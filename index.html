@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMarket Live - Cameroun 🇨🇲</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --dark: #0f172a; --cyan: #06b6d4; --gray: #334155; --green: #22c55e; }
+        body { margin: 0; background: var(--dark); color: white; font-family: sans-serif; overflow: hidden; }
+        #app { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: 0 auto; border-left: 1px solid var(--gray); border-right: 1px solid var(--gray); }
+        header { padding: 12px; background: rgba(15, 23, 42, 0.9); text-align: center; border-bottom: 2px solid var(--cyan); z-index: 1000; }
+        header h1 { margin: 0; font-size: 1.1rem; color: var(--cyan); text-transform: uppercase; }
+        #map { flex-grow: 1; z-index: 1; } 
+        .footer { padding: 15px; background: var(--dark); display: flex; flex-direction: column; gap: 10px; z-index: 10; border-top: 1px solid var(--gray); }
+        .btn { background: var(--cyan); color: var(--dark); border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; }
+        #formModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e293b; border-radius: 20px; width: 90%; max-width: 400px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        input, textarea { width: 100%; background: #0f172a; border: 1px solid var(--gray); color: white; padding: 12px; margin-bottom: 10px; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <header><h1>JobMarket Hybrid 🛰️</h1></header>
+    <div id="map"></div>
+    <div class="footer"><button class="btn" onclick="openPostModal()">🚀 Publier une Mission</button></div>
+</div>
+
+<div id="formModal">
+    <div class="modal-content">
+        <h2 style="color:var(--cyan); margin-top:0;">Nouvelle Mission</h2>
+        <input type="text" id="userName" placeholder="Ton Nom">
+        <input type="text" id="mTitle" placeholder="Quel est le job ?">
+        <textarea id="mDesc" placeholder="Détails et prix..."></textarea>
+        <button class="btn" id="publishBtn" onclick="publish()">Publier sur la Carte</button>
+        <button class="btn" style="background:#334155; color:white; margin-top:10px;" onclick="closePostModal()">Annuler</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, push, onChildAdded, update, onChildChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+    authDomain: "jobmarketfuture.firebaseapp.com",
+    databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+    projectId: "jobmarketfuture",
+    storageBucket: "jobmarketfuture.firebasestorage.app",
+    messagingSenderId: "351669024349",
+    appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const missionsRef = ref(db, 'missions');
+
+  var map = L.map('map', {zoomControl: false}).setView([3.848, 11.502], 13);
+  L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { 
+    maxZoom: 20, 
+    subdomains:['mt0','mt1','mt2','mt3'] 
+  }).addTo(map);
+
+  let markers = {};
+
+  window.openPostModal = () => document.getElementById('formModal').style.display='flex';
+  window.closePostModal = () => { 
+    document.getElementById('formModal').style.display='none'; 
+    document.getElementById('publishBtn').disabled = false; 
+    document.getElementById('publishBtn').innerText = "Publier sur la Carte";
+  };
+
+  window.publish = function() {
+    const name = document.getElementById('userName').value || "Anonyme";
+    const title = document.getElementById('mTitle').value;
+    const desc = document.getElementById('mDesc').value;
+    if(!title) return alert("Le titre est requis !");
+
+    const btn = document.getElementById('publishBtn');
+    btn.innerText = "Recherche GPS..."; btn.disabled = true;
+
+    // CONFIGURATION GPS AMÉLIORÉE
+    map.locate({
+        setView: true, 
+        maxZoom: 16, 
+        enableHighAccuracy: false, // Utilise aussi le réseau mobile pour aller plus vite
+        timeout: 30000 // Attend 30 secondes au lieu de 10
+    });
+
+    map.once('locationfound', (e) => {
+        push(missionsRef, { name, title, desc, lat: e.latlng.lat, lng: e.latlng.lng, status: "open", timestamp: Date.now() })
+        .then(() => { alert("✅ Mission publiée !"); closePostModal(); });
+    });
+
+    map.once('locationerror', (err) => { 
+        alert("Erreur GPS : " + err.message + ". Vérifiez que votre localisation est activée."); 
+        btn.disabled = false; btn.innerText = "Publier sur la Carte"; 
+    });
+  };
+
+  function createOrUpdateMarker(id, data) {
+    const isTaken = data.status === "taken";
+    if (markers[id]) map.removeLayer(markers[id]);
+    const marker = L.circleMarker([data.lat, data.lng], { radius: 12, color: "white", weight: 2, fillColor: isTaken ? "#22c55e" : "#06b6d4", fillOpacity: 1 }).addTo(map);
+    let popup = `<div style="color:black; min-width:150px;"><b>${data.title}</b><br><small>Par: ${data.name}</small><br>${data.desc}<br>`;
+    if(!isTaken) popup += `<button onclick="window.markAsTaken('${id}')" style="background:#22c55e; color:white; border:none; padding:8px; margin-top:8px; width:100%; border-radius:5px; cursor:pointer;">M'y rendre</button>`;
+    marker.bindPopup(popup + `</div>`);
+    markers[id] = marker;
+  }
+
+  window.markAsTaken = function(id) { update(ref(db, `missions/${id}`), { status: "taken" }); };
+  onChildAdded(missionsRef, (snap) => createOrUpdateMarker(snap.key, snap.val()));
+  onChildChanged(missionsRef, (snap) => createOrUpdateMarker(snap.key, snap.val()));
+</script>
+</body>
+  </html>
