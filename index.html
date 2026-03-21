@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMarket Pro - Cameroun 🇨🇲</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        :root { --dark: #0f172a; --cyan: #06b6d4; --gray: #334155; --green: #22c55e; --red: #ef4444; }
+        body { margin: 0; background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        #app { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: 0 auto; border-left: 1px solid var(--gray); border-right: 1px solid var(--gray); }
+        
+        /* Header & Filtres */
+        header { padding: 10px; background: rgba(15, 23, 42, 0.95); text-align: center; border-bottom: 2px solid var(--cyan); z-index: 1000; }
+        .filter-bar { display: flex; overflow-x: auto; gap: 8px; padding: 10px; background: #1e293b; white-space: nowrap; border-bottom: 1px solid var(--gray); }
+        .filter-btn { background: var(--gray); border: none; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
+        .filter-btn.active { background: var(--cyan); color: var(--dark); font-weight: bold; }
+
+        #map { flex-grow: 1; z-index: 1; } 
+        .footer { padding: 15px; background: var(--dark); z-index: 10; border-top: 1px solid var(--gray); }
+        .btn { background: var(--cyan); color: var(--dark); border: none; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; }
+        
+        /* Modale */
+        #formModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e293b; border-radius: 25px; width: 90%; max-width: 400px; padding: 20px; max-height: 90vh; overflow-y: auto; }
+        input, textarea, select { width: 100%; background: #0f172a; border: 1px solid var(--gray); color: white; padding: 10px; margin-bottom: 10px; border-radius: 8px; box-sizing: border-box; }
+        label { font-size: 0.75rem; color: var(--cyan); font-weight: bold; margin-bottom: 4px; display: block; }
+
+        /* Style des Marqueurs */
+        .custom-div-icon { background: none; border: none; }
+        .marker-pin { width: 35px; height: 35px; border-radius: 50% 50% 50% 0; background: var(--cyan); position: absolute; transform: rotate(-45deg); left: 50%; top: 50%; margin: -17px 0 0 -17px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .marker-pin i { transform: rotate(45deg); color: var(--dark); font-size: 15px; }
+
+        .wa-btn { background: #25d366; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; padding: 10px; border-radius: 8px; font-weight: bold; gap: 8px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <header><h1 style="margin:0; font-size:1rem;">JOBMARKET CAMEROUN PRO 🇨🇲</h1></header>
+    <div class="filter-bar" id="filterBar">
+        <button class="filter-btn active" onclick="filterMissions('Tous', this)">Tous</button>
+        <button class="filter-btn" onclick="filterMissions('🛠️ Dépannage', this)">🛠️ Dépannage</button>
+        <button class="filter-btn" onclick="filterMissions('📦 Livraison', this)">📦 Livraison</button>
+        <button class="filter-btn" onclick="filterMissions('🧹 Ménage', this)">🧹 Ménage</button>
+    </div>
+    <div id="map"></div>
+    <div class="footer"><button class="btn" onclick="openPostModal()">🚀 PUBLIER UNE MISSION</button></div>
+</div>
+
+<div id="formModal">
+    <div class="modal-content">
+        <h3 style="margin:0 0 15px 0; color:var(--cyan);">Nouvelle Annonce</h3>
+        <label>CATÉGORIE</label>
+        <select id="mType">
+            <option value="🛠️ Dépannage">🛠️ Dépannage</option>
+            <option value="📦 Livraison">📦 Livraison</option>
+            <option value="🧹 Ménage">🧹 Ménage</option>
+            <option value="💻 Info">💻 Informatique</option>
+            <option value="✨ Autre">✨ Autre</option>
+        </select>
+        <label>NOM</label><input type="text" id="userName" placeholder="Ton nom">
+        <label>WHATSAPP (9 chiffres)</label><input type="number" id="userPhone" placeholder="6xxxxxxxx">
+        <label>DESCRIPTION & PRIX</label><textarea id="mDesc" rows="2" placeholder="Ex: Électricien, 5000F"></textarea>
+        <label>CODE SECRET (Pour supprimer plus tard)</label>
+        <input type="password" id="delCode" placeholder="Ex: 1234">
+        
+        <button class="btn" id="publishBtn" onclick="publish()">PUBLIER</button>
+        <button class="btn" style="background:none; color:white; margin-top:5px;" onclick="closePostModal()">Annuler</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, push, onChildAdded, remove, onChildRemoved } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  
+  const firebaseConfig = {
+    apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+    authDomain: "jobmarketfuture.firebaseapp.com",
+    databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+    projectId: "jobmarketfuture",
+    storageBucket: "jobmarketfuture.firebasestorage.app",
+    messagingSenderId: "351669024349",
+    appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const missionsRef = ref(db, 'missions');
+
+  var map = L.map('map', {zoomControl: false}).setView([3.848, 11.502], 13);
+  L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
+
+  let markers = {};
+  let currentFilter = 'Tous';
+
+  const iconMap = {
+    "🛠️ Dépannage": "fa-screwdriver-wrench",
+    "📦 Livraison": "fa-truck",
+    "🧹 Ménage": "fa-broom",
+    "💻 Info": "fa-laptop-code",
+    "✨ Autre": "fa-star"
+  };
+
+  window.openPostModal = () => document.getElementById('formModal').style.display='flex';
+  window.closePostModal = () => document.getElementById('formModal').style.display='none';
+
+  window.publish = function() {
+    const data = {
+        type: document.getElementById('mType').value,
+        name: document.getElementById('userName').value || "Anonyme",
+        phone: document.getElementById('userPhone').value,
+        desc: document.getElementById('mDesc').value,
+        code: document.getElementById('delCode').value, // On stocke le code secret
+        lat: 0, lng: 0
+    };
+
+    if(!data.phone || !data.desc || !data.code) return alert("Remplissez tout, y compris le code secret !");
+    
+    document.getElementById('publishBtn').innerText = "GPS...";
+    map.locate({setView: true, maxZoom: 16, enableHighAccuracy: false, timeout: 20000});
+    
+    map.once('locationfound', (e) => {
+        data.lat = e.latlng.lat; data.lng = e.latlng.lng;
+        push(missionsRef, data).then(() => { alert("🚀 Mission publiée !"); location.reload(); });
+    });
+  };
+
+  function createMarker(id, data) {
+    const iconClass = iconMap[data.type] || "fa-briefcase";
+    const customIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div class="marker-pin"><i class="fa-solid ${iconClass}"></i></div>`,
+        iconSize:, iconAnchor:, popupAnchor: [0, -40]
+    });
+
+    const marker = L.marker([data.lat, data.lng], { icon: customIcon }).addTo(map);
+    
+    let popupContent = `
+        <div style="color:black; min-width:180px;">
+            <b style="color:var(--cyan); font-size:1rem;">${data.type}</b><br>
+            <small>Par: ${data.name}</small><hr>
+            <p>${data.desc}</p>
+            <a href="https://wa.me/237${data.phone}" class="wa-btn" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+            <button onclick="window.tryDelete('${id}', '${data.code}')" style="background:none; border:none; color:red; font-size:0.7rem; margin-top:10px; cursor:pointer; width:100%;">🗑️ Supprimer (Code requis)</button>
+        </div>`;
+    
+    marker.bindPopup(popupContent);
+    marker.category = data.type;
+    markers[id] = marker;
+  }
+
+  // SECURITÉ : On demande le code avant de supprimer
+  window.tryDelete = (id, correctCode) => {
+    const userCode = prompt("Entrez le code secret de cette annonce pour la supprimer :");
+    if(userCode === correctCode) {
+        remove(ref(db, `missions/${id}`));
+        alert("Annonce supprimée !");
+    } else {
+        alert("Code incorrect ! Seul l'auteur peut supprimer.");
+    }
+  };
+
+  // FILTRAGE
+  window.filterMissions = (cat, btn) => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    Object.values(markers).forEach(m => {
+        if(cat === 'Tous' || m.category === cat) { map.addLayer(m); }
+        else { map.removeLayer(m); }
+    });
+  };
+
+  onChildAdded(missionsRef, (snap) => createMarker(snap.key, snap.val()));
+  onChildRemoved(missionsRef, (snap) => { if(markers[snap.key]) { map.removeLayer(markers[snap.key]); delete markers[snap.key]; } });
+</script>
+</body>
+  </html>
