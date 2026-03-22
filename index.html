@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroun 🛰️</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; background: #000; overflow: hidden; font-family: sans-serif; }
+        #map { flex-grow: 1; width: 100%; height: 100%; }
+        .footer-fixe { position: fixed; bottom: 0; left: 0; right: 0; height: 80px; background: #1e293b; display: flex; align-items: center; justify-content: center; padding: 10px; z-index: 1000; border-top: 3px solid #06b6d4; }
+        .btn-large { background: #06b6d4; color: #0f172a; border: none; width: 95%; height: 60px; border-radius: 15px; font-weight: bold; font-size: 18px; cursor: pointer; }
+        #formModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 20px; width: 85%; max-width: 350px; border: 1px solid #06b6d4; color: white; }
+        input, textarea, select { width: 100%; margin-bottom: 12px; padding: 12px; border-radius: 8px; border: none; box-sizing: border-box; font-size: 16px; background: #0f172a; color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div class="footer-fixe">
+        <button class="btn-large" onclick="ouvrirFormulaire()">🚀 PUBLIER UNE MISSION ICI</button>
+    </div>
+
+    <div id="formModal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:#06b6d4;">Nouvelle Annonce 🇨🇲</h3>
+            <select id="mType">
+                <option value="🛠️">🛠️ Dépannage</option>
+                <option value="📦">📦 Livraison</option>
+                <option value="🧹">🧹 Ménage / Aide</option>
+            </select>
+            <input type="text" id="userName" placeholder="Ton nom">
+            <input type="number" id="userPhone" placeholder="WhatsApp (ex: 699001122)">
+            <textarea id="mDesc" placeholder="Détails de la mission..."></textarea>
+            <button class="btn-large" id="btnValider" onclick="validerPublication()">VALIDER</button>
+            <button onclick="fermerFormulaire()" style="background:none; border:none; color:gray; width:100%; margin-top:10px;">Annuler</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    
+    <script type="module">
+        // IMPORT FIREBASE
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+            authDomain: "jobmarketfuture.firebaseapp.com",
+            databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+            projectId: "jobmarketfuture",
+            storageBucket: "jobmarketfuture.firebasestorage.app",
+            messagingSenderId: "351669024349",
+            appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const missionsRef = ref(db, 'missions');
+
+        // CARTE
+        var map = L.map('map', { zoomControl: false }).setView([3.848, 11.502], 13);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}').addTo(map);
+
+        // LIRE LES MISSIONS DEPUIS FIREBASE
+        onChildAdded(missionsRef, (snapshot) => {
+            const m = snapshot.val();
+            if(m.lat && m.lng) {
+                L.marker([m.lat, m.lng]).addTo(map)
+                 .bindPopup(`<b>${m.type} - ${m.name}</b><br>${m.desc}<br><br><a href="https://wa.me/237${m.phone}" target="_blank" style="background:#25D366; color:white; padding:10px; border-radius:10px; text-decoration:none; display:block; text-align:center;">💬 WhatsApp</a>`);
+            }
+        });
+
+        // ACTIONS
+        window.ouvrirFormulaire = () => document.getElementById('formModal').style.display = 'flex';
+        window.fermerFormulaire = () => document.getElementById('formModal').style.display = 'none';
+
+        window.validerPublication = function() {
+            const data = {
+                name: document.getElementById('userName').value || "Anonyme",
+                phone: document.getElementById('userPhone').value,
+                type: document.getElementById('mType').value,
+                desc: document.getElementById('mDesc').value
+            };
+
+            if(!data.phone || !data.desc) return alert("⚠️ Remplis tout !");
+
+            const btn = document.getElementById('btnValider');
+            btn.innerText = "🛰️ Localisation...";
+            
+            navigator.geolocation.getCurrentPosition((pos) => {
+                data.lat = pos.coords.latitude;
+                data.lng = pos.coords.longitude;
+                
+                // ENREGISTRER DANS FIREBASE
+                push(missionsRef, data).then(() => {
+                    alert("✅ Mission enregistrée pour tout le Cameroun !");
+                    location.reload(); 
+                });
+            }, (err) => alert("Active le GPS !"), { enableHighAccuracy: true });
+        }
+
+        setTimeout(() => map.invalidateSize(), 500);
+    </script>
+</body>
+  </html>
