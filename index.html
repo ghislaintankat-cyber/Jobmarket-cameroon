@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; background: #000; }
+        #map { flex-grow: 1; width: 100%; height: 80vh; } /* La carte prend 80% de l'écran */
+        
+        /* BOUTON FIXÉ EN BAS */
+        .footer-fixe { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            height: 80px; 
+            background: #1e293b; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 10px;
+            z-index: 9999; 
+            border-top: 2px solid #06b6d4;
+        }
+        .btn-large { 
+            background: #06b6d4; 
+            color: white; 
+            border: none; 
+            width: 95%; 
+            height: 60px; 
+            border-radius: 15px; 
+            font-weight: bold; 
+            font-size: 18px; 
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div class="footer-fixe">
+        <button class="btn-large" onclick="alert('GPS en cours...'); location.reload();">🚀 CLIQUE ICI POUR PUBLIER</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([3.848, 11.502], 13);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}').addTo(map);
+        
+        // Petit fix pour forcer l'affichage sur tablette
+        setTimeout(function(){ map.invalidateSize()}, 500);
+    </script>
+</body>
+</html>
