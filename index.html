@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroun 🛰️</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { padding: 15px; background: #1e293b; text-align: center; border-bottom: 3px solid #06b6d4; z-index: 1000; flex-shrink: 0; }
+        #map { flex: 1; background: #111; width: 100%; height: 100%; }
+        .footer { padding: 15px; background: #0f172a; flex-shrink: 0; z-index: 1000; }
+        .btn { background: #06b6d4; color: #0f172a; border: none; padding: 15px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; font-size: 1rem; }
+        
+        #formModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; border: 1px solid #06b6d4; }
+        input, textarea, select { width: 100%; margin-bottom: 10px; padding: 12px; border-radius: 8px; border: none; box-sizing: border-box; font-size: 16px; background: #0f172a; color: white; }
+        
+        .marker-pin { background: #06b6d4; width: 30px; height: 30px; border-radius: 50% 50% 50% 0; border: 2px solid white; display: flex; align-items: center; justify-content: center; transform: rotate(-45deg); margin-left: -15px; margin-top: -30px; }
+        .marker-pin span { transform: rotate(45deg); font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<header><b>JOBMARKET CAMEROUN 🛰️</b></header>
+<div id="map"></div>
+<div class="footer">
+    <button class="btn" onclick="document.getElementById('formModal').style.display='flex'">🚀 PUBLIER UNE MISSION ICI</button>
+</div>
+
+<div id="formModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:#06b6d4;">Nouvelle Annonce</h3>
+        <select id="mType">
+            <option value="🛠️">🛠️ Dépannage</option>
+            <option value="📦">📦 Livraison</option>
+            <option value="🧹">🧹 Ménage</option>
+        </select>
+        <input type="text" id="userName" placeholder="Ton nom">
+        <input type="number" id="userPhone" placeholder="WhatsApp (ex: 699001122)">
+        <textarea id="mDesc" placeholder="Description et Prix..."></textarea>
+        <button class="btn" id="finalPubBtn" onclick="publier()">VALIDER LA PUBLICATION</button>
+        <button class="btn" style="background:gray; margin-top:8px;" onclick="document.getElementById('formModal').style.display='none'">Annuler</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+    authDomain: "jobmarketfuture.firebaseapp.com",
+    databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+    projectId: "jobmarketfuture",
+    storageBucket: "jobmarketfuture.firebasestorage.app",
+    messagingSenderId: "351669024349",
+    appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const missionsRef = ref(db, 'missions');
+
+  // CARTE SATELLITE ESRI
+  var map = L.map('map', { zoomControl: false }).setView([3.848, 11.502], 13);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+  
+  setTimeout(() => { map.invalidateSize(); }, 800);
+
+  window.publier = function() {
+    const btn = document.getElementById('finalPubBtn');
+    const data = {
+        type: document.getElementById('mType').value,
+        name: document.getElementById('userName').value || "Anonyme",
+        phone: document.getElementById('userPhone').value,
+        desc: document.getElementById('mDesc').value
+    };
+
+    if(!data.phone || !data.desc) return alert("⚠️ Remplis ton WhatsApp et la description !");
+    
+    btn.innerText = "🛰️ Recherche GPS...";
+    btn.style.background = "orange";
+
+    // MÉTHODE FORCÉE POUR LA LOCALISATION
+    if (!navigator.geolocation) {
+        alert("Ton navigateur ne supporte pas le GPS.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            data.lat = position.coords.latitude;
+            data.lng = position.coords.longitude;
+            map.setView([data.lat, data.lng], 16);
+            
+            push(missionsRef, data).then(() => { 
+                alert("✅ Mission publiée avec succès !"); 
+                location.reload(); 
+            });
+        },
+        (error) => {
+            console.error(error);
+            alert("❌ ERREUR : Tu dois CLIQUER SUR 'AUTORISER' quand la question apparaît en haut de l'écran !");
+            btn.innerText = "VALIDER LA PUBLICATION";
+            btn.style.background = "#06b6d4";
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  onChildAdded(missionsRef, (snap) => {
+    const m = snap.val();
+    if(m.lat && m.lng) {
+        const icon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class="marker-pin"><span>${m.type}</span></div>`,
+            iconSize:, iconAnchor:
+        });
+        L.marker([m.lat, m.lng], {icon: icon}).addTo(map)
+         .bindPopup(`<b style="color:black">${m.type} - ${m.name}</b><br><span style="color:black">${m.desc}</span><br><br><a href="https://wa.me/237${m.phone}" style="background:#25D366; color:white; padding:10px; border-radius:8px; text-decoration:none; display:inline-block; font-weight:bold;">💬 WhatsApp</a>`);
+    }
+  });
+</script>
+</body>
+</html>
