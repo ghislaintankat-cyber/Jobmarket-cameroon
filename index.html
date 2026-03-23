@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroon 🇨🇲</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        :root { --cyan: #06b6d4; --orange: #f59e0b; --green: #10b981; --dark: #0f172a; }
+        body { margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; background: var(--dark); font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; }
+        
+        /* Header & Filtres */
+        header { background: #1e293b; padding: 10px; text-align: center; border-bottom: 2px solid var(--cyan); }
+        .filter-bar { display: flex; justify-content: space-around; background: #1e293b; padding: 8px; gap: 5px; }
+        .f-btn { border: 1px solid #334155; background: #0f172a; color: white; padding: 8px; border-radius: 20px; font-size: 12px; flex: 1; cursor: pointer; }
+        .f-btn.active { border-color: var(--cyan); background: rgba(6, 182, 212, 0.2); }
+
+        /* Carte */
+        #map { flex-grow: 1; width: 100%; }
+
+        /* Bouton Publier Flottant */
+        .btn-float { position: fixed; bottom: 20px; right: 20px; left: 20px; background: var(--cyan); color: #0f172a; 
+                    border: none; height: 55px; border-radius: 30px; font-weight: bold; font-size: 16px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 25px; width: 85%; max-width: 380px; border: 1px solid var(--cyan); }
+        input, textarea, select { width: 100%; margin-bottom: 12px; padding: 14px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 16px; box-sizing: border-box; }
+        
+        /* Boutons de la bulle */
+        .btn-wa { background: #25D366; color: white; padding: 12px; display: block; text-align: center; text-decoration: none; border-radius: 10px; font-weight: bold; margin-top: 10px; }
+        .btn-del { background: #ef4444; color: white; border: none; padding: 10px; border-radius: 10px; margin-top: 8px; width: 100%; cursor: pointer; }
+        .admin-badge { background: red; font-size: 10px; padding: 2px 5px; border-radius: 5px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+    <header id="mainTitle">
+        <b>JOBMARKET CAMEROUN</b> <span id="adminTag" class="admin-badge" style="display:none;">ADMIN</span>
+    </header>
+
+    <div class="filter-bar">
+        <button class="f-btn active" onclick="filterMissions('ALL', this)">🌍 Tout</button>
+        <button class="f-btn" onclick="filterMissions('🛠️', this)">🛠️ Dépannage</button>
+        <button class="f-btn" onclick="filterMissions('📦', this)">📦 Livraison</button>
+        <button class="f-btn" onclick="filterMissions('🧹', this)">🧹 Ménage</button>
+    </div>
+
+    <div id="map"></div>
+
+    <button class="btn-float" onclick="openModal()">🚀 PUBLIER UNE MISSION ICI</button>
+
+    <div id="pubModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-top:0; color:var(--cyan)">Nouvelle Annonce</h2>
+            <select id="mType">
+                <option value="🛠️">🛠️ Dépannage (Plomberie, Electro...)</option>
+                <option value="📦">📦 Livraison (Colis, Courses...)</option>
+                <option value="🧹">🧹 Ménage & Services</option>
+            </select>
+            <input type="text" id="userName" placeholder="Ton nom ou entreprise">
+            <input type="number" id="userPhone" placeholder="Numéro WhatsApp (ex: 695...)">
+            <textarea id="mDesc" rows="3" placeholder="Ex: Cherche réparateur frigo à Deido. Budget 5000 FCFA."></textarea>
+            <button class="btn-float" style="position:static; width:100%" id="btnSubmit" onclick="submitMission()">LANCER L'APPEL 🛰️</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:gray; width:100%; margin-top:15px;">Fermer</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+            authDomain: "jobmarketfuture.firebaseapp.com",
+            databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+            projectId: "jobmarketfuture",
+            appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const missionsRef = ref(db, 'missions');
+
+        // IDs & ADMIN
+        if(!localStorage.getItem('myUID')) localStorage.setItem('myUID', 'user_' + Math.random().toString(36).substr(2, 9));
+        const myUID = localStorage.getItem('myUID');
+        let isAdmin = localStorage.getItem('isAdmin') === 'true';
+        if(isAdmin) document.getElementById('adminTag').style.display = 'inline';
+
+        // INITIALISATION CARTE
+        var map = L.map('map', { zoomControl: false }).setView([3.848, 11.502], 13);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}').addTo(map);
+
+        let allMarkers = [];
+
+        // COULEURS DES MARQUEURS
+        const getColor = (type) => {
+            if(type.includes('🛠️')) return '#ef4444'; // Rouge
+            if(type.includes('📦')) return '#f59e0b'; // Orange
+            return '#10b981'; // Vert
+        };
+
+        // AFFICHER MISSION
+        onChildAdded(missionsRef, (snap) => {
+            const id = snap.key;
+            const m = snap.val();
+            const color = getColor(m.type);
+            
+            // Création d'un petit cercle coloré stylé
+            const marker = L.circleMarker([m.lat, m.lng], {
+                radius: 10, fillOpacity: 0.8, color: 'white', weight: 2, fillColor: color
+            }).addTo(map);
+
+            const isOwner = (m.ownerID === myUID || isAdmin);
+            const delBtn = isOwner ? `<button class="btn-del" onclick="deleteMission('${id}')">🗑️ Supprimer</button>` : "";
+
+            marker.bindPopup(`
+                <div style="color:black; min-width:150px">
+                    <b style="font-size:16px">${m.type}</b><br>
+                    <small>Par: ${m.name}</small><hr>
+                    ${m.desc}<br>
+                    <a href="https://wa.me/237${m.phone}" class="btn-wa">💬 WhatsApp</a>
+                    ${delBtn}
+                </div>
+            `);
+
+            marker.missionType = m.type;
+            marker.missionId = id;
+            allMarkers.push(marker);
+        });
+
+        onChildRemoved(missionsRef, (snap) => {
+            const id = snap.key;
+            allMarkers = allMarkers.filter(m => {
+                if(m.missionId === id) { map.removeLayer(m); return false; }
+                return true;
+            });
+        });
+
+        // FILTRES
+        window.filterMissions = (type, btn) => {
+            document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            allMarkers.forEach(m => {
+                if(type === 'ALL' || m.missionType.includes(type)) map.addLayer(m);
+                else map.removeLayer(m);
+            });
+        };
+
+        // ACTIONS
+        window.openModal = () => document.getElementById('pubModal').style.display='flex';
+        window.closeModal = () => document.getElementById('pubModal').style.display='none';
+        
+        window.deleteMission = (id) => {
+            if(confirm("Confirmer la suppression ?")) remove(ref(db, 'missions/' + id));
+        };
+
+        window.submitMission = () => {
+            const data = {
+                type: document.getElementById('mType').value,
+                name: document.getElementById('userName').value || "Anonyme",
+                phone: document.getElementById('userPhone').value,
+                desc: document.getElementById('mDesc').value,
+                ownerID: myUID
+            };
+
+            if(!data.phone || !data.desc) return alert("Remplis le numéro et la description !");
+
+            document.getElementById('btnSubmit').innerText = "📍 Localisation GPS...";
+            navigator.geolocation.getCurrentPosition((pos) => {
+                data.lat = pos.coords.latitude;
+                data.lng = pos.coords.longitude;
+                push(missionsRef, data).then(() => {
+                    closeModal();
+                    alert("✅ Posté sur la carte !");
+                    document.getElementById('btnSubmit').innerText = "LANCER L'APPEL 🛰️";
+                });
+            }, () => alert("Active le GPS !"), {enableHighAccuracy:true});
+        };
+
+        // SECRET ADMIN (5 clics sur titre)
+        let clicks = 0;
+        document.getElementById('mainTitle').onclick = () => {
+            clicks++;
+            if(clicks === 5) {
+                if(prompt("Code Admin ?") === "237BO") {
+                    localStorage.setItem('isAdmin', 'true');
+                    location.reload();
+                }
+                clicks = 0;
+            }
+        };
+
+        setTimeout(() => map.invalidateSize(), 500);
+    </script>
+</body>
+</html>
