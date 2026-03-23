@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroon 🛰️</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+    <style>
+        :root { --gold: #f59e0b; --gold-light: #fcd34d; --dark: #0f172a; --dark-light: #1e293b; }
+        body { margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; background: var(--dark); font-family: sans-serif; overflow: hidden; color: white; }
+        header { background: var(--dark-light); padding: 10px; text-align: center; border-bottom: 2px solid var(--gold); cursor: pointer; z-index: 2000; }
+        #map { flex-grow: 1; width: 100%; height: 100%; background: #1e293b; }
+        .info-bulle { position: fixed; top: 65px; left: 50%; transform: translateX(-50%); background: rgba(245, 158, 11, 0.9); color: black; padding: 5px 15px; border-radius: 20px; font-size: 11px; font-weight: bold; z-index: 1000; pointer-events: none; }
+        .btn-float { position: fixed; bottom: 20px; right: 20px; left: 20px; background: linear-gradient(45deg, var(--gold), var(--gold-light)); color: #0f172a; border: none; height: 50px; border-radius: 25px; font-weight: bold; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--dark-light); padding: 20px; border-radius: 20px; width: 85%; max-width: 350px; border: 1px solid var(--gold); }
+        input, textarea, select { width: 100%; margin-bottom: 10px; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: var(--dark); color: white; font-size: 16px; box-sizing: border-box; }
+        .btn-wa { background: #25D366; color: white; padding: 10px; display: block; text-align: center; text-decoration: none; border-radius: 10px; font-weight: bold; margin-top: 10px; }
+        .btn-del { background: #ef4444; color: white; border: none; padding: 10px; border-radius: 10px; margin-top: 8px; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <header id="mainTitle"><b>JOBMARKET CAMEROON 🛰️</b> <span id="adm" style="display:none; color:red; font-size:10px;">[ADM]</span></header>
+    <div class="info-bulle">👉 Touche la carte pour publier</div>
+    <div id="map"></div>
+    <button class="btn-float" onclick="useGPS()">📍 UTILISER MON GPS ACTUEL</button>
+
+    <div id="pubModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:var(--gold-light)">Publier ici ✨</h3>
+            <select id="mType">
+                <option value="🛠️ Dépannage">🛠️ Dépannage</option>
+                <option value="📦 Livraison">📦 Livraison</option>
+                <option value="🧹 Ménage">🧹 Ménage</option>
+            </select>
+            <input type="text" id="userName" placeholder="Ton nom">
+            <input type="number" id="userPhone" placeholder="WhatsApp (ex: 695...)">
+            <textarea id="mDesc" rows="3" placeholder="Description du job..."></textarea>
+            <button class="btn-float" style="position:static; width:100%" onclick="finaliserPublication()">VALIDER ✨</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:gray; width:100%; margin-top:10px; cursor:pointer;">Annuler</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+            authDomain: "jobmarketfuture.firebaseapp.com",
+            databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+            projectId: "jobmarketfuture",
+            appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const myUID = localStorage.getItem('myUID') || 'user_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('myUID', myUID);
+        let isAdmin = localStorage.getItem('isAdmin') === 'true';
+        if(isAdmin) document.getElementById('adm').style.display = 'inline';
+
+        // --- FIX POUR IPHONE ET TABLETTE ---
+        var map = L.map('map', { 
+            zoomControl: false, 
+            tap: false // Désactive le tap Leaflet qui entre en conflit avec Safari
+        }).setView([3.848, 11.502], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Forcer le redimensionnement après le chargement (Essentiel sur iPhone)
+        window.addEventListener('load', () => {
+            setTimeout(() => { map.invalidateSize(); }, 500);
+        });
+
+        let tempCoords = null;
+        let markers = {};
+
+        map.on('click', function(e) {
+            tempCoords = e.latlng;
+            document.getElementById('pubModal').style.display = 'flex';
+        });
+
+        window.useGPS = function() {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                tempCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                map.flyTo([pos.coords.latitude, pos.coords.longitude], 16);
+                document.getElementById('pubModal').style.display = 'flex';
+            }, (err) => {
+                alert("Erreur GPS : " + err.message + ". Active ta localisation !");
+            });
+        };
+
+        window.closeModal = function() {
+            document.getElementById('pubModal').style.display = 'none';
+        };
+
+        window.finaliserPublication = function() {
+            const data = {
+                type: document.getElementById('mType').value,
+                name: document.getElementById('userName').value || "Anonyme",
+                phone: document.getElementById('userPhone').value,
+                desc: document.getElementById('mDesc').value,
+                lat: tempCoords.lat,
+                lng: tempCoords.lng,
+                ownerID: myUID,
+                date: Date.now()
+            };
+            if(!data.phone || !data.desc) return alert("Remplis tout !");
+            db.ref('missions').push(data).then(() => {
+                closeModal();
+                alert("✅ Publié !");
+            });
+        };
+
+        db.ref('missions').on('child_added', (snap) => {
+            const m = snap.val();
+            const id = snap.key;
+            const marker = L.marker([m.lat, m.lng]).addTo(map);
+            const canDelete = (m.ownerID === myUID || isAdmin);
+            const delBtn = canDelete ? `<button class="btn-del" onclick="deleteMission('${id}')">🗑️ Supprimer</button>` : "";
+            marker.bindPopup(`<b>${m.type}</b><br>${m.name}<hr>${m.desc}<br><a href="https://wa.me/237${m.phone}" class="btn-wa" target="_blank">💬 WhatsApp</a>${delBtn}`);
+            markers[id] = marker;
+        });
+
+        db.ref('missions').on('child_removed', (snap) => {
+            if(markers[snap.key]) { map.removeLayer(markers[snap.key]); delete markers[snap.key]; }
+        });
+
+        window.deleteMission = function(id) {
+            if(confirm("Supprimer ?")) db.ref('missions/' + id).remove();
+        };
+
+        let c = 0;
+        document.getElementById('mainTitle').onclick = () => {
+            c++; if(c === 5) { 
+                let p = prompt("Code?"); 
+                if(p === "237BO") { localStorage.setItem('isAdmin', 'true'); location.reload(); } 
+                c=0; 
+            }
+        };
+    </script>
+</body>
+</html>
