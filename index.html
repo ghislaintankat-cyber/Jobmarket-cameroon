@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Gold Touch 🛰️</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        :root { --gold: #f59e0b; --gold-light: #fcd34d; --dark: #0f172a; --dark-light: #1e293b; }
+        body { margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; background: var(--dark); font-family: sans-serif; overflow: hidden; color: white; }
+        header { background: var(--dark-light); padding: 10px; text-align: center; border-bottom: 2px solid var(--gold); cursor: pointer; }
+        #map { flex-grow: 1; width: 100%; height: 100%; background: #0f172a; }
+        .info-bulle { position: fixed; top: 65px; left: 50%; transform: translateX(-50%); background: rgba(245, 158, 11, 0.9); color: black; padding: 5px 15px; border-radius: 20px; font-size: 11px; font-weight: bold; z-index: 1000; pointer-events: none; white-space: nowrap; }
+        .btn-float { position: fixed; bottom: 20px; right: 20px; left: 20px; background: linear-gradient(45deg, var(--gold), var(--gold-light)); color: #0f172a; border: none; height: 50px; border-radius: 25px; font-weight: bold; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--dark-light); padding: 20px; border-radius: 20px; width: 85%; max-width: 350px; border: 1px solid var(--gold); }
+        input, textarea, select { width: 100%; margin-bottom: 10px; padding: 12px; border-radius: 10px; border: 1px solid #334155; background: var(--dark); color: white; font-size: 16px; box-sizing: border-box; }
+        .btn-wa { background: #25D366; color: white; padding: 10px; display: block; text-align: center; text-decoration: none; border-radius: 10px; font-weight: bold; margin-top: 10px; }
+        .btn-del { background: #ef4444; color: white; border: none; padding: 10px; border-radius: 10px; margin-top: 8px; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <header id="mainTitle"><b>JOBMARKET GOLD 🛰️</b> <span id="adminTag" style="display:none; color:red; font-size:10px;">[ADMIN]</span></header>
+    <div class="info-bulle">👉 Touche la carte pour placer un job</div>
+    
+    <div id="map"></div>
+
+    <button class="btn-float" onclick="useGPS()">📍 UTILISER MA POSITION GPS</button>
+
+    <div id="pubModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:var(--gold-light)">Publier ici ✨</h3>
+            <select id="mType">
+                <option value="🛠️ Dépannage">🛠️ Dépannage</option>
+                <option value="📦 Livraison">📦 Livraison</option>
+                <option value="🧹 Ménage">🧹 Ménage</option>
+            </select>
+            <input type="text" id="userName" placeholder="Ton nom">
+            <input type="number" id="userPhone" placeholder="WhatsApp (ex: 695...)">
+            <textarea id="mDesc" rows="3" placeholder="Description du job..."></textarea>
+            <button class="btn-float" style="position:static; width:100%" id="btnSubmit" onclick="finaliserPublication()">VALIDER ✨</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:gray; width:100%; margin-top:10px;">Annuler</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+            authDomain: "jobmarketfuture.firebaseapp.com",
+            databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+            projectId: "jobmarketfuture",
+            appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const missionsRef = ref(db, 'missions');
+
+        const myUID = localStorage.getItem('myUID') || 'user_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('myUID', myUID);
+        let isAdmin = localStorage.getItem('isAdmin') === 'true';
+        if(isAdmin) document.getElementById('adminTag').style.display = 'inline';
+
+        // CARTE
+        var map = L.map('map', { zoomControl: false }).setView([3.848, 11.502], 13);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}').addTo(map);
+
+        let tempCoords = null;
+        let allMarkers = {};
+
+        const goldIcon = L.divIcon({
+            className: 'custom-gold-icon',
+            html: '<div style="background-color: #f59e0b; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);"></div>',
+            iconSize:, iconAnchor:
+        });
+
+        // ACTIONS CARTE
+        map.on('click', function(e) {
+            tempCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
+            document.getElementById('pubModal').style.display='flex';
+        });
+
+        window.useGPS = function() {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                tempCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                document.getElementById('pubModal').style.display='flex';
+            }, () => alert("Active ton GPS !"));
+        };
+
+        window.closeModal = function() {
+            document.getElementById('pubModal').style.display='none';
+            tempCoords = null;
+        };
+
+        window.finaliserPublication = function() {
+            const data = {
+                type: document.getElementById('mType').value,
+                name: document.getElementById('userName').value || "Anonyme",
+                phone: document.getElementById('userPhone').value,
+                desc: document.getElementById('mDesc').value,
+                lat: tempCoords.lat,
+                lng: tempCoords.lng,
+                ownerID: myUID
+            };
+
+            if(!data.phone || !data.desc) return alert("Remplis les champs !");
+
+            push(missionsRef, data).then(() => {
+                closeModal();
+                alert("✅ Publié !");
+            }).catch(e => alert("Erreur : " + e.message));
+        };
+
+        // SYNC FIREBASE
+        onChildAdded(missionsRef, (snap) => {
+            const id = snap.key;
+            const m = snap.val();
+            const marker = L.marker([m.lat, m.lng], { icon: goldIcon }).addTo(map);
+            const isOwner = (m.ownerID === myUID || isAdmin);
+            const delBtn = isOwner ? `<button class="btn-del" onclick="deleteMission('${id}')">🗑️ Supprimer</button>` : "";
+
+            marker.bindPopup(`<b>${m.type}</b><br><small>${m.name}</small><hr>${m.desc}<br><a href="https://wa.me/237${m.phone}" class="btn-wa" target="_blank">💬 WhatsApp</a>${delBtn}`);
+            allMarkers[id] = marker;
+        });
+
+        onChildRemoved(missionsRef, (snap) => {
+            if(allMarkers[snap.key]) { map.removeLayer(allMarkers[snap.key]); delete allMarkers[snap.key]; }
+        });
+
+        window.deleteMission = function(id) {
+            if(confirm("Supprimer ?")) remove(ref(db, 'missions/' + id));
+        };
+
+        // ADMIN (5 clics sur titre)
+        let clicks = 0;
+        document.getElementById('mainTitle').onclick = () => {
+            clicks++;
+            if(clicks === 5) {
+                if(prompt("Code Admin ?") === "237BO") { localStorage.setItem('isAdmin', 'true'); location.reload(); }
+                clicks = 0;
+            }
+        };
+
+        setTimeout(() => map.invalidateSize(), 500);
+    </script>
+</body>
+</html>
