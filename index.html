@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobMarket Cameroon 🛰️ SOS</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css"/>
+<style>
+:root { --gold:#f59e0b; --dark:#1e293b; --red:#ef4444; --green:#22c55e; }
+html,body{margin:0;padding:0;height:100%;background:#000;font-family:sans-serif;overflow:hidden;}
+body{display:flex;flex-direction:column;}
+header{background:var(--dark);color:#fff;padding:15px;text-align:center;border-bottom:3px solid var(--gold);font-weight:900;}
+
+#map{flex:1;width:100%;}
+
+.controls-top { position:fixed; top:75px; left:10px; right:10px; z-index:2000; display:flex; gap:8px; }
+#filterType { flex:1; padding:12px; border-radius:12px; background:var(--dark); color:white; border:2px solid var(--gold); font-weight:bold; outline:none;}
+.map-switcher { background:var(--dark); color:white; border:2px solid #fff; padding:10px; border-radius:12px; font-weight:bold; cursor:pointer; }
+
+.btn-group { position:fixed; bottom:20px; left:15px; right:15px; z-index:1000; display:flex; flex-direction:column; gap:10px; }
+.btn-publish { background:var(--gold); color:black; border:none; height:60px; border-radius:30px; font-weight:900; font-size:16px; box-shadow:0 4px 15px rgba(0,0,0,0.5); cursor:pointer;}
+.btn-sos { background:var(--red); color:white; border:none; height:60px; border-radius:30px; font-weight:900; font-size:16px; box-shadow:0 4px 15px rgba(0,0,0,0.5); cursor:pointer; animation:pulse-red 1.5s infinite; }
+
+@keyframes pulse-red { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+.sos-icon { display:flex; justify-content:center; align-items:center; background:white; border:3px solid var(--red); border-radius:50%; width:45px; height:45px; font-size:24px; box-shadow:0 0 15px var(--red); animation:blink 0.8s infinite alternate; }
+@keyframes blink { from { opacity:1; transform:scale(1); } to { opacity:0.7; transform:scale(1.2); } }
+
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:3000;justify-content:center;align-items:center;}
+.modal-content{background:var(--dark);padding:25px;border-radius:20px;width:92%;max-width:380px;color:white;border:2px solid var(--gold);}
+input,select,textarea{width:100%; margin-bottom:12px; padding:14px; border-radius:10px; border:none; background:#0f172a; color:white; font-size:16px; box-sizing:border-box;}
+.btn-confirm { background:var(--green); color:white; border:none; padding:16px; width:100%; border-radius:12px; font-weight:bold; font-size:18px; cursor:pointer; }
+
+.custom-icon{display:flex;justify-content:center;align-items:center;background:white;border:2px solid var(--gold);border-radius:50%;width:40px;height:40px;font-size:22px;}
+.btn-del{background:#ef4444;color:white;border:none;padding:10px;border-radius:8px;margin-top:10px;width:100%;}
+</style>
+</head>
+<body>
+
+<header>JOBMARKET CAMEROON 🛰️</header>
+
+<div class="controls-top">
+<select id="filterType" onchange="afficherJobs()">
+    <option value="all">🔍 Tous les Jobs</option>
+    <option value="🚨">🚨 SOS / URGENCES</option>
+    <option value="🏠">🏠 Maison</option>
+    <option value="🛠️">🛠️ Technique</option>
+    <option value="📚">📚 Education</option>
+    <option value="🛡️">🛡️ Sécurité</option>
+    <option value="🚚">🚚 Transport</option>
+</select>
+<button class="map-switcher" onclick="toggleMap()">🛰️/🗺️</button>
+</div>
+
+<div id="map"></div>
+
+<div class="btn-group">
+<button class="btn-sos" onclick="demarrerGPS('🚨')">🚨 SOS : BESOIN D'AIDE URGENT</button>
+<button class="btn-publish" onclick="demarrerGPS('NORMAL')">📍 PUBLIER UN SERVICE / JOB</button>
+</div>
+
+<div id="pubModal" class="modal">
+<div class="modal-content">
+<h3 id="modalTitle" style="margin-top:0;color:var(--gold);">Détails du Job ✨</h3>
+
+<div id="categoryGroup">
+    <select id="mCategory">
+        <option value="🏠">Maison (Ménage, Cuisine...)</option>
+        <option value="🛠️">Technique (Dépannage, Maçon...)</option>
+        <option value="📚">Education (Répétiteur...)</option>
+        <option value="🛡️">Sécurité (Vigile...)</option>
+        <option value="🚚">Transport (Chauffeur...)</option>
+        <option value="💼">Autre Métier</option>
+    </select>
+</div>
+
+<input id="mJobTitle" placeholder="Quel métier ? (ex: Vigile, Maçon...)" maxlength="30">
+<input id="uName" placeholder="Votre Nom / Prénom">
+<input id="uPhone" type="tel" placeholder="WhatsApp (ex: 6xxxxxxxx)">
+<textarea id="mDesc" rows="2" placeholder="Précisions (prix, horaires...)"></textarea>
+
+<button class="btn-confirm" onclick="envoyerFirebase()">VALIDER ✅</button>
+<button onclick="fermerModal()" style="background:none; border:none; color:#aaa; width:100%; margin-top:15px;">ANNULER</button>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+apiKey:"AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+authDomain:"jobmarketfuture.firebaseapp.com",
+databaseURL:"https://jobmarketfuture-default-rtdb.firebaseio.com",
+projectId:"jobmarketfuture",
+appId:"1:351669024349:web:d4d4d08727ccc6012b7fb4"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let map, tempCoords, tempMarker, isSatellite=true, modeActuel='NORMAL';
+let markers=[], missionsData=[];
+
+const satellite = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
+    L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}')
+]);
+const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+
+window.onload=()=>{
+map=L.map('map',{zoomControl:false}).setView([3.848,11.502],13);
+satellite.addTo(map);
+
+map.on('click',e=>{
+    tempCoords=e.latlng;
+    if(tempMarker) map.removeLayer(tempMarker);
+    tempMarker=L.marker(tempCoords).addTo(map);
+    modeActuel='NORMAL';
+    ouvrirModal();
+});
+
+db.ref('missions').on('value',snap=>{
+    missionsData=[];
+    snap.forEach(child=>{ missionsData.push({...child.val(), id:child.key}); });
+    afficherJobs();
+});
+};
+
+function toggleMap(){
+if(isSatellite){ map.removeLayer(satellite); streets.addTo(map); isSatellite=false; }
+else{ map.removeLayer(streets); satellite.addTo(map); isSatellite=true; }
+}
+
+function ouvrirModal(){
+const isSOS = (modeActuel==='🚨');
+document.getElementById('modalTitle').innerText = isSOS ? "🚨 SIGNALER UNE URGENCE" : "Nouveau Job ✨";
+document.getElementById('modalTitle').style.color = isSOS ? "var(--red)" : "var(--gold)";
+document.getElementById('categoryGroup').style.display = isSOS ? "none" : "block";
+document.getElementById('mJobTitle').placeholder = isSOS ? "Besoin de quoi ? (ex: Plombier urgent !)" : "Quel métier ?";
+document.getElementById('pubModal').style.display='flex';
+}
+
+function fermerModal(){ document.getElementById('pubModal').style.display='none'; }
+
+function afficherJobs(){
+markers.forEach(m=>map.removeLayer(m));
+markers=[];
+const filter=document.getElementById('filterType').value;
+const unMois=30*24*60*60*1000;
+
+missionsData.forEach(m=>{
+    if(Date.now()-m.time>unMois){ 
+        db.ref('missions/'+m.id).remove(); return; 
+    }
+    if(filter!=='all' && !m.type.startsWith(filter)) return;
+    const isSOS = m.type.startsWith('🚨');
+    const icon=L.divIcon({
+        html: isSOS?'🚨':m.type.split(' ')[0],
+        className:isSOS?'sos-icon':'custom-icon',
+        iconSize:isSOS?[45,45]:[40,40]
+    });
+    const marker=L.marker([m.lat,m.lng],{icon}).addTo(map)
+    .bindPopup(`
+        <div style="color:black;text-align:center;min-width:180px;">
+        <h3 style="margin:5px 0; color:${isSOS?'red':'black'};">${m.type}</h3>
+        <b>👤 ${m.name}</b><br>
+        <p style="margin:10px 0;">${m.desc}</p>
+        <a href="https://wa.me/237${m.phone}" target="_blank" style="background:var(--green);color:white;padding:12px;border-radius:10px;text-decoration:none;display:block;font-weight:bold;">${isSOS?'AIDER MAINTENANT':'CONTACTER'}</a>
+        <button class="btn-del" onclick="supprimerJob('${m.id}','${m.deleteCode}')">Supprimer</button>
+        </div>
+    `);
+    markers.push(marker);
+});
+}
+
+function demarrerGPS(mode){
+modeActuel=mode;
+navigator.geolocation.getCurrentPosition(pos=>{
+    tempCoords={lat: pos.coords.latitude, lng: pos.coords.longitude};
+    map.setView(tempCoords,18);
+    if(tempMarker) map.removeLayer(tempMarker);
+    tempMarker=L.marker(tempCoords).addTo(map);
+    ouvrirModal();
+},()=>alert("GPS requis pour le mode SOS !"));
+}
+
+function envoyerFirebase(){
+const uName=document.getElementById('uName');
+const uPhone=document.getElementById('uPhone');
+const mDesc=document.getElementById('mDesc');
+const titre=document.getElementById('mJobTitle').value;
+const emoji=(modeActuel==='🚨')?'🚨':document.getElementById('mCategory').value;
+
+if(!titre || !uPhone.value) return alert("Remplissez les champs obligatoires !");
+const deleteCode=Math.random().toString(36).substring(2,7).toUpperCase();
+
+const data={
+    type: emoji+" "+titre,
+    name: uName.value || "Anonyme",
+    phone: uPhone.value,
+    desc: mDesc.value || "",
+    lat: tempCoords.lat,
+    lng: tempCoords.lng,
+    time: Date.now(),
+    deleteCode: deleteCode
+};
+
+db.ref('missions').push(data).then(()=>{
+    if(tempMarker) map.removeLayer(tempMarker);
+    fermerModal();
+    alert("PUBLIÉ ! ✅\nCode suppression: "+deleteCode);
+});
+}
+
+function supprimerJob(id, deleteCode){
+let code=prompt("Entrez le Code de Suppression :");
+if(code && (code==="237BO" || code.toUpperCase()===deleteCode.toUpperCase())){
+    db.ref('missions/'+id).remove().then(()=>alert("Supprimé !"));
+} else alert("Code incorrect !");
+}
+</script>
+</body>
+</html>
