@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Test</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; background: #000; color: white; font-family: sans-serif; }
+        
+        header { 
+            background: #1e293b; 
+            padding: 20px; 
+            text-align: center; 
+            border-bottom: 2px solid #f59e0b;
+            font-weight: bold;
+        }
+
+        /* FIX : Hauteur fixe pour forcer l'apparition */
+        #map { 
+            height: 500px; 
+            width: 100%; 
+            background: #222; 
+            display: block;
+        }
+
+        .btn-float { 
+            display: block;
+            width: 90%;
+            margin: 20px auto;
+            padding: 15px;
+            background: #f59e0b;
+            color: black;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        #status { color: #f59e0b; text-align: center; padding: 10px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <header>JOBMARKET CAMEROON 🛰️</header>
+    
+    <div id="status">Chargement de la carte en cours...</div>
+    
+    <div id="map"></div>
+    
+    <button class="btn-float" onclick="testerGPS()">📍 TESTER LOCALISATION</button>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+
+    <script>
+        // On vérifie si Leaflet est chargé
+        window.onload = function() {
+            try {
+                if (typeof L === 'undefined') {
+                    document.getElementById('status').innerHTML = "Erreur : Leaflet n'est pas chargé. Vérifie ta connexion.";
+                    return;
+                }
+
+                document.getElementById('status').innerHTML = "Carte active ✅";
+                
+                // Initialisation simple
+                var map = L.map('map').setView([3.848, 11.502], 13);
+
+                // On utilise le plan standard (plus léger que le satellite pour tester)
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+                // Forcer l'affichage
+                setTimeout(function() {
+                    map.invalidateSize();
+                }, 1000);
+
+                window.testerGPS = function() {
+                    navigator.geolocation.getCurrentPosition(function(pos) {
+                        map.flyTo([pos.coords.latitude, pos.coords.longitude], 16);
+                        L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(map).bindPopup("Tu es ici").openPopup();
+                    }, function() {
+                        alert("Erreur GPS : Active la localisation sur ton téléphone");
+                    });
+                };
+            } catch (e) {
+                document.getElementById('status').innerHTML = "Erreur Script : " + e.message;
+            }
+        };
+    </script>
+</body>
+</html>
