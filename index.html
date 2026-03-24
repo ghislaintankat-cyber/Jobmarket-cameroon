@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroon 🛰️</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    
+    <style>
+        :root { --gold: #f59e0b; --dark: #0f172a; --dark-light: #1e293b; }
+        
+        /* FIX : On force le body à prendre toute l'écran */
+        html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
+        
+        body { display: flex; flex-direction: column; }
+
+        header { 
+            background: var(--dark-light); 
+            padding: 15px; 
+            text-align: center; 
+            border-bottom: 2px solid var(--gold); 
+            z-index: 2000; 
+            color: white;
+            font-weight: bold;
+        }
+
+        /* FIX : La carte DOIT avoir une hauteur fixe ou flexible bien définie */
+        #map { 
+            flex-grow: 1; 
+            width: 100%; 
+            height: 100%; /* Important pour l'iPhone */
+            z-index: 1;
+        }
+
+        .btn-float { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            left: 20px; 
+            background: var(--gold); 
+            color: #0f172a; 
+            border: none; 
+            height: 50px; 
+            border-radius: 25px; 
+            font-weight: bold; 
+            z-index: 1000; 
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>JOBMARKET CAMEROON 🛰️</header>
+
+    <div id="map"></div>
+    
+    <button class="btn-float" onclick="useGPS()">📍 TESTER MON GPS</button>
+
+    <script>
+        // On attend que la page soit totalement chargée avant de lancer la carte
+        window.onload = function() {
+            
+            // Initialisation de la carte sur Yaoundé
+            var map = L.map('map', { 
+                zoomControl: false,
+                attributionControl: false 
+            }).setView([3.848, 11.502], 13);
+
+            // Ajout de la couche satellite Esri
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+
+            // FIX : Sécurité pour forcer l'affichage si c'est gris
+            setTimeout(function() {
+                map.invalidateSize();
+            }, 500);
+
+            // Fonction GPS
+            window.useGPS = function() {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    map.flyTo([lat, lng], 16);
+                    L.marker([lat, lng]).addTo(map).bindPopup("Vous êtes ici !").openPopup();
+                }, () => alert("Activez le GPS sur votre téléphone"));
+            };
+        };
+    </script>
+</body>
+</html>
