@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket CM 🛰️</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+    
+    <style>
+        :root { --gold: #f59e0b; --dark: #0f172a; }
+        
+        /* FIX : On force l'affichage plein écran */
+        html, body { margin: 0; padding: 0; height: 100vh; width: 100vw; background: #000; overflow: hidden; font-family: sans-serif; }
+        body { display: flex; flex-direction: column; }
+
+        header { 
+            background: #1e293b; color: white; padding: 15px; 
+            text-align: center; border-bottom: 2px solid var(--gold); 
+            z-index: 2000; font-weight: bold;
+        }
+
+        /* FIX : Hauteur garantie pour la carte */
+        #map { flex: 1; width: 100%; background: #111; z-index: 1; }
+
+        .btn-float { 
+            position: fixed; bottom: 25px; right: 20px; left: 20px; 
+            background: var(--gold); color: #000; border: none; 
+            height: 55px; border-radius: 30px; font-weight: bold; 
+            z-index: 1000; font-size: 16px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Modals */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e293b; padding: 20px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid var(--gold); color: white; }
+        input, select, textarea { width: 100%; margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 16px; }
+        .btn-send { background: var(--gold); color: black; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <header>JOBMARKET CAMEROON 🛰️</header>
+
+    <div id="map"></div>
+    
+    <button class="btn-float" onclick="demarrerGPS()">📍 PUBLIER À MA POSITION</button>
+
+    <div id="pubModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:var(--gold)">Nouveau Job ✨</h3>
+            <select id="mType">
+                <option value="🏊 Nageur">🏊 Maître-Nageur</option>
+                <option value="🛠️ Dépannage">🛠️ Dépannage</option>
+                <option value="📦 Livraison">📦 Livraison</option>
+                <option value="🧹 Ménage">🧹 Ménage</option>
+            </select>
+            <input type="text" id="uName" placeholder="Ton nom">
+            <input type="number" id="uPhone" placeholder="WhatsApp (ex: 695...)">
+            <textarea id="mDesc" rows="3" placeholder="Détails du service..."></textarea>
+            <button class="btn-send" onclick="envoyerFirebase()">VALIDER LA PUBLICATION</button>
+            <button onclick="fermerModal()" style="background:none; border:none; color:gray; width:100%; margin-top:10px;">Annuler</button>
+        </div>
+    </div>
+
+    <script>
+        // Config Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+            authDomain: "jobmarketfuture.firebaseapp.com",
+            databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+            projectId: "jobmarketfuture",
+            appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        var map, tempCoords;
+
+        // --- 1. LANCEMENT SÉCURISÉ DE LA CARTE ---
+        window.addEventListener('load', function() {
+            // On initialise la carte
+            map = L.map('map', { zoomControl: false }).setView([3.848, 11.502], 13);
+
+            // Couche Satellite (ArcGIS)
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+
+            // FIX : On force le rafraîchissement pour éviter l'écran noir
+            setTimeout(() => { map.invalidateSize(); }, 600);
+
+            // Clic sur la carte pour publier
+            map.on('click', function(e) {
+                tempCoords = e.latlng;
+                document.getElementById('pubModal').style.display = 'flex';
+            });
+
+            // Charger les points existants
+            db.ref('missions').on('child_added', (snap) => {
+                const m = snap.val();
+                L.marker([m.lat, m.lng]).addTo(map)
+                .bindPopup(`<b>${m.type}</b><br>${m.name}<br><a href="https://wa.me/237${m.phone}" style="color:green; font-weight:bold; text-decoration:none;">Contacter WhatsApp</a>`);
+            });
+        });
+
+        // --- 2. FONCTIONS GPS ET PUBLICATION ---
+        function demarrerGPS() {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                tempCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                map.flyTo([tempCoords.lat, tempCoords.lng], 17);
+                setTimeout(() => { document.getElementById('pubModal').style.display = 'flex'; }, 1000);
+            }, () => { alert("Activez votre localisation !"); });
+        }
+
+        function fermerModal() { document.getElementById('pubModal').style.display = 'none'; }
+
+        function envoyerFirebase() {
+            const data = {
+                type: document.getElementById('mType').value,
+                name: document.getElementById('uName').value || "Anonyme",
+                phone: document.getElementById('uPhone').value,
+                desc: document.getElementById('mDesc').value,
+                lat: tempCoords.lat, lng: tempCoords.lng
+            };
+
+            if(!data.phone || !data.desc) return alert("Remplissez tout !");
+
+            db.ref('missions').push(data).then(() => {
+                alert("Publié avec succès ! ✅");
+                fermerModal();
+            }).catch(e => alert("Erreur Firebase : " + e.message));
+        }
+    </script>
+</body>
+</html>
