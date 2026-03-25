@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Ultra 🌍</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+    <style>
+        :root { --gold:#f59e0b; --dark:#0f172a; --green:#10b981; }
+        body, html { margin:0; height:100%; width:100%; overflow:hidden; font-family:sans-serif; background: #000; }
+        #map { position:absolute; top:0; bottom:0; width:100%; z-index: 1; }
+        
+        .btn { position:absolute; right:15px; width:45px; height:45px; background:white; border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.3); cursor:pointer; z-index:1000; font-size: 20px; }
+        #gps { top:20px; }
+        #mapType { top:75px; }
+        #clear { top:130px; background:red; color:white; display:none; }
+        #add { position:absolute; bottom:90px; right:20px; width:65px; height:65px; border-radius:50%; background:var(--gold); color:white; font-size:35px; border:none; z-index:1000; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+
+        .panel { position:fixed; bottom:-100%; left:0; width:100%; background:var(--dark); color:white; padding:20px; transition:.4s; z-index:2000; border-radius:20px 20px 0 0; box-sizing: border-box; border-top: 3px solid var(--gold); }
+        #businessPanel { border-top: 3px solid var(--green); height: 70%; overflow-y: auto; }
+        .panel.active { bottom:0; }
+
+        input, textarea { width:100%; padding:12px; margin:8px 0; background:#1e293b; border:1px solid #334155; color:white; border-radius:8px; box-sizing: border-box; font-size: 16px; }
+        .ai-msg { background:#1e293b; padding:15px; border-radius:10px; margin-top:15px; font-size:14px; line-height:1.5; border-left:4px solid var(--green); min-height: 50px; }
+
+        #bottomNav { position:absolute; bottom:0; width:100%; background:white; display:flex; height: 65px; justify-content:space-around; align-items: center; z-index:1000; border-top: 1px solid #ddd; }
+        .nav-btn { text-align:center; font-size:11px; cursor:pointer; color: #444; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="gps" class="btn" onclick="centerUser()">🎯</div>
+<div id="mapType" class="btn" onclick="toggleMap()">🛰️</div>
+<div id="clear" class="btn" onclick="clearRoute()">❌</div>
+<button id="add" onclick="togglePanel('panel')">+</button>
+
+<div id="panel" class="panel">
+    <h3 style="margin:0; text-align:center; color:var(--gold)">Publier une annonce</h3>
+    <input id="title" placeholder="Métier (ex: Électricien)">
+    <input id="phone" type="tel" placeholder="WhatsApp (ex: 6...)">
+    <textarea id="desc" placeholder="Détails du service"></textarea>
+    <button onclick="publish()" style="width:100%; background:var(--gold); color:white; border:none; padding:15px; border-radius:10px; font-weight:bold;">PUBLIER SUR LA CARTE</button>
+    <p onclick="togglePanel('panel')" style="text-align:center; color:gray; cursor:pointer;">Annuler</p>
+</div>
+
+<div id="businessPanel" class="panel">
+    <h3 style="margin:0; text-align:center; color:var(--green)">💰 Coach Business IA</h3>
+    <p style="text-align:center; font-size:12px; color:#94a3b8;">Expert du marché Camerounais</p>
+    <input id="ai-q" placeholder="Posez votre question business...">
+    <button onclick="askAI()" style="width:100%; background:var(--green); color:white; border:none; padding:12px; border-radius:10px; font-weight:bold;">DEMANDER CONSEIL</button>
+    <div id="ai-res" class="ai-msg">Bonjour ! Je suis votre assistant. Comment puis-je vous aider à gagner plus d'argent aujourd'hui ?</div>
+    <p onclick="togglePanel('businessPanel')" style="text-align:center; color:gray; cursor:pointer; margin-top:20px;">Fermer</p>
+</div>
+
+<div id="bottomNav">
+    <div class="nav-btn" onclick="togglePanel('panel')">🧳<br>POSTER</div>
+    <div class="nav-btn" onclick="location.reload()">🗺️<br>CARTE</div>
+    <div class="nav-btn" onclick="togglePanel('businessPanel')">💰<br>BUSINESS</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+  authDomain: "jobmarketfuture.firebaseapp.com",
+  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+  projectId: "jobmarketfuture"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let map, normal, sat, userMarker, routeControl, userPos = null;
+let mode = "normal";
+
+window.onload = function() {
+    map = L.map('map', { zoomControl: false }).setView([3.86, 11.51], 13);
+    normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+    
+    navigator.geolocation.watchPosition(pos => {
+        userPos = [pos.coords.latitude, pos.coords.longitude];
+        if(!userMarker) userMarker = L.circleMarker(userPos, {radius: 9, color: '#3b82f6', fillColor:'#3b82f6', fillOpacity: 1}).addTo(map);
+        else userMarker.setLatLng(userPos);
+    }, null, { enableHighAccuracy: true });
+
+    loadJobs();
+};
+
+function togglePanel(id) { document.getElementById(id).classList.toggle("active"); }
+
+function publish() {
+    let t = document.getElementById("title").value, p = document.getElementById("phone").value, d = document.getElementById("desc").value;
+    if(!t || !p) return alert("Métier et WhatsApp requis !");
+    db.ref("jobs").push({ title: t, phone: p.replace(/\D/g,''), desc: d, lat: map.getCenter().lat, lng: map.getCenter().lng, time: Date.now() });
+    togglePanel('panel');
+}
+
+function loadJobs() {
+    db.ref("jobs").on("value", snap => {
+        map.eachLayer(l => { if(l instanceof L.Marker && l !== userMarker) map.removeLayer(l); });
+        snap.forEach(j => {
+            let data = j.val();
+            let marker = L.marker([data.lat, data.lng]).addTo(map);
+            marker.bindPopup(`<b>${data.title}</b><br>${data.desc}<br><button onclick="startRoute(${data.lat},${data.lng})" style="background:orange;color:white;border:none;padding:5px;width:100%;margin-top:5px;cursor:pointer;">Itinéraire</button><a href="https://wa.me/${data.phone}" style="display:block;text-align:center;background:green;color:white;padding:5px;margin-top:5px;text-decoration:none;">WhatsApp</a>`);
+        });
+    });
+}
+
+// L'IA COMPÉTENTE (BACKEND SIMULÉ AVEC TA CLÉ)
+async function askAI() {
+    const q = document.getElementById("ai-q").value;
+    const res = document.getElementById("ai-res");
+    if(!q) return;
+    res.innerHTML = "🌀 Analyse du marché (Yaoundé/Douala)...";
+
+    const systemPrompt = `Tu es l'expert business de JobMarket au Cameroun. Réponds en Franc CFA (XAF). 
+    Connais les quartiers (Bastos, Akwa, Mvan, etc.). Donne des astuces pour gagner de l'argent.
+    Question : ${q}`;
+
+    try {
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDsK3pebXuwNHm8QZU2iXCOW7HS85ZqzNI", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
+        });
+        const data = await response.json();
+        res.innerHTML = "<b>Conseil Expert :</b><br>" + data.candidates.content.parts.text;
+    } catch (e) { res.innerHTML = "❌ Erreur de connexion IA."; }
+}
+
+function startRoute(lat, lng) {
+    if(!userPos) return alert("Activez votre GPS");
+    if(routeControl) map.removeControl(routeControl);
+    routeControl = L.Routing.control({ waypoints: [L.latLng(userPos), L.latLng(lat, lng)], createMarker:()=>null, lineOptions:{styles:[{color:'#f59e0b', weight:6}]} }).addTo(map);
+}
+
+function toggleMap() { if(mode==="normal"){map.removeLayer(normal);sat.addTo(map);mode="sat";}else{map.removeLayer(sat);normal.addTo(map);mode="normal";}}
+function centerUser() { if(userPos) map.setView(userPos, 16); }
+</script>
+</body>
+</html>
