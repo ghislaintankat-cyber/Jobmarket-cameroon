@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobMarket Pro 🌍</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+
+<style>
+:root { --gold:#f59e0b; --dark:#0f172a; }
+
+body, html {
+    margin:0; padding:0; height:100%;
+    font-family: 'Segoe UI', sans-serif;
+    overflow:hidden; background: var(--dark);
+}
+
+#map {
+    position:absolute; top:0; bottom:0; width:100%; z-index:1;
+}
+
+/* BOUTONS FLOTTANTS */
+.btn {
+    position:absolute; right:15px; background:white;
+    border-radius:10px; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 10px rgba(0,0,0,0.3); cursor:pointer; z-index:1000;
+    font-size: 20px;
+}
+
+#user { top:15px; width:45px; height:45px; border-radius:50%; border: 2px solid var(--gold); overflow:hidden; font-weight:bold; }
+#gps { top:75px; width:45px; height:45px; }
+#mapType { top:135px; width:45px; height:45px; }
+#routeClear { top:195px; width:45px; height:45px; background: #ef4444; color:white; font-size:16px; display:none; } /* Caché par défaut */
+
+#add {
+    position:absolute; bottom:25px; right:15px;
+    width:60px; height:60px; border-radius:50%;
+    background:var(--gold); font-size:30px; border:none;
+    z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.4); cursor:pointer;
+}
+
+/* FENÊTRES COULISSANTES */
+.modal {
+    position:fixed; bottom:-100%; width:100%;
+    background:#0f172a; color:white; padding:20px;
+    transition:0.4s; z-index:2000; box-sizing: border-box;
+    border-top: 3px solid var(--gold); border-radius: 20px 20px 0 0;
+}
+.modal.active { bottom:0; }
+
+input, textarea {
+    width:100%; padding:12px; margin:6px 0;
+    border-radius: 8px; border: none; box-sizing: border-box;
+    background: #1e293b; color: white;
+}
+
+.btn-action { width: 100%; padding: 12px; margin-top: 10px; font-weight: bold; background: var(--gold); border: none; border-radius: 8px; cursor: pointer; }
+.btn-close { width: 100%; padding: 12px; margin-top: 10px; background: #334155; color: white; border: none; border-radius: 8px; cursor: pointer; }
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div id="user" class="btn" onclick="openModal('profile')">?</div>
+<div id="gps" class="btn" onclick="centerUser()">🎯</div>
+<div id="mapType" class="btn" onclick="toggleMap()">🛰️</div>
+<div id="routeClear" class="btn" onclick="clearRoute()">❌</div>
+<button id="add" onclick="openModal('publish')">+</button>
+
+<div id="profile" class="modal">
+    <button class="btn-action" onclick="loginGoogle()">Connexion Google</button>
+    <button class="btn-action" style="background:#ef4444; color:white;" onclick="logout()">Déconnexion</button>
+    <button class="btn-close" onclick="closeModal()">Fermer</button>
+</div>
+
+<div id="publish" class="modal">
+    <h3 style="margin-top:0; color:var(--gold);">Publier un service 📍</h3>
+    <input id="title" placeholder="Métier (ex: Plombier)">
+    <textarea id="desc" placeholder="Détails"></textarea>
+    <input id="phone" type="tel" placeholder="WhatsApp (ex: 237...)">
+    <button class="btn-action" onclick="publish()">Publier</button>
+    <button class="btn-close" onclick="closeModal()">Annuler</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+
+<script>
+// --- FIREBASE ---
+const firebaseConfig = {
+    apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+    authDomain: "jobmarketfuture.firebaseapp.com",
+    databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// --- MAP & LAYERS ---
+let map = L.map('map', {maxZoom: 22, zoomControl: false}).setView([3.86, 11.51], 7);
+
+const normalMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const satelliteMap = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
+    L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}')
+]);
+
+let current = "normal";
+function toggleMap() {
+    if(current === "normal") { map.removeLayer(normalMap); satelliteMap.addTo(map); current = "satellite"; } 
+    else { map.removeLayer(satelliteMap); normalMap.addTo(map); current = "normal"; }
+}
+
+// --- GPS UTILISATEUR ---
+let userPos = null;
+let userMarker = null;
+
+navigator.geolocation.watchPosition(pos => {
+    userPos = [pos.coords.latitude, pos.coords.longitude];
+    if(userMarker) map.removeLayer(userMarker);
+    userMarker = L.circleMarker(userPos, {color:'#3b82f6', radius:8, fillOpacity:0.8}).addTo(map);
+}, ()=>{}, {enableHighAccuracy: true});
+
+function centerUser() {
+    if(userPos) map.setView(userPos, 16);
+    else alert("Recherche GPS en cours...");
+}
+
+// --- SÉLECTIONNER POSITION (CLIC CARTE) ---
+let selected = null;
+map.on('click', e => {
+    selected = e.latlng;
+    alert("📍 Position sélectionnée ! Cliquez sur le bouton + pour publier ici.");
+    closeModal();
+});
+
+// --- ROUTING (ITINÉRAIRE DIRECT SUR LA CARTE) ---
+let routingControl = null;
+
+function drawRoute(destLat, destLng) {
+    if(!userPos) return alert("Position GPS non trouvée. Activez votre localisation.");
+    
+    // Si un itinéraire existe déjà, on le nettoie
+    if(routingControl) map.removeControl(routingControl);
+
+    routingControl = L.Routing.control({
+        waypoints: [ L.latLng(userPos, userPos), L.latLng(destLat, destLng) ],
+        routeWhileDragging: false,
+        addWaypoints: false,
+        show: false, // Cache les instructions texte pour ne pas encombrer l'écran
+        lineOptions: { styles: [{color: '#3b82f6', opacity: 0.8, weight: 5}] }
+    }).addTo(map);
+
+    // Afficher le bouton X pour annuler l'itinéraire
+    document.getElementById('routeClear').style.display = 'flex';
+    map.closePopup();
+}
+
+function clearRoute() {
+    if(routingControl) {
+        map.removeControl(routingControl);
+        routingControl = null;
+    }
+    document.getElementById('routeClear').style.display = 'none';
+}
+
+// --- UI / MODALS ---
+function openModal(id) {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+function closeModal() {
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+}
+
+// --- AUTHENTIFICATION ---
+function loginGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(()=>closeModal()); }
+function logout() { auth.signOut(); closeModal(); }
+
+auth.onAuthStateChanged(user => {
+    const btn = document.getElementById('user');
+    if(user) btn.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;">`;
+    else btn.innerHTML = "?";
+});
+
+// --- PUBLIER ---
+function publish() {
+    const user = auth.currentUser;
+    if(!user) { alert("Connectez-vous !"); return openModal('profile'); }
+    if(!title.value || !phone.value) return alert("Champs requis");
+
+    const data = {
+        title: title.value, desc: desc.value, phone: phone.value.replace(/\D/g,''),
+        lat: selected ? selected.lat : map.getCenter().lat,
+        lng: selected ? selected.lng : map.getCenter().lng,
+        time: Date.now(), owner: user.email
+    };
+
+    db.ref("jobs").push(data).then(() => {
+        alert("Publié avec succès ! 🚀");
+        closeModal(); title.value = ""; desc.value = ""; phone.value = ""; selected = null;
+    });
+
+    fetch("https://jobmarket-cameroon.onrender.com/job-created", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)
+    }).catch(() => console.log("Render offline"));
+}
+
+// --- AFFICHAGE MARQUEURS ---
+db.ref("jobs").on("value", snap => {
+    map.eachLayer(l => { if(l instanceof L.Marker && l !== userMarker) map.removeLayer(l); });
+
+    snap.forEach(j => {
+        let d = j.val();
+        if(Date.now()-d.time > 30*24*60*60*1000) { db.ref("jobs/"+j.key).remove(); return; }
+
+        let marker = L.marker([d.lat, d.lng]).addTo(map);
+        let info = "";
+
+        if(userPos) {
+            const dist = map.distance(userPos, [d.lat, d.lng]) / 1000;
+            // Bouton pour tracer la ligne bleue
+            info = `
+            <br><span style="color:gray; font-size:12px;">📍 Distance: ${dist.toFixed(2)} km</span>
+            <br><button onclick="drawRoute(${d.lat}, ${d.lng})" style="width:100%; padding:8px; margin-top:5px; background:var(--gold); border:none; border-radius:5px; font-weight:bold; cursor:pointer;">🗺️ Tracer l'itinéraire</button>
+            `;
+        }
+
+        marker.bindPopup(`
+        <div style="font-family:sans-serif; min-width: 150px;">
+        <b style="font-size:16px;">${d.title}</b><br>
+        <span style="font-size:13px;">${d.desc}</span>
+        ${info}<br>
+        <a href="https://wa.me/${d.phone}" target="_blank" style="margin-top:10px; background:#25D366; color:white; padding:8px; border-radius:5px; text-decoration:none; font-weight:bold; display:block; text-align:center;">💬 Contacter WhatsApp</a>
+        </div>
+        `);
+    });
+});
+
+</script>
+</body>
+</html>
