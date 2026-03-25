@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Pro 🌍</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+    <style>
+        body,html{margin:0;height:100%;overflow:hidden;font-family:sans-serif;background:#0f172a;}
+        #map{position:absolute;top:0;bottom:0;width:100%;z-index:1;}
+        .btn{
+            position:absolute;right:15px;background:white;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            box-shadow:0 4px 10px rgba(0,0,0,0.3);cursor:pointer;z-index:1000;
+        }
+        #gps{top:20px;width:45px;height:45px;}
+        #mapType{top:80px;width:45px;height:45px;}
+        #modeBtn{top:140px;width:45px;height:45px;font-size:20px;}
+        #voiceBtn{top:200px;width:45px;height:45px;font-size:20px;}
+        #routeClear{top:260px;width:45px;height:45px;background:#ef4444;color:white;display:none;}
+        
+        #add{
+            position:absolute;bottom:20px;right:20px;
+            width:60px;height:60px;border-radius:50%;
+            background:#f59e0b;font-size:30px;border:none;z-index:1000;color:white;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="gps" class="btn" onclick="centerUser()">🎯</div>
+<div id="mapType" class="btn" onclick="toggleMap()">🛰️</div>
+<div id="modeBtn" class="btn" onclick="changeMode()">🚗</div>
+<div id="voiceBtn" class="btn" onclick="toggleVoice()">🔇</div>
+<div id="routeClear" class="btn" onclick="clearRoute()">❌</div>
+<button id="add" onclick="alert('Cliquez sur la carte pour publier')">+</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+
+<script>
+// FIREBASE
+firebase.initializeApp({
+    apiKey: "AIzaSy...", // Remplace par ta vraie clé
+    authDomain: "jobmarketfuture.firebaseapp.com",
+    databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com"
+});
+const db = firebase.database();
+
+// MAP
+let map = L.map('map',{maxZoom:22, zoomControl:false}).setView([3.86,11.51],7);
+const normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const sat = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
+    L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}')
+]);
+
+let currentMap = "normal";
+function toggleMap(){
+    if(currentMap==="normal"){map.removeLayer(normal);sat.addTo(map);currentMap="sat";}
+    else{map.removeLayer(sat);normal.addTo(map);currentMap="normal";}
+}
+
+// GPS
+let userPos = null;
+let userMarker = null;
+navigator.geolocation.watchPosition(pos => {
+    userPos = [pos.coords.latitude, pos.coords.longitude];
+    if(userMarker) map.removeLayer(userMarker);
+    userMarker = L.circleMarker(userPos,{color:'#3b82f6',radius:8,fillOpacity:0.8}).addTo(map);
+}, ()=>{}, {enableHighAccuracy:true});
+
+function centerUser(){ if(userPos) map.setView(userPos,16); }
+
+// MODES (OSRM utilise driving, walking, cycling)
+let profile = "driving";
+function changeMode(){
+    const btn = document.getElementById('modeBtn');
+    if(profile === "driving"){ profile="walking"; btn.innerHTML="🚶"; }
+    else if(profile === "walking"){ profile="cycling"; btn.innerHTML="🏍️"; }
+    else { profile="driving"; btn.innerHTML="🚗"; }
+    speak("Mode " + profile + " activé");
+}
+
+// VOICE
+let voiceOn = false;
+function toggleVoice(){
+    voiceOn = !voiceOn;
+    document.getElementById('voiceBtn').innerHTML = voiceOn ? "🔊" : "🔇";
+    if(voiceOn) speak("Navigation vocale activée");
+}
+
+function speak(text){
+    if(!voiceOn) return;
+    window.speechSynthesis.cancel(); // Stoppe la voix précédente
+    let msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "fr-FR";
+    window.speechSynthesis.speak(msg);
+}
+
+// ROUTE
+let routeControl = null;
+function createRoute(lat, lng){
+    if(!userPos) return alert("GPS requis");
+    clearRoute();
+    
+    routeControl = L.Routing.control({
+        waypoints: [L.latLng(userPos, userPos), L.latLng(lat, lng)],
+        router: L.Routing.osrmv1({ serviceUrl: `https://router.project-osrm.org/route/v1/${profile}` }),
+        createMarker: () => null,
+        addWaypoints: false,
+        show: false,
+        lineOptions: { styles: [{color: '#f59e0b', weight: 6}] }
+    }).addTo(map);
+
+    routeControl.on('routesfound', function(e) {
+        document.getElementById('routeClear').style.display = 'flex';
+        let route = e.routes;
+        speak("Itinéraire trouvé. Distance " + (route.summary.totalDistance/1000).toFixed(1) + " kilomètres.");
+        
+        // On ne lit que la première instruction au départ pour éviter le spam
+        if(route.instructions && route.instructions.length > 0) {
+            setTimeout(() => speak("Instruction : " + route.instructions.text), 3000);
+        }
+    });
+    map.closePopup();
+}
+
+function clearRoute(){
+    if(routeControl){ map.removeControl(routeControl); routeControl=null; }
+    document.getElementById('routeClear').style.display = 'none';
+}
+
+// PUBLISH
+map.on('click', e => {
+    let title = prompt("Métier ?");
+    let phone = prompt("WhatsApp ?");
+    if(!title || !phone) return;
+    db.ref("jobs").push({
+        title: title, phone: phone.replace(/\D/g,''),
+        lat: e.latlng.lat, lng: e.latlng.lng, time: Date.now()
+    });
+    speak("Annonce publiée");
+});
+
+// DISPLAY
+db.ref("jobs").on("value", snap => {
+    map.eachLayer(l => { if(l instanceof L.Marker && l !== userMarker) map.removeLayer(l); });
+    snap.forEach(j => {
+        let d = j.val();
+        if(Date.now()-d.time > 2592000000) { db.ref("jobs/"+j.key).remove(); return; }
+        let m = L.marker([d.lat, d.lng]).addTo(map);
+        m.bindPopup(`
+            <b>${d.title}</b><br>
+            <button onclick="createRoute(${d.lat},${d.lng})" style="width:100%;padding:8px;margin-top:10px;background:#f59e0b;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">🧭 Itinéraire</button><br>
+            <a href="https://wa.me/${d.phone}" target="_blank" style="display:block;text-align:center;margin-top:5px;color:#25D366;text-decoration:none;font-weight:bold;">WhatsApp</a>
+        `);
+    });
+});
+</script>
+</body>
+  </html>
