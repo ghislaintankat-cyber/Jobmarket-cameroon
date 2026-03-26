@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin JobMarket 🇨🇲</title>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: white; padding: 20px; }
+        .job-card { background: #1e293b; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #f59e0b; display: flex; justify-content: space-between; align-items: center; }
+        .btn-del { background: #ef4444; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .stats { display: flex; gap: 20px; margin-bottom: 30px; }
+        .stat-box { background: #334155; padding: 20px; border-radius: 10px; flex: 1; text-align: center; }
+        h1 { color: #f59e0b; }
+    </style>
+</head>
+<body>
+
+    <h1>Contrôle JobMarket Cameroon</h1>
+
+    <div class="stats">
+        <div class="stat-box">📂 Annonces: <span id="count-jobs">0</span></div>
+        <div class="stat-box">💰 Questions IA: <span id="count-ai">En cours...</span></div>
+    </div>
+
+    <h2>Annonces en ligne</h2>
+    <div id="admin-list">Chargement des données...</div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+            authDomain: "jobmarketfuture.firebaseapp.com",
+            databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+            projectId: "jobmarketfuture"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Charger et gérer les annonces
+        function loadAdminJobs() {
+            db.ref("jobs").on("value", snap => {
+                const list = document.getElementById("admin-list");
+                const count = document.getElementById("count-jobs");
+                list.innerHTML = "";
+                let i = 0;
+
+                snap.forEach(child => {
+                    i++;
+                    const job = child.val();
+                    const id = child.key;
+
+                    list.innerHTML += `
+                        <div class="job-card">
+                            <div>
+                                <b>${job.title}</b> (WhatsApp: ${job.phone})<br>
+                                <small>${job.desc || "Pas de description"}</small>
+                            </div>
+                            <button class="btn-del" onclick="deleteJob('${id}')">SUPPRIMER</button>
+                        </div>
+                    `;
+                });
+                count.innerText = i;
+            });
+        }
+
+        // Fonction pour supprimer
+        function deleteJob(id) {
+            if(confirm("Supprimer cette annonce définitivement ?")) {
+                db.ref("jobs/" + id).remove()
+                .then(() => alert("Annonce supprimée !"))
+                .catch(e => alert("Erreur: " + e.message));
+            }
+        }
+
+        loadAdminJobs();
+    </script>
+</body>
+</html>
