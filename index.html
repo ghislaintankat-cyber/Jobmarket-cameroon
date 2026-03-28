@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMarket Pro 🇨🇲</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+    <style>
+        :root { --primary: #f59e0b; --dark: #0f172a; }
+        body { margin:0; font-family: 'Segoe UI', sans-serif; background: #f8fafc; }
+        
+        #map { height: 350px; width: 100%; z-index: 1; }
+
+        /* Loader */
+        .loader {
+            position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(15, 23, 42, 0.9); display:flex; 
+            flex-direction:column; align-items:center; justify-content:center;
+            color:white; z-index:9999;
+        }
+
+        /* UI Elements */
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        .search-box { 
+            width: 100%; padding: 12px; border-radius: 10px; 
+            border: 1px solid #ddd; margin: 10px 0; box-sizing: border-box;
+        }
+
+        .publish-panel {
+            background: white; padding: 15px; border-radius: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+
+        input, textarea {
+            width: 100%; padding: 10px; margin: 5px 0;
+            border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box;
+        }
+
+        button {
+            width: 100%; padding: 12px; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: bold; transition: 0.3s;
+        }
+
+        .btn-main { background: var(--primary); color: white; }
+        .btn-auth { background: #4285F4; color: white; margin-bottom: 10px; }
+
+        /* Cards */
+        .job-card {
+            background: white; padding: 15px; border-radius: 12px;
+            margin-bottom: 15px; border-left: 5px solid #cbd5e1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .boosted { 
+            border-left: 5px solid var(--primary); 
+            background: #fffbeb; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-boost { 
+            background: var(--primary); color: white; 
+            font-size: 10px; padding: 2px 6px; border-radius: 4px; 
+        }
+
+        .btn-group { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
+        .btn-sm { padding: 6px 10px; font-size: 12px; width: auto; flex: 1; }
+        .btn-wa { background: #25D366; color: white; text-decoration: none; text-align: center; border-radius: 6px; }
+        .btn-rate { background: #64748b; color: white; }
+        .btn-report { background: #ef4444; color: white; }
+        .btn-boost-action { background: #3b82f6; color: white; }
+
+        #welcome-msg { text-align: center; color: var(--dark); font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+<div id="loader" class="loader">
+    <div style="font-size: 40px;">📍</div>
+    <p>Initialisation JobMarket...</p>
+</div>
+
+<div id="map"></div>
+
+<div class="container">
+    <div id="auth-section">
+        <button class="btn-auth" id="loginBtn">Se connecter avec Google</button>
+    </div>
+    
+    <div id="welcome-msg"></div>
+
+    <input type="text" id="search" class="search-box" placeholder="🔍 Rechercher un service (ex: Menuisier)...">
+
+    <div class="publish-panel" id="publish-ui" style="display:none;">
+        <h3>Publier un service</h3>
+        <input id="title" placeholder="Quel est votre métier ?">
+        <input id="phone" placeholder="Numéro WhatsApp (ex: 699...)">
+        <textarea id="desc" placeholder="Décrivez votre service en quelques mots..."></textarea>
+        <button class="btn-main" id="publishBtn">Diffuser sur la carte</button>
+    </div>
+
+    <div id="jobs-list"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+// 1. CONFIGURATION (Remplace avec tes vraies clés Firebase)
+const firebaseConfig = {
+    apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+    authDomain: "jobmarketfuture.firebaseapp.com",
+    databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+    projectId: "jobmarketfuture"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// 2. VARIABLES GLOBALES
+let userPos = [3.848, 11.502]; // Par défaut: Yaoundé
+let jobsCache = [];
+const map = L.map('map').setView(userPos, 12);
+const jobsLayer = L.layerGroup().addTo(map);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+// 3. FONCTIONS UTILITAIRES
+const showLoader = () => document.getElementById("loader").style.display = "flex";
+const hideLoader = () => document.getElementById("loader").style.display = "none";
+const cleanInput = (str) => str.replace(/[<>]/g, "").trim();
+
+// 4. GÉOLOCALISATION RÉELLE
+navigator.geolocation.getCurrentPosition(pos => {
+    userPos = [pos.coords.latitude, pos.coords.longitude];
+    map.setView(userPos, 14);
+    L.circleMarker(userPos, {color: 'blue', radius: 8}).addTo(map).bindPopup("Vous êtes ici");
+}, () => console.log("GPS refusé"));
+
+// 5. AUTHENTIFICATION
+document.getElementById("loginBtn").onclick = () => {
+    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+};
+
+auth.onAuthStateChanged(user => {
+    if(user) {
+        document.getElementById("auth-section").style.display = "none";
+        document.getElementById("publish-ui").style.display = "block";
+        document.getElementById("welcome-msg").innerText = `Salut, ${user.displayName} 👋`;
+        loadJobs();
+    } else {
+        hideLoader();
+    }
+});
+
+// 6. CHARGEMENT DES DONNÉES
+function loadJobs() {
+    db.ref("jobs").on("value", snap => {
+        jobsCache = [];
+        snap.forEach(child => {
+            jobsCache.push({ id: child.key, ...child.val() });
+        });
+        renderJobs();
+        hideLoader();
+    });
+}
+
+// 7. AFFICHAGE DES JOBS
+function renderJobs() {
+    const list = document.getElementById("jobs-list");
+    const search = document.getElementById("search").value.toLowerCase();
+    list.innerHTML = "";
+    jobsLayer.clearLayers();
+
+    // Tri : Boostés en premier
+    jobsCache.sort((a,b) => (b.boosted || 0) - (a.boosted || 0));
+
+    jobsCache.forEach(job => {
+        if(search && !job.title.toLowerCase().includes(search)) return;
+
+        const isBoosted = job.boosted === true;
+        const rating = job.rating ? Number(job.rating).toFixed(1) : "5.0";
+
+        const card = document.createElement("div");
+        card.className = `job-card ${isBoosted ? 'boosted' : ''}`;
+        card.innerHTML = `
+            ${isBoosted ? '<span class="badge-boost">🚀 BOOSTÉ</span>' : ''}
+            <div style="display:flex; justify-content:space-between;">
+                <strong>${job.title}</strong>
+                <span style="color:#f59e0b">⭐ ${rating}</span>
+            </div>
+            <p style="font-size:13px; color:#64748b; margin: 5px 0;">${job.desc || 'Pas de description'}</p>
+            
+            <div class="btn-group">
+                <a href="https://wa.me/${job.phone}" target="_blank" class="btn-sm btn-wa">WhatsApp</a>
+                <button onclick="addReview('${job.id}')" class="btn-sm btn-rate">Noter</button>
+                <button onclick="reportJob('${job.id}')" class="btn-sm btn-report">🚨</button>
+                <button onclick="payBoost('${job.id}')" class="btn-sm btn-boost-action">Booster</button>
+            </div>
+        `;
+
+        list.appendChild(card);
+
+        // Ajouter marqueur sur la carte
+        L.marker([job.lat, job.lng]).addTo(jobsLayer)
+         .bindPopup(`<b>${job.title}</b><br>⭐ ${rating}`);
+    });
+}
+
+// 8. ACTIONS (PUBLIER, NOTER, SIGNALER)
+document.getElementById("publishBtn").onclick = () => {
+    const user = auth.currentUser;
+    const title = cleanInput(document.getElementById("title").value);
+    const phone = document.getElementById("phone").value.replace(/\D/g,'');
+    const desc = cleanInput(document.getElementById("desc").value);
+
+    if(title.length < 3 || phone.length < 8) return alert("Infos incomplètes !");
+
+    db.ref("jobs").push({
+        title, phone, desc,
+        lat: userPos, lng: userPos,
+        user: user.uid, rating: 5, reviews: 0,
+        boosted: false, date: Date.now()
+    });
+
+    document.getElementById("title").value = "";
+    document.getElementById("phone").value = "";
+    document.getElementById("desc").value = "";
+    alert("Annonce publiée !");
+};
+
+function addReview(jobId) {
+    const note = prompt("Notez ce service de 1 à 5 :");
+    if(!note || note < 1 || note > 5) return;
+    
+    db.ref(`reviews/${jobId}`).push({
+        rating: Number(note),
+        user: auth.currentUser.uid,
+        date: Date.now()
+    }).then(() => updateAverage(jobId));
+}
+
+function updateAverage(jobId) {
+    db.ref(`reviews/${jobId}`).once("value", snap => {
+        let total = 0, count = 0;
+        snap.forEach(r => { total += r.val().rating; count++; });
+        db.ref(`jobs/${jobId}`).update({ rating: total/count, reviews: count });
+    });
+}
+
+function reportJob(id) {
+    db.ref(`reports/${id}`).push({ user: auth.currentUser.uid, date: Date.now() });
+    alert("Signalement envoyé aux modérateurs.");
+}
+
+// 9. APPEL AU PAIEMENT (BOOST)
+async function payBoost(jobId) {
+    const confirmPay = confirm("Voulez-vous booster cette annonce pour 500 FCFA ?");
+    if(!confirmPay) return;
+
+    // Redirection vers ton futur serveur de paiement
+    alert("Redirection vers Mobile Money... (Nécessite ton serveur Render)");
+    
+    /* Ici on fera : 
+       const res = await fetch("https://ton-serveur.onrender.com/pay", ...);
+       const data = await res.json();
+       window.location.href = data.link; 
+    */
+}
+
+document.getElementById("search").oninput = renderJobs;
+</script>
+
+</body>
+</html>
