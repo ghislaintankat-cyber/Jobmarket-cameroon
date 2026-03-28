@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroon 🇨🇲</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+
+    <style>
+        :root { --gold:#f59e0b; --dark:#0f172a; --green:#10b981; --wa:#25D366; }
+        body, html { margin:0; height:100%; overflow:hidden; font-family:sans-serif; background:#0f172a; }
+
+        #map { position:absolute; top:0; bottom:70px; width:100%; z-index: 1; }
+
+        /* Boutons Flottants */
+        .btn {
+            position:absolute; right:15px; width:48px; height:48px; background:white;
+            border-radius:14px; display:flex; align-items:center; justify-content:center;
+            box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:1000; border:none; font-size:20px; cursor:pointer;
+        }
+        #gps { top:20px; }
+        #layerBtn { top:80px; }
+
+        #add {
+            position:absolute; bottom:90px; right:20px; width:70px; height:70px;
+            border-radius:50%; background:var(--gold); color:white; font-size:36px;
+            border:none; z-index:1000; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor:pointer;
+        }
+
+        /* Panneau de publication */
+        .panel {
+            position:fixed; bottom:-100%; width:100%; background:var(--dark);
+            color:white; padding:20px; transition:.4s cubic-bezier(0, 0, 0.2, 1); z-index:2000;
+            border-radius:25px 25px 0 0; box-sizing: border-box;
+        }
+        .panel.active { bottom:0; }
+
+        input, textarea, select {
+            width:100%; padding:14px; margin:8px 0; background:#1e293b;
+            border:1px solid #334155; color:white; border-radius:10px; box-sizing: border-box; font-size: 16px;
+        }
+
+        #bottomNav {
+            position:absolute; bottom:0; width:100%; background:white;
+            display:flex; height:70px; z-index: 1000; border-top: 1px solid #ddd;
+        }
+        .nav-btn { flex:1; border:none; background:none; font-weight:bold; color:#475569; font-size:12px; cursor:pointer; }
+
+        /* Étiquettes sur la carte */
+        .job-label {
+            background: white; border: 2px solid var(--gold); border-radius: 6px;
+            padding: 2px 6px; font-size: 11px; font-weight: bold; color: black;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<button id="gps" class="btn" onclick="centerUser()">🎯</button>
+<button id="layerBtn" class="btn" onclick="switchMap()">🛰️</button>
+<button id="add" onclick="togglePanel('panel')">+</button>
+
+<div id="panel" class="panel">
+    <h3 style="text-align:center; color:var(--gold); margin:0 0 10px 0;">Publier un Job 🇨🇲</h3>
+    <input id="in_title" placeholder="Métier (ex: Menuisier)">
+    <input id="in_phone" type="tel" placeholder="WhatsApp (6...)">
+    <select id="in_category">
+        <option value="">Catégorie</option>
+        <option value="construction">🔨 Construction</option>
+        <option value="beaute">💇 Beauté</option>
+        <option value="transport">🚗 Transport</option>
+        <option value="tech">💻 Tech</option>
+        <option value="autre">📦 Autre</option>
+    </select>
+    <textarea id="in_desc" placeholder="Description courte..."></textarea>
+    <button onclick="publish()" style="width:100%; background:var(--gold); color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; font-size:16px;">PUBLIER MAINTENANT</button>
+    <p onclick="togglePanel()" style="text-align:center; color:#94a3b8; cursor:pointer; margin-top:15px;">Fermer</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
+
+<script>
+// --- CONFIGURATION FIREBASE (REMPLACE PAR TA CLÉ) ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE", // <--- Mets ta vraie clé ici
+  authDomain: "jobmarketfuture.firebaseapp.com",
+  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+  projectId: "jobmarketfuture"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let map, userPos, streetLayer, satelliteLayer;
+let currentLayer = "street";
+let markersLayer = L.layerGroup(); // Pour éviter les doublons
+
+window.onload = () => {
+    // Initialisation Yaoundé par défaut
+    map = L.map('map', { zoomControl: false }).setView([3.86, 11.51], 13);
+    
+    streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {subdomains:['mt0','mt1','mt2','mt3']});
+    
+    markersLayer.addTo(map);
+
+    // Forcer le rendu de la carte
+    setTimeout(() => { map.invalidateSize(); }, 500);
+
+    // Géolocalisation
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(pos => {
+            userPos = [pos.coords.latitude, pos.coords.longitude];
+            if (!window.userMarker) {
+                window.userMarker = L.circleMarker(userPos, { radius: 8, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 1 }).addTo(map);
+                map.setView(userPos, 15);
+            } else {
+                window.userMarker.setLatLng(userPos);
+            }
+        }, null, { enableHighAccuracy: true });
+    }
+
+    loadJobs();
+};
+
+function switchMap() {
+    if (currentLayer === "street") {
+        map.removeLayer(streetLayer);
+        satelliteLayer.addTo(map);
+        currentLayer = "satellite";
+    } else {
+        map.removeLayer(satelliteLayer);
+        streetLayer.addTo(map);
+        currentLayer = "street";
+    }
+}
+
+function togglePanel(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove("active"));
+    if (id) document.getElementById(id).classList.add("active");
+}
+
+function publish() {
+    const t = document.getElementById("in_title").value;
+    const p = document.getElementById("in_phone").value;
+    const d = document.getElementById("in_desc").value;
+    const c = document.getElementById("in_category").value;
+
+    if (!t || !p || !c || !userPos) {
+        alert("⚠️ Erreur : Active ton GPS et remplis tous les champs !");
+        return;
+    }
+
+    db.ref("jobs").push({
+        title: t,
+        phone: p.replace(/\D/g, ''),
+        desc: d,
+        category: c,
+        lat: userPos,
+        lng: userPos,
+        date: Date.now()
+    }).then(() => {
+        alert("✅ Annonce publiée avec succès !");
+        // Nettoyage des champs
+        document.getElementById("in_title").value = "";
+        document.getElementById("in_phone").value = "";
+        document.getElementById("in_desc").value = "";
+        togglePanel();
+    }).catch(err => {
+        alert("❌ Erreur réseau : " + err.message);
+    });
+}
+
+function getIcon(cat) {
+    let url = "https://cdn-icons-png.flaticon.com/512/565/565547.png";
+    if (cat === "construction") url = "https://cdn-icons-png.flaticon.com/512/3062/3062634.png";
+    if (cat === "beaute") url = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+    if (cat === "transport") url = "https://cdn-icons-png.flaticon.com/512/744/744465.png";
+    if (cat === "tech") url = "https://cdn-icons-png.flaticon.com/512/1006/1006363.png";
+
+    return L.icon({
+        iconUrl: url,
+        iconSize:,
+        iconAnchor:,
+        popupAnchor: [0, -35]
+    });
+}
+
+function loadJobs() {
+    db.ref("jobs").on("value", snap => {
+        markersLayer.clearLayers(); // <--- TRÈS IMPORTANT : On vide avant de redessiner
+        
+        snap.forEach(child => {
+            let d = child.val();
+            
+            // Marker icône
+            let marker = L.marker([d.lat, d.lng], { icon: getIcon(d.category) });
+            
+            marker.bindPopup(`
+                <div style="text-align:center;">
+                    <b style="font-size:16px;">${d.title}</b><br>
+                    <p style="margin:5px 0;">${d.desc}</p>
+                    <a href="https://wa.me/${d.phone}" target="_blank" 
+                       style="background:var(--wa); color:white; padding:8px 12px; border-radius:8px; display:block; text-decoration:none; font-weight:bold; margin-top:5px;">
+                       WhatsApp
+                    </a>
+                </div>
+            `);
+
+            // Label textuel (DivIcon)
+            let label = L.marker([d.lat, d.lng], {
+                icon: L.divIcon({
+                    className: 'custom-label',
+                    html: `<div class="job-label">${d.title}</div>`,
+                    iconSize:,
+                    iconAnchor:
+                }),
+                interactive: false
+            });
+
+            markersLayer.addLayer(marker);
+            markersLayer.addLayer(label);
+        });
+    });
+}
+
+function centerUser() {
+    if (userPos) {
+        map.setView(userPos, 16);
+        togglePanel();
+    } else {
+        alert("GPS en cours de recherche...");
+    }
+}
+</script>
+
+</body>
+</html>
