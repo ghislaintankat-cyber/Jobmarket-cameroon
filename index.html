@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobMarket Cameroon 🇨🇲</title>
+<title>JobMarket Cameroon</title>
 
 <style>
 body{
@@ -33,17 +33,15 @@ input{
 
 <body>
 
-<h1>JobMarket Cameroon 🚀</h1>
+<h1>JobMarket 🚀</h1>
 
-<input id="amount" placeholder="Montant (XAF)" />
+<input id="amount" placeholder="Montant (XAF)">
 <br>
 <button onclick="payer()">Payer</button>
 
 <script>
-// 🔥 URL BACKEND (IMPORTANT)
 const API = "https://jobmarket-backend-6gqm.onrender.com";
 
-// 🚀 Fonction paiement
 async function payer(){
   try{
     const amount = document.getElementById("amount").value;
@@ -66,7 +64,7 @@ async function payer(){
     if(data.link){
       window.location.href = data.link;
     }else{
-      alert("Erreur: " + JSON.stringify(data));
+      alert("Erreur serveur: " + JSON.stringify(data));
     }
 
   }catch(err){
@@ -74,13 +72,13 @@ async function payer(){
   }
 }
 
-// ⚠️ DEBUG ANDROID (TRÈS IMPORTANT)
-window.onerror = function(message, source, lineno, colno, error) {
-  alert("Erreur JS:\n" + message + "\nLigne: " + lineno);
+// DEBUG ANDROID
+window.onerror = function(message, source, lineno) {
+  alert("Erreur JS: " + message + " ligne " + lineno);
 };
 
 window.addEventListener("unhandledrejection", function(event) {
-  alert("Erreur Promise:\n" + event.reason);
+  alert("Erreur Promise: " + event.reason);
 });
 </script>
 
