@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMarket Cameroon - Annonces</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding: 15px; margin: 0; }
+        h1 { text-align: center; color: #1a1a1a; margin-bottom: 25px; }
+        #jobs-container { max-width: 600px; margin: 0 auto; }
+
+        .job-card {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* STYLE POUR LES BOOSTÉS */
+        .boosted {
+            border: 2.5px solid #FFD700;
+            background-color: #fffdf2;
+            box-shadow: 0px 4px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .badge-boost {
+            background: #FFD700;
+            color: #000;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 20px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .price { color: #27ae60; font-weight: bold; font-size: 1.1em; }
+        
+        .btn-boost {
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .btn-boost:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+    <h1>🇨🇲 JobMarket Cameroon</h1>
+    <div id="jobs-container">Chargement des annonces...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // TA CONFIGURATION FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+            authDomain: "jobmarketfuture.firebaseapp.com",
+            databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+            projectId: "jobmarketfuture",
+            storageBucket: "jobmarketfuture.firebasestorage.app",
+            messagingSenderId: "351669024349",
+            appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4",
+            measurementId: "G-89ZNJZX2W3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const container = document.getElementById('jobs-container');
+
+        // RÉCUPÉRATION ET TRI DES ANNONCES
+        onValue(ref(db, 'jobs'), (snapshot) => {
+            const data = snapshot.val();
+            container.innerHTML = "";
+
+            if (data) {
+                let list = Object.keys(data).map(id => ({ id, ...data[id] }));
+
+                // Mettre les boostés en premier
+                list.sort((a, b) => (b.boosted === true) - (a.boosted === true));
+
+                list.forEach(job => {
+                    const isBoosted = job.boosted === true;
+                    const div = document.createElement('div');
+                    div.className = `job-card ${isBoosted ? 'boosted' : ''}`;
+                    
+                    div.innerHTML = `
+                        ${isBoosted ? '<span class="badge-boost">⭐ EN VEDETTE</span>' : ''}
+                        <h3>${job.title}</h3>
+                        <p>${job.description}</p>
+                        <p class="price">${job.price || 'À discuter'} FCFA</p>
+                        
+                        ${!isBoosted ? `
+                            <button class="btn-boost" onclick="lancerPaiement('${job.id}')">
+                                🚀 Booster cette annonce (500 FCFA)
+                            </button>
+                        ` : '<p style="color: #d4af37; font-weight: bold; text-align: center;">✅ Annonce Boostée</p>'}
+                    `;
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = "<p style='text-align:center;'>Aucune annonce trouvée.</p>";
+            }
+        });
+
+        // FONCTION DE PAIEMENT (LIÉE À TON NOUVEAU RENDER)
+        window.lancerPaiement = async function(jobId) {
+            const email = prompt("Entrez votre email pour recevoir le reçu :");
+            if(!email) return;
+
+            try {
+                // MISE À JOUR DE L'URL ICI :
+                const response = await fetch("https://jobmarket-cameroon-xhid.onrender.com/pay", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        jobId: jobId,
+                        amount: 500,
+                        email: email
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success" && result.data.link) {
+                    window.location.href = result.data.link;
+                } else {
+                    alert("Erreur de paiement : " + (result.message || "Serveur indisponible"));
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Erreur de connexion au serveur de paiement.");
+            }
+        };
+    </script>
+</body>
+</html>
