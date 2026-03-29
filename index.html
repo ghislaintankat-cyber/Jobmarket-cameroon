@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobMarket Cameroon</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0; }
+        h1 { text-align: center; color: #333; }
+        #jobs-container { max-width: 500px; margin: 0 auto; }
+        .job-card { 
+            background: white; padding: 15px; margin-bottom: 15px; 
+            border-radius: 10px; border: 1px solid #ddd; position: relative;
+        }
+        .boosted { border: 2px solid #FFD700; background-color: #fffef0; }
+        .badge { 
+            background: #FFD700; color: black; font-size: 10px; 
+            padding: 2px 8px; border-radius: 5px; position: absolute; top: 10px; right: 10px;
+        }
+        .btn-boost { 
+            background: #e67e22; color: white; border: none; padding: 10px; 
+            width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🇨🇲 JobMarket Cameroon</h1>
+    <div id="jobs-container">Connexion en cours...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // CONFIGURATION FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+            authDomain: "jobmarketfuture.firebaseapp.com",
+            databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+            projectId: "jobmarketfuture",
+            storageBucket: "jobmarketfuture.firebasestorage.app",
+            messagingSenderId: "351669024349",
+            appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // RÉCUPÉRATION DES ANNONCES
+        const container = document.getElementById('jobs-container');
+        onValue(ref(db, 'jobs'), (snapshot) => {
+            const data = snapshot.val();
+            container.innerHTML = "";
+            if (data) {
+                Object.keys(data).forEach(id => {
+                    const job = data[id];
+                    const div = document.createElement('div');
+                    div.className = `job-card ${job.boosted ? 'boosted' : ''}`;
+                    div.innerHTML = `
+                        ${job.boosted ? '<span class="badge">TOP</span>' : ''}
+                        <h3>${job.title}</h3>
+                        <p>${job.description}</p>
+                        ${!job.boosted ? `<button class="btn-boost" onclick="lancerPaiement('${id}')">🚀 Booster (500 FCFA)</button>` : '<b>✅ Déjà Boosté</b>'}
+                    `;
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = "Aucune annonce.";
+            }
+        });
+
+        // FONCTION DE PAIEMENT VERS RENDER (LIEN CORRIGÉ)
+        window.lancerPaiement = async function(jobId) {
+            const email = prompt("Ton email pour le reçu :");
+            if (!email) return;
+
+            try {
+                // L'URL EXACTE DE TON NOUVEAU SERVEUR RENDER
+                const response = await fetch("https://jobmarket-cameroon-xhid.onrender.com/pay", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ jobId, amount: 500, email })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    window.location.href = result.data.link; // Redirection vers Flutterwave
+                } else {
+                    alert("Erreur : " + result.message);
+                }
+            } catch (err) {
+                alert("Le serveur ne répond pas. Réessaie dans 1 minute.");
+            }
+        };
+    </script>
+</body>
+</html>
