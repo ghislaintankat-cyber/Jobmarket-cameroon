@@ -59,20 +59,19 @@ async function payer(){
       body: JSON.stringify({ amount })
     });
 
-    // 🔥 lire la réponse brute
     const text = await res.text();
 
     let data;
-    try{
+    try {
       data = JSON.parse(text);
-    }catch(e){
+    } catch(e) {
       alert("Réponse serveur invalide:\n" + text);
       return;
     }
 
     if(data.link){
       window.location.href = data.link;
-    }else{
+    } else {
       alert("Erreur serveur:\n" + JSON.stringify(data));
     }
 
@@ -81,12 +80,12 @@ async function payer(){
   }
 }
 
-// DEBUG ANDROID
-window.onerror = function(message, source, lineno) {
+// Debug Android
+window.onerror = function(message, source, lineno){
   alert("Erreur JS:\n" + message + "\nligne " + lineno);
 };
 
-window.addEventListener("unhandledrejection", function(event) {
+window.addEventListener("unhandledrejection", function(event){
   alert("Erreur Promise:\n" + event.reason);
 });
 </script>
