@@ -59,26 +59,35 @@ async function payer(){
       body: JSON.stringify({ amount })
     });
 
-    const data = await res.json();
+    // 🔥 lire la réponse brute
+    const text = await res.text();
+
+    let data;
+    try{
+      data = JSON.parse(text);
+    }catch(e){
+      alert("Réponse serveur invalide:\n" + text);
+      return;
+    }
 
     if(data.link){
       window.location.href = data.link;
     }else{
-      alert("Erreur serveur: " + JSON.stringify(data));
+      alert("Erreur serveur:\n" + JSON.stringify(data));
     }
 
   }catch(err){
-    alert("Erreur réseau: " + err.message);
+    alert("Erreur réseau:\n" + err);
   }
 }
 
 // DEBUG ANDROID
 window.onerror = function(message, source, lineno) {
-  alert("Erreur JS: " + message + " ligne " + lineno);
+  alert("Erreur JS:\n" + message + "\nligne " + lineno);
 };
 
 window.addEventListener("unhandledrejection", function(event) {
-  alert("Erreur Promise: " + event.reason);
+  alert("Erreur Promise:\n" + event.reason);
 });
 </script>
 
