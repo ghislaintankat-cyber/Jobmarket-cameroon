@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "jobmarketfuture",
+  "private_key_id": "32f5ded68f827662d01315853636dc96c3f39e05",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC7uD8qQPQp/dhL\nU0aGiPJYRnFbj6TAVwzs+lqfW+gCZFPRJg/uuaPWvPv83YcN4z3ah/5Lpe1d5m9u\nZ18TqoyQ66cMcrQ1diA0l4I6/93so62fXqnt9znXE1Ro+2WL/JyGTFk9g/79urav\nG3KuW88gdZ/ijRGUZbiPSEOvCe9cHv/WEqxh3nqd3w5/c/sN4465N2+cU01XXn6E\nRuS4SS8EJS0qVGWdPS/AVHOd3OrWtcTgRW5GRtDnVBsZy5Qa3otIB4h4Em5OWp3Z\nvEh+JJwng2R1DuIHSa+phB58WU4osldkOhvvHeO+gxkqd26ng4gMHR1ke2Lr1tem\ntEJp9X6FAgMBAAECggEAATQYXOjSB+uONZwWPCo9mi5IGhpXfToxpYVMtm/W6B5a\nNow5bEI5bYOEVBCG200af5UBSYffTTZQfuiKa1cGaVlxa+WCXUNhcno0MLT6PcL7\ni9AwuQtYOMDxeMN/2QATcChQ0XxP/V1zQA0mKj2sHBz/m5VkSEtx/aKCIz77j191\nXA+09inZyRMc/t3FlmxcfOemN38Zp3VFSFjprjhoQZeGLDqNekJO+gbDa5xki/fL\nnN3RTpTcstQm4yEjizznnTLjc9EErn5rZZaitPl/h7yEdZs5xaf65HMJhKFLQL9r\n69Byc8QyDwB17NfpItlt/tHotyL68CzMHNJ0Occe0wKBgQDjISOYXjXflWNQWGbP\nXevW08vhJl4HfVoEvoTHwhLFlmoWSefUMMlApYLuwrwPT238QcuT6BzA3fnEc5kK\nvk3rGPky/ZYuivdGGcB+MqMQnJRAnYDXH62neakGXZ/gALMOQom8eKVqvoZsvGTO\nI5lFdGD6TzUTAwyVNAzIeAXfrwKBgQDTlLP2vwaRVICTAezoJCsnvYe2YaidWYE7\nWcvYPB/79iQHfZVDpt8GJ6uSpDQoLgPmrg4bhVwoZKIaKKtfmWxCso7M39jccWDE\n6HsnPrAM+Ullxaves8S5BfW4KGJf0A2AOr/zSWUvDhceyiyisUQ5TSf1W+8JpVIo\nRwzKiJ++CwKBgBOcufEfOXGr+Z5nc8E2L/Yl5bX0VSw6Y7qDJP4GwQ40tcZk7VLC\nP66IXCz3vbtotWuR1t1XrpvszvNqs+1cj2fciTAg+4XbVAzGjnuXLcNycc6+ivCI\neLs8Yx78mKCEDvINRs1ycX4tI3hiMCYopsR7jyAuFLwmiECd9PiefItbAoGBANDO\nwsTTRYIL6VAr6Eg52bVAoTznKGcRvC58smZXACHDi08xKyw29Ye3guYX07mLoCH6\nyMV0Wb0rg6dZV7fjTCqO2ctrZzQ3WI87+L6EaW6EX2FnMfV5aL5JGXWDtYJla82P\nLXzGhGtp9ntWf7KYS4JZmQPWlRPp6ikB5afEKhJ9AoGBAMENPm3d4jEMXN56lpf7\nmj03WVQvaV8JyciU9qJ7fyCPPDBnHgBs5GIHm4negWw8EesrXZFQJsnnN6+qUfDp\nM+Bv4ajBkQjWb4AW6y2qLX7tAsVf0VmaqDdbMMQvS76LcekEzzREf0INo/K9pYMD\n0tk4WSvXHJ9cBuUHvGsOnFCt\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@jobmarketfuture.iam.gserviceaccount.com",
+  "client_id": "112526929943289296308",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40jobmarketfuture.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
