@@ -3,159 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobMarket Cameroon 🇨🇲</title>
+<title>JobMarket</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
 
-<style>
-body { margin:0; font-family:sans-serif; background:#0f172a; }
-
-#map { height:100vh; }
-
-/* TOP BAR */
-.top-bar {
-  position:absolute;
-  top:10px;
-  left:10px;
-  right:10px;
-  background:white;
-  padding:10px;
-  border-radius:20px;
-  z-index:1000;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-/* BUTTONS */
-.btn {
-  background:#f59e0b;
-  color:white;
-  border:none;
-  padding:8px 12px;
-  border-radius:10px;
-}
-
-/* FLOAT BUTTON */
-.fab {
-  position:absolute;
-  bottom:20px;
-  right:20px;
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  background:#f59e0b;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:30px;
-  color:white;
-  z-index:1000;
-}
-
-/* CARD */
-.card {
-  background:white;
-  padding:10px;
-  border-radius:10px;
-}
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="top-bar">
-  <b>📍 JobMarket</b>
-  <button class="btn" onclick="toggleMap()">🛰️</button>
-</div>
-
 <div id="map"></div>
 
-<div class="fab" onclick="addJob()">+</div>
+<div class="panel">
+  <input id="title" placeholder="Titre">
+  <input id="desc" placeholder="Description">
+  <button onclick="createJob()">Publier</button>
+</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 
-<script>
+<script type="module" src="app.js"></script>
 
-// ⚠️ TON BACKEND RENDER
-const API = "https://TON-BACKEND.onrender.com";
-
-// ===== MAP =====
-let map = L.map('map').setView([3.848, 11.502], 13);
-
-// ===== LAYERS =====
-const normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-
-const satellite = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-);
-
-let currentLayer = satellite;
-currentLayer.addTo(map);
-
-// SWITCH
-function toggleMap(){
-  map.removeLayer(currentLayer);
-  currentLayer = currentLayer === satellite ? normal : satellite;
-  map.addLayer(currentLayer);
-}
-
-// ===== LOAD JOBS =====
-async function loadJobs(){
-
-  const res = await fetch(API + "/jobs");
-  const data = await res.json();
-
-  Object.keys(data || {}).forEach(id=>{
-    const job = data[id];
-
-    const marker = L.marker([job.lat, job.lng]).addTo(map);
-
-    marker.bindPopup(`
-      <div class="card">
-        <b>${job.title}</b><br>
-        📞 ${job.phone || ""}<br>
-        <button onclick="goTo(${job.lat},${job.lng})">📍 Y aller</button>
-        <br><br>
-        <a href="https://wa.me/${job.phone}" target="_blank">💬 WhatsApp</a>
-      </div>
-    `);
-  });
-}
-
-loadJobs();
-
-// ===== ADD JOB =====
-window.addJob = () => {
-
-  const title = prompt("Métier ?");
-  const phone = prompt("Téléphone ?");
-
-  if(!title) return;
-
-  navigator.geolocation.getCurrentPosition(async pos=>{
-
-    await fetch(API + "/jobs",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        title,
-        phone,
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude
-      })
-    });
-
-    location.reload();
-  });
-};
-
-// ===== NAVIGATION SIMPLE =====
-window.goTo = (lat,lng)=>{
-  const url = `https://www.google.com/maps?q=${lat},${lng}`;
-  window.open(url, "_blank");
-};
-
-</script>
 </body>
-    </html>
+</html>
