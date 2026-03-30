@@ -2,223 +2,259 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobMarket Navigation Pro 🌍</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>JobMarket GPS Ultra 🇨🇲</title>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
 
 <style>
-body { margin:0; font-family:sans-serif; background:#0f172a; color:white; }
+    body { margin:0; font-family: 'Segoe UI', sans-serif; background:#0f172a; color:white; overflow: hidden; }
+    #map { height:100vh; width:100vw; z-index:1; }
 
-#map { height: 100vh; }
+    #top {
+        position:absolute; top:15px; left:50%; transform:translateX(-50%);
+        background:rgba(30, 41, 59, 0.95); padding:15px 25px; border-radius:30px;
+        z-index:1000; text-align:center; font-weight:bold;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 2px solid #f59e0b;
+        min-width: 200px;
+    }
 
-.top-bar {
-  position:absolute;
-  top:10px;
-  left:10px;
-  background:white;
-  color:black;
-  padding:10px;
-  border-radius:15px;
-  z-index:1000;
-}
+    #arrowBox {
+        position:absolute; bottom:30px; left:50%; transform:translateX(-50%);
+        background:white; width: 70px; height: 70px; border-radius:50%;
+        display:flex; align-items:center; justify-content:center;
+        z-index:1000; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    #arrow { font-size:40px; color:#0f172a; transition: transform 0.2s ease; }
 
-.map-switch {
-  position:absolute;
-  top:70px;
-  left:10px;
-  z-index:1000;
-  background:white;
-  padding:5px;
-  border-radius:10px;
-}
+    .btn-container {
+        position:absolute; right:15px; top:80px; z-index:1000;
+        display:flex; flex-direction:column; gap:10px;
+    }
+    .btn {
+        background:#f59e0b; color:white; border:none; padding:12px;
+        border-radius:12px; font-weight:bold; cursor:pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    
+    #conn-status {
+        position: absolute; top: 15px; left: 15px; z-index: 1000;
+        background: #22c55e; padding: 5px 10px; border-radius: 10px; font-size: 12px;
+    }
 
-.map-switch button {
-  display:block;
-  margin:5px 0;
-  padding:6px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-}
-
-.fab {
-  position:absolute;
-  bottom:20px;
-  right:20px;
-  background:#f59e0b;
-  width:60px;
-  height:60px;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:30px;
-  color:white;
-  z-index:1000;
-  cursor:pointer;
-}
-
-#navInfo {
-  position:absolute;
-  bottom:90px;
-  left:10px;
-  background:white;
-  color:black;
-  padding:10px;
-  border-radius:10px;
-  z-index:1000;
-}
+    .leaflet-routing-container { display: none !important; }
 </style>
 </head>
 
 <body>
 
-<div class="top-bar">📍 JobMarket Pro</div>
-
-<div class="map-switch">
-  <button onclick="setMap('standard')">🗺️ Standard</button>
-  <button onclick="setMap('satellite')">🛰️ Satellite</button>
-</div>
-
+<div id="conn-status">🟢 En ligne</div>
+<div id="top">Appuyez sur la carte pour naviguer</div>
 <div id="map"></div>
 
-<div id="navInfo">Navigation: inactive</div>
+<div id="arrowBox"><div id="arrow">⬆️</div></div>
 
-<div class="fab" onclick="addJob()">+</div>
+<div class="btn-container">
+    <button class="btn" onclick="initCompass()">🧭 ACTIVER</button>
+</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+<script>
+// ===== INITIALISATION =====
+let map = L.map('map', {zoomControl: false}).setView([3.848, 11.502], 15);
+let userMarker, destinationMarker, routeControl;
+let heading = 0;
+let lastSpeak = 0;
+let isOnline = navigator.onLine;
 
-const firebaseConfig = {
-  apiKey: "AIza...",
-  authDomain: "jobmarketfuture.firebaseapp.com",
-  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
-  projectId: "jobmarketfuture"
+// ===== OFFLINE TILE SYSTEM (CORRIGÉ) =====
+let db;
+const request = indexedDB.open("MapCache", 1);
+request.onupgradeneeded = e => {
+    db = e.target.result;
+    if(!db.objectStoreNames.contains("tiles")) db.createObjectStore("tiles");
 };
+request.onsuccess = e => db = e.target.result;
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+L.TileLayer.Offline = L.TileLayer.extend({
+    createTile: function (coords, done) {
+        const tile = document.createElement('img');
+        const url = this.getTileUrl(coords);
+        
+        if (!db) { tile.src = url; done(null, tile); return tile; }
 
-// MAP
-const map = L.map('map').setView([3.848, 11.502], 6);
+        const tx = db.transaction("tiles", "readonly");
+        const store = tx.objectStore("tiles");
+        const getReq = store.get(url);
 
-const standard = L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-);
-
-const satellite = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-);
-
-standard.addTo(map);
-
-let currentLayer = standard;
-
-window.setMap = (type) => {
-  map.removeLayer(currentLayer);
-
-  if (type === 'standard') currentLayer = standard;
-  else currentLayer = satellite;
-
-  currentLayer.addTo(map);
-};
-
-// ROUTING
-let routeControl = null;
-let watchId = null;
-
-function speak(text) {
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "fr-FR";
-  msg.rate = 1.05;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(msg);
-}
-
-window.goToJob = (lat, lng) => {
-
-  if (watchId) navigator.geolocation.clearWatch(watchId);
-
-  watchId = navigator.geolocation.watchPosition(pos => {
-
-    const userLat = pos.coords.latitude;
-    const userLng = pos.coords.longitude;
-
-    if (routeControl) map.removeControl(routeControl);
-
-    routeControl = L.Routing.control({
-      waypoints: [
-        L.latLng(userLat, userLng),
-        L.latLng(lat, lng)
-      ],
-      addWaypoints: false
-    }).addTo(map);
-
-    routeControl.on('routesfound', function(e) {
-      const route = e.routes[0];
-
-      const distance = (route.summary.totalDistance / 1000).toFixed(2);
-      const time = Math.round(route.summary.totalTime / 60);
-
-      document.getElementById("navInfo").innerHTML =
-        `📍 ${distance} km<br>⏱ ${time} min`;
-
-      route.instructions.forEach(step => {
-        speak(step.text);
-      });
-    });
-
-  });
-};
-
-// LOAD JOBS
-onValue(ref(db, 'jobs'), snapshot => {
-  map.eachLayer(layer => {
-    if (layer instanceof L.Marker) map.removeLayer(layer);
-  });
-
-  const data = snapshot.val();
-  if (!data) return;
-
-  Object.keys(data).forEach(id => {
-    const job = data[id];
-
-    const marker = L.marker([job.lat, job.lng]).addTo(map);
-
-    marker.bindPopup(`
-      <b>${job.title}</b><br>
-      ${job.description}<br><br>
-      <button onclick="goToJob(${job.lat}, ${job.lng})">
-        📍 Y aller
-      </button>
-    `);
-  });
+        getReq.onsuccess = () => {
+            if (getReq.result) {
+                // Trouvé dans le cache !
+                tile.src = URL.createObjectURL(getReq.result);
+                done(null, tile);
+            } else if (isOnline) {
+                // Pas en cache, on télécharge et on sauvegarde
+                fetch(url).then(res => res.blob()).then(blob => {
+                    tile.src = URL.createObjectURL(blob);
+                    const writeTx = db.transaction("tiles", "readwrite");
+                    writeTx.objectStore("tiles").put(blob, url);
+                    done(null, tile);
+                }).catch(() => done(null, tile));
+            } else {
+                done(null, tile); // Offline et pas en cache = vide
+            }
+        };
+        return tile;
+    }
 });
 
-// ADD JOB
-window.addJob = () => {
-  const title = prompt("Titre ?");
-  const desc = prompt("Description ?");
+new L.TileLayer.Offline('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-  if (!title || !desc) return;
+// ===== GESTION CONNEXION =====
+window.addEventListener('online', () => {
+    isOnline = true;
+    document.getElementById('conn-status').innerText = "🟢 En ligne";
+    document.getElementById('conn-status').style.background = "#22c55e";
+    if (destination) updateRoute(lastUserLoc);
+});
+window.addEventListener('offline', () => {
+    isOnline = false;
+    document.getElementById('conn-status').innerText = "🔴 Hors-Ligne (Mode Secours)";
+    document.getElementById('conn-status').style.background = "#ef4444";
+    speak("Connexion perdue, passage en guidage boussole");
+});
 
-  navigator.geolocation.getCurrentPosition(pos => {
-    push(ref(db, 'jobs'), {
-      title,
-      description: desc,
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude
-    });
-  });
-};
+// ===== VOIX =====
+function speak(text) {
+    if (Date.now() - lastSpeak < 5000) return;
+    lastSpeak = Date.now();
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.lang = "fr-FR";
+    window.speechSynthesis.speak(msg);
+}
+
+// ===== BOUSSOLE =====
+function initCompass() {
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(state => {
+            if (state === 'granted') window.addEventListener('deviceorientation', e => heading = e.webkitCompassHeading || (360 - e.alpha) || 0);
+        });
+    } else {
+        window.addEventListener('deviceorientation', e => heading = e.webkitCompassHeading || (360 - e.alpha) || 0);
+    }
+    speak("Système GPS activé");
+}
+
+// ===== MATHÉMATIQUES (Distance & Angle) =====
+function getDistance(a, b) {
+    const R = 6371e3;
+    const dLat = (b.lat - a.lat) * Math.PI / 180;
+    const dLng = (b.lng - a.lng) * Math.PI / 180;
+    const x = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng/2) * Math.sin(dLng/2);
+    return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+}
+
+function getBearing(a, b) {
+    const dLng = (b.lng - a.lng) * Math.PI / 180;
+    const y = Math.sin(dLng) * Math.cos(b.lat * Math.PI / 180);
+    const x = Math.cos(a.lat * Math.PI / 180) * Math.sin(b.lat * Math.PI / 180) - Math.sin(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.cos(dLng);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+// ===== NAVIGATION =====
+let destination = null;
+let lastUserLoc = null;
+let offlineRouteLine = null;
+
+// Charger la route sauvegardée au démarrage
+const savedRoute = JSON.parse(localStorage.getItem("lastRoute"));
+if (savedRoute && savedRoute.length > 0) {
+    destination = L.latLng(savedRoute[savedRoute.length - 1]);
+    destinationMarker = L.marker(destination).addTo(map);
+    offlineRouteLine = L.polyline(savedRoute, {color: '#f59e0b', weight: 6}).addTo(map);
+}
+
+map.on("click", e => {
+    destination = e.latlng;
+    if (destinationMarker) map.removeLayer(destinationMarker);
+    destinationMarker = L.marker(destination).addTo(map);
+    speak("Nouvelle destination");
+    if (lastUserLoc) updateRoute(lastUserLoc);
+});
+
+function updateRoute(userLoc) {
+    if (!destination) return;
+
+    const distToTarget = getDistance(userLoc, destination);
+    if (distToTarget < 20) {
+        document.getElementById('top').innerText = "🏁 Vous êtes arrivé !";
+        speak("Vous êtes arrivé à destination");
+        localStorage.removeItem("lastRoute");
+        return;
+    }
+
+    if (isOnline) {
+        // En ligne : OSRM fait le travail
+        if (routeControl) map.removeControl(routeControl);
+        if (offlineRouteLine) { map.removeLayer(offlineRouteLine); offlineRouteLine = null; }
+
+        routeControl = L.Routing.control({
+            waypoints: [userLoc, destination],
+            lineOptions: { styles: [{ color: '#3b82f6', weight: 7 }] },
+            addWaypoints: false, draggableWaypoints: false, createMarker: () => null, routeWhileDragging: false
+        }).addTo(map);
+
+        routeControl.on('routesfound', e => {
+            const route = e.routes;
+            const nextPoint = route.coordinates || route.coordinates;
+            localStorage.setItem("lastRoute", JSON.stringify(route.coordinates)); // Sauvegarde pour mode Offline
+
+            updateCompassAndUI(userLoc, nextPoint, (route.summary.totalDistance/1000).toFixed(1));
+        });
+    } else {
+        // Hors-ligne : On suit la ligne sauvegardée
+        if (routeControl) { map.removeControl(routeControl); routeControl = null; }
+        document.getElementById('top').innerText = `Guidage Boussole : ${(distToTarget/1000).toFixed(1)} km`;
+        updateCompassAndUI(userLoc, destination, (distToTarget/1000).toFixed(1)); // Pointe directement vers la cible
+    }
+}
+
+function updateCompassAndUI(userLoc, targetLoc, distanceStr) {
+    const bearingVal = getBearing(userLoc, targetLoc);
+    let angle = bearingVal - heading;
+    if (angle > 180) angle -= 360;
+    if (angle < -180) angle += 360;
+
+    document.getElementById("arrow").style.transform = `rotate(${angle}deg)`;
+    if (isOnline) document.getElementById('top').innerText = `🚀 ${distanceStr} km`;
+
+    if (Math.abs(angle) > 40) {
+        speak(angle > 0 ? "Tournez à droite" : "Tournez à gauche");
+    } else {
+        speak("Continuez tout droit");
+    }
+}
+
+// Suivi GPS Continu
+navigator.geolocation.watchPosition(pos => {
+    lastUserLoc = L.latLng(pos.coords.latitude, pos.coords.longitude);
+    
+    if (!userMarker) {
+        userMarker = L.circleMarker(lastUserLoc, {radius: 8, color: '#f59e0b', fillOpacity: 1}).addTo(map);
+    } else {
+        userMarker.setLatLng(lastUserLoc);
+    }
+    map.setView(lastUserLoc);
+    
+    updateRoute(lastUserLoc);
+
+}, null, { enableHighAccuracy: true, maximumAge: 2000 });
 
 </script>
 
 </body>
-    </html>
+  </html>
