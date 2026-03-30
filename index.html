@@ -3,208 +3,221 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobMarket Pro</title>
+<title>JobMarket Navigation Pro 🌍</title>
 
-<!-- LEAFLET CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
-body{background:#0f172a;color:#fff;}
+body { margin:0; font-family:sans-serif; background:#0f172a; color:white; }
 
-/* HEADER */
-.header{
-    padding:15px;
-    text-align:center;
-    background:#111827;
-    font-weight:bold;
+#map { height: 100vh; }
+
+.top-bar {
+  position:absolute;
+  top:10px;
+  left:10px;
+  background:white;
+  color:black;
+  padding:10px;
+  border-radius:15px;
+  z-index:1000;
 }
 
-/* MAP */
-#map{
-    height:75vh;
-    width:100%;
-    position:relative;
+.map-switch {
+  position:absolute;
+  top:70px;
+  left:10px;
+  z-index:1000;
+  background:white;
+  padding:5px;
+  border-radius:10px;
 }
 
-/* USER */
-.user-card{
-    position:absolute;
-    top:10px;
-    left:10px;
-    background:#fff;
-    color:#000;
-    padding:10px;
-    border-radius:20px;
-    font-size:12px;
-    z-index:1000;
+.map-switch button {
+  display:block;
+  margin:5px 0;
+  padding:6px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
 }
 
-/* DISTANCE */
-.distance-box{
-    position:absolute;
-    bottom:100px;
-    left:10px;
-    background:#111827;
-    padding:15px;
-    border-radius:15px;
-    width:200px;
-    z-index:1000;
+.fab {
+  position:absolute;
+  bottom:20px;
+  right:20px;
+  background:#f59e0b;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+  color:white;
+  z-index:1000;
+  cursor:pointer;
 }
 
-/* BUTTONS */
-.controls{
-    position:absolute;
-    right:10px;
-    bottom:100px;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    z-index:1000;
-}
-
-.btn{
-    width:50px;
-    height:50px;
-    border-radius:15px;
-    background:#fff;
-    color:#000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-/* ADD */
-.add-btn{
-    position:absolute;
-    bottom:90px;
-    right:20px;
-    width:65px;
-    height:65px;
-    border-radius:50%;
-    background:#f59e0b;
-    color:#000;
-    font-size:30px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:1000;
-}
-
-/* FOOTER */
-.footer{
-    position:fixed;
-    bottom:0;
-    width:100%;
-    background:#111827;
-    display:flex;
-    justify-content:space-around;
-    padding:10px;
+#navInfo {
+  position:absolute;
+  bottom:90px;
+  left:10px;
+  background:white;
+  color:black;
+  padding:10px;
+  border-radius:10px;
+  z-index:1000;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-    JobMarket Pro v5 🌍
+<div class="top-bar">📍 JobMarket Pro</div>
+
+<div class="map-switch">
+  <button onclick="setMap('standard')">🗺️ Standard</button>
+  <button onclick="setMap('satellite')">🛰️ Satellite</button>
 </div>
 
-<div id="map">
+<div id="map"></div>
 
-    <div class="user-card">
-        🟢 Connecté<br>user@gmail.com
-    </div>
+<div id="navInfo">Navigation: inactive</div>
 
-    <div class="distance-box">
-        <b>Distance</b><br>0 km
-    </div>
+<div class="fab" onclick="addJob()">+</div>
 
-    <div class="controls">
-        <div class="btn">🎯</div>
-        <div class="btn">📏</div>
-        <div class="btn">📍</div>
-    </div>
-
-    <div class="add-btn">+</div>
-
-</div>
-
-<div class="footer">
-    <div>💼 Jobs</div>
-    <div>🗺️ Carte</div>
-    <div>👤 Compte</div>
-</div>
-
-<!-- LEAFLET JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
-<script>
-// ======================
-// INITIALISATION
-// ======================
-const map = L.map('map').setView([3.848, 11.502], 13);
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// ======================
-// TYPES DE CARTES
-// ======================
+const firebaseConfig = {
+  apiKey: "AIza...",
+  authDomain: "jobmarketfuture.firebaseapp.com",
+  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+  projectId: "jobmarketfuture"
+};
 
-// Carte normale
-const normal = L.tileLayer(
-  'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png',
-  { maxZoom: 19 }
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// MAP
+const map = L.map('map').setView([3.848, 11.502], 6);
+
+const standard = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 );
 
-// Satellite (approximation)
 const satellite = L.tileLayer(
-  'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-  { maxZoom: 17 }
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 );
 
-// Labels
-const labels = L.tileLayer(
-  'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png',
-  { maxZoom: 19, opacity: 0.6 }
-);
+standard.addTo(map);
 
-// Hybride
-const hybrid = L.layerGroup([satellite, labels]);
+let currentLayer = standard;
 
-// Par défaut
-normal.addTo(map);
+window.setMap = (type) => {
+  map.removeLayer(currentLayer);
 
-// Switch
-L.control.layers({
-  "🗺️ Normal": normal,
-  "🛰️ Satellite": satellite,
-  "🌍 Hybride": hybrid
-}).addTo(map);
+  if (type === 'standard') currentLayer = standard;
+  else currentLayer = satellite;
 
+  currentLayer.addTo(map);
+};
 
-// ======================
-// GPS UTILISATEUR
-// ======================
-if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(position => {
+// ROUTING
+let routeControl = null;
+let watchId = null;
 
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-
-        map.setView([lat, lng], 15);
-
-        L.circleMarker([lat, lng], {
-            radius:10,
-            color:'#2563eb',
-            fillColor:'#3b82f6',
-            fillOpacity:1
-        })
-        .addTo(map)
-        .bindPopup("📍 Vous êtes ici");
-
-    }, () => {
-        alert("GPS refusé");
-    });
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "fr-FR";
+  msg.rate = 1.05;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(msg);
 }
+
+window.goToJob = (lat, lng) => {
+
+  if (watchId) navigator.geolocation.clearWatch(watchId);
+
+  watchId = navigator.geolocation.watchPosition(pos => {
+
+    const userLat = pos.coords.latitude;
+    const userLng = pos.coords.longitude;
+
+    if (routeControl) map.removeControl(routeControl);
+
+    routeControl = L.Routing.control({
+      waypoints: [
+        L.latLng(userLat, userLng),
+        L.latLng(lat, lng)
+      ],
+      addWaypoints: false
+    }).addTo(map);
+
+    routeControl.on('routesfound', function(e) {
+      const route = e.routes[0];
+
+      const distance = (route.summary.totalDistance / 1000).toFixed(2);
+      const time = Math.round(route.summary.totalTime / 60);
+
+      document.getElementById("navInfo").innerHTML =
+        `📍 ${distance} km<br>⏱ ${time} min`;
+
+      route.instructions.forEach(step => {
+        speak(step.text);
+      });
+    });
+
+  });
+};
+
+// LOAD JOBS
+onValue(ref(db, 'jobs'), snapshot => {
+  map.eachLayer(layer => {
+    if (layer instanceof L.Marker) map.removeLayer(layer);
+  });
+
+  const data = snapshot.val();
+  if (!data) return;
+
+  Object.keys(data).forEach(id => {
+    const job = data[id];
+
+    const marker = L.marker([job.lat, job.lng]).addTo(map);
+
+    marker.bindPopup(`
+      <b>${job.title}</b><br>
+      ${job.description}<br><br>
+      <button onclick="goToJob(${job.lat}, ${job.lng})">
+        📍 Y aller
+      </button>
+    `);
+  });
+});
+
+// ADD JOB
+window.addJob = () => {
+  const title = prompt("Titre ?");
+  const desc = prompt("Description ?");
+
+  if (!title || !desc) return;
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    push(ref(db, 'jobs'), {
+      title,
+      description: desc,
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude
+    });
+  });
+};
+
 </script>
 
 </body>
