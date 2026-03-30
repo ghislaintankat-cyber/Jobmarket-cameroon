@@ -5,18 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JobMarket Pro</title>
 
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, sans-serif;
-}
+<!-- LEAFLET CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
 
-body{
-    background:#0f172a;
-    color:#fff;
-}
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif;}
+body{background:#0f172a;color:#fff;}
 
 /* HEADER */
 .header{
@@ -24,37 +18,29 @@ body{
     text-align:center;
     background:#111827;
     font-weight:bold;
-    font-size:18px;
-}
-
-.sub{
-    font-size:12px;
-    opacity:0.7;
-    margin-top:5px;
 }
 
 /* MAP */
 #map{
     height:75vh;
     width:100%;
-    background:#1f2937;
     position:relative;
 }
 
-/* USER CARD */
+/* USER */
 .user-card{
     position:absolute;
     top:10px;
     left:10px;
     background:#fff;
     color:#000;
-    padding:10px 15px;
+    padding:10px;
     border-radius:20px;
     font-size:12px;
-    box-shadow:0 5px 10px rgba(0,0,0,0.2);
+    z-index:1000;
 }
 
-/* DISTANCE BOX */
+/* DISTANCE */
 .distance-box{
     position:absolute;
     bottom:100px;
@@ -63,10 +49,10 @@ body{
     padding:15px;
     border-radius:15px;
     width:200px;
-    font-size:14px;
+    z-index:1000;
 }
 
-/* FLOAT BUTTONS */
+/* BUTTONS */
 .controls{
     position:absolute;
     right:10px;
@@ -74,6 +60,7 @@ body{
     display:flex;
     flex-direction:column;
     gap:10px;
+    z-index:1000;
 }
 
 .btn{
@@ -85,11 +72,9 @@ body{
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:20px;
-    box-shadow:0 5px 10px rgba(0,0,0,0.2);
 }
 
-/* ADD BUTTON */
+/* ADD */
 .add-btn{
     position:absolute;
     bottom:90px;
@@ -99,11 +84,11 @@ body{
     border-radius:50%;
     background:#f59e0b;
     color:#000;
-    font-size:35px;
+    font-size:30px;
     display:flex;
     align-items:center;
     justify-content:center;
-    box-shadow:0 5px 15px rgba(0,0,0,0.3);
+    z-index:1000;
 }
 
 /* FOOTER */
@@ -114,58 +99,113 @@ body{
     background:#111827;
     display:flex;
     justify-content:space-around;
-    padding:10px 0;
-    border-top:1px solid rgba(255,255,255,0.1);
-}
-
-.footer div{
-    text-align:center;
-    font-size:12px;
+    padding:10px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
 <div class="header">
-    JobMarket Pro v2 🌍
-    <div class="sub">Trouvez et publiez des services autour de vous</div>
+    JobMarket Pro v5 🌍
 </div>
 
-<!-- MAP -->
 <div id="map">
 
-    <!-- USER -->
     <div class="user-card">
-        🟢 Connecté<br>
-        user@gmail.com
+        🟢 Connecté<br>user@gmail.com
     </div>
 
-    <!-- DISTANCE -->
     <div class="distance-box">
-        <b>Distance</b><br>
-        0 km
+        <b>Distance</b><br>0 km
     </div>
 
-    <!-- BUTTONS -->
     <div class="controls">
         <div class="btn">🎯</div>
         <div class="btn">📏</div>
         <div class="btn">📍</div>
     </div>
 
-    <!-- ADD BUTTON -->
     <div class="add-btn">+</div>
 
 </div>
 
-<!-- FOOTER -->
 <div class="footer">
-    <div>💼<br>Jobs</div>
-    <div>🗺️<br>Carte</div>
-    <div>👤<br>Compte</div>
+    <div>💼 Jobs</div>
+    <div>🗺️ Carte</div>
+    <div>👤 Compte</div>
 </div>
+
+<!-- LEAFLET JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+
+<script>
+// ======================
+// INITIALISATION
+// ======================
+const map = L.map('map').setView([3.848, 11.502], 13);
+
+// ======================
+// TYPES DE CARTES
+// ======================
+
+// Carte normale
+const normal = L.tileLayer(
+  'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png',
+  { maxZoom: 19 }
+);
+
+// Satellite (approximation)
+const satellite = L.tileLayer(
+  'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  { maxZoom: 17 }
+);
+
+// Labels
+const labels = L.tileLayer(
+  'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png',
+  { maxZoom: 19, opacity: 0.6 }
+);
+
+// Hybride
+const hybrid = L.layerGroup([satellite, labels]);
+
+// Par défaut
+normal.addTo(map);
+
+// Switch
+L.control.layers({
+  "🗺️ Normal": normal,
+  "🛰️ Satellite": satellite,
+  "🌍 Hybride": hybrid
+}).addTo(map);
+
+
+// ======================
+// GPS UTILISATEUR
+// ======================
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(position => {
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        map.setView([lat, lng], 15);
+
+        L.circleMarker([lat, lng], {
+            radius:10,
+            color:'#2563eb',
+            fillColor:'#3b82f6',
+            fillOpacity:1
+        })
+        .addTo(map)
+        .bindPopup("📍 Vous êtes ici");
+
+    }, () => {
+        alert("GPS refusé");
+    });
+}
+</script>
 
 </body>
     </html>
