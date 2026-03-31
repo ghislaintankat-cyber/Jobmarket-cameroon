@@ -13,28 +13,32 @@ const firebaseConfig = {
   measurementId: "G-89ZNJZX2W3"
 };
 
-// INIT
+// INIT FIREBASE
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // MAP
 const map = L.map('map').setView([3.848, 11.502], 6);
 
-// 🗺️ Carte normale
+// 🗺️ CARTE
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-// 📍 CHARGER LES JOBS
+// 📍 AFFICHER JOBS
 onValue(ref(db, 'jobs'), snapshot => {
 
   const data = snapshot.val();
+
   if (!data) return;
 
-  // Nettoyer la carte
+  // Nettoyer anciens markers
   map.eachLayer(layer => {
-    if (layer instanceof L.Marker) map.removeLayer(layer);
+    if (layer instanceof L.Marker) {
+      map.removeLayer(layer);
+    }
   });
 
   Object.keys(data).forEach(id => {
+
     const job = data[id];
 
     const marker = L.marker([job.lat, job.lng]).addTo(map);
@@ -47,14 +51,14 @@ onValue(ref(db, 'jobs'), snapshot => {
   });
 });
 
-// ➕ CRÉER UN JOB
+// ➕ CRÉER JOB
 window.createJob = () => {
 
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
 
   if (!title || !desc) {
-    alert("Remplis tous les champs");
+    alert("Remplis les champs");
     return;
   }
 
@@ -68,34 +72,41 @@ window.createJob = () => {
       boosted: false
     });
 
-    alert("Job publié !");
+    alert("Service publié !");
   });
 };
 
-// 💰 BOOST (paiement via backend)
+// 💰 BOOST (connecté à TON backend)
 window.boost = async (jobId) => {
 
   const email = prompt("Ton email");
 
   if (!email) return;
 
-  const res = await fetch("https://TON-BACKEND.onrender.com/pay", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      jobId,
-      amount: 500,
-      email
-    })
-  });
+  try {
 
-  const data = await res.json();
+    const res = await fetch("https://jobmarket-backend-6gqm.onrender.com/pay", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        jobId,
+        amount: 500,
+        email
+      })
+    });
 
-  if (data.status === "success") {
-    window.location.href = data.data.link;
-  } else {
-    alert("Erreur paiement");
+    const data = await res.json();
+
+    if (data.status === "success") {
+      window.location.href = data.data.link;
+    } else {
+      alert("Erreur paiement");
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Erreur serveur");
   }
 };
