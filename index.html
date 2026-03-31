@@ -1,24 +1,26 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JobMarket Cameroon 🇨🇲</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobMarket</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-    <div id="map"></div>
+<div id="map"></div>
 
-    <div class="panel">
-        <input id="title" placeholder="Titre du métier">
-        <input id="desc" placeholder="Description / Contact">
-        <button onclick="createJob()">📍 Publier mon service</button>
-    </div>
+<div class="panel">
+  <input id="title" placeholder="Titre">
+  <input id="desc" placeholder="Description">
+  <button onclick="createJob()">Publier</button>
+</div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-    <script type="module" src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script type="module" src="app.js"></script>
 
 </body>
-            </html>
+    </html>
