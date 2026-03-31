@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// 🔥 TA CONFIG FIREBASE
+// FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
   authDomain: "jobmarketfuture.firebaseapp.com",
@@ -13,24 +13,22 @@ const firebaseConfig = {
   measurementId: "G-89ZNJZX2W3"
 };
 
-// INIT FIREBASE
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // MAP
 const map = L.map('map').setView([3.848, 11.502], 6);
 
-// 🗺️ CARTE
+// TILE
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-// 📍 AFFICHER JOBS
+// LOAD JOBS
 onValue(ref(db, 'jobs'), snapshot => {
 
   const data = snapshot.val();
-
   if (!data) return;
 
-  // Nettoyer anciens markers
+  // Nettoyage markers
   map.eachLayer(layer => {
     if (layer instanceof L.Marker) {
       map.removeLayer(layer);
@@ -51,14 +49,14 @@ onValue(ref(db, 'jobs'), snapshot => {
   });
 });
 
-// ➕ CRÉER JOB
+// CREATE JOB
 window.createJob = () => {
 
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
 
   if (!title || !desc) {
-    alert("Remplis les champs");
+    alert("Remplis tous les champs");
     return;
   }
 
@@ -76,7 +74,7 @@ window.createJob = () => {
   });
 };
 
-// 💰 BOOST (connecté à TON backend)
+// BOOST
 window.boost = async (jobId) => {
 
   const email = prompt("Ton email");
@@ -106,7 +104,6 @@ window.boost = async (jobId) => {
     }
 
   } catch (err) {
-    console.error(err);
     alert("Erreur serveur");
   }
 };
