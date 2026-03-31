@@ -15,7 +15,7 @@ body {
   padding: 12px;
   border-radius: 10px;
   z-index: 1000;
-  width: 200px;
+  width: 220px;
 }
 
 input {
@@ -32,4 +32,4 @@ button {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-}
+  }
