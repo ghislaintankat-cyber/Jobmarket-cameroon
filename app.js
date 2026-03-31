@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// Configuration Firebase avec TES clés réelles
+// 🔥 TA CONFIG FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
   authDomain: "jobmarketfuture.firebaseapp.com",
@@ -13,92 +13,89 @@ const firebaseConfig = {
   measurementId: "G-89ZNJZX2W3"
 };
 
-// Initialisation Firebase
+// INIT
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// --- INITIALISATION DE LA CARTE ---
-// On centre sur Yaoundé par défaut [3.848, 11.502]
-const map = L.map('map').setView([3.848, 11.502], 13);
+// MAP
+const map = L.map('map').setView([3.848, 11.502], 6);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-}).addTo(map);
+// 🗺️ Carte normale
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-// --- CHARGEMENT DES JOBS ---
+// 📍 CHARGER LES JOBS
 onValue(ref(db, 'jobs'), snapshot => {
+
   const data = snapshot.val();
   if (!data) return;
 
-  // Supprimer les anciens marqueurs pour éviter les doublons à l'affichage
-  map.eachLayer((layer) => {
+  // Nettoyer la carte
+  map.eachLayer(layer => {
     if (layer instanceof L.Marker) map.removeLayer(layer);
   });
 
-  Object.entries(data).forEach(([id, job]) => {
-    if (job.lat && job.lng) {
-        const marker = L.marker([job.lat, job.lng]).addTo(map);
-        marker.bindPopup(`
-          <div style="color:black;">
-            <b>${job.title}</b><br>
-            ${job.description}<br><br>
-            <button onclick="boost('${id}')" style="background:orange; color:white; border:none; padding:5px; cursor:pointer; width:100%;">💎 Booster ce service</button>
-          </div>
-        `);
-    }
+  Object.keys(data).forEach(id => {
+    const job = data[id];
+
+    const marker = L.marker([job.lat, job.lng]).addTo(map);
+
+    marker.bindPopup(`
+      <b>${job.title}</b><br>
+      ${job.description}<br><br>
+      <button onclick="boost('${id}')">Booster 500F</button>
+    `);
   });
 });
 
-// --- CRÉER UN JOB ---
+// ➕ CRÉER UN JOB
 window.createJob = () => {
+
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
 
   if (!title || !desc) {
-      alert("Veuillez remplir les deux champs !");
-      return;
+    alert("Remplis tous les champs");
+    return;
   }
 
   navigator.geolocation.getCurrentPosition(pos => {
+
     push(ref(db, 'jobs'), {
-      title: title,
+      title,
       description: desc,
       lat: pos.coords.latitude,
       lng: pos.coords.longitude,
-      date: Date.now()
+      boosted: false
     });
-    alert("✅ Service publié sur la carte !");
-    document.getElementById("title").value = "";
-    document.getElementById("desc").value = "";
-  }, err => {
-      alert("Erreur : Veuillez activer votre GPS pour publier.");
+
+    alert("Job publié !");
   });
 };
 
-// --- BOOSTER (Appel Backend Render) ---
+// 💰 BOOST (paiement via backend)
 window.boost = async (jobId) => {
-  // REMPLACE PAR TON URL RENDER RÉELLE QUAND ELLE SERA LIVE
-  const backendURL = "https://TON-BACKEND.onrender.com/pay";
 
-  try {
-    const res = await fetch(backendURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jobId: jobId,
-        amount: 500,
-        email: "client@jobmarket.cm"
-      })
-    });
+  const email = prompt("Ton email");
 
-    const data = await res.json();
+  if (!email) return;
 
-    if (data.status === "success") {
-      window.location.href = data.data.link;
-    } else {
-      alert("Erreur lors de la préparation du paiement.");
-    }
-  } catch (error) {
-    alert("Le serveur de paiement est hors-ligne. Réessayez plus tard.");
+  const res = await fetch("https://TON-BACKEND.onrender.com/pay", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      jobId,
+      amount: 500,
+      email
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.status === "success") {
+    window.location.href = data.data.link;
+  } else {
+    alert("Erreur paiement");
   }
 };
