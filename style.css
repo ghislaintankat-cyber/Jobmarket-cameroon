@@ -1,123 +1,32 @@
-body {
+body, html {
   margin: 0;
-  font-family: Arial;
+  padding: 0;
 }
 
 #map {
   height: 100vh;
+  z-index: 1;
 }
 
-/* LOADER */
+.modal {
+  display: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  margin: 10% auto;
+  width: 90%;
+  z-index: 10000;
+}
+
 #loader {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-/* SEARCH */
-.search-box {
-  position: absolute;
-  top: 60px;
-  left: 10px;
-  right: 10px;
-  z-index: 1000;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 20px;
-}
-
-/* FILTERS */
-.filters {
-  position: absolute;
-  bottom: 140px;
-  left: 10px;
-  display: flex;
-  gap: 10px;
-}
-
-.filter {
-  background: white;
-  padding: 8px 12px;
-  border-radius: 20px;
-}
-
-.filter.active {
-  background: orange;
-  color: white;
-}
-
-/* FAB */
-.fab {
-  position: absolute;
-  bottom: 80px;
-  right: 20px;
-  width: 60px;
-  height: 60px;
-  background: gold;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 30px;
-}
-
-/* MODAL */
-.modal {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: none;
-}
-
-.modal-content {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  background: white;
-  padding: 15px;
-  border-radius: 20px 20px 0 0;
-  animation: pop 0.2s;
-}
-
-@keyframes pop {
-  from { transform: scale(0.9); }
-  to { transform: scale(1); }
-}
-
-.modal-header {
-  text-align: right;
-}
-
-#jobPhoto {
-  width: 100%;
-  border-radius: 10px;
-}
-
-#jobRating {
-  color: gold;
-  font-weight: bold;
-  margin: 5px 0;
-}
-
-/* BUTTONS */
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.call, .whatsapp {
-  padding: 10px;
-  border-radius: 10px;
-  text-decoration: none;
-  color: white;
-}
-
-.call { background: blue; }
-.whatsapp { background: green; }
+  }
