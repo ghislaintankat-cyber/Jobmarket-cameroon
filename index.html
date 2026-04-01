@@ -1,53 +1,28 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroon 🇨🇲</title>
 
-<title>JobMarket Pro</title>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
-<link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<!-- LOADER -->
-<div id="loader">Chargement...</div>
+    <div id="map"></div>
 
-<!-- USER -->
-<div class="top-bar">
-  <div class="user">🟢 JobMarket</div>
-</div>
+    <div class="panel">
+        <h3 style="margin-top:0; font-size:16px; color:#1e293b;">🚀 Proposer mes services</h3>
+        <input id="title" placeholder="Ex: Plombier, Développeur..." required>
+        <input id="desc" placeholder="Description de vos compétences" required>
+        <input id="phone" type="tel" placeholder="Numéro (ex: 690000000)" required>
+        <button onclick="createJob()">📍 Publier sur la carte</button>
+    </div>
 
-<!-- MAP -->
-<div id="map"></div>
-
-<!-- RIGHT BUTTONS -->
-<div class="right-controls">
-  <div class="btn" onclick="goToUser()">📍</div>
-  <div class="btn">🎯</div>
-</div>
-
-<!-- DISTANCE -->
-<div class="distance-box">
-  <div class="title">Distance</div>
-  <div class="value">-- km</div>
-  <div class="dir">Proche</div>
-</div>
-
-<!-- FLOAT BUTTON -->
-<div class="fab" onclick="createJob()">+</div>
-
-<!-- BOTTOM NAV -->
-<div class="bottom-nav">
-  <div class="nav-item active">💼 Jobs</div>
-  <div class="nav-item">🗺️ Carte</div>
-  <div class="nav-item">👤 Compte</div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script type="module" src="app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script type="module" src="app.js"></script>
 
 </body>
   </html>
