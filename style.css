@@ -1,128 +1,85 @@
- body {
-    margin: 0;
-    font-family: 'Inter', sans-serif; /* Police moderne comme sur les apps Pro */
-    background: #f8fafc;
-    overflow: hidden;
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
 }
 
 #map {
-    height: 100vh;
-    width: 100vw;
-    z-index: 1;
+  height: 100vh;
+  width: 100vw;
 }
 
-/* --- PANNEAU DE PUBLICATION --- */
-.panel {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 20px;
-    border-radius: 20px;
-    z-index: 1000;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    width: 90%;
-    max-width: 350px;
+/* LOADER */
+#loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: black;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  z-index: 2000;
 }
 
-input {
-    display: block;
-    margin-bottom: 12px;
-    padding: 12px 15px;
-    width: calc(100% - 30px);
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    background: #f8fafc;
+/* SEARCH */
+.search-box {
+  position: absolute;
+  top: 70px;
+  left: 15px;
+  right: 15px;
+  z-index: 1000;
 }
 
-button {
-    padding: 14px;
-    background: #2563eb; /* Bleu pro de confiance */
-    color: white;
-    border: none;
-    width: 100%;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-    transition: background 0.3s ease;
+.search-box input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 25px;
+  border: none;
 }
 
-button:hover { background: #1d4ed8; }
-
-/* --- DESIGN DES CARTES GÉNÉRÉES (SUR LA CARTE) --- */
-/* On annule le style par défaut de Leaflet */
-.leaflet-popup-content-wrapper {
-    padding: 0 !important;
-    border-radius: 16px !important;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important;
+/* FILTERS */
+.filters {
+  position: absolute;
+  bottom: 160px;
+  left: 15px;
+  right: 15px;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  z-index: 1000;
 }
-.leaflet-popup-content { margin: 0 !important; width: 260px !important; }
-.leaflet-popup-tip { display: none; } /* Enlève la petite flèche du bas */
 
-/* Style interne de notre Job Card */
+.filter {
+  background: white;
+  padding: 10px 14px;
+  border-radius: 25px;
+}
+
+.filter.active {
+  background: orange;
+  color: white;
+}
+
+/* FLOAT BUTTON */
+.fab {
+  position: absolute;
+  bottom: 90px;
+  right: 20px;
+  width: 70px;
+  height: 70px;
+  background: gold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* JOB CARD */
 .job-card {
-    background: white;
-    padding: 15px;
-}
-
-.job-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-}
-
-.job-card-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #0f172a;
-    margin: 0;
-}
-
-.job-card-distance {
-    font-size: 12px;
-    font-weight: 600;
-    color: #16a34a; /* Vert pour la proximité */
-    background: #dcfce7;
-    padding: 4px 8px;
-    border-radius: 20px;
-}
-
-.job-card-desc {
-    font-size: 13px;
-    color: #475569;
-    margin-bottom: 15px;
-    line-height: 1.4;
-}
-
-/* Grille de boutons d'action */
-.action-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-}
-
-.btn-wa {
-    background: #25D366; color: white; padding: 10px;
-    border-radius: 8px; text-align: center; font-weight: 600; font-size: 12px;
-    text-decoration: none; display: block; border: none;
-}
-.btn-call {
-    background: #f1f5f9; color: #0f172a; padding: 10px;
-    border-radius: 8px; text-align: center; font-weight: 600; font-size: 12px;
-    text-decoration: none; display: block; border: 1px solid #cbd5e1;
-}
-.btn-boost {
-    grid-column: span 2;
-    background: linear-gradient(135deg, #f59e0b, #ea580c);
-    color: white; padding: 10px; border-radius: 8px; border: none;
-    font-weight: bold; font-size: 13px; cursor: pointer; margin-top: 5px;
-  }
+  display: flex;
+  gap: 10px;
+  background: white;
+  padding: 10px;
+  border-radius: 14px;
+ }
