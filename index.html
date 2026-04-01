@@ -1,66 +1,48 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Job Market</title>
 
-<title>JobMarket Pro</title>
+  <link rel="stylesheet" href="style.css">
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <script type="module" src="app.js"></script>
 </head>
 
 <body>
 
-<div id="loader">Chargement...</div>
-
-<div class="top-bar">🟢 JobMarket</div>
-
-<div class="search-box">
-  <input id="search" placeholder="Rechercher un métier...">
-</div>
-
 <div id="map"></div>
 
-<div class="filters">
-  <div class="filter active" onclick="filterJobs(event,'all')">Tous</div>
-  <div class="filter" onclick="filterJobs(event,'plombier')">🔧</div>
-  <div class="filter" onclick="filterJobs(event,'électricien')">⚡</div>
-  <div class="filter" onclick="filterJobs(event,'coiffeuse')">✂️</div>
-  <div class="filter" onclick="filterJobs(event,'vendeuse')">🛒</div>
-</div>
+<input id="search" placeholder="Rechercher...">
 
-<div class="fab" onclick="createJob()">+</div>
+<button onclick="createJob()">➕ Ajouter</button>
+<button onclick="goToUser()">📍 Ma position</button>
 
-<!-- MODAL -->
 <div id="jobModal" class="modal">
   <div class="modal-content">
 
-    <div class="modal-header">
-      <span id="closeModal">✖</span>
-    </div>
+    <span id="closeModal">❌</span>
 
-    <div class="modal-body">
-      <img id="jobPhoto" />
-      <div id="jobRating"></div>
+    <h2 id="jobTitle"></h2>
+    <p id="jobDesc"></p>
+    <p id="jobDistance"></p>
+    <p id="jobRating"></p>
 
-      <h2 id="jobTitle"></h2>
-      <p id="jobDesc"></p>
-      <div id="jobDistance"></div>
+    <img id="jobPhoto" width="100%">
 
-      <div class="actions">
-        <a id="callBtn" class="call">📞 Appeler</a>
-        <a id="waBtn" class="whatsapp">💬 WhatsApp</a>
-      </div>
-    </div>
+    <a id="callBtn">📞 Appeler</a>
+    <a id="waBtn">💬 WhatsApp</a>
+
+    <div id="reviews"></div>
 
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-<script type="module" src="app.js"></script>
+<div id="loader">Chargement...</div>
 
 </body>
-  </html>
+      </html>
