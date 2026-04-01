@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Job Market</title>
+  <title>JobMarket</title>
 
   <link rel="stylesheet" href="style.css">
 
@@ -20,7 +20,7 @@
 <input id="search" placeholder="Rechercher...">
 
 <button onclick="createJob()">➕ Ajouter</button>
-<button onclick="goToUser()">📍 Ma position</button>
+<button onclick="goToUser()">📍 Moi</button>
 
 <div id="jobModal" class="modal">
   <div class="modal-content">
@@ -29,20 +29,11 @@
 
     <h2 id="jobTitle"></h2>
     <p id="jobDesc"></p>
-    <p id="jobDistance"></p>
-    <p id="jobRating"></p>
-
-    <img id="jobPhoto" width="100%">
-
-    <a id="callBtn">📞 Appeler</a>
-    <a id="waBtn">💬 WhatsApp</a>
 
     <div id="reviews"></div>
 
   </div>
 </div>
-
-<div id="loader">Chargement...</div>
 
 </body>
   </html>
