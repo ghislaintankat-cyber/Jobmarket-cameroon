@@ -1,129 +1,128 @@
-body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  overflow: hidden;
+ body {
+    margin: 0;
+    font-family: 'Inter', sans-serif; /* Police moderne comme sur les apps Pro */
+    background: #f8fafc;
+    overflow: hidden;
 }
 
-/* MAP */
 #map {
-  height: 100vh;
-  width: 100vw;
-  filter: contrast(1.08) saturate(1.15);
+    height: 100vh;
+    width: 100vw;
+    z-index: 1;
 }
 
-/* LOADER */
-#loader {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: black;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 10px;
-  z-index: 2000;
+/* --- PANNEAU DE PUBLICATION --- */
+.panel {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 20px;
+    z-index: 1000;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 350px;
 }
 
-/* TOP */
-.top-bar {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  z-index: 1000;
+input {
+    display: block;
+    margin-bottom: 12px;
+    padding: 12px 15px;
+    width: calc(100% - 30px);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    background: #f8fafc;
 }
 
-.user {
-  background: rgba(255,255,255,0.9);
-  padding: 10px 16px;
-  border-radius: 30px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+button {
+    padding: 14px;
+    background: #2563eb; /* Bleu pro de confiance */
+    color: white;
+    border: none;
+    width: 100%;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.3s ease;
 }
 
-/* RIGHT BUTTONS */
-.right-controls {
-  position: absolute;
-  right: 15px;
-  bottom: 170px;
-  z-index: 1000;
-}
+button:hover { background: #1d4ed8; }
 
-.btn {
-  background: white;
-  margin: 10px 0;
-  padding: 14px;
-  border-radius: 14px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-}
-
-/* DISTANCE */
-.distance-box {
-  position: absolute;
-  bottom: 170px;
-  left: 15px;
-  background: rgba(0,0,0,0.85);
-  color: white;
-  padding: 16px;
-  border-radius: 18px;
-  z-index: 1000;
-}
-
-.value {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-/* JOB CARD */
-.job-card {
-  display: flex;
-  gap: 12px;
-  background: white;
-  padding: 12px;
-  border-radius: 16px;
-  box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-}
-
-/* FLOAT BUTTON */
-.fab {
-  position: absolute;
-  bottom: 95px;
-  right: 20px;
-  width: 72px;
-  height: 72px;
-  background: gold;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34px;
-  box-shadow: 0 15px 30px rgba(0,0,0,0.35);
-  animation: float 2s infinite;
-}
-
-@keyframes float {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-  100% { transform: translateY(0); }
-}
-
-/* NAV */
-.bottom-nav {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 70px;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-}
-
-/* POPUP */
+/* --- DESIGN DES CARTES GÉNÉRÉES (SUR LA CARTE) --- */
+/* On annule le style par défaut de Leaflet */
 .leaflet-popup-content-wrapper {
-  border-radius: 18px;
-  animation: fade 0.3s;
+    padding: 0 !important;
+    border-radius: 16px !important;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important;
+}
+.leaflet-popup-content { margin: 0 !important; width: 260px !important; }
+.leaflet-popup-tip { display: none; } /* Enlève la petite flèche du bas */
+
+/* Style interne de notre Job Card */
+.job-card {
+    background: white;
+    padding: 15px;
 }
 
-@keyframes fade {
-  from {opacity:0; transform: translateY(10px);}
-  to {opacity:1;}
+.job-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.job-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.job-card-distance {
+    font-size: 12px;
+    font-weight: 600;
+    color: #16a34a; /* Vert pour la proximité */
+    background: #dcfce7;
+    padding: 4px 8px;
+    border-radius: 20px;
+}
+
+.job-card-desc {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+/* Grille de boutons d'action */
+.action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.btn-wa {
+    background: #25D366; color: white; padding: 10px;
+    border-radius: 8px; text-align: center; font-weight: 600; font-size: 12px;
+    text-decoration: none; display: block; border: none;
+}
+.btn-call {
+    background: #f1f5f9; color: #0f172a; padding: 10px;
+    border-radius: 8px; text-align: center; font-weight: 600; font-size: 12px;
+    text-decoration: none; display: block; border: 1px solid #cbd5e1;
+}
+.btn-boost {
+    grid-column: span 2;
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    color: white; padding: 10px; border-radius: 8px; border: none;
+    font-weight: bold; font-size: 13px; cursor: pointer; margin-top: 5px;
   }
