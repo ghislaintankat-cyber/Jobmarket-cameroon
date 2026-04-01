@@ -9,9 +9,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const map = L.map('map').setView([3.848, 11.502], 6);
+const map = L.map('map').setView([3.8, 11.5], 6);
 
-// 🛰️ Satellite + noms lieux
+/* SATELLITE */
 L.tileLayer(
 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 ).addTo(map);
@@ -20,136 +20,152 @@ L.tileLayer(
 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
 ).addTo(map);
 
+/* CLUSTER */
 const markers = L.markerClusterGroup();
 map.addLayer(markers);
 
 let userLat, userLng;
-let allJobs = {};
+let jobsData = {};
 let currentFilter = "all";
 
-// USER
+/* USER LOCATION */
 navigator.geolocation.getCurrentPosition(pos => {
   userLat = pos.coords.latitude;
   userLng = pos.coords.longitude;
 
-  L.circleMarker([userLat, userLng], { radius: 8, color: "blue" }).addTo(map);
+  L.circleMarker([userLat, userLng]).addTo(map);
   map.setView([userLat, userLng], 12);
 });
 
-// DISTANCE
-function getDistance(lat1, lon1, lat2, lon2) {
+/* DISTANCE */
+function distance(a, b, c, d) {
   const R = 6371;
-  const dLat = (lat2-lat1) * Math.PI/180;
-  const dLon = (lon2-lon1) * Math.PI/180;
+  const dLat = (c-a) * Math.PI/180;
+  const dLon = (d-b) * Math.PI/180;
 
-  const a =
+  const x =
     Math.sin(dLat/2)**2 +
-    Math.cos(lat1*Math.PI/180) *
-    Math.cos(lat2*Math.PI/180) *
+    Math.cos(a*Math.PI/180) *
+    Math.cos(c*Math.PI/180) *
     Math.sin(dLon/2)**2;
 
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
 }
 
-// LOAD
-onValue(ref(db, 'jobs'), snapshot => {
-  allJobs = snapshot.val() || {};
+/* LOAD DATA */
+onValue(ref(db,'jobs'), snap => {
+  jobsData = snap.val() || {};
   applyFilters();
   document.getElementById("loader").style.display = "none";
 });
 
-// FILTER
-window.filterJobs = (e, type) => {
+/* FILTER */
+window.filterJobs = (e,type) => {
   currentFilter = type;
 
-  document.querySelectorAll(".filter").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".filter").forEach(f=>f.classList.remove("active"));
   e.target.classList.add("active");
 
   applyFilters();
 };
 
-// SEARCH
-document.getElementById("search").addEventListener("input", e => {
+/* SEARCH */
+document.getElementById("search").addEventListener("input", e=>{
   applyFilters(e.target.value.toLowerCase());
 });
 
-function applyFilters(search = "") {
+/* APPLY FILTER */
+function applyFilters(search="") {
 
-  let filtered = Object.values(allJobs);
+  let jobs = Object.values(jobsData);
 
-  if (currentFilter !== "all") {
-    filtered = filtered.filter(j => j.title.toLowerCase().includes(currentFilter));
+  if(currentFilter !== "all"){
+    jobs = jobs.filter(j => j.title.toLowerCase().includes(currentFilter));
   }
 
-  if (search) {
-    filtered = filtered.filter(j => j.title.toLowerCase().includes(search));
+  if(search){
+    jobs = jobs.filter(j => j.title.toLowerCase().includes(search));
   }
 
-  if (userLat) {
-    filtered.sort((a, b) =>
-      getDistance(userLat, userLng, a.lat, a.lng) -
-      getDistance(userLat, userLng, b.lat, b.lng)
+  if(userLat){
+    jobs.sort((a,b)=>
+      distance(userLat,userLng,a.lat,a.lng) -
+      distance(userLat,userLng,b.lat,b.lng)
     );
   }
 
-  displayJobs(filtered);
+  displayJobs(jobs);
 }
 
-// DISPLAY
-function displayJobs(jobs) {
+/* DISPLAY */
+function displayJobs(jobs){
 
   markers.clearLayers();
 
-  jobs.forEach((job, i) => {
+  jobs.forEach(job=>{
 
-    const distance = userLat
-      ? getDistance(userLat, userLng, job.lat, job.lng).toFixed(1)
+    const dist = userLat
+      ? distance(userLat,userLng,job.lat,job.lng).toFixed(1)
       : "?";
 
-    const marker = L.marker([job.lat, job.lng]);
+    const marker = L.marker([job.lat,job.lng]);
 
-    marker.bindPopup(`
-      <div class="job-card">
-        <div>
-          <b>${job.title}</b><br>
-          ${job.description}<br>
-          ⭐ 4.8 • ${distance} km
-          ${i === 0 ? "<br><b style='color:green'>🔥 Plus proche</b>" : ""}
-        </div>
-      </div>
-    `);
-
-    marker.on("click", () => {
-      map.flyTo([job.lat, job.lng], 14);
-    });
+    marker.on("click", ()=> openModal(job, dist));
 
     markers.addLayer(marker);
-
   });
-
 }
 
-// CREATE
+/* MODAL */
+function openModal(job,dist){
+
+  document.getElementById("jobTitle").innerText = job.title;
+  document.getElementById("jobDesc").innerText = job.description;
+  document.getElementById("jobDistance").innerText = dist + " km";
+
+  document.getElementById("callBtn").href = "tel:"+job.phone;
+
+  document.getElementById("waBtn").href =
+    "https://wa.me/237"+job.phone;
+
+  document.getElementById("jobPhoto").src =
+    job.photo || "https://via.placeholder.com/300";
+
+  document.getElementById("jobRating").innerText =
+    "⭐ " + (job.rating || "4.5");
+
+  document.getElementById("jobModal").style.display = "block";
+}
+
+/* CLOSE */
+document.getElementById("closeModal").onclick = () => {
+  document.getElementById("jobModal").style.display = "none";
+};
+
+/* CREATE */
 window.createJob = () => {
-  const title = prompt("Titre ?");
-  const desc = prompt("Description ?");
 
-  if (!title || !desc) return;
+  const title = prompt("Titre");
+  const desc = prompt("Description");
+  const phone = prompt("Téléphone");
 
-  navigator.geolocation.getCurrentPosition(pos => {
+  if(!title || !desc || !phone) return;
 
-    push(ref(db, 'jobs'), {
+  navigator.geolocation.getCurrentPosition(pos=>{
+
+    push(ref(db,'jobs'),{
       title,
       description: desc,
+      phone,
       lat: pos.coords.latitude,
       lng: pos.coords.longitude
     });
 
-    alert("Publié !");
   });
+
 };
 
-// GO USER
+/* CENTER USER */
 window.goToUser = () => {
-  if (userLat) map.flyTo([userLat, userLng], 15);
+  if(userLat) map.flyTo([userLat,userLng],15);
 };
