@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>JobMarket Pro</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
@@ -11,11 +12,12 @@
 
 <body>
 
-<!-- HEADER -->
+<!-- LOADER -->
+<div id="loader">Chargement...</div>
+
+<!-- USER -->
 <div class="top-bar">
-  <div class="user">
-    🟢 Connecté : Ghislaint@gmail.com
-  </div>
+  <div class="user">🟢 JobMarket</div>
 </div>
 
 <!-- MAP -->
@@ -23,16 +25,15 @@
 
 <!-- RIGHT BUTTONS -->
 <div class="right-controls">
+  <div class="btn" onclick="goToUser()">📍</div>
   <div class="btn">🎯</div>
-  <div class="btn">📏</div>
-  <div class="btn">📍</div>
 </div>
 
-<!-- DISTANCE PANEL -->
+<!-- DISTANCE -->
 <div class="distance-box">
-  <div class="title">Distance mesurée</div>
-  <div class="value">12.4 km</div>
-  <div class="dir">Nord-Est (45°)</div>
+  <div class="title">Distance</div>
+  <div class="value">-- km</div>
+  <div class="dir">Proche</div>
 </div>
 
 <!-- FLOAT BUTTON -->
