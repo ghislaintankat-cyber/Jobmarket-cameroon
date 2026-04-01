@@ -3,26 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>JobMarket Pro</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
 <link rel="stylesheet" href="style.css">
-
 </head>
+
 <body>
 
+<!-- HEADER -->
+<div class="top-bar">
+  <div class="user">
+    🟢 Connecté : Ghislaint@gmail.com
+  </div>
+</div>
+
+<!-- MAP -->
 <div id="map"></div>
 
-<!-- FORM -->
-<div class="panel">
-  <input id="title" placeholder="Titre du service">
-  <input id="desc" placeholder="Description">
-  <button onclick="createJob()">Publier</button>
+<!-- RIGHT BUTTONS -->
+<div class="right-controls">
+  <div class="btn">🎯</div>
+  <div class="btn">📏</div>
+  <div class="btn">📍</div>
+</div>
+
+<!-- DISTANCE PANEL -->
+<div class="distance-box">
+  <div class="title">Distance mesurée</div>
+  <div class="value">12.4 km</div>
+  <div class="dir">Nord-Est (45°)</div>
 </div>
 
 <!-- FLOAT BUTTON -->
 <div class="fab" onclick="createJob()">+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active">💼 Jobs</div>
+  <div class="nav-item">🗺️ Carte</div>
+  <div class="nav-item">👤 Compte</div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script type="module" src="app.js"></script>
