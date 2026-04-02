@@ -1,24 +1,58 @@
-body, html {
+body {
   margin: 0;
+  font-family: Arial;
 }
 
 #map {
   height: 100vh;
-  z-index: 1;
 }
 
-.modal {
-  display: none;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  z-index: 9999;
-}
-
-.modal-content {
+/* PANEL */
+.panel {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
   background: white;
-  padding: 20px;
-  margin: 10% auto;
-  width: 90%;
+  padding: 12px;
+  border-radius: 10px;
+  z-index: 1000;
+  width: 220px;
 }
+
+input {
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+/* POPUP */
+.actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.call {
+  background: #2563eb;
+  color: white;
+  padding: 6px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.whatsapp {
+  background: #25D366;
+  color: white;
+  padding: 6px;
+  border-radius: 6px;
+  text-decoration: none;
+  }
