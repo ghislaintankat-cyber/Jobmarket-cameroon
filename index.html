@@ -3,49 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>JobMarket Pro 🌍</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
 
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <div id="map"></div>
 
-<!-- HEADER -->
-<div class="header">
-  <h1>JobMarket Pro 🌍</h1>
-  <p>Trouvez et publiez des services autour de vous</p>
+<div class="header">JobMarket Pro 🌍</div>
+
+<div class="filters">
+<button onclick="filterJobs('all')">Tous</button>
+<button onclick="filterJobs('plombier')">Plombier</button>
+<button onclick="filterJobs('coiffure')">Coiffure</button>
+<button onclick="filterJobs('electricien')">Électricien</button>
 </div>
 
-<!-- USER -->
-<div class="user-box">
-  🟢 Connecté
-</div>
+<div id="jobsPanel" class="panel"></div>
 
-<!-- NAVIGATION -->
-<div class="bottom-nav">
-  <button onclick="showJobs()">Jobs</button>
-  <button onclick="showMap()">Carte</button>
-  <button onclick="showAccount()">Compte</button>
-</div>
-
-<!-- FAB -->
 <div class="fab" onclick="createJob()">+</div>
 
-<!-- JOB LIST -->
-<div id="jobsPanel" class="panel hidden"></div>
-
-<!-- ACCOUNT -->
-<div id="accountPanel" class="panel hidden">
-  <button onclick="loginGoogle()">Connexion Google</button>
-  <button onclick="becomeAdmin()">Mode Admin</button>
+<div class="bottom-nav">
+<button onclick="showMap()">Carte</button>
+<button onclick="showJobs()">Jobs</button>
+<button onclick="login()">Compte</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
 <script type="module" src="app.js"></script>
 
 </body>
