@@ -1,55 +1,33 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>JobMarket Cameroon</title>
+  <link rel="stylesheet" href="style.css">
 
-<title>JobMarket Cameroon</title>
-
-<link rel="stylesheet" href="style.css">
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
+  <!-- Firebase -->
+  <script type="module" src="firebase.js"></script>
 </head>
 
 <body>
 
-<div class="header">JobMarket Pro</div>
+  <h1>JobMarket Cameroon 🚀</h1>
 
-<div id="map"></div>
+  <div id="map"></div>
 
-<!-- NAVBAR -->
-<div class="navbar">
-  <div class="nav-item active" onclick="showScreen('map')">Carte</div>
-  <div class="nav-item" onclick="showScreen('jobs')">Jobs</div>
-  <div class="nav-item" onclick="showScreen('account')">Compte</div>
-</div>
+  <div class="form">
+    <input id="title" placeholder="Job title">
+    <input id="phone" placeholder="Phone">
+    <button onclick="addJob()">Post Job</button>
+  </div>
 
-<!-- JOBS -->
-<div id="jobs" class="jobs">
-  <h3>Jobs disponibles</h3>
-  <div id="jobsList"></div>
-</div>
+  <ul id="jobs"></ul>
 
-<!-- COMPTE -->
-<div id="account" class="account">
-  <h3>Mon compte</h3>
-
-  <input placeholder="Email">
-  <input placeholder="Mot de passe" type="password">
-
-  <button>Connexion</button>
-  <button>Créer compte</button>
-
-  <input placeholder="Code admin">
-  <button>Admin</button>
-</div>
-
-<!-- FLOAT BUTTON -->
-<div class="fab" onclick="centerMap()">📍</div>
-
-<script src="app.js"></script>
+  <!-- Scripts -->
+  <script type="module" src="map.js"></script>
+  <script type="module" src="ui.js"></script>
+  <script type="module" src="drops.js"></script>
+  <script type="module" src="app.js"></script>
 
 </body>
-  </html>
+      </html>
