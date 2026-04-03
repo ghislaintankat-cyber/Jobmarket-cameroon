@@ -1,60 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>JobMarket Cameroon</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+</head>
+
 <body>
 
-<!-- HEADER -->
-<div class="header">
-  JobMarket Pro 🌍
-</div>
+<div class="header">JobMarket Pro</div>
 
-<!-- MAP -->
 <div id="map"></div>
-
-<!-- USER INFO -->
-<div class="user-box">
-  🟢 Connecté
-</div>
-
-<div class="gps-box">
-  📍 GPS actif
-</div>
-
-<!-- FLOAT BUTTON -->
-<div class="fab" onclick="showCreate()">+</div>
-<div class="fab-label">Publier</div>
-
-<!-- JOB SCREEN -->
-<div id="jobsScreen" class="jobs active-screen">
-  <h3>📋 Services disponibles</h3>
-  <div id="jobsList"></div>
-</div>
-
-<!-- ACCOUNT SCREEN -->
-<div id="accountScreen" class="account">
-  <h3>👤 Mon compte</h3>
-
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Mot de passe">
-
-  <button onclick="login()">Connexion</button>
-  <button onclick="register()">Créer compte</button>
-
-  <br><br>
-
-  <button onclick="chooseMode('worker')">Je cherche du travail</button>
-  <button onclick="chooseMode('client')">Je poste du travail</button>
-
-  <br><br>
-
-  <input id="adminCode" placeholder="Code admin">
-  <button onclick="adminLogin()">Admin</button>
-</div>
 
 <!-- NAVBAR -->
 <div class="navbar">
-  <div class="nav-item active" onclick="showJobs()">Jobs</div>
-  <div class="nav-item" onclick="showMap()">Carte</div>
-  <div class="nav-item" onclick="showAccount()">Compte</div>
+  <div class="nav-item active" onclick="showScreen('map')">Carte</div>
+  <div class="nav-item" onclick="showScreen('jobs')">Jobs</div>
+  <div class="nav-item" onclick="showScreen('account')">Compte</div>
 </div>
 
-<script type="module" src="app.js"></script>
+<!-- JOBS -->
+<div id="jobs" class="jobs">
+  <h3>Jobs disponibles</h3>
+  <div id="jobsList"></div>
+</div>
 
-  </body>
+<!-- COMPTE -->
+<div id="account" class="account">
+  <h3>Mon compte</h3>
+
+  <input placeholder="Email">
+  <input placeholder="Mot de passe" type="password">
+
+  <button>Connexion</button>
+  <button>Créer compte</button>
+
+  <input placeholder="Code admin">
+  <button>Admin</button>
+</div>
+
+<!-- FLOAT BUTTON -->
+<div class="fab" onclick="centerMap()">📍</div>
+
+<script src="app.js"></script>
+
+</body>
+  </html>
