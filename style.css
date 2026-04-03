@@ -1,74 +1,129 @@
-body { margin:0; font-family:Arial; }
-
-#map { height:100vh; }
-
-.header {
-position:absolute;
-top:10px;
-left:50%;
-transform:translateX(-50%);
-background:black;
-color:white;
-padding:10px;
-border-radius:20px;
-z-index:1000;
+/* RESET */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
 }
 
+/* 🗺️ MAP */
+#map {
+  height: 100vh;
+  width: 100vw;
+  z-index: 1;
+}
+
+/* 🔝 HEADER */
+.header {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  z-index: 1000;
+}
+
+/* 🎛️ FILTERS */
 .filters {
-position:absolute;
-top:60px;
-left:10px;
-display:flex;
-gap:10px;
-z-index:1000;
+  position: absolute;
+  top: 60px;
+  left: 10px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
 }
 
 .filters button {
-padding:8px;
-border:none;
-border-radius:20px;
-background:white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 20px;
+  background: white;
+  font-size: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  cursor: pointer;
 }
 
+/* 📦 PANEL JOBS */
 .panel {
-position:absolute;
-bottom:0;
-width:100%;
-height:40%;
-background:white;
-border-radius:20px 20px 0 0;
-overflow:auto;
-transform:translateY(100%);
-transition:0.3s;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 45%;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  z-index: 1000;
 }
 
-.panel.show { transform:translateY(0); }
+.panel.show {
+  transform: translateY(0);
+}
 
+/* 📄 JOB CARD */
 .job-card {
-padding:10px;
-border-bottom:1px solid #eee;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
 }
 
+.job-card b {
+  font-size: 14px;
+}
+
+/* ➕ FLOAT BUTTON */
 .fab {
-position:absolute;
-bottom:80px;
-right:20px;
-background:gold;
-width:60px;
-height:60px;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:30px;
+  position: absolute;
+  bottom: 90px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: #f59e0b;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  cursor: pointer;
+  z-index: 1000;
 }
 
+/* 🔻 BOTTOM NAV */
 .bottom-nav {
-position:absolute;
-bottom:0;
-width:100%;
-display:flex;
-justify-content:space-around;
-background:white;
-padding:10px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 60px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: white;
+  border-top: 1px solid #ddd;
+  z-index: 1000;
+}
+
+.bottom-nav button {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* 📱 POPUP STYLE (leaflet) */
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+}
+
+.leaflet-popup-content {
+  font-size: 13px;
+}
+
+/* 🧠 BONUS UX */
+button:active {
+  transform: scale(0.95);
   }
