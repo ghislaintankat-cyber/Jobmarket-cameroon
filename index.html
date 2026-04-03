@@ -3,50 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>JobMarket Pro 🌍</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
 <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
 
-<h1 class="title">JobMarket Pro 🌍</h1>
-<p class="subtitle">Trouvez et publiez des services autour de vous</p>
-
 <div id="map"></div>
 
-<!-- USER PANEL -->
+<!-- HEADER -->
+<div class="header">
+  <h1>JobMarket Pro 🌍</h1>
+  <p>Trouvez et publiez des services autour de vous</p>
+</div>
+
+<!-- USER -->
 <div class="user-box">
-🟢 Connecté en tant que<br>
-<b>GhislainT@gmail.com</b>
+  🟢 Connecté
 </div>
 
-<div class="gps-box">📍 Position GPS active</div>
-
-<!-- DISTANCE BOX -->
-<div class="distance-box">
-<h3>Distance mesurée</h3>
-<p class="km">12.4 km</p>
-<p class="dir">Direction: Nord-Est (45°)</p>
-<button>Voir l’itinéraire complet</button>
-</div>
-
-<!-- FLOAT BUTTON -->
-<div class="fab" onclick="openForm()">+</div>
-
-<!-- BOTTOM NAV -->
+<!-- NAVIGATION -->
 <div class="bottom-nav">
-<div class="active">💼 Jobs</div>
-<div>🗺️ Carte</div>
-<div>👤 Compte</div>
+  <button onclick="showJobs()">Jobs</button>
+  <button onclick="showMap()">Carte</button>
+  <button onclick="showAccount()">Compte</button>
 </div>
 
-<!-- FORM -->
-<div class="modal" id="modal">
-<input id="title" placeholder="Titre">
-<input id="desc" placeholder="Description">
-<button onclick="createJob()">Publier</button>
+<!-- FAB -->
+<div class="fab" onclick="createJob()">+</div>
+
+<!-- JOB LIST -->
+<div id="jobsPanel" class="panel hidden"></div>
+
+<!-- ACCOUNT -->
+<div id="accountPanel" class="panel hidden">
+  <button onclick="loginGoogle()">Connexion Google</button>
+  <button onclick="becomeAdmin()">Mode Admin</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
