@@ -1,43 +1,60 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobMarket Pro</title>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
-<link rel="stylesheet" href="style.css">
-</head>
-
 <body>
 
 <!-- HEADER -->
 <div class="header">
   JobMarket Pro 🌍
-  <div id="userInfo"></div>
 </div>
 
 <!-- MAP -->
 <div id="map"></div>
 
-<!-- JOBS SCREEN -->
-<div id="jobsScreen" class="screen"></div>
-
-<!-- ACCOUNT SCREEN -->
-<div id="accountScreen" class="screen"></div>
-
-<!-- BUTTON + -->
-<div class="fab" onclick="createJob()">+</div>
-
-<!-- NAVIGATION -->
-<div class="bottom-nav">
-  <button onclick="showTab('jobs')">Jobs</button>
-  <button onclick="showTab('map')">Carte</button>
-  <button onclick="showTab('account')">Compte</button>
+<!-- USER INFO -->
+<div class="user-box">
+  🟢 Connecté
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<div class="gps-box">
+  📍 GPS actif
+</div>
+
+<!-- FLOAT BUTTON -->
+<div class="fab" onclick="showCreate()">+</div>
+<div class="fab-label">Publier</div>
+
+<!-- JOB SCREEN -->
+<div id="jobsScreen" class="jobs active-screen">
+  <h3>📋 Services disponibles</h3>
+  <div id="jobsList"></div>
+</div>
+
+<!-- ACCOUNT SCREEN -->
+<div id="accountScreen" class="account">
+  <h3>👤 Mon compte</h3>
+
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Mot de passe">
+
+  <button onclick="login()">Connexion</button>
+  <button onclick="register()">Créer compte</button>
+
+  <br><br>
+
+  <button onclick="chooseMode('worker')">Je cherche du travail</button>
+  <button onclick="chooseMode('client')">Je poste du travail</button>
+
+  <br><br>
+
+  <input id="adminCode" placeholder="Code admin">
+  <button onclick="adminLogin()">Admin</button>
+</div>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="nav-item active" onclick="showJobs()">Jobs</div>
+  <div class="nav-item" onclick="showMap()">Carte</div>
+  <div class="nav-item" onclick="showAccount()">Compte</div>
+</div>
+
 <script type="module" src="app.js"></script>
 
-</body>
-  </html>
+  </body>
