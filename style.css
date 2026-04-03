@@ -3,7 +3,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: Arial, sans-serif;
 }
 
 /* BODY */
@@ -17,8 +17,10 @@ body {
   text-align: center;
   padding: 15px;
   background: white;
-  font-weight: bold;
   font-size: 20px;
+  font-weight: bold;
+  position: relative;
+  z-index: 1000;
 }
 
 /* MAP */
@@ -40,10 +42,10 @@ body {
   border-radius: 20px;
   font-size: 13px;
   box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-  z-index: 999;
+  z-index: 1000;
 }
 
-/* GPS BADGE */
+/* GPS BOX */
 .gps-box {
   position: absolute;
   top: 130px;
@@ -53,7 +55,7 @@ body {
   padding: 8px 12px;
   border-radius: 10px;
   font-size: 12px;
-  z-index: 999;
+  z-index: 1000;
 }
 
 /* FLOAT BUTTON */
@@ -72,7 +74,7 @@ body {
   color: white;
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
   cursor: pointer;
-  z-index: 999;
+  z-index: 1000;
 }
 
 /* FAB LABEL */
@@ -85,7 +87,7 @@ body {
   border-radius: 10px;
   font-size: 12px;
   box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-  z-index: 999;
+  z-index: 1000;
 }
 
 /* NAVBAR */
@@ -101,12 +103,12 @@ body {
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
   box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
-  z-index: 999;
+  z-index: 1000;
 }
 
 .nav-item {
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   color: gray;
   cursor: pointer;
 }
@@ -114,6 +116,23 @@ body {
 .nav-item.active {
   color: #f59e0b;
   font-weight: bold;
+}
+
+/* SCREENS */
+.jobs, .account {
+  position: absolute;
+  top: 70px;
+  bottom: 80px;
+  width: 100%;
+  background: white;
+  z-index: 900;
+  padding: 15px;
+  overflow-y: auto;
+  display: none;
+}
+
+.active-screen {
+  display: block;
 }
 
 /* JOB CARD */
@@ -126,7 +145,7 @@ body {
   padding: 15px;
   border-radius: 15px;
   box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-  z-index: 1000;
+  z-index: 2000;
   animation: slideUp 0.3s ease;
 }
 
@@ -164,29 +183,27 @@ body {
   cursor: pointer;
 }
 
-/* DISTANCE BOX */
-.distance-box {
-  position: absolute;
-  bottom: 180px;
-  left: 10px;
-  background: rgba(0,0,0,0.8);
+/* FORM INPUT */
+input {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+/* GENERAL BUTTON */
+button {
+  margin-top: 10px;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #f59e0b;
   color: white;
-  padding: 15px;
-  border-radius: 15px;
-  width: 200px;
-  z-index: 999;
+  cursor: pointer;
 }
 
-.distance-box h3 {
-  font-size: 16px;
-}
-
-.distance-box p {
-  font-size: 12px;
-  margin-top: 5px;
-}
-
-/* RIGHT CONTROLS */
+/* MAP CONTROLS */
 .map-controls {
   position: absolute;
   right: 10px;
@@ -194,7 +211,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  z-index: 999;
+  z-index: 1000;
 }
 
 .control-btn {
@@ -203,35 +220,4 @@ body {
   border-radius: 10px;
   box-shadow: 0 3px 10px rgba(0,0,0,0.2);
   font-size: 12px;
-  text-align: center;
-}
-
-/* ACCOUNT SCREEN */
-.account {
-  position: absolute;
-  top: 70px;
-  bottom: 80px;
-  width: 100%;
-  background: white;
-  z-index: 998;
-  padding: 20px;
-  display: none;
-}
-
-/* JOB LIST SCREEN */
-.jobs {
-  position: absolute;
-  top: 70px;
-  bottom: 80px;
-  width: 100%;
-  background: white;
-  z-index: 998;
-  padding: 15px;
-  overflow-y: auto;
-  display: none;
-}
-
-/* SHOW ACTIVE */
-.active-screen {
-  display: block;
   }
