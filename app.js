@@ -1,31 +1,28 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIza...",
-  authDomain: "jobmarketfuture.firebaseapp.com",
-  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
-  projectId: "jobmarketfuture"
+  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🛰️ MAP SATELLITE + LABELS
+// MAP
 const map = L.map('map').setView([3.848, 11.502], 6);
 
+// SATELLITE + NOMS
 L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { maxZoom: 19 }
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 ).addTo(map);
 
-// Labels (noms villes)
 L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  { opacity: 0.5 }
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{ opacity: 0.3 }
 ).addTo(map);
 
-// 📍 USER POSITION
+// USER POSITION
 let userLat, userLng;
 
 navigator.geolocation.getCurrentPosition(pos => {
@@ -33,100 +30,82 @@ navigator.geolocation.getCurrentPosition(pos => {
   userLng = pos.coords.longitude;
 
   L.circleMarker([userLat, userLng], {
-    radius: 8,
+    radius: 10,
     color: "blue",
     fillColor: "#3b82f6",
-    fillOpacity: 1
+    fillOpacity: 0.9
   }).addTo(map);
 
   map.setView([userLat, userLng], 12);
 });
 
-// 📏 DISTANCE
+// DISTANCE
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2-lat1) * Math.PI/180;
   const dLon = (lon2-lon1) * Math.PI/180;
 
   const a =
-    Math.sin(dLat/2)**2 +
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
     Math.cos(lat1*Math.PI/180) *
     Math.cos(lat2*Math.PI/180) *
-    Math.sin(dLon/2)**2;
+    Math.sin(dLon/2) *
+    Math.sin(dLon/2);
 
   return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
 }
 
-// 🔄 LOAD JOBS
+// LOAD JOBS
 onValue(ref(db, 'jobs'), snapshot => {
 
   const data = snapshot.val();
   if (!data) return;
 
-  map.eachLayer(layer => {
-    if (layer instanceof L.Marker) map.removeLayer(layer);
-  });
+  Object.values(data).forEach(job => {
 
-  Object.keys(data).forEach(id => {
-
-    const job = data[id];
-
-    const distance = userLat
+    const dist = userLat
       ? getDistance(userLat, userLng, job.lat, job.lng)
-      : "?";
+      : "...";
 
-    const badge = job.boosted ? "🔥 BOOST" : "";
+    const colors = ["red","yellow","green","purple","orange"];
+    const icons = ["🔧","⚡","✂️","🎨","🛒"];
+
+    const rand = Math.floor(Math.random()*5);
 
     const marker = L.marker([job.lat, job.lng]).addTo(map);
 
     marker.bindPopup(`
-      <div class="job-ui">
+      <div class="job-card">
+        <div class="icon ${colors[rand]}">${icons[rand]}</div>
         <div>
           <b>${job.title}</b><br>
           ${job.description}<br>
-          ⭐ 4.8 • ${distance} km<br>
-          ${badge}<br><br>
-          <button onclick="boost('${id}')">Booster 500F</button>
+          ⭐ 4.${rand+5} • ${dist} km
         </div>
       </div>
     `);
   });
 });
 
-// ➕ CREATE JOB
+// CREATE JOB
 window.createJob = () => {
 
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
 
-  if (!title || !desc) return alert("Remplis tout");
-
   navigator.geolocation.getCurrentPosition(pos => {
-
     push(ref(db, 'jobs'), {
       title,
       description: desc,
       lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      boosted: false
+      lng: pos.coords.longitude
     });
-
-    alert("Publié !");
   });
+
+  document.getElementById("modal").style.display = "none";
 };
 
-// 💰 BOOST
-window.boost = async (jobId) => {
-
-  const email = prompt("Ton email");
-  if (!email) return;
-
-  const res = await fetch("https://jobmarket-backend-6gqm.onrender.com/pay", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ jobId, amount: 500, email })
-  });
-
-  const data = await res.json();
-  window.location.href = data.data.link;
+// OPEN FORM
+window.openForm = () => {
+  document.getElementById("modal").style.display = "block";
 };
