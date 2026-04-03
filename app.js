@@ -1,117 +1,156 @@
+// FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-/* FIREBASE */
+// CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
   authDomain: "jobmarketfuture.firebaseapp.com",
   databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
-  projectId: "jobmarketfuture"
+  projectId: "jobmarketfuture",
+  storageBucket: "jobmarketfuture.appspot.com",
+  messagingSenderId: "351669024349",
+  appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const auth = getAuth(app);
 
-let currentUser = null;
+// MAP
+const map = L.map('map').setView([3.848, 11.502], 6);
 
-/* LOGIN */
-window.login = async ()=>{
-  const provider = new GoogleAuthProvider();
-  const res = await signInWithPopup(auth, provider);
-  currentUser = res.user;
+// MAP STYLE (satellite + noms)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png').addTo(map);
 
-  document.getElementById("userInfo").innerHTML = currentUser.email;
-};
+let userPosition = null;
 
-/* MAP */
-const map = L.map('map').setView([3.8, 11.5], 6);
+// GPS
+navigator.geolocation.watchPosition(pos => {
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
 
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{opacity:0.4}).addTo(map);
+  userPosition = [lat, lng];
 
-/* JOBS */
-let jobs = [];
+  L.circle([lat, lng], {
+    radius: 20,
+    color: "blue"
+  }).addTo(map);
 
-onValue(ref(db,'jobs'), snap=>{
-  const data = snap.val();
-  if(!data) return;
+}, err => console.log(err));
 
-  jobs = Object.values(data);
+// 📌 LOAD JOBS
+const jobsRef = ref(db, "jobs");
 
-  displayJobs();
-  displayMap();
-});
+onValue(jobsRef, snapshot => {
+  const data = snapshot.val();
 
-/* DISPLAY JOBS */
-function displayJobs(){
-  const div = document.getElementById("jobsScreen");
+  if (!data) return;
 
-  div.innerHTML = jobs.map(job=>`
-    <div class="job-card">
-      <b>${job.title}</b><br>
-      ⭐ ${job.rating || 4.5}<br>
-      <button onclick="call('${job.phone}')">📞</button>
-      <button onclick="whatsapp('${job.phone}')">💬</button>
-    </div>
-  `).join('');
-}
+  Object.entries(data).forEach(([id, job]) => {
 
-/* DISPLAY MAP */
-function displayMap(){
-  jobs.forEach(job=>{
-    L.marker([job.lat, job.lng])
-    .addTo(map)
-    .bindPopup(job.title);
-  });
-}
+    const marker = L.marker([job.lat, job.lng]).addTo(map);
 
-/* NAVIGATION */
-window.showTab = (tab)=>{
-
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-
-  if(tab === 'jobs'){
-    document.getElementById("jobsScreen").classList.add("active");
-  }
-
-  if(tab === 'account'){
-    document.getElementById("accountScreen").classList.add("active");
-    loadAccount();
-  }
-};
-
-/* ACCOUNT */
-function loadAccount(){
-  const div = document.getElementById("accountScreen");
-
-  div.innerHTML = `
-    <h2>Compte</h2>
-
-    <button onclick="login()">Connexion Google</button>
-
-    <p>Que veux-tu faire ?</p>
-
-    <button>🔎 Chercher du travail</button>
-    <button>📢 Poster un travail</button>
-  `;
-}
-
-/* CREATE JOB */
-window.createJob = ()=>{
-  const title = prompt("Titre du job");
-
-  navigator.geolocation.getCurrentPosition(pos=>{
-    push(ref(db,'jobs'), {
-      title,
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude,
-      phone:"690000000"
+    marker.on('click', () => {
+      openJobCard(job, id);
     });
   });
+});
+
+// 🧾 CARD UI
+function openJobCard(job, id) {
+
+  let imagesHTML = "";
+  if (job.images) {
+    job.images.forEach(img => {
+      imagesHTML += `<img src="${img}" style="width:80px;border-radius:8px;margin:5px;">`;
+    });
+  }
+
+  const card = document.createElement("div");
+  card.className = "job-card";
+
+  card.innerHTML = `
+    <h3>${job.title}</h3>
+    <p>⭐ ${job.rating || 5}</p>
+
+    <div>${imagesHTML}</div>
+
+    <button onclick="callUser('${job.phone}')">📞 Appeler</button>
+    <button onclick="whatsappUser('${job.phone}')">💬 WhatsApp</button>
+    <button onclick="startRoute(${job.lat}, ${job.lng})">🧭 Itinéraire</button>
+    <button onclick="boostJob('${id}')">🚀 Booster</button>
+  `;
+
+  document.body.appendChild(card);
+}
+
+// 📞 CALL
+window.callUser = (phone) => {
+  window.location.href = `tel:${phone}`;
 };
 
-/* CONTACT */
-window.call = (p)=> location.href="tel:"+p;
-window.whatsapp = (p)=> window.open("https://wa.me/237"+p);
+// 💬 WHATSAPP
+window.whatsappUser = (phone) => {
+  window.open(`https://wa.me/${phone}`);
+};
+
+// 🧭 ITINERAIRE + VOIX
+let routeLine;
+
+window.startRoute = (lat, lng) => {
+
+  if (!userPosition) {
+    alert("Position inconnue");
+    return;
+  }
+
+  if (routeLine) map.removeLayer(routeLine);
+
+  routeLine = L.polyline([userPosition, [lat, lng]], {
+    color: "red"
+  }).addTo(map);
+
+  map.fitBounds(routeLine.getBounds());
+
+  speak("Itinéraire démarré. Avancez vers votre destination");
+};
+
+// 🔊 VOIX
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "fr-FR";
+  speechSynthesis.speak(msg);
+}
+
+// 🚀 BOOST (simulation paiement)
+window.boostJob = (id) => {
+  alert("Paiement boost en cours...");
+  // ici tu connecteras Flutterwave plus tard
+};
+
+// ➕ AJOUT JOB AVEC IMAGE
+window.addJob = () => {
+
+  navigator.geolocation.getCurrentPosition(pos => {
+
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    const newJob = {
+      title: "Service Pro",
+      phone: "237690000000",
+      lat,
+      lng,
+      rating: 5,
+      images: [
+        "https://via.placeholder.com/150",
+        "https://via.placeholder.com/150"
+      ]
+    };
+
+    push(jobsRef, newJob);
+
+    alert("✅ Job avec photos publié !");
+  });
+};
