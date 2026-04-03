@@ -3,40 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobMarket Pro 🌍</title>
+<title>JobMarket Pro</title>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
-
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div id="map"></div>
-
-<div class="header">JobMarket Pro 🌍</div>
-
-<div class="filters">
-<button onclick="filterJobs('all')">Tous</button>
-<button onclick="filterJobs('plombier')">Plombier</button>
-<button onclick="filterJobs('coiffure')">Coiffure</button>
-<button onclick="filterJobs('electricien')">Électricien</button>
+<!-- HEADER -->
+<div class="header">
+  JobMarket Pro 🌍
+  <div id="userInfo"></div>
 </div>
 
-<div id="jobsPanel" class="panel"></div>
+<!-- MAP -->
+<div id="map"></div>
 
+<!-- JOBS SCREEN -->
+<div id="jobsScreen" class="screen"></div>
+
+<!-- ACCOUNT SCREEN -->
+<div id="accountScreen" class="screen"></div>
+
+<!-- BUTTON + -->
 <div class="fab" onclick="createJob()">+</div>
 
+<!-- NAVIGATION -->
 <div class="bottom-nav">
-<button onclick="showMap()">Carte</button>
-<button onclick="showJobs()">Jobs</button>
-<button onclick="login()">Compte</button>
+  <button onclick="showTab('jobs')">Jobs</button>
+  <button onclick="showTab('map')">Carte</button>
+  <button onclick="showTab('account')">Compte</button>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-
 <script type="module" src="app.js"></script>
 
 </body>
