@@ -1,156 +1,237 @@
-// FIREBASE
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-// CONFIG
-const firebaseConfig = {
-  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
-  authDomain: "jobmarketfuture.firebaseapp.com",
-  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
-  projectId: "jobmarketfuture",
-  storageBucket: "jobmarketfuture.appspot.com",
-  messagingSenderId: "351669024349",
-  appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// MAP
-const map = L.map('map').setView([3.848, 11.502], 6);
-
-// MAP STYLE (satellite + noms)
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png').addTo(map);
-
-let userPosition = null;
-
-// GPS
-navigator.geolocation.watchPosition(pos => {
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
-
-  userPosition = [lat, lng];
-
-  L.circle([lat, lng], {
-    radius: 20,
-    color: "blue"
-  }).addTo(map);
-
-}, err => console.log(err));
-
-// 📌 LOAD JOBS
-const jobsRef = ref(db, "jobs");
-
-onValue(jobsRef, snapshot => {
-  const data = snapshot.val();
-
-  if (!data) return;
-
-  Object.entries(data).forEach(([id, job]) => {
-
-    const marker = L.marker([job.lat, job.lng]).addTo(map);
-
-    marker.on('click', () => {
-      openJobCard(job, id);
-    });
-  });
-});
-
-// 🧾 CARD UI
-function openJobCard(job, id) {
-
-  let imagesHTML = "";
-  if (job.images) {
-    job.images.forEach(img => {
-      imagesHTML += `<img src="${img}" style="width:80px;border-radius:8px;margin:5px;">`;
-    });
-  }
-
-  const card = document.createElement("div");
-  card.className = "job-card";
-
-  card.innerHTML = `
-    <h3>${job.title}</h3>
-    <p>⭐ ${job.rating || 5}</p>
-
-    <div>${imagesHTML}</div>
-
-    <button onclick="callUser('${job.phone}')">📞 Appeler</button>
-    <button onclick="whatsappUser('${job.phone}')">💬 WhatsApp</button>
-    <button onclick="startRoute(${job.lat}, ${job.lng})">🧭 Itinéraire</button>
-    <button onclick="boostJob('${id}')">🚀 Booster</button>
-  `;
-
-  document.body.appendChild(card);
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
 }
 
-// 📞 CALL
-window.callUser = (phone) => {
-  window.location.href = `tel:${phone}`;
-};
-
-// 💬 WHATSAPP
-window.whatsappUser = (phone) => {
-  window.open(`https://wa.me/${phone}`);
-};
-
-// 🧭 ITINERAIRE + VOIX
-let routeLine;
-
-window.startRoute = (lat, lng) => {
-
-  if (!userPosition) {
-    alert("Position inconnue");
-    return;
-  }
-
-  if (routeLine) map.removeLayer(routeLine);
-
-  routeLine = L.polyline([userPosition, [lat, lng]], {
-    color: "red"
-  }).addTo(map);
-
-  map.fitBounds(routeLine.getBounds());
-
-  speak("Itinéraire démarré. Avancez vers votre destination");
-};
-
-// 🔊 VOIX
-function speak(text) {
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = "fr-FR";
-  speechSynthesis.speak(msg);
+/* BODY */
+body {
+  background: #f5f5f5;
+  overflow: hidden;
 }
 
-// 🚀 BOOST (simulation paiement)
-window.boostJob = (id) => {
-  alert("Paiement boost en cours...");
-  // ici tu connecteras Flutterwave plus tard
-};
+/* HEADER */
+.header {
+  text-align: center;
+  padding: 15px;
+  background: white;
+  font-weight: bold;
+  font-size: 20px;
+}
 
-// ➕ AJOUT JOB AVEC IMAGE
-window.addJob = () => {
+/* MAP */
+#map {
+  position: absolute;
+  top: 70px;
+  bottom: 80px;
+  width: 100%;
+  z-index: 1;
+}
 
-  navigator.geolocation.getCurrentPosition(pos => {
+/* USER BOX */
+.user-box {
+  position: absolute;
+  top: 80px;
+  left: 10px;
+  background: white;
+  padding: 10px 15px;
+  border-radius: 20px;
+  font-size: 13px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  z-index: 999;
+}
 
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
+/* GPS BADGE */
+.gps-box {
+  position: absolute;
+  top: 130px;
+  left: 10px;
+  background: #111827;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  z-index: 999;
+}
 
-    const newJob = {
-      title: "Service Pro",
-      phone: "237690000000",
-      lat,
-      lng,
-      rating: 5,
-      images: [
-        "https://via.placeholder.com/150",
-        "https://via.placeholder.com/150"
-      ]
-    };
+/* FLOAT BUTTON */
+.fab {
+  position: absolute;
+  bottom: 100px;
+  right: 15px;
+  width: 60px;
+  height: 60px;
+  background: #f59e0b;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 30px;
+  color: white;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  cursor: pointer;
+  z-index: 999;
+}
 
-    push(jobsRef, newJob);
+/* FAB LABEL */
+.fab-label {
+  position: absolute;
+  bottom: 170px;
+  right: 15px;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  z-index: 999;
+}
 
-    alert("✅ Job avec photos publié !");
-  });
-};
+/* NAVBAR */
+.navbar {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 80px;
+  background: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
+  z-index: 999;
+}
+
+.nav-item {
+  text-align: center;
+  font-size: 12px;
+  color: gray;
+  cursor: pointer;
+}
+
+.nav-item.active {
+  color: #f59e0b;
+  font-weight: bold;
+}
+
+/* JOB CARD */
+.job-card {
+  position: absolute;
+  bottom: 100px;
+  left: 10px;
+  right: 10px;
+  background: white;
+  padding: 15px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+  z-index: 1000;
+  animation: slideUp 0.3s ease;
+}
+
+/* ANIMATION */
+@keyframes slideUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* JOB IMAGES */
+.job-card img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin: 5px;
+}
+
+/* BUTTONS */
+.job-card button {
+  margin-top: 8px;
+  margin-right: 5px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 10px;
+  background: #f59e0b;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* DISTANCE BOX */
+.distance-box {
+  position: absolute;
+  bottom: 180px;
+  left: 10px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 15px;
+  width: 200px;
+  z-index: 999;
+}
+
+.distance-box h3 {
+  font-size: 16px;
+}
+
+.distance-box p {
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* RIGHT CONTROLS */
+.map-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 999;
+}
+
+.control-btn {
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ACCOUNT SCREEN */
+.account {
+  position: absolute;
+  top: 70px;
+  bottom: 80px;
+  width: 100%;
+  background: white;
+  z-index: 998;
+  padding: 20px;
+  display: none;
+}
+
+/* JOB LIST SCREEN */
+.jobs {
+  position: absolute;
+  top: 70px;
+  bottom: 80px;
+  width: 100%;
+  background: white;
+  z-index: 998;
+  padding: 15px;
+  overflow-y: auto;
+  display: none;
+}
+
+/* SHOW ACTIVE */
+.active-screen {
+  display: block;
+  }
