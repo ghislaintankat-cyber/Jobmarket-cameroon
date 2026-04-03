@@ -1,88 +1,74 @@
-body {
-margin: 0;
-font-family: Arial;
-}
+body { margin:0; font-family:Arial; }
 
-#map {
-height: 100vh;
-width: 100vw;
-}
+#map { height:100vh; }
 
 .header {
-position: absolute;
-top: 10px;
-left: 50%;
-transform: translateX(-50%);
-background: white;
-padding: 10px;
-border-radius: 12px;
-z-index: 1000;
-text-align: center;
+position:absolute;
+top:10px;
+left:50%;
+transform:translateX(-50%);
+background:black;
+color:white;
+padding:10px;
+border-radius:20px;
+z-index:1000;
 }
 
-.user-box {
-position: absolute;
-top: 80px;
-left: 10px;
-background: white;
-padding: 10px;
-border-radius: 20px;
-z-index: 1000;
+.filters {
+position:absolute;
+top:60px;
+left:10px;
+display:flex;
+gap:10px;
+z-index:1000;
 }
 
-.bottom-nav {
-position: absolute;
-bottom: 0;
-width: 100%;
-display: flex;
-justify-content: space-around;
-background: white;
-padding: 10px;
-z-index: 1000;
-}
-
-.bottom-nav button {
-border: none;
-background: none;
-font-size: 16px;
-}
-
-.fab {
-position: absolute;
-bottom: 80px;
-right: 20px;
-width: 60px;
-height: 60px;
-background: gold;
-border-radius: 50%;
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 30px;
-z-index: 1000;
+.filters button {
+padding:8px;
+border:none;
+border-radius:20px;
+background:white;
 }
 
 .panel {
-position: absolute;
-bottom: 100px;
-left: 10px;
-right: 10px;
-background: white;
-padding: 15px;
-border-radius: 15px;
-z-index: 1000;
-max-height: 300px;
-overflow: auto;
+position:absolute;
+bottom:0;
+width:100%;
+height:40%;
+background:white;
+border-radius:20px 20px 0 0;
+overflow:auto;
+transform:translateY(100%);
+transition:0.3s;
 }
 
-.hidden {
-display: none;
-}
+.panel.show { transform:translateY(0); }
 
 .job-card {
-background: #fff;
-padding: 10px;
-margin-bottom: 10px;
-border-radius: 10px;
-box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+padding:10px;
+border-bottom:1px solid #eee;
+}
+
+.fab {
+position:absolute;
+bottom:80px;
+right:20px;
+background:gold;
+width:60px;
+height:60px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:30px;
+}
+
+.bottom-nav {
+position:absolute;
+bottom:0;
+width:100%;
+display:flex;
+justify-content:space-around;
+background:white;
+padding:10px;
   }
