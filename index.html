@@ -11,18 +11,46 @@
 
 <body>
 
+<h1 class="title">JobMarket Pro 🌍</h1>
+<p class="subtitle">Trouvez et publiez des services autour de vous</p>
+
 <div id="map"></div>
 
-<div class="panel">
-  <input id="title" placeholder="Titre du service">
-  <input id="desc" placeholder="Description">
-  <button onclick="createJob()">Publier</button>
+<!-- USER PANEL -->
+<div class="user-box">
+🟢 Connecté en tant que<br>
+<b>GhislainT@gmail.com</b>
 </div>
 
-<div class="fab" onclick="createJob()">+</div>
+<div class="gps-box">📍 Position GPS active</div>
+
+<!-- DISTANCE BOX -->
+<div class="distance-box">
+<h3>Distance mesurée</h3>
+<p class="km">12.4 km</p>
+<p class="dir">Direction: Nord-Est (45°)</p>
+<button>Voir l’itinéraire complet</button>
+</div>
+
+<!-- FLOAT BUTTON -->
+<div class="fab" onclick="openForm()">+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+<div class="active">💼 Jobs</div>
+<div>🗺️ Carte</div>
+<div>👤 Compte</div>
+</div>
+
+<!-- FORM -->
+<div class="modal" id="modal">
+<input id="title" placeholder="Titre">
+<input id="desc" placeholder="Description">
+<button onclick="createJob()">Publier</button>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script type="module" src="app.js"></script>
 
 </body>
-    </html>
+  </html>
