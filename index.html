@@ -1,33 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>JobMarket Cameroon</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Firebase -->
-  <script type="module" src="firebase.js"></script>
+<title>JobMarket Cameroon</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 </head>
 
 <body>
 
-  <h1>JobMarket Cameroon 🚀</h1>
+<div class="header">JobMarket Pro</div>
 
-  <div id="map"></div>
+<div id="map"></div>
 
-  <div class="form">
-    <input id="title" placeholder="Job title">
-    <input id="phone" placeholder="Phone">
-    <button onclick="addJob()">Post Job</button>
-  </div>
+<div class="form">
+  <input id="title" placeholder="Titre du service">
+  <input id="phone" placeholder="Téléphone">
+  <button onclick="addJob()">Publier</button>
+</div>
 
-  <ul id="jobs"></ul>
+<div id="jobsList"></div>
 
-  <!-- Scripts -->
-  <script type="module" src="map.js"></script>
-  <script type="module" src="ui.js"></script>
-  <script type="module" src="drops.js"></script>
-  <script type="module" src="app.js"></script>
+<script src="app.js"></script>
 
 </body>
-      </html>
+  </html>
