@@ -26,8 +26,21 @@
 <!-- MAP -->
 <div id="mapScreen" class="hidden">
   <div id="map"></div>
+
   <div class="distance-box">
     Distance: <span id="distance">0</span> km
+  </div>
+
+  <!-- + BUTTON -->
+  <div class="fab" onclick="toggleForm()">+</div>
+
+  <!-- FORM -->
+  <div id="jobForm" class="form-popup hidden">
+    <input id="title" placeholder="Travail">
+    <textarea id="desc" placeholder="Description"></textarea>
+    <input id="price" placeholder="Prix">
+    <input id="phone" placeholder="Téléphone">
+    <button onclick="addJob()">Publier</button>
   </div>
 </div>
 
@@ -49,7 +62,6 @@
 </select>
 
 <input id="pseudo" placeholder="Pseudo ou nom">
-
 <textarea id="cv" placeholder="Ton CV"></textarea>
 
 <button onclick="saveProfile()">Sauvegarder</button>
@@ -73,4 +85,4 @@
 <script src="app.js"></script>
 
 </body>
-    </html>
+  </html>
