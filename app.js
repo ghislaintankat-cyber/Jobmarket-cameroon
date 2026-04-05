@@ -12,24 +12,36 @@ const auth = firebase.auth();
 
 // NAV
 function showScreen(s){
+
 jobsScreen.classList.add("hidden");
 mapScreen.classList.add("hidden");
 accountScreen.classList.add("hidden");
 businessScreen.classList.add("hidden");
 
 if(s==="jobs") jobsScreen.classList.remove("hidden");
+
 if(s==="map"){
 mapScreen.classList.remove("hidden");
-setTimeout(()=>{map.invalidateSize();},300);
+
+/* 🔥 FIX CARTE GRISE */
+setTimeout(()=>{ map.invalidateSize(); },300);
+setTimeout(()=>{ map.invalidateSize(); },800);
+setTimeout(()=>{ map.invalidateSize(); },1500);
 }
+
 if(s==="account") accountScreen.classList.remove("hidden");
 if(s==="business") businessScreen.classList.remove("hidden");
 }
 
-// MAP
-let map = L.map('map').setView([3.8,11.5],6);
+// MAP INIT
+let map = L.map('map', {
+center:[3.8,11.5],
+zoom:6
+});
 
-L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png').addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{
+maxZoom:19
+}).addTo(map);
 
 let userLat, userLng;
 let routeLine;
@@ -80,7 +92,7 @@ ${job.desc || ""}<br>
 // ADD JOB
 function addJob(){
 
-let title = document.getElementById("title").value;
+let title = titleInput.value || document.getElementById("title").value;
 let desc = document.getElementById("desc").value;
 let price = document.getElementById("price").value;
 let phone = document.getElementById("phone").value;
@@ -131,7 +143,6 @@ map.fitBounds(routeLine.getBounds());
 let dist = data.routes[0].distance/1000;
 document.getElementById("distance").innerText = dist.toFixed(2);
 
-// VOIX
 let msg = new SpeechSynthesisUtterance("Distance "+dist.toFixed(1)+" kilomètres");
 speechSynthesis.speak(msg);
 
@@ -169,3 +180,6 @@ mode:mode.value
 function boostJob(){
 alert("Paiement bientôt disponible");
 }
+
+/* 🔥 FIX GLOBAL FINAL */
+setTimeout(()=>{ map.invalidateSize(); },2000);
