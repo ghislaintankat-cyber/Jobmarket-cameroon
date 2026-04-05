@@ -5,8 +5,8 @@
 <title>JobMarket Pro</title>
 
 <link rel="stylesheet" href="style.css">
-
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <!-- Firebase -->
@@ -18,61 +18,59 @@
 
 <body>
 
-<h1>JobMarket Pro 🌍</h1>
-<p>Trouvez et publiez des services autour de vous</p>
+<h2>JobMarket Pro 🌍</h2>
 
-<!-- TOP -->
-<div class="top-bar">
-  <div id="userBox">🔴 Non connecté</div>
-  <div>📍 GPS actif</div>
-</div>
+<!-- JOBS -->
+<div id="jobsScreen"></div>
 
 <!-- MAP -->
-<div id="map"></div>
-
-<!-- JOBS LIST -->
-<div id="jobsScreen" class="hidden"></div>
+<div id="mapScreen" class="hidden">
+  <div id="map"></div>
+  <div class="distance-box">
+    Distance: <span id="distance">0</span> km
+  </div>
+</div>
 
 <!-- ACCOUNT -->
 <div id="accountScreen" class="hidden">
 
 <input id="email" placeholder="Email">
-<input id="password" placeholder="Mot de passe" type="password">
+<input id="password" type="password" placeholder="Mot de passe">
 
-<button onclick="register()">Créer compte</button>
 <button onclick="login()">Connexion</button>
+<button onclick="register()">Créer</button>
 <button onclick="googleLogin()">Google</button>
 
 <br><br>
 
-<select id="role">
-<option value="client">Je cherche</option>
-<option value="worker">Je travaille</option>
+<select id="mode">
+<option value="worker">Rechercher travail</option>
+<option value="client">Poster travail</option>
 </select>
 
-<br><br>
+<input id="pseudo" placeholder="Pseudo ou nom">
 
-<input id="adminCode" placeholder="Code admin">
-<button onclick="adminMode()">Admin</button>
+<textarea id="cv" placeholder="Ton CV"></textarea>
+
+<button onclick="saveProfile()">Sauvegarder</button>
 
 </div>
 
-<!-- DISTANCE -->
-<div class="distance-box">
-Distance: <span id="distance">0</span> km
+<!-- BUSINESS -->
+<div id="businessScreen" class="hidden">
+<h3>Business</h3>
+<button onclick="boostJob()">Booster un job</button>
 </div>
-
-<!-- ADD -->
-<button class="fab" onclick="addJob()">+</button>
 
 <!-- NAV -->
 <div class="nav">
-<button onclick="showScreen('jobs')">Jobs</button>
+<button onclick="showScreen('jobs')">Poster</button>
 <button onclick="showScreen('map')">Carte</button>
 <button onclick="showScreen('account')">Compte</button>
+<button onclick="showScreen('business')">Business</button>
 </div>
 
 <script src="app.js"></script>
 
 </body>
-  </html>
+    </html>
