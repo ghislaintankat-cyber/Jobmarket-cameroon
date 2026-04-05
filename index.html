@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JobMarket Pro</title>
 
 <link rel="stylesheet" href="style.css">
@@ -9,7 +10,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<!-- FIREBASE v8 (IMPORTANT) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -18,82 +18,59 @@
 
 <body>
 
-<h2>JobMarket Pro 🌍</h2>
+<div id="map"></div>
+
+<div class="top">JobMarket Pro 🚀</div>
 
 <!-- JOBS -->
-<div id="jobsScreen"></div>
-
-<!-- MAP -->
-<div id="mapScreen" class="hidden">
-  <div id="map"></div>
-
-  <div class="distance-box">
-    Distance: <span id="distance">0</span> km
-  </div>
-
-  <div class="fab" onclick="toggleForm()">+</div>
-
-  <div id="jobForm" class="form-popup hidden">
-    <input id="title" placeholder="Travail">
-    <textarea id="desc" placeholder="Description"></textarea>
-    <input id="price" placeholder="Prix">
-    <input id="phone" placeholder="Téléphone">
-    <button onclick="addJob()">Publier</button>
-  </div>
-</div>
+<div id="jobsPanel" class="panel hidden"></div>
 
 <!-- ACCOUNT -->
-<div id="accountScreen" class="hidden">
+<div id="accountPanel" class="panel hidden">
+
 <input id="email" placeholder="Email">
 <input id="password" type="password" placeholder="Mot de passe">
 
 <button onclick="login()">Connexion</button>
-<button onclick="register()">Créer</button>
+<button onclick="register()">Créer compte</button>
 <button onclick="googleLogin()">Google</button>
 
-<br><br>
-
-<select id="mode">
-<option value="worker">Rechercher travail</option>
-<option value="client">Poster travail</option>
+<select id="role">
+<option value="worker">Chercher travail</option>
+<option value="poster">Poster travail</option>
 </select>
 
-<input id="pseudo" placeholder="Pseudo">
-<textarea id="cv" placeholder="CV"></textarea>
+<textarea id="cv" placeholder="Ton CV..."></textarea>
+<button onclick="saveCV()">Sauvegarder CV</button>
 
-<button onclick="saveProfile()">Sauvegarder</button>
-</div>
-
-<!-- ACADEMY -->
-<div id="academyScreen" class="hidden">
-<h2>🎓 Académie</h2>
-
-<div class="course-card">
-<h3>🕊️ Baptême</h3>
-<button onclick="openLesson('bapteme')">Lire</button>
-</div>
-
-<div class="course-card">
-<h3>🌊 Fontaine</h3>
-<button onclick="openLesson('fontaine')">Lire</button>
-</div>
-
-<div id="lessonContent"></div>
 </div>
 
 <!-- BUSINESS -->
-<div id="businessScreen" class="hidden">
-<h3>Business</h3>
-<button onclick="boostJob()">Booster</button>
+<div id="businessPanel" class="panel hidden">
+<h3>🚀 Business</h3>
+<button onclick="boostJob()">Booster un job</button>
 </div>
+
+<!-- FORM -->
+<div id="form" class="form hidden">
+<input id="title" placeholder="Travail">
+<textarea id="desc" placeholder="Description"></textarea>
+<input id="price" placeholder="Prix">
+<input id="phone" placeholder="Téléphone">
+<input id="image" placeholder="Lien image">
+
+<button onclick="askAI()">✨ AI</button>
+<button onclick="addJob()">Publier</button>
+</div>
+
+<div class="fab" onclick="toggleForm()">+</div>
 
 <!-- NAV -->
 <div class="nav">
-<button onclick="showScreen('jobs')">Poster</button>
-<button onclick="showScreen('map')">Carte</button>
-<button onclick="showScreen('academy')">Académie</button>
-<button onclick="showScreen('account')">Compte</button>
-<button onclick="showScreen('business')">Business</button>
+<button onclick="show('jobs')">Jobs</button>
+<button onclick="show('map')">Carte</button>
+<button onclick="show('account')">Compte</button>
+<button onclick="show('business')">Business</button>
 </div>
 
 <script src="app.js"></script>
