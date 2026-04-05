@@ -1,152 +1,96 @@
-* {
-  box-sizing: border-box; /* Évite les débordements d'écran */
-  -webkit-tap-highlight-color: transparent;
+body{
+margin:0;
+font-family:Arial;
+background:#f5f5f5;
+text-align:center;
 }
 
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: #f0f2f5;
-  text-align: center;
-  padding-bottom: 80px; /* Espace pour la navbar */
+h2{
+background:linear-gradient(90deg,#FFD700,#FFA500);
+padding:18px;
+margin:0;
 }
 
-/* HEADER */
-h2 {
-  background: linear-gradient(90deg, #FFD700, #FFA500);
-  padding: 18px;
-  margin: 0;
-  color: #333;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+.hidden{
+display:none;
 }
 
-/* SCREENS */
-.screen {
-  min-height: 85vh;
-  padding: 15px;
-  animation: fadeIn 0.3s ease-in-out;
-}
-#jobsScreen { background: #fff8dc; }
-#accountScreen { background: #eef6ff; }
-#businessScreen { background: #fff0f5; }
-
-.hidden { display: none !important; }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+#map{
+height:75vh;
+width:100%;
 }
 
-/* MAP FIX */
-#mapScreen { padding: 0; position: relative; }
-#map {
-  height: calc(100vh - 140px); /* Hauteur dynamique */
-  width: 100%;
-  z-index: 1;
+/* NAV AGRANDIE */
+.nav{
+position:fixed;
+bottom:0;
+width:100%;
+display:flex;
+justify-content:space-around;
+background:white;
+padding:30px;
+box-shadow:0 -2px 10px rgba(0,0,0,0.2);
 }
 
-/* NAV BIG & STABLE */
-.nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-  background: white;
-  padding: 15px 5px;
-  box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
-  z-index: 1000;
+.nav button{
+font-size:18px;
+padding:18px;
+background:#FFD700;
+border:none;
+border-radius:12px;
 }
 
-.nav button {
-  flex: 1;
-  margin: 0 5px;
-  font-size: 15px;
-  font-weight: bold;
-  padding: 12px 0;
-  background: #f8f9fa;
-  color: #333;
-  border: none;
-  border-radius: 12px;
-  transition: 0.2s;
-}
-.nav button:active { background: #FFD700; }
-
-/* JOB CARDS */
-.job {
-  background: white;
-  margin-bottom: 15px;
-  padding: 18px;
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  text-align: left;
+/* JOB */
+.job{
+background:white;
+margin:12px;
+padding:18px;
+border-radius:12px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 
-/* COMPONENTS */
-.distance-box {
-  position: absolute;
-  top: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.8);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 20px;
-  z-index: 400;
-  font-weight: bold;
+/* MAP UI */
+.distance-box{
+position:absolute;
+bottom:160px;
+left:10px;
+background:black;
+color:white;
+padding:12px;
+border-radius:10px;
 }
 
-.fab {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 65px;
-  height: 65px;
-  background: #FFD700;
-  border-radius: 50%;
-  font-size: 36px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
-  cursor: pointer;
-  z-index: 400;
+.fab{
+position:absolute;
+bottom:180px;
+right:20px;
+width:70px;
+height:70px;
+background:#FFD700;
+border-radius:50%;
+font-size:32px;
+display:flex;
+justify-content:center;
+align-items:center;
+box-shadow:0 5px 15px rgba(0,0,0,0.3);
 }
 
-/* FORMS & CARDS */
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
-.mt-15 { margin-top: 15px; }
-
-.form-popup {
-  position: absolute;
-  bottom: 95px;
-  right: 20px;
-  background: white;
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  width: 280px;
-  z-index: 500;
+/* FORM */
+.form-popup{
+position:absolute;
+bottom:260px;
+right:20px;
+background:white;
+padding:15px;
+width:260px;
+border-radius:10px;
 }
 
-input, textarea, select {
-  width: 100%;
-  margin-bottom: 12px;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-family: inherit;
-}
-
-button { cursor: pointer; }
-.btn-primary { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #007bff; color: white; font-weight: bold; }
-.btn-secondary { width: 100%; padding: 12px; border: 1px solid #007bff; border-radius: 8px; background: white; color: #007bff; font-weight: bold; }
-.btn-google { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #DB4437; color: white; font-weight: bold; margin-top: 10px; }
-.btn-gold { width: 100%; padding: 15px; border: none; border-radius: 8px; background: #FFD700; color: black; font-weight: bold; font-size: 16px; }
-.btn-group { display: flex; gap: 10px; }
+/* ACADEMY */
+.course-card{
+background:white;
+margin:15px;
+padding:20px;
+border-radius:12px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
+                           }
