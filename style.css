@@ -5,15 +5,40 @@ background:#f5f5f5;
 text-align:center;
 }
 
+/* HEADER */
+h2{
+background:linear-gradient(90deg,#FFD700,#FFA500);
+padding:15px;
+margin:0;
+}
+
+/* SCREENS */
+#jobsScreen{
+background:#fff8dc;
+min-height:80vh;
+}
+
+#accountScreen{
+background:#eef6ff;
+min-height:80vh;
+}
+
+#businessScreen{
+background:#fff0f5;
+min-height:80vh;
+}
+
 .hidden{
 display:none;
 }
 
+/* MAP */
 #map{
 height:80vh;
 width:100%;
 }
 
+/* NAV */
 .nav{
 position:fixed;
 bottom:0;
@@ -21,9 +46,19 @@ width:100%;
 display:flex;
 justify-content:space-around;
 background:white;
-padding:10px;
+padding:15px;
+box-shadow:0 -2px 10px rgba(0,0,0,0.1);
 }
 
+.nav button{
+font-size:16px;
+padding:10px;
+background:#FFD700;
+border:none;
+border-radius:10px;
+}
+
+/* JOB */
 .job{
 background:white;
 margin:10px;
@@ -32,9 +67,10 @@ border-radius:10px;
 box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 
+/* DISTANCE */
 .distance-box{
 position:absolute;
-bottom:100px;
+bottom:120px;
 left:10px;
 background:black;
 color:white;
@@ -42,7 +78,37 @@ padding:10px;
 border-radius:10px;
 }
 
-textarea{
-width:90%;
-height:80px;
-  }
+/* FLOAT BUTTON */
+.fab{
+position:absolute;
+bottom:140px;
+right:20px;
+width:60px;
+height:60px;
+background:#FFD700;
+border-radius:50%;
+font-size:30px;
+display:flex;
+justify-content:center;
+align-items:center;
+box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* FORM */
+.form-popup{
+position:absolute;
+bottom:220px;
+right:20px;
+background:white;
+padding:15px;
+border-radius:10px;
+box-shadow:0 5px 20px rgba(0,0,0,0.3);
+width:250px;
+}
+
+.form-popup input,
+.form-popup textarea{
+width:100%;
+margin:5px 0;
+padding:5px;
+}
