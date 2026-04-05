@@ -2,30 +2,75 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>JobMarket Cameroon</title>
+<title>JobMarket Pro</title>
 
 <link rel="stylesheet" href="style.css">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+
 </head>
 
 <body>
 
-<div class="header">JobMarket Pro</div>
+<h1>JobMarket Pro 🌍</h1>
+<p>Trouvez et publiez des services autour de vous</p>
 
-<div id="map"></div>
-
-<div class="form">
-  <input id="title" placeholder="Titre du service">
-  <input id="phone" placeholder="Téléphone">
-  <button onclick="addJob()">Publier</button>
+<!-- TOP -->
+<div class="top-bar">
+  <div id="userBox">🔴 Non connecté</div>
+  <div>📍 GPS actif</div>
 </div>
 
-<div id="jobsList"></div>
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- JOBS LIST -->
+<div id="jobsScreen" class="hidden"></div>
+
+<!-- ACCOUNT -->
+<div id="accountScreen" class="hidden">
+
+<input id="email" placeholder="Email">
+<input id="password" placeholder="Mot de passe" type="password">
+
+<button onclick="register()">Créer compte</button>
+<button onclick="login()">Connexion</button>
+<button onclick="googleLogin()">Google</button>
+
+<br><br>
+
+<select id="role">
+<option value="client">Je cherche</option>
+<option value="worker">Je travaille</option>
+</select>
+
+<br><br>
+
+<input id="adminCode" placeholder="Code admin">
+<button onclick="adminMode()">Admin</button>
+
+</div>
+
+<!-- DISTANCE -->
+<div class="distance-box">
+Distance: <span id="distance">0</span> km
+</div>
+
+<!-- ADD -->
+<button class="fab" onclick="addJob()">+</button>
+
+<!-- NAV -->
+<div class="nav">
+<button onclick="showScreen('jobs')">Jobs</button>
+<button onclick="showScreen('map')">Carte</button>
+<button onclick="showScreen('account')">Compte</button>
+</div>
 
 <script src="app.js"></script>
 
