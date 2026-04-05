@@ -1,82 +1,101 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>JobMarket Pro 🌍</title>
+<meta charset="UTF-8">
+<title>JobMarket Pro</title>
 
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="style.css">
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<!-- FIREBASE v8 (IMPORTANT) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 </head>
+
 <body>
 
-  <h2>JobMarket Pro 🌍</h2>
+<h2>JobMarket Pro 🌍</h2>
 
-  <div id="jobsScreen" class="screen"></div>
+<!-- JOBS -->
+<div id="jobsScreen"></div>
 
-  <div id="mapScreen" class="screen hidden">
-    <div id="map"></div>
-    <div class="distance-box">Distance: <span id="distance">0</span> km</div>
-    
-    <div class="fab" onclick="toggleForm()">+</div>
+<!-- MAP -->
+<div id="mapScreen" class="hidden">
+  <div id="map"></div>
 
-    <div id="jobForm" class="form-popup hidden">
-      <input id="title" placeholder="Titre du travail">
-      <textarea id="desc" placeholder="Description"></textarea>
-      <input id="price" type="number" placeholder="Prix (FCFA)">
-      <input id="phone" type="tel" placeholder="Numéro Téléphone">
-      <button onclick="addJob()" class="btn-primary">Publier</button>
-    </div>
+  <div class="distance-box">
+    Distance: <span id="distance">0</span> km
   </div>
 
-  <div id="accountScreen" class="screen hidden">
-    <div class="card">
-      <h3>Connexion / Inscription</h3>
-      <input id="email" type="email" placeholder="Email">
-      <input id="password" type="password" placeholder="Mot de passe">
-      
-      <div class="btn-group">
-        <button onclick="login()" class="btn-primary">Connexion</button>
-        <button onclick="register()" class="btn-secondary">Créer</button>
-      </div>
-      <button onclick="googleLogin()" class="btn-google">Continuer avec Google</button>
-    </div>
+  <div class="fab" onclick="toggleForm()">+</div>
 
-    <div class="card mt-15">
-      <h3>Mon Profil</h3>
-      <select id="mode">
-        <option value="worker">Je cherche du travail</option>
-        <option value="client">Je propose du travail</option>
-      </select>
-      <input id="pseudo" placeholder="Pseudo ou nom complet">
-      <textarea id="cv" placeholder="Ton CV ou tes compétences"></textarea>
-      <button onclick="saveProfile()" class="btn-primary">Sauvegarder</button>
-    </div>
+  <div id="jobForm" class="form-popup hidden">
+    <input id="title" placeholder="Travail">
+    <textarea id="desc" placeholder="Description"></textarea>
+    <input id="price" placeholder="Prix">
+    <input id="phone" placeholder="Téléphone">
+    <button onclick="addJob()">Publier</button>
   </div>
+</div>
 
-  <div id="businessScreen" class="screen hidden">
-    <div class="card">
-      <h3>Business & Visibilité</h3>
-      <p>Passez en première position sur la carte !</p>
-      <button onclick="boostJob()" class="btn-gold">Booster un job (500 FCFA)</button>
-    </div>
-  </div>
+<!-- ACCOUNT -->
+<div id="accountScreen" class="hidden">
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Mot de passe">
 
-  <div class="nav">
-    <button onclick="showScreen('jobs')">Annonces</button>
-    <button onclick="showScreen('map')">Carte</button>
-    <button onclick="showScreen('account')">Compte</button>
-    <button onclick="showScreen('business')">Boost</button>
-  </div>
+<button onclick="login()">Connexion</button>
+<button onclick="register()">Créer</button>
+<button onclick="googleLogin()">Google</button>
 
-  <script src="app.js"></script>
+<br><br>
 
+<select id="mode">
+<option value="worker">Rechercher travail</option>
+<option value="client">Poster travail</option>
+</select>
+
+<input id="pseudo" placeholder="Pseudo">
+<textarea id="cv" placeholder="CV"></textarea>
+
+<button onclick="saveProfile()">Sauvegarder</button>
+</div>
+
+<!-- ACADEMY -->
+<div id="academyScreen" class="hidden">
+<h2>🎓 Académie</h2>
+
+<div class="course-card">
+<h3>🕊️ Baptême</h3>
+<button onclick="openLesson('bapteme')">Lire</button>
+</div>
+
+<div class="course-card">
+<h3>🌊 Fontaine</h3>
+<button onclick="openLesson('fontaine')">Lire</button>
+</div>
+
+<div id="lessonContent"></div>
+</div>
+
+<!-- BUSINESS -->
+<div id="businessScreen" class="hidden">
+<h3>Business</h3>
+<button onclick="boostJob()">Booster</button>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+<button onclick="showScreen('jobs')">Poster</button>
+<button onclick="showScreen('map')">Carte</button>
+<button onclick="showScreen('academy')">Académie</button>
+<button onclick="showScreen('account')">Compte</button>
+<button onclick="showScreen('business')">Business</button>
+</div>
+
+<script src="app.js"></script>
 </body>
   </html>
