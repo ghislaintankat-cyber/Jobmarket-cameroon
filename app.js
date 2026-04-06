@@ -1,12 +1,8 @@
-// FIREBASE CONFIG (TON CODE)
 var firebaseConfig = {
   apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
   authDomain: "jobmarketfuture.firebaseapp.com",
   databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
   projectId: "jobmarketfuture",
-  storageBucket: "jobmarketfuture.appspot.com",
-  messagingSenderId: "351669024349",
-  appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -14,65 +10,68 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
 
-// NAV
-function showScreen(s){
-jobsScreen.classList.add("hidden");
-mapScreen.classList.add("hidden");
-accountScreen.classList.add("hidden");
-businessScreen.classList.add("hidden");
-academyScreen.classList.add("hidden");
-
-if(s==="jobs") jobsScreen.classList.remove("hidden");
-
-if(s==="map"){
-mapScreen.classList.remove("hidden");
-setTimeout(()=>map.invalidateSize(),300);
-setTimeout(()=>map.invalidateSize(),1000);
-}
-
-if(s==="account") accountScreen.classList.remove("hidden");
-if(s==="business") businessScreen.classList.remove("hidden");
-if(s==="academy") academyScreen.classList.remove("hidden");
-}
-
 // MAP
 let map = L.map('map').setView([3.8,11.5],6);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+// MAP MIX (satellite style léger)
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{opacity:0.5}).addTo(map);
+L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{opacity:0.6}).addTo(map);
 
-let userLat,userLng,routeLine;
+// NAV
+function show(s){
+jobsPanel.classList.add("hidden");
+accountPanel.classList.add("hidden");
+businessPanel.classList.add("hidden");
+
+if(s==="jobs") jobsPanel.classList.remove("hidden");
+if(s==="account") accountPanel.classList.remove("hidden");
+if(s==="business") businessPanel.classList.remove("hidden");
+}
+
+// GPS
+let userLat,userLng;
 
 navigator.geolocation.watchPosition(pos=>{
 userLat=pos.coords.latitude;
 userLng=pos.coords.longitude;
 });
 
+// DISTANCE
+function distance(lat,lng){
+if(!userLat) return "...";
+let d=Math.sqrt(Math.pow(lat-userLat,2)+Math.pow(lng-userLng,2));
+return (d*111).toFixed(2);
+}
+
 // JOBS
 db.ref("jobs").on("value", snap=>{
 let data=snap.val();
-jobsScreen.innerHTML="";
+jobsPanel.innerHTML="";
 
 if(!data) return;
 
-Object.values(data).forEach(job=>{
+Object.entries(data).forEach(([id,job])=>{
 
-jobsScreen.innerHTML+=`
+jobsPanel.innerHTML+=`
 <div class="job">
 <b>${job.title}</b><br>
-${job.price||""} FCFA<br>
-<button onclick="contact('${job.phone}','${job.title}')">Contacter</button>
-</div>`;
+${job.price} FCFA<br>
+⭐ ${job.rating || 0}
+
+<img src="${job.image || ''}">
+
+<button onclick="contact('${job.phone}','${job.title}')">WhatsApp</button>
+<button onclick="call('${job.phone}')">Appel</button>
+<button onclick="deleteJob('${id}')">❌</button>
+</div>
+`;
 
 let marker=L.marker([job.lat,job.lng]).addTo(map);
 
 marker.bindPopup(`
 <b>${job.title}</b><br>
-${job.desc||""}<br>
-<button onclick="route(${job.lat},${job.lng})">Itinéraire</button><br>
-<a href="tel:${job.phone}">📞</a><br>
-<a href="https://wa.me/${job.phone}?text=Bonjour je viens de JobMarket pour ${job.title}">
-WhatsApp
-</a>
+${job.desc}<br>
+Distance: ${distance(job.lat,job.lng)} km
 `);
 });
 });
@@ -85,66 +84,78 @@ title:title.value,
 desc:desc.value,
 price:price.value,
 phone:phone.value,
+image:image.value,
 lat:pos.coords.latitude,
-lng:pos.coords.longitude
+lng:pos.coords.longitude,
+rating:0,
+boost:false
 });
-alert("Job publié !");
+alert("Publié");
 });
 }
 
 // CONTACT
 function contact(phone,title){
-window.open(`https://wa.me/${phone}?text=Bonjour je viens de JobMarket pour ${title}`);
+window.open(`https://wa.me/${phone}?text=Bonjour JobMarket pour ${title}`);
 }
 
-// ROUTE
-async function route(lat,lng){
-let url=`https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${lng},${lat}?overview=full&geometries=geojson`;
+function call(phone){
+window.open(`tel:${phone}`);
+}
 
-let res=await fetch(url);
-let data=await res.json();
-
-let coords=data.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
-
-if(routeLine) map.removeLayer(routeLine);
-routeLine=L.polyline(coords,{color:"red"}).addTo(map);
-
-map.fitBounds(routeLine.getBounds());
-
-let dist=data.routes[0].distance/1000;
-distance.innerText=dist.toFixed(2);
-
-speechSynthesis.speak(new SpeechSynthesisUtterance("Distance "+dist.toFixed(1)+" kilomètres"));
+// ADMIN
+function deleteJob(id){
+let code=prompt("Code admin ?");
+if(code==="237BO"){
+db.ref("jobs/"+id).remove();
+}
 }
 
 // AUTH
-function register(){auth.createUserWithEmailAndPassword(email.value,password.value);}
-function login(){auth.signInWithEmailAndPassword(email.value,password.value);}
-function googleLogin(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
+function register(){
+auth.createUserWithEmailAndPassword(email.value,password.value);
+}
 
-// PROFILE
-function saveProfile(){
+function login(){
+auth.signInWithEmailAndPassword(email.value,password.value);
+}
+
+function googleLogin(){
+let provider=new firebase.auth.GoogleAuthProvider();
+auth.signInWithPopup(provider);
+}
+
+// CV
+function saveCV(){
 let user=auth.currentUser;
 if(!user) return alert("Connecte-toi");
 
 db.ref("users/"+user.uid).set({
-pseudo:pseudo.value,
 cv:cv.value,
-mode:mode.value
+role:role.value
 });
 }
 
-// BUSINESS
-function boostJob(){
-alert("Boost bientôt actif");
+// FORM
+function toggleForm(){
+form.classList.toggle("hidden");
 }
 
-// ACADEMY
-function openLesson(type){
-if(type==="bapteme"){
-lessonContent.innerHTML="Créer profil pro + GPS + étoiles ⭐";
+// AI
+async function askAI(){
+let text=prompt("Décris ton job");
+
+let res=await fetch("https://TON-BACKEND.onrender.com/ai",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({message:text})
+});
+
+let data=await res.json();
+desc.value=data.reply;
 }
-if(type==="fontaine"){
-lessonContent.innerHTML="Boost = plus de clients + plus d'argent 💰";
-}
+
+// BOOST
+function boostJob(){
+alert("Fonction boost prête (connecter Flutterwave)");
   }
