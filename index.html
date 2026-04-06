@@ -13,21 +13,17 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 </head>
 
 <body>
 
 <div id="map"></div>
 
-<div class="top">JobMarket Pro 🚀</div>
+<div class="top">🚀 JobMarket Cameroun</div>
 
-<!-- JOBS -->
 <div id="jobsPanel" class="panel hidden"></div>
 
-<!-- ACCOUNT -->
 <div id="accountPanel" class="panel hidden">
-
 <input id="email" placeholder="Email">
 <input id="password" type="password" placeholder="Mot de passe">
 
@@ -40,24 +36,21 @@
 <option value="poster">Poster travail</option>
 </select>
 
-<textarea id="cv" placeholder="Ton CV..."></textarea>
+<textarea id="cv" placeholder="Ton CV"></textarea>
 <button onclick="saveCV()">Sauvegarder CV</button>
-
 </div>
 
-<!-- BUSINESS -->
 <div id="businessPanel" class="panel hidden">
-<h3>🚀 Business</h3>
-<button onclick="boostJob()">Booster un job</button>
+<h3>💰 Business</h3>
+<button onclick="payBoost()">Booster un job</button>
 </div>
 
-<!-- FORM -->
 <div id="form" class="form hidden">
 <input id="title" placeholder="Travail">
 <textarea id="desc" placeholder="Description"></textarea>
 <input id="price" placeholder="Prix">
 <input id="phone" placeholder="Téléphone">
-<input id="image" placeholder="Lien image">
+<input id="image" placeholder="Image URL">
 
 <button onclick="askAI()">✨ AI</button>
 <button onclick="addJob()">Publier</button>
@@ -65,7 +58,6 @@
 
 <div class="fab" onclick="toggleForm()">+</div>
 
-<!-- NAV -->
 <div class="nav">
 <button onclick="show('jobs')">Jobs</button>
 <button onclick="show('map')">Carte</button>
@@ -75,4 +67,4 @@
 
 <script src="app.js"></script>
 </body>
-  </html>
+                </html>
