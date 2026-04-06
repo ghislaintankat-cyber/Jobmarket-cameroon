@@ -180,4 +180,4 @@ desc.value=data.reply;
 // BOOST
 function payBoost(){
 alert("Paiement bientôt actif");
-                                }
+  }
