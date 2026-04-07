@@ -1,132 +1,116 @@
 body{
-margin:0;
-font-family:sans-serif;
-background:linear-gradient(#0f172a,#1e293b);
-color:white;
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(180deg,#fdfbfb,#ebedee);
 }
 
+/* HEADER */
+.header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:15px;
+  background:linear-gradient(90deg,#ffd700,#ff8c00);
+  color:white;
+  font-size:20px;
+  font-weight:bold;
+}
+
+.user{
+  width:45px;
+  height:45px;
+  border-radius:50%;
+  background:black;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* PAGE */
+.page{display:none;padding-bottom:110px;}
+.active{display:block;}
+.big-page{padding:20px;}
+
+/* MAP */
 #map{
-height:100vh;
-width:100%;
-position:absolute;
-z-index:1;
+  height:85vh;
+  border-radius:20px;
 }
 
-.top{
-position:absolute;
-top:0;
-width:100%;
-background:linear-gradient(90deg,#FFD700,#FF8C00);
-padding:18px;
-text-align:center;
-z-index:5;
-font-weight:bold;
+/* BUTTON */
+.main-btn{
+  width:100%;
+  padding:15px;
+  margin-top:10px;
+  border:none;
+  border-radius:15px;
+  background:linear-gradient(90deg,#ff8c00,#ffd700);
+  font-size:18px;
+  color:white;
 }
 
-.panel{
-position:absolute;
-bottom:110px;
-width:100%;
-max-height:60%;
-overflow:auto;
-background:linear-gradient(#111,#1e293b);
-border-radius:25px 25px 0 0;
-padding:15px;
-z-index:5;
-}
-
-.job{
-background:linear-gradient(135deg,#1e293b,#334155);
-padding:15px;
-margin:10px;
-border-radius:15px;
-box-shadow:0 5px 20px rgba(0,0,0,0.5);
-}
-
-.job img{
-width:100%;
-border-radius:10px;
-margin-top:10px;
-}
-
-button{
-margin:5px;
-padding:10px;
-border:none;
-border-radius:10px;
-font-weight:bold;
-}
-
-.whatsapp{
-background:#25D366;
-color:white;
-}
-
-.call{
-background:#3b82f6;
-color:white;
-}
-
-.delete{
-background:red;
-color:white;
-border-radius:50%;
-width:35px;
-height:35px;
-}
-
-.nav{
-position:absolute;
-bottom:0;
-width:100%;
-display:flex;
-justify-content:space-around;
-background:#111;
-padding:22px;
-z-index:10;
-}
-
-.nav button{
-background:linear-gradient(#FFD700,#FF8C00);
-padding:18px;
-}
-
+/* FAB */
 .fab{
-position:absolute;
-bottom:140px;
-right:20px;
-background:linear-gradient(#FFD700,#FF8C00);
-width:80px;
-height:80px;
-border-radius:50%;
-display:flex;
-justify-content:center;
-align-items:center;
-font-size:32px;
-z-index:10;
+  position:absolute;
+  bottom:120px;
+  right:20px;
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  background:gold;
+  font-size:30px;
+  border:none;
 }
 
-.form{
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-background:white;
-color:black;
-padding:20px;
-border-radius:20px;
-width:300px;
-z-index:10;
+/* MAP TOOLS */
+.map-tools{
+  position:absolute;
+  top:20px;
+  right:20px;
 }
 
-.account{
-position:absolute;
-top:0;
-width:100%;
-height:100%;
-background:linear-gradient(#0f172a,#1e293b);
-padding:20px;
-z-index:10;
+.map-tools button{
+  background:white;
+  border-radius:10px;
+  padding:10px;
 }
 
-.hidden{display:none;}
+/* FORM */
+#formBox{
+  position:fixed;
+  top:15%;
+  left:10%;
+  width:80%;
+  background:white;
+  padding:20px;
+  border-radius:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+/* JOB CARD */
+.job-card{
+  background:linear-gradient(135deg,#ffd700,#ffcc70);
+  padding:20px;
+  margin:15px;
+  border-radius:20px;
+  font-size:18px;
+}
+
+/* NAV */
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  height:100px;
+  background:#1e3c72;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+}
+
+.bottom-nav button{
+  color:white;
+  font-size:16px;
+  border:none;
+  background:none;
+  }
