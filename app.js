@@ -52,7 +52,7 @@ async function autoAI(){
 function payBoost(){
 
   FlutterwaveCheckout({
-    public_key: "TON_FLW_KEY",
+    public_key: "FLWPUBK_TEST-a33eb7e6188f8560b4fbda00d8c07304-X",
     tx_ref: Date.now(),
     amount: 500,
     currency: "XAF",
