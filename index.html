@@ -2,73 +2,97 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>JobMarket Pro</title>
+<title>JobMarket Pro Max</title>
 
 <link rel="stylesheet" href="style.css">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://checkout.flutterwave.com/v3.js"></script>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+  authDomain: "jobmarketfuture.firebaseapp.com",
+  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+  projectId: "jobmarketfuture",
+  storageBucket: "jobmarketfuture.firebasestorage.app",
+  messagingSenderId: "351669024349",
+  appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+window.db = db;
+window.ref = ref;
+window.push = push;
+window.onValue = onValue;
+</script>
 
 </head>
 
-<body>
+<body onload="initMap()">
 
-<div id="map"></div>
-
-<div class="top">🚀 JobMarket Cameroun</div>
-
-<div id="jobsPanel" class="panel hidden"></div>
-
-<div id="accountPanel" class="account hidden">
-<h2>👤 Compte</h2>
-
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Mot de passe">
-
-<button onclick="login()">Connexion</button>
-<button onclick="register()">Créer compte</button>
-<button onclick="googleLogin()">Google</button>
-
-<select id="role">
-<option value="worker">Chercher travail</option>
-<option value="poster">Poster travail</option>
-</select>
-
-<textarea id="cv" placeholder="Ton CV"></textarea>
-<button onclick="saveCV()">Sauvegarder</button>
+<!-- HEADER -->
+<div class="header">
+  <div class="user">G</div>
+  <div class="title">JobMarket</div>
 </div>
 
-<div id="businessPanel" class="panel hidden">
-<h3>💰 Business</h3>
-<button onclick="payBoost()">Booster un job</button>
-<button onclick="openAI()">🤖 Parler à l’IA</button>
+<!-- JOBS -->
+<div id="jobsPage" class="page active"></div>
+
+<!-- MAP -->
+<div id="mapPage" class="page">
+  <div id="map"></div>
+
+  <button class="fab" onclick="openForm()">+</button>
+
+  <div class="map-tools">
+    <button onclick="centerUser()">📍</button>
+  </div>
 </div>
 
-<!-- FORM CENTRE -->
-<div id="form" class="form hidden">
-<h3>📢 Publier</h3>
-<input id="title" placeholder="Nom / Service">
-<textarea id="desc" placeholder="Description"></textarea>
-<input id="price" placeholder="Prix">
-<input id="phone" placeholder="WhatsApp">
-<input id="image" placeholder="Image URL">
-
-<button onclick="addJob()">Publier</button>
+<!-- ACCOUNT -->
+<div id="accountPage" class="page big-page">
+  <h2>👤 Compte</h2>
+  <input placeholder="Email">
+  <input placeholder="Mot de passe">
+  <button class="main-btn">Connexion</button>
 </div>
 
-<div class="fab" onclick="toggleForm()">＋</div>
+<!-- BUSINESS -->
+<div id="businessPage" class="page big-page">
+  <h2>💰 Business</h2>
 
-<div class="nav">
-<button onclick="show('jobs')">Jobs</button>
-<button onclick="show('map')">Carte</button>
-<button onclick="show('account')">Compte</button>
-<button onclick="show('business')">Business</button>
+  <input id="aiInput" placeholder="Pose ta question...">
+  <button class="main-btn" onclick="askAI()">🤖 IA</button>
+
+  <div id="aiResponse"></div>
+</div>
+
+<!-- FORM -->
+<div id="formBox" class="hidden">
+  <h3>Créer un job</h3>
+  <input id="title" placeholder="Nom / entreprise">
+  <input id="desc" placeholder="Description">
+  <input id="price" placeholder="Prix">
+  <input id="phone" placeholder="WhatsApp">
+  <button class="main-btn" onclick="addJob()">Publier</button>
+</div>
+
+<!-- NAV -->
+<div class="bottom-nav">
+  <button onclick="showPage('jobsPage')">📄 Jobs</button>
+  <button onclick="showPage('mapPage')">🗺️ Carte</button>
+  <button onclick="showPage('accountPage')">👤 Compte</button>
+  <button onclick="showPage('businessPage')">💰 Business</button>
 </div>
 
 <script src="app.js"></script>
