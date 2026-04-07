@@ -1,99 +1,11 @@
 body{
   margin:0;
   font-family:Arial;
-  background:linear-gradient(180deg,#fdfbfb,#ebedee);
 }
-
-/* HEADER */
-.header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:15px;
-  background:linear-gradient(90deg,#ffd700,#ff8c00);
-  color:white;
-  font-size:20px;
-  font-weight:bold;
-}
-
-.user{
-  width:45px;
-  height:45px;
-  border-radius:50%;
-  background:black;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* PAGE */
-.page{display:none;padding-bottom:110px;}
-.active{display:block;}
-.big-page{padding:20px;}
 
 /* MAP */
 #map{
-  height:85vh;
-  border-radius:20px;
-}
-
-/* BUTTON */
-.main-btn{
-  width:100%;
-  padding:15px;
-  margin-top:10px;
-  border:none;
-  border-radius:15px;
-  background:linear-gradient(90deg,#ff8c00,#ffd700);
-  font-size:18px;
-  color:white;
-}
-
-/* FAB */
-.fab{
-  position:absolute;
-  bottom:120px;
-  right:20px;
-  width:70px;
-  height:70px;
-  border-radius:50%;
-  background:gold;
-  font-size:30px;
-  border:none;
-}
-
-/* MAP TOOLS */
-.map-tools{
-  position:absolute;
-  top:20px;
-  right:20px;
-}
-
-.map-tools button{
-  background:white;
-  border-radius:10px;
-  padding:10px;
-}
-
-/* FORM */
-#formBox{
-  position:fixed;
-  top:15%;
-  left:10%;
-  width:80%;
-  background:white;
-  padding:20px;
-  border-radius:20px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.2);
-}
-
-/* JOB CARD */
-.job-card{
-  background:linear-gradient(135deg,#ffd700,#ffcc70);
-  padding:20px;
-  margin:15px;
-  border-radius:20px;
-  font-size:18px;
+  height:100vh;
 }
 
 /* NAV */
@@ -101,16 +13,39 @@ body{
   position:fixed;
   bottom:0;
   width:100%;
-  height:100px;
-  background:#1e3c72;
+  height:120px;
+  background:#1E3C72;
   display:flex;
-  justify-content:space-around;
+  justify-content:center;
   align-items:center;
 }
 
 .bottom-nav button{
+  font-size:22px;
   color:white;
-  font-size:16px;
-  border:none;
   background:none;
+  border:none;
+}
+
+/* FAB */
+.fab{
+  position:absolute;
+  bottom:140px;
+  right:20px;
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:#FFD700;
+  font-size:30px;
+}
+
+/* FORM */
+#formBox{
+  position:fixed;
+  top:20%;
+  left:10%;
+  width:80%;
+  background:white;
+  padding:20px;
+  border-radius:20px;
   }
