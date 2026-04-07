@@ -1,171 +1,183 @@
-var firebaseConfig = {
-  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
-  authDomain: "jobmarketfuture.firebaseapp.com",
-  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
-};
+let map, userMarker, jobs=[], routeLine;
 
-firebase.initializeApp(firebaseConfig);
+const API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjlmYzFmYWRmNDMxNTRmNzliM2MyNzJiMTc0ODA5NzQyIiwiaCI6Im11cm11cjY0In0=";
 
-const db = firebase.database();
-const auth = firebase.auth();
-
-// MAP SATELLITE + NOMS
-let map = L.map('map').setView([3.8,11.5],15);
-
-L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png').addTo(map);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{opacity:0.3}).addTo(map);
-
-setTimeout(()=>map.invalidateSize(),500);
-
-// GPS
-let userLat,userLng;
-
-navigator.geolocation.watchPosition(pos=>{
-userLat=pos.coords.latitude;
-userLng=pos.coords.longitude;
-map.setView([userLat,userLng],17);
-});
-
-// DISTANCE
-function distance(lat,lng){
-let d=Math.sqrt((lat-userLat)**2+(lng-userLng)**2);
-return (d*111).toFixed(2);
+/* NAV */
+function showPage(p){
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  document.getElementById(p).classList.add("active");
+  if(p==="mapPage") setTimeout(()=>map.invalidateSize(),200);
 }
 
-// DRAW ROUTE
-let routeLine;
+/* MAP */
+function initMap(){
 
-function drawRoute(lat,lng){
-if(routeLine) map.removeLayer(routeLine);
+  const sat = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+  );
 
-routeLine = L.polyline([
-[userLat,userLng],
-[lat,lng]
-],{color:"yellow"}).addTo(map);
+  const labels = L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
+  );
 
-speak("Itinéraire lancé");
+  map = L.map("map",{center:[3.848,11.502],zoom:17,layers:[sat,labels]});
+
+  navigator.geolocation.watchPosition(pos=>{
+    let lat=pos.coords.latitude;
+    let lng=pos.coords.longitude;
+
+    if(userMarker){
+      userMarker.setLatLng([lat,lng]);
+    }else{
+      userMarker=L.circleMarker([lat,lng],{radius:12,color:"blue"}).addTo(map);
+    }
+  });
+
+  loadJobs();
 }
 
-// VOICE
-function speak(text){
-speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+/* CENTER */
+function centerUser(){
+  if(userMarker){
+    map.setView(userMarker.getLatLng(),18);
+  }
 }
 
-// LOAD JOBS
-db.ref("jobs").on("value", snap=>{
-let data=snap.val();
-jobsPanel.innerHTML="";
-
-Object.entries(data).sort((a,b)=>{
-return distance(a[1].lat,a[1].lng) - distance(b[1].lat,b[1].lng);
-}).forEach(([id,job])=>{
-
-jobsPanel.innerHTML+=`
-<div class="job">
-<b>${job.title}</b><br>
-${job.price} FCFA<br>
-⭐ ${job.rating || 0}
-<img src="${job.image || ''}">
-<br>
-<button class="whatsapp" onclick="contact('${job.phone}','${job.title}')">WhatsApp</button>
-<button class="call" onclick="call('${job.phone}')">Appel</button>
-<button class="delete" onclick="deleteJob('${id}','${job.owner}','${job.boost}')">✖</button>
-</div>
-`;
-
-let marker=L.marker([job.lat,job.lng]).addTo(map);
-
-marker.bindPopup(`
-<img src="${job.image}" width="100%">
-<b>${job.title}</b><br>
-⭐ ${job.rating || 0}<br>
-${distance(job.lat,job.lng)} km<br>
-<button onclick="drawRoute(${job.lat},${job.lng})">🧭 Itinéraire</button>
-<button onclick="contact('${job.phone}','${job.title}')">WhatsApp</button>
-`);
-});
-});
-
-// ADD JOB
+/* ADD JOB */
 function addJob(){
-if(!auth.currentUser) return alert("Connecte-toi");
 
-navigator.geolocation.getCurrentPosition(pos=>{
-db.ref("jobs").push({
-title:title.value,
-desc:desc.value,
-price:price.value,
-phone:phone.value,
-image:image.value,
-lat:pos.coords.latitude,
-lng:pos.coords.longitude,
-rating:0,
-owner:auth.currentUser.uid,
-boost:false
-});
-});
+  let job={
+    title:title.value,
+    desc:desc.value,
+    price:price.value,
+    phone:phone.value,
+    lat:userMarker.getLatLng().lat,
+    lng:userMarker.getLatLng().lng,
+    boosted:false
+  };
+
+  push(ref(db,"jobs"),job);
+
+  formBox.classList.add("hidden");
 }
 
-// DELETE
-function deleteJob(id,owner,boost){
-let user = auth.currentUser;
+/* LOAD */
+function loadJobs(){
+  onValue(ref(db,"jobs"),snap=>{
+    jobs=[];
+    map.eachLayer(l=>{
+      if(l instanceof L.CircleMarker && l!==userMarker){
+        map.removeLayer(l);
+      }
+    });
 
-if(!user) return;
+    snap.forEach(c=>{
+      let job=c.val();
+      jobs.push(job);
+      addMarker(job);
+    });
 
-if(user.uid === owner || boost === true || prompt("Code admin ?")==="237BO"){
-db.ref("jobs/"+id).remove();
-}
-}
-
-// CONTACT
-function contact(phone,title){
-window.open(`https://wa.me/${phone}?text=Bonjour JobMarket pour ${title}`);
-}
-
-function call(phone){
-window.open(`tel:${phone}`);
-}
-
-// NAV
-function show(s){
-jobsPanel.classList.add("hidden");
-accountPanel.classList.add("hidden");
-businessPanel.classList.add("hidden");
-
-if(s==="jobs") jobsPanel.classList.remove("hidden");
-if(s==="account") accountPanel.classList.remove("hidden");
-if(s==="business") businessPanel.classList.remove("hidden");
+    displayJobs();
+  });
 }
 
-// AUTH
-function register(){auth.createUserWithEmailAndPassword(email.value,password.value);}
-function login(){auth.signInWithEmailAndPassword(email.value,password.value);}
-function googleLogin(){
-let provider=new firebase.auth.GoogleAuthProvider();
-auth.signInWithPopup(provider);
+/* MARKER */
+function addMarker(job){
+
+  let m=L.circleMarker([job.lat,job.lng],{
+    radius:10,
+    color:job.boosted?"gold":"green"
+  }).addTo(map);
+
+  m.bindPopup(`
+    <b>${job.title}</b><br>
+    ${job.desc}<br>
+    💰 ${job.price}<br><br>
+
+    <button onclick='routeTo(${JSON.stringify(job)})'>🧭 Itinéraire</button><br><br>
+
+    <a href="https://wa.me/${job.phone}?text=Je viens de JobMarket">
+    WhatsApp</a>
+  `);
 }
 
-// CV
-function saveCV(){
-let user=auth.currentUser;
-db.ref("users/"+user.uid).set({
-cv:cv.value,
-role:role.value
-});
+/* LIST */
+function displayJobs(){
+  jobsPage.innerHTML="";
+  jobs.forEach(j=>{
+    jobsPage.innerHTML+=`
+    <div class="job-card">
+      <b>${j.title}</b><br>
+      ${j.desc}<br>
+      💰 ${j.price}
+    </div>`;
+  });
 }
 
-// FORM
-function toggleForm(){
-form.classList.toggle("hidden");
+/* ROUTE */
+async function routeTo(job){
+
+  let start=userMarker.getLatLng();
+
+  let res=await fetch("https://api.openrouteservice.org/v2/directions/foot-walking",{
+    method:"POST",
+    headers:{
+      "Authorization":API_KEY,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      coordinates:[
+        [start.lng,start.lat],
+        [job.lng,job.lat]
+      ]
+    })
+  });
+
+  let data=await res.json();
+
+  let coords=data.features[0].geometry.coordinates;
+  let route=coords.map(c=>[c[1],c[0]]);
+
+  if(routeLine) map.removeLayer(routeLine);
+  routeLine=L.polyline(route,{color:"blue"}).addTo(map);
+
+  speak(data.features[0].properties.segments[0].steps);
 }
 
-// AI
-function openAI(){
-let q=prompt("Pose ta question");
-alert("Réponse IA bientôt connectée");
+/* VOICE */
+function speak(steps){
+  let i=0;
+  function next(){
+    if(i>=steps.length)return;
+    let u=new SpeechSynthesisUtterance(steps[i].instruction);
+    speechSynthesis.speak(u);
+    i++;
+    setTimeout(next,4000);
+  }
+  next();
 }
 
-// BOOST
-function payBoost(){
-alert("Paiement bientôt actif");
+/* AI */
+async function askAI(){
+  let msg=aiInput.value;
+
+  let res=await fetch("https://api.openai.com/v1/chat/completions",{
+    method:"POST",
+    headers:{
+      "Authorization":"Bearer blnk_ak_r0pHacaGW4nnsrvbeHq8PX_D4HM_cBmrLcm-99F501VQyJC0",
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      model:"gpt-4o-mini",
+      messages:[{role:"user",content:msg}]
+    })
+  });
+
+  let data=await res.json();
+  aiResponse.innerText=data.choices[0].message.content;
+}
+
+/* FORM */
+function openForm(){
+  formBox.classList.remove("hidden");
     }
