@@ -1,6 +1,7 @@
 body{
   margin:0;
   font-family:Arial;
+  font-size:18px;
 }
 
 #map{
@@ -8,40 +9,13 @@ body{
   width:100%;
 }
 
-.fab{
-  position:absolute;
-  bottom:150px;
-  right:20px;
-  width:90px;
-  height:90px;
-  border-radius:50%;
-  background:#FFD700;
-  font-size:35px;
-  border:none;
-  z-index:1000;
-}
-
-#formBox{
-  position:fixed;
-  top:20%;
-  left:10%;
-  width:80%;
-  background:white;
-  padding:20px;
-  border-radius:20px;
-  z-index:2000;
-}
-
-.hidden{
-  display:none;
-}
-
+/* NAV */
 .bottom-nav{
   position:fixed;
   bottom:0;
   width:100%;
-  height:130px;
-  background:#1E3C72;
+  height:140px;
+  background:linear-gradient(90deg,#1E3C72,#2c5364);
   display:flex;
   justify-content:space-around;
   align-items:center;
@@ -50,8 +24,51 @@ body{
 
 .bottom-nav button{
   color:white;
-  font-size:22px;
+  font-size:24px;
   font-weight:bold;
   border:none;
   background:none;
+}
+
+/* FAB */
+.fab{
+  position:absolute;
+  bottom:160px;
+  right:20px;
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  background:#FFD700;
+  font-size:40px;
+  border:none;
+  z-index:1000;
+}
+
+/* FORM */
+#formBox{
+  position:fixed;
+  top:15%;
+  left:5%;
+  width:90%;
+  background:white;
+  padding:25px;
+  border-radius:20px;
+  z-index:2000;
+}
+
+#formBox input,
+#formBox textarea{
+  width:100%;
+  padding:15px;
+  margin-bottom:10px;
+  font-size:18px;
+}
+
+button{
+  padding:15px;
+  font-size:18px;
+}
+
+.hidden{
+  display:none;
   }
