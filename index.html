@@ -9,60 +9,32 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
 <script src="https://checkout.flutterwave.com/v3.js"></script>
 </head>
 
-<body onload="initMap()">
+<body>
 
-<!-- MAP PAGE -->
-<div id="mapPage" class="page active">
-  <div id="map"></div>
+<div id="map"></div>
 
-  <button class="fab" onclick="openForm()">＋</button>
-</div>
+<button class="fab" onclick="openForm()">+</button>
 
-<!-- JOBS -->
-<div id="jobsPage" class="page">
-  <h2>📄 Jobs</h2>
-  <div id="jobsList"></div>
-</div>
-
-<!-- ACCOUNT -->
-<div id="accountPage" class="page">
-  <h2>👤 Compte</h2>
-  <input placeholder="Email">
-  <input placeholder="Mot de passe">
-  <button>Connexion</button>
-</div>
-
-<!-- BUSINESS -->
-<div id="businessPage" class="page">
-  <h2>💰 Business + IA</h2>
-
-  <input id="aiInput" placeholder="Ex: plomberie">
-  <button onclick="askAI()">🤖 IA</button>
-
-  <div id="aiResponse"></div>
-
-  <button onclick="payBoost()">💰 Booster</button>
-</div>
-
-<!-- FORM -->
 <div id="formBox" class="hidden">
   <input id="title" placeholder="Nom du job">
-  <textarea id="desc"></textarea>
+  <textarea id="desc" placeholder="Description"></textarea>
   <input id="price" placeholder="Prix">
   <input id="phone" placeholder="WhatsApp">
 
   <button onclick="addJob()">Publier</button>
 </div>
 
-<!-- NAV -->
 <div class="bottom-nav">
-  <button onclick="showPage('jobsPage')">📄 Jobs</button>
-  <button onclick="showPage('mapPage')">🗺️ Carte</button>
-  <button onclick="showPage('accountPage')">👤 Compte</button>
-  <button onclick="showPage('businessPage')">💰 Business</button>
+  <button onclick="centerMap()">📍</button>
+  <button onclick="askAI()">🤖</button>
+  <button onclick="payBoost()">💰</button>
+  <button onclick="loadJobs()">🔄</button>
 </div>
 
 <script src="app.js"></script>
