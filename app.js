@@ -1,4 +1,4 @@
-// 🔥 FIREBASE CONFIG (TES DONNÉES)
+// 🔥 FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
   authDomain: "jobmarketfuture.firebaseapp.com",
@@ -9,16 +9,19 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 🔥 MAP
-let map = L.map("map").setView([3.848,11.502],17);
+// 🗺️ MAP
+let map = L.map("map").setView([3.848,11.502],19);
 
-L.tileLayer(
+const satellite = L.tileLayer(
  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-).addTo(map);
+);
 
-L.tileLayer(
+const labels = L.tileLayer(
  "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
-).addTo(map);
+);
+
+satellite.addTo(map);
+labels.addTo(map);
 
 let userMarker;
 
@@ -27,11 +30,14 @@ navigator.geolocation.watchPosition(pos=>{
   let lat = pos.coords.latitude;
   let lng = pos.coords.longitude;
 
+  map.setView([lat,lng],19);
+
   if(userMarker){
     userMarker.setLatLng([lat,lng]);
   }else{
     userMarker = L.circleMarker([lat,lng],{
-      radius:10,color:"blue"
+      radius:10,
+      color:"blue"
     }).addTo(map);
   }
 });
@@ -79,27 +85,34 @@ function loadJobs(){
       m.bindPopup(`
         <b>${j.title}</b><br>
         ${j.desc}<br>
-        💰 ${j.price}<br>
-        <a href="https://wa.me/${j.phone}?text=Je viens de JobMarket">WhatsApp</a>
+        💰 ${j.price}<br><br>
+        <a href="https://wa.me/${j.phone}?text=Je viens de JobMarket">📲 WhatsApp</a>
       `);
     });
   });
 }
 
-// 🤖 IA (backend)
+// 🤖 IA PRO
 async function askAI(){
 
   let msg = prompt("Décris ton job");
 
-  let res = await fetch("https://TON-RENDER/ai-complete",{
+  if(!msg) return;
+
+  let res = await fetch("https://jobmarket-cameroon-xhid.onrender.com/ai",{
     method:"POST",
-    headers:{ "Content-Type":"application/json"},
-    body:JSON.stringify({title:msg})
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({text:msg})
   });
 
   let data = await res.json();
 
   alert(data.reply);
+
+  title.value = msg;
+  desc.value = data.reply;
 }
 
 // 💰 BOOST
@@ -118,7 +131,7 @@ function payBoost(){
 // 📍 CENTER
 function centerMap(){
   if(userMarker){
-    map.setView(userMarker.getLatLng(),17);
+    map.setView(userMarker.getLatLng(),19);
   }
 }
 
