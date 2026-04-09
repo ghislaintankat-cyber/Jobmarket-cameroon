@@ -26,7 +26,7 @@ const labels = L.tileLayer(
 satellite.addTo(map);
 labels.addTo(map);
 
-// 📍 GPS UTILISATEUR
+// 📍 GPS
 let userMarker;
 
 navigator.geolocation.watchPosition(pos => {
@@ -47,12 +47,12 @@ navigator.geolocation.watchPosition(pos => {
 
 });
 
-// ➕ FORMULAIRE
+// ➕ FORM
 function openForm() {
   document.getElementById("formBox").classList.toggle("hidden");
 }
 
-// 💾 AJOUT JOB
+// 💾 ADD JOB
 function addJob() {
 
   navigator.geolocation.getCurrentPosition(pos => {
@@ -80,7 +80,6 @@ function loadJobs() {
 
   db.ref("jobs").on("value", snap => {
 
-    // supprimer anciens markers
     markers.forEach(m => map.removeLayer(m));
     markers = [];
 
@@ -104,7 +103,7 @@ function loadJobs() {
 
 }
 
-// 🤖 IA PRO (CORRIGÉ)
+// 🤖 IA FINAL (SANS ERREUR)
 async function askAI() {
 
   let msg = prompt("Décris ton job");
@@ -124,10 +123,12 @@ async function askAI() {
     let data = await res.json();
 
     if (data.reply) {
+
       alert(data.reply);
 
       document.getElementById("title").value = msg;
       document.getElementById("desc").value = data.reply;
+
     } else {
       alert("Erreur IA ⚠️");
     }
@@ -142,7 +143,7 @@ async function askAI() {
 function payBoost() {
 
   FlutterwaveCheckout({
-    public_key:"FLWPUBK_TEST-a33eb7e6188f8560b4fbda00d8c07304-X",
+    public_key: "FLWPUBK_TEST-a33eb7e6188f8560b4fbda00d8c07304-X",
     tx_ref: Date.now(),
     amount: 500,
     currency: "XAF",
@@ -156,12 +157,12 @@ function payBoost() {
 
 }
 
-// 📍 RECENTRER
+// 📍 CENTER
 function centerMap() {
   if (userMarker) {
     map.setView(userMarker.getLatLng(), 19);
   }
 }
 
-// 🚀 AUTO LOAD
+// 🚀 START
 loadJobs();
