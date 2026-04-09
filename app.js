@@ -99,7 +99,7 @@ async function askAI(){
 
   if(!msg) return;
 
-  let res = await fetch("https://jobmarket-cameroon-xhid.onrender.com/ai",{
+  let res = await fetch(https://jobmarket-backend-6gqm.onrender.com/ai",{
     method:"POST",
     headers:{
       "Content-Type":"application/json"
