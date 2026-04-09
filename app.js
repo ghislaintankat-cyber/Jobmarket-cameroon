@@ -9,30 +9,27 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 🗺️ MAP
-let map = L.map("map", {
-  zoomControl: false
-}).setView([3.848, 11.502], 19);
 
-// 🌍 SATELLITE + NOMS
-const satellite = L.tileLayer(
+// 🗺️ MAP INIT
+let map = L.map("map", { zoomControl: false }).setView([3.848, 11.502], 19);
+
+// 🌍 SATELLITE + LABELS
+L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-);
+).addTo(map);
 
-const labels = L.tileLayer(
+L.tileLayer(
   "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
-);
+).addTo(map);
 
-satellite.addTo(map);
-labels.addTo(map);
 
-// 📍 GPS
+// 📍 GPS USER
 let userMarker;
 
 navigator.geolocation.watchPosition(pos => {
 
-  let lat = pos.coords.latitude;
-  let lng = pos.coords.longitude;
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
 
   map.setView([lat, lng], 19);
 
@@ -41,23 +38,27 @@ navigator.geolocation.watchPosition(pos => {
   } else {
     userMarker = L.circleMarker([lat, lng], {
       radius: 10,
-      color: "blue"
+      color: "blue",
+      fillColor: "blue",
+      fillOpacity: 0.5
     }).addTo(map);
   }
 
 });
 
-// ➕ FORM
+
+// ➕ FORMULAIRE
 function openForm() {
   document.getElementById("formBox").classList.toggle("hidden");
 }
 
-// 💾 ADD JOB
+
+// 💾 AJOUT JOB
 function addJob() {
 
   navigator.geolocation.getCurrentPosition(pos => {
 
-    let job = {
+    const job = {
       title: document.getElementById("title").value,
       desc: document.getElementById("desc").value,
       price: document.getElementById("price").value,
@@ -73,6 +74,7 @@ function addJob() {
 
 }
 
+
 // 🔄 LOAD JOBS
 let markers = [];
 
@@ -85,9 +87,9 @@ function loadJobs() {
 
     snap.forEach(d => {
 
-      let j = d.val();
+      const j = d.val();
 
-      let m = L.marker([j.lat, j.lng]).addTo(map);
+      const m = L.marker([j.lat, j.lng]).addTo(map);
 
       m.bindPopup(`
         <b>${j.title}</b><br>
@@ -103,16 +105,19 @@ function loadJobs() {
 
 }
 
-// 🤖 IA FINAL (SANS ERREUR)
+
+// 🤖 IA (VERSION FINALE DEBUG + FIX)
 async function askAI() {
 
-  let msg = prompt("Décris ton job");
+  alert("IA ACTIVÉE 🚀"); // 🔥 TEST pour vérifier que le nouveau code est bien chargé
+
+  const msg = prompt("Décris ton job");
 
   if (!msg) return;
 
   try {
 
-    let res = await fetch("https://jobmarket-backend-6gqm.onrender.com/ai", {
+    const res = await fetch("https://jobmarket-backend-6gqm.onrender.com/ai", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -120,7 +125,12 @@ async function askAI() {
       body: JSON.stringify({ text: msg })
     });
 
-    let data = await res.json();
+    if (!res.ok) {
+      alert("Serveur IA ne répond pas ❌");
+      return;
+    }
+
+    const data = await res.json();
 
     if (data.reply) {
 
@@ -130,20 +140,22 @@ async function askAI() {
       document.getElementById("desc").value = data.reply;
 
     } else {
-      alert("Erreur IA ⚠️");
+      alert("Erreur IA ⚠️ réponse vide");
     }
 
   } catch (e) {
     alert("Connexion IA échouée ❌");
+    console.log(e);
   }
 
 }
+
 
 // 💰 BOOST
 function payBoost() {
 
   FlutterwaveCheckout({
-    public_key: "FLWPUBK_TEST-a33eb7e6188f8560b4fbda00d8c07304-X",
+    public_key: "FLWPUBK_TEST-XXXX",
     tx_ref: Date.now(),
     amount: 500,
     currency: "XAF",
@@ -157,12 +169,14 @@ function payBoost() {
 
 }
 
-// 📍 CENTER
+
+// 📍 RECENTRER
 function centerMap() {
   if (userMarker) {
     map.setView(userMarker.getLatLng(), 19);
   }
 }
 
-// 🚀 START
+
+// 🚀 INIT
 loadJobs();
