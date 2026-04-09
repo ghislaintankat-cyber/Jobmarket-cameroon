@@ -10,77 +10,85 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // 🗺️ MAP
-let map = L.map("map").setView([3.848,11.502],19);
+let map = L.map("map", {
+  zoomControl: false
+}).setView([3.848, 11.502], 19);
 
+// 🌍 SATELLITE + NOMS
 const satellite = L.tileLayer(
- "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 );
 
 const labels = L.tileLayer(
- "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
+  "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
 );
 
 satellite.addTo(map);
 labels.addTo(map);
 
+// 📍 GPS UTILISATEUR
 let userMarker;
 
-// 📍 GPS
-navigator.geolocation.watchPosition(pos=>{
+navigator.geolocation.watchPosition(pos => {
+
   let lat = pos.coords.latitude;
   let lng = pos.coords.longitude;
 
-  map.setView([lat,lng],19);
+  map.setView([lat, lng], 19);
 
-  if(userMarker){
-    userMarker.setLatLng([lat,lng]);
-  }else{
-    userMarker = L.circleMarker([lat,lng],{
-      radius:10,
-      color:"blue"
+  if (userMarker) {
+    userMarker.setLatLng([lat, lng]);
+  } else {
+    userMarker = L.circleMarker([lat, lng], {
+      radius: 10,
+      color: "blue"
     }).addTo(map);
   }
+
 });
 
-// ➕ FORM
-function openForm(){
-  formBox.classList.toggle("hidden");
+// ➕ FORMULAIRE
+function openForm() {
+  document.getElementById("formBox").classList.toggle("hidden");
 }
 
-// 💾 ADD JOB
-function addJob(){
+// 💾 AJOUT JOB
+function addJob() {
 
-  navigator.geolocation.getCurrentPosition(pos=>{
+  navigator.geolocation.getCurrentPosition(pos => {
 
     let job = {
-      title:title.value,
-      desc:desc.value,
-      price:price.value,
-      phone:phone.value,
-      lat:pos.coords.latitude,
-      lng:pos.coords.longitude
+      title: document.getElementById("title").value,
+      desc: document.getElementById("desc").value,
+      price: document.getElementById("price").value,
+      phone: document.getElementById("phone").value,
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude
     };
 
     db.ref("jobs").push(job);
 
-    alert("Job publié !");
+    alert("✅ Job publié !");
   });
+
 }
 
 // 🔄 LOAD JOBS
-function loadJobs(){
+let markers = [];
 
-  db.ref("jobs").on("value",snap=>{
+function loadJobs() {
 
-    map.eachLayer(layer=>{
-      if(layer instanceof L.Marker) map.removeLayer(layer);
-    });
+  db.ref("jobs").on("value", snap => {
 
-    snap.forEach(d=>{
+    // supprimer anciens markers
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+
+    snap.forEach(d => {
 
       let j = d.val();
 
-      let m = L.marker([j.lat,j.lng]).addTo(map);
+      let m = L.marker([j.lat, j.lng]).addTo(map);
 
       m.bindPopup(`
         <b>${j.title}</b><br>
@@ -88,52 +96,72 @@ function loadJobs(){
         💰 ${j.price}<br><br>
         <a href="https://wa.me/${j.phone}?text=Je viens de JobMarket">📲 WhatsApp</a>
       `);
+
+      markers.push(m);
     });
+
   });
+
 }
 
-// 🤖 IA PRO
-async function askAI(){
+// 🤖 IA PRO (CORRIGÉ)
+async function askAI() {
 
   let msg = prompt("Décris ton job");
 
-  if(!msg) return;
+  if (!msg) return;
 
-  let res = await fetch(https://jobmarket-backend-6gqm.onrender.com/ai",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
-    body:JSON.stringify({text:msg})
-  });
+  try {
 
-  let data = await res.json();
+    let res = await fetch("https://jobmarket-backend-6gqm.onrender.com/ai", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ text: msg })
+    });
 
-  alert(data.reply);
+    let data = await res.json();
 
-  title.value = msg;
-  desc.value = data.reply;
+    if (data.reply) {
+      alert(data.reply);
+
+      document.getElementById("title").value = msg;
+      document.getElementById("desc").value = data.reply;
+    } else {
+      alert("Erreur IA ⚠️");
+    }
+
+  } catch (e) {
+    alert("Connexion IA échouée ❌");
+  }
+
 }
 
 // 💰 BOOST
-function payBoost(){
+function payBoost() {
 
   FlutterwaveCheckout({
     public_key:"FLWPUBK_TEST-a33eb7e6188f8560b4fbda00d8c07304-X",
-    tx_ref:Date.now(),
-    amount:500,
-    currency:"XAF",
-    customer:{email:"user@gmail.com"},
-    callback:()=>alert("Boost activé 🚀")
+    tx_ref: Date.now(),
+    amount: 500,
+    currency: "XAF",
+    customer: {
+      email: "user@gmail.com"
+    },
+    callback: function () {
+      alert("🚀 Boost activé !");
+    }
   });
+
 }
 
-// 📍 CENTER
-function centerMap(){
-  if(userMarker){
-    map.setView(userMarker.getLatLng(),19);
+// 📍 RECENTRER
+function centerMap() {
+  if (userMarker) {
+    map.setView(userMarker.getLatLng(), 19);
   }
 }
 
-// AUTO LOAD
+// 🚀 AUTO LOAD
 loadJobs();
