@@ -1,49 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>JobMarket Pro</title>
 
 <link rel="stylesheet" href="style.css">
-
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
-<script src="https://checkout.flutterwave.com/v3.js"></script>
 </head>
 
 <body>
 
+<div id="topBar">
+  👤 <span id="username"></span>
+</div>
+
 <div id="map"></div>
 
-<!-- FAB -->
 <button class="fab" onclick="openForm()">+</button>
 
-<!-- FORM -->
-<div id="formBox" class="hidden">
-  <input id="title" placeholder="Nom du job">
+<div id="formBox" class="form hidden">
+  <h2>Publier un job</h2>
+
+  <input id="name" placeholder="Ton nom"/>
+  <input id="title" placeholder="Titre job"/>
   <textarea id="desc" placeholder="Description"></textarea>
-  <input id="price" placeholder="Prix">
-  <input id="phone" placeholder="WhatsApp">
+  <input id="price" placeholder="Prix"/>
+  <input id="phone" placeholder="WhatsApp"/>
+
+  <input type="file" id="image"/>
+
+  <label>
+    <input type="checkbox" id="boost"/> BOOST 🔥
+  </label>
 
   <button onclick="addJob()">Publier</button>
 </div>
 
-<!-- NAV -->
 <div class="bottom-nav">
   <button onclick="centerMap()">📍</button>
-  <button onclick="askAI()">🤖</button>
-  <button onclick="payBoost()">💰</button>
-  <button onclick="loadJobs()">🔄</button>
+  <button onclick="openForm()">➕</button>
+  <button onclick="alert('Business bientôt')">💰</button>
+  <button onclick="setName()">👤</button>
 </div>
 
 <script src="app.js"></script>
 
 </body>
-  </html>
+                                                                               </html>
