@@ -1,182 +1,133 @@
 // 🔥 FIREBASE
 const firebaseConfig = {
-  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+  apiKey: "AIzaSy...",
   authDomain: "jobmarketfuture.firebaseapp.com",
   databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
   projectId: "jobmarketfuture",
+  storageBucket: "jobmarketfuture.appspot.com"
 };
 
 firebase.initializeApp(firebaseConfig);
+
 const db = firebase.database();
+const storage = firebase.storage();
 
+// 👤 USER
+function setName(){
+  let name = prompt("Ton nom ?");
+  localStorage.setItem("user", name);
+  document.getElementById("username").innerText = name;
+}
 
-// 🗺️ MAP INIT
-let map = L.map("map", { zoomControl: false }).setView([3.848, 11.502], 19);
+document.getElementById("username").innerText = localStorage.getItem("user") || "Guest";
 
-// 🌍 SATELLITE + LABELS
-L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-).addTo(map);
+// 🗺️ MAP
+let map = L.map("map").setView([3.848,11.502],18);
 
-L.tileLayer(
-  "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
-).addTo(map);
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}").addTo(map);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png").addTo(map);
 
-
-// 📍 GPS USER
+// 📍 GPS
 let userMarker;
 
-navigator.geolocation.watchPosition(pos => {
+navigator.geolocation.watchPosition(pos=>{
+  let lat = pos.coords.latitude;
+  let lng = pos.coords.longitude;
 
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
+  map.setView([lat,lng],19);
 
-  map.setView([lat, lng], 19);
-
-  if (userMarker) {
-    userMarker.setLatLng([lat, lng]);
-  } else {
-    userMarker = L.circleMarker([lat, lng], {
-      radius: 10,
-      color: "blue",
-      fillColor: "blue",
-      fillOpacity: 0.5
-    }).addTo(map);
+  if(userMarker){
+    userMarker.setLatLng([lat,lng]);
+  }else{
+    userMarker = L.circleMarker([lat,lng],{radius:10,color:"blue"}).addTo(map);
   }
+});
+
+// ➕ FORM
+function openForm(){
+  formBox.classList.toggle("hidden");
+}
+
+// 💾 ADD JOB
+function addJob(){
+
+  if(!title.value || !desc.value){
+    alert("Remplis les champs !");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(pos=>{
+
+    let file = image.files[0];
+
+    if(file){
+      let ref = storage.ref("jobs/"+Date.now());
+      ref.put(file).then(()=>{
+        ref.getDownloadURL().then(url=>{
+          saveJob(url,pos);
+        });
+      });
+    }else{
+      saveJob("",pos);
+    }
+
+  });
+}
+
+function saveJob(img,pos){
+
+  let job = {
+    name: localStorage.getItem("user") || "Anonyme",
+    title: title.value,
+    desc: desc.value,
+    price: price.value,
+    phone: phone.value,
+    img: img,
+    boost: boost.checked,
+    lat: pos.coords.latitude,
+    lng: pos.coords.longitude
+  };
+
+  db.ref("jobs").push(job);
+
+  alert("✅ Job publié");
+}
+
+// 🔄 LOAD JOBS
+let markers=[];
+
+db.ref("jobs").on("value",snap=>{
+
+  markers.forEach(m=>map.removeLayer(m));
+  markers=[];
+
+  snap.forEach(d=>{
+
+    let j=d.val();
+    let color = j.boost ? "gold" : "green";
+
+    let m = L.circleMarker([j.lat,j.lng],{
+      radius:10,
+      color:color
+    }).addTo(map);
+
+    m.bindPopup(`
+      <b>${j.title}</b><br>
+      👤 ${j.name}<br>
+      ${j.desc}<br>
+      💰 ${j.price}<br>
+      ${j.img ? `<img src="${j.img}" width="100%">` : ""}<br>
+      <a href="https://wa.me/${j.phone}">WhatsApp</a>
+    `);
+
+    markers.push(m);
+  });
 
 });
 
-
-// ➕ FORMULAIRE
-function openForm() {
-  document.getElementById("formBox").classList.toggle("hidden");
-}
-
-
-// 💾 AJOUT JOB
-function addJob() {
-
-  navigator.geolocation.getCurrentPosition(pos => {
-
-    const job = {
-      title: document.getElementById("title").value,
-      desc: document.getElementById("desc").value,
-      price: document.getElementById("price").value,
-      phone: document.getElementById("phone").value,
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude
-    };
-
-    db.ref("jobs").push(job);
-
-    alert("✅ Job publié !");
-  });
-
-}
-
-
-// 🔄 LOAD JOBS
-let markers = [];
-
-function loadJobs() {
-
-  db.ref("jobs").on("value", snap => {
-
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
-
-    snap.forEach(d => {
-
-      const j = d.val();
-
-      const m = L.marker([j.lat, j.lng]).addTo(map);
-
-      m.bindPopup(`
-        <b>${j.title}</b><br>
-        ${j.desc}<br>
-        💰 ${j.price}<br><br>
-        <a href="https://wa.me/${j.phone}?text=Je viens de JobMarket">📲 WhatsApp</a>
-      `);
-
-      markers.push(m);
-    });
-
-  });
-
-}
-
-
-// 🤖 IA (VERSION FINALE DEBUG + FIX)
-async function askAI() {
-
-  alert("IA ACTIVÉE 🚀"); // 🔥 TEST pour vérifier que le nouveau code est bien chargé
-
-  const msg = prompt("Décris ton job");
-
-  if (!msg) return;
-
-  try {
-
-    const res = await fetch("https://jobmarket-backend-6gqm.onrender.com/ai", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ text: msg })
-    });
-
-    if (!res.ok) {
-      alert("Serveur IA ne répond pas ❌");
-      return;
-    }
-
-    const data = await res.json();
-
-    if (data.reply) {
-
-      alert(data.reply);
-
-      document.getElementById("title").value = msg;
-      document.getElementById("desc").value = data.reply;
-
-    } else {
-      alert("Erreur IA ⚠️ réponse vide");
-    }
-
-  } catch (e) {
-    alert("Connexion IA échouée ❌");
-    console.log(e);
+// 📍 CENTER
+function centerMap(){
+  if(userMarker){
+    map.setView(userMarker.getLatLng(),19);
   }
-
-}
-
-
-// 💰 BOOST
-function payBoost() {
-
-  FlutterwaveCheckout({
-    public_key: "FLWPUBK_TEST-XXXX",
-    tx_ref: Date.now(),
-    amount: 500,
-    currency: "XAF",
-    customer: {
-      email: "user@gmail.com"
-    },
-    callback: function () {
-      alert("🚀 Boost activé !");
-    }
-  });
-
-}
-
-
-// 📍 RECENTRER
-function centerMap() {
-  if (userMarker) {
-    map.setView(userMarker.getLatLng(), 19);
   }
-}
-
-
-// 🚀 INIT
-loadJobs();
