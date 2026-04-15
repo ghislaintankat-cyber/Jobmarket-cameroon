@@ -12,56 +12,56 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const storage = firebase.storage();
 
-// 👤 USER
-function setName(){
-  let name = prompt("Ton nom ?");
-  localStorage.setItem("user", name);
-  document.getElementById("username").innerText = name;
-}
-
-document.getElementById("username").innerText = localStorage.getItem("user") || "Guest";
-
 // 🗺️ MAP
-let map = L.map("map").setView([3.848,11.502],18);
+let map = L.map("map").setView([3.848,11.502],15);
 
-L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}").addTo(map);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png").addTo(map);
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
+  maxZoom:19
+}).addTo(map);
 
-// 📍 GPS
 let userMarker;
+let markers=[];
 
+// 📍 GPS OPTIMISÉ
 navigator.geolocation.watchPosition(pos=>{
   let lat = pos.coords.latitude;
   let lng = pos.coords.longitude;
 
-  map.setView([lat,lng],19);
-
   if(userMarker){
     userMarker.setLatLng([lat,lng]);
   }else{
-    userMarker = L.circleMarker([lat,lng],{radius:10,color:"blue"}).addTo(map);
+    userMarker = L.circleMarker([lat,lng],{radius:8,color:"blue"}).addTo(map);
   }
-});
+
+}, {enableHighAccuracy:true, maximumAge:5000});
 
 // ➕ FORM
 function openForm(){
   formBox.classList.toggle("hidden");
 }
 
+// 📏 DISTANCE
+function getDistance(a,b,c,d){
+  let R=6371;
+  let dLat=(c-a)*Math.PI/180;
+  let dLon=(d-b)*Math.PI/180;
+
+  let x=Math.sin(dLat/2)**2+
+  Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*
+  Math.sin(dLon/2)**2;
+
+  return (R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(2);
+}
+
 // 💾 ADD JOB
 function addJob(){
 
-  if(!title.value || !desc.value){
-    alert("Remplis les champs !");
-    return;
-  }
-
   navigator.geolocation.getCurrentPosition(pos=>{
 
-    let file = image.files[0];
+    let file=image.files[0];
 
     if(file){
-      let ref = storage.ref("jobs/"+Date.now());
+      let ref=storage.ref("jobs/"+Date.now());
       ref.put(file).then(()=>{
         ref.getDownloadURL().then(url=>{
           saveJob(url,pos);
@@ -76,58 +76,74 @@ function addJob(){
 
 function saveJob(img,pos){
 
-  let job = {
-    name: localStorage.getItem("user") || "Anonyme",
-    title: title.value,
-    desc: desc.value,
-    price: price.value,
-    phone: phone.value,
-    img: img,
-    boost: boost.checked,
-    lat: pos.coords.latitude,
-    lng: pos.coords.longitude
+  let job={
+    title:title.value,
+    desc:desc.value,
+    price:price.value,
+    phone:phone.value,
+    img:img,
+    boost:boost.checked,
+    lat:pos.coords.latitude,
+    lng:pos.coords.longitude,
+    time:Date.now()
   };
 
   db.ref("jobs").push(job);
 
-  alert("✅ Job publié");
+  alert("Job ajouté");
 }
 
-// 🔄 LOAD JOBS
-let markers=[];
+// 🔄 LOAD LIMITÉ (PERF)
+function loadNearby(){
 
-db.ref("jobs").on("value",snap=>{
+  navigator.geolocation.getCurrentPosition(userPos=>{
 
-  markers.forEach(m=>map.removeLayer(m));
-  markers=[];
+    db.ref("jobs").once("value",snap=>{
 
-  snap.forEach(d=>{
+      markers.forEach(m=>map.removeLayer(m));
+      markers=[];
 
-    let j=d.val();
-    let color = j.boost ? "gold" : "green";
+      let jobs=[];
 
-    let m = L.circleMarker([j.lat,j.lng],{
-      radius:10,
-      color:color
-    }).addTo(map);
+      snap.forEach(d=>{
+        let j=d.val();
 
-    m.bindPopup(`
-      <b>${j.title}</b><br>
-      👤 ${j.name}<br>
-      ${j.desc}<br>
-      💰 ${j.price}<br>
-      ${j.img ? `<img src="${j.img}" width="100%">` : ""}<br>
-      <a href="https://wa.me/${j.phone}">WhatsApp</a>
-    `);
+        j.distance=getDistance(
+          userPos.coords.latitude,
+          userPos.coords.longitude,
+          j.lat,
+          j.lng
+        );
 
-    markers.push(m);
+        jobs.push(j);
+      });
+
+      jobs.sort((a,b)=>a.distance-b.distance);
+
+      jobs.slice(0,50).forEach(j=>{
+
+        let m=L.marker([j.lat,j.lng]).addTo(map);
+
+        m.bindPopup(`
+        <b>${j.title}</b><br>
+        ${j.distance} km<br>
+
+        <a href="https://wa.me/${j.phone}">WhatsApp</a><br>
+        <a href="tel:${j.phone}">Appeler</a>
+        `);
+
+        markers.push(m);
+      });
+
+    });
+
   });
 
-});
+}
 
 // 📍 CENTER
 function centerMap(){
   if(userMarker){
-    map.setView(userMarker.getLatLng(),19);
+    map.setView(userMarker.getLatLng(),18);
   }
   }
