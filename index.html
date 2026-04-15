@@ -5,51 +5,41 @@
 <title>JobMarket Pro</title>
 
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
 </head>
 
 <body>
 
-<div id="topBar">
-  👤 <span id="username"></span>
-</div>
-
 <div id="map"></div>
 
 <button class="fab" onclick="openForm()">+</button>
 
-<div id="formBox" class="form hidden">
-  <h2>Publier un job</h2>
-
-  <input id="name" placeholder="Ton nom"/>
-  <input id="title" placeholder="Titre job"/>
-  <textarea id="desc" placeholder="Description"></textarea>
-  <input id="price" placeholder="Prix"/>
-  <input id="phone" placeholder="WhatsApp"/>
-
-  <input type="file" id="image"/>
-
-  <label>
-    <input type="checkbox" id="boost"/> BOOST 🔥
-  </label>
-
-  <button onclick="addJob()">Publier</button>
+<div class="bottom-nav">
+  <button onclick="centerMap()">📍<br>Carte</button>
+  <button onclick="loadNearby()">📄<br>Jobs</button>
+  <button onclick="openForm()">➕<br>Publier</button>
+  <button onclick="showAccount()">👤<br>Compte</button>
 </div>
 
-<div class="bottom-nav">
-  <button onclick="centerMap()">📍</button>
-  <button onclick="openForm()">➕</button>
-  <button onclick="alert('Business bientôt')">💰</button>
-  <button onclick="setName()">👤</button>
+<div id="formBox" class="form hidden">
+  <input id="title" placeholder="Titre">
+  <textarea id="desc" placeholder="Description"></textarea>
+  <input id="price" placeholder="Prix">
+  <input id="phone" placeholder="Téléphone">
+  <input type="file" id="image">
+  <label><input type="checkbox" id="boost"> BOOST</label>
+  <button onclick="addJob()">Publier</button>
 </div>
 
 <script src="app.js"></script>
 
 </body>
-                                                                               </html>
+  </html>
