@@ -1,58 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JobMarket</title>
-
-<link rel="stylesheet" href="style.css">
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Pro | Cameroun</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
-
 <body>
 
-<div id="map"></div>
+    <div id="map"></div>
 
-<div id="jobsList" class="hidden"></div>
+    <div class="top-info">
+        <div class="dot active"></div>
+        <span id="userDisplay">JobMarket Live • Yaoundé</span>
+    </div>
 
-<div id="accountBox" class="hidden">
-  <h2>Compte</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Mot de passe">
-  <button onclick="register()">Créer</button>
-  <button onclick="login()">Connexion</button>
-</div>
+    <div id="jobsList" class="overlay-section hidden"></div>
+    
+    <div id="accountBox" class="overlay-section hidden">
+        <div class="modal-content">
+            <h2>Compte Personnel</h2>
+            <input id="email" type="email" placeholder="Email professionnel">
+            <input id="password" type="password" placeholder="Mot de passe">
+            <button class="btn-primary" onclick="register()">Créer mon compte</button>
+            <button class="btn-outline" onclick="login()">Se connecter</button>
+        </div>
+    </div>
 
-<div id="chatBox" class="hidden">
-  <h2>Chat</h2>
-  <div id="messages"></div>
-  <input id="msgInput" placeholder="Message">
-  <button onclick="sendMessage()">Envoyer</button>
-</div>
+    <div id="chatBox" class="overlay-section hidden">
+        <div class="chat-container">
+            <h2>Chat Communauté</h2>
+            <div id="messages"></div>
+            <div class="chat-input-area">
+                <input id="msgInput" placeholder="Posez une question...">
+                <button onclick="sendMessage()">🚀</button>
+            </div>
+        </div>
+    </div>
 
-<div id="formBox" class="hidden">
-  <input id="title" placeholder="Titre">
-  <textarea id="desc" placeholder="Description"></textarea>
-  <input id="price" placeholder="Prix">
-  <input id="phone" placeholder="Téléphone">
-  <button onclick="addJob()">Publier</button>
-</div>
+    <div id="formBox" class="drawer hidden">
+        <div class="drawer-handle"></div>
+        <h2>Publier un besoin</h2>
+        <input id="title" placeholder="Quel ouvrier ? (ex: Maçon)">
+        <textarea id="desc" placeholder="Détails du travail..."></textarea>
+        <div class="row">
+            <input id="price" placeholder="Budget (FCFA)">
+            <input id="phone" placeholder="Numéro WhatsApp">
+        </div>
+        <button class="btn-post" onclick="addJob()">Publier sur la carte</button>
+    </div>
 
-<button class="fab" onclick="openForm()">+</button>
+    <button class="fab" onclick="toggleForm()">+</button>
 
-<div class="bottom-nav">
-  <button onclick="showMap()">📍</button>
-  <button onclick="showList()">📄</button>
-  <button onclick="showChat()">💬</button>
-  <button onclick="showAccount()">👤</button>
-</div>
+    <nav class="bottom-nav">
+        <button onclick="showMap()" class="nav-btn active">📍<span>Carte</span></button>
+        <button onclick="showList()" class="nav-btn">📄<span>Jobs</span></button>
+        <button onclick="showChat()" class="nav-btn">💬<span>Chat</span></button>
+        <button onclick="showAccount()" class="nav-btn">👤<span>Profil</span></button>
+    </nav>
 
-<script src="app.js"></script>
-
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="app.js"></script>
 </body>
-  </html>
+              </html>
