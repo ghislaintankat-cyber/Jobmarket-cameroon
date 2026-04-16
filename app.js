@@ -12,18 +12,27 @@ const db = firebase.database();
 const auth = firebase.auth();
 
 let currentUser;
-const ADMIN_UID = "TON_UID_ICI"; // 🔥 remplace
 
+// 🔥 DOM FIX (IMPORTANT)
+const formBox = document.getElementById("formBox");
+const jobsList = document.getElementById("jobsList");
+const chatBox = document.getElementById("chatBox");
+const accountBox = document.getElementById("accountBox");
+const messages = document.getElementById("messages");
+
+// 🔐 AUTH
 auth.onAuthStateChanged(user=>{
   currentUser = user;
 });
 
-// 🔐 AUTH
 function register(){
-  auth.createUserWithEmailAndPassword(email.value,password.value);
+  auth.createUserWithEmailAndPassword(email.value,password.value)
+  .then(()=>alert("Compte créé"));
 }
+
 function login(){
-  auth.signInWithEmailAndPassword(email.value,password.value);
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .then(()=>alert("Connecté"));
 }
 
 // 🗺️ MAP
@@ -46,7 +55,7 @@ navigator.geolocation.watchPosition(pos=>{
     userMarker = L.circleMarker([lat,lng],{radius:8,color:"blue"}).addTo(map);
   }
 
-},{enableHighAccuracy:true});
+});
 
 // ➕ FORM
 function openForm(){
@@ -73,17 +82,16 @@ function addJob(){
       phone:phone.value,
       lat:pos.coords.latitude,
       lng:pos.coords.longitude,
-      user: currentUser.uid,
-      time: Date.now()
+      user: currentUser.uid
     });
 
-    alert("✅ Job ajouté");
+    alert("Job ajouté");
     formBox.classList.add("hidden");
 
   });
 }
 
-// 📄 LISTE JOBS
+// 📄 LISTE
 function loadJobsList(){
 
   jobsList.innerHTML="Chargement...";
@@ -100,13 +108,8 @@ function loadJobsList(){
         <b>${j.title}</b><br>
         💰 ${j.price || ""}<br>
 
-        <a href="https://wa.me/${j.phone}" style="color:#25D366">WhatsApp</a><br>
-        <a href="tel:${j.phone}" style="color:#1E90FF">Appeler</a><br>
-
-        <button onclick="openChat('${j.user}')">💬 Chat</button>
-
-        ${(currentUser && (currentUser.uid===j.user || currentUser.uid===ADMIN_UID)) ?
-        `<button onclick="deleteJob('${j.id}')" style="background:red;color:white">Supprimer</button>`:""}
+        <a href="https://wa.me/${j.phone}">WhatsApp</a><br>
+        <a href="tel:${j.phone}">Appeler</a>
       </div>
       `;
     });
@@ -114,42 +117,31 @@ function loadJobsList(){
   });
 }
 
-// 🗑️ DELETE
-function deleteJob(id){
-  db.ref("jobs/"+id).remove();
-}
-
-// 💬 CHAT GLOBAL
+// 💬 CHAT
 function showChat(){
   map.style.display="none";
   chatBox.classList.remove("hidden");
   jobsList.classList.add("hidden");
+  accountBox.classList.add("hidden");
 }
 
 function sendMessage(){
 
-  if(!currentUser)return;
+  if(!currentUser) return;
 
   db.ref("messages").push({
-    text:msgInput.value,
-    user:currentUser.uid
+    text:msgInput.value
   });
 
   msgInput.value="";
 }
 
 db.ref("messages").limitToLast(20).on("value",snap=>{
-
   messages.innerHTML="";
 
   snap.forEach(d=>{
-    let m=d.val();
-
-    messages.innerHTML+=`
-    <div>${m.text}</div>
-    `;
+    messages.innerHTML += `<div>${d.val().text}</div>`;
   });
-
 });
 
 // 🧭 NAV
@@ -157,12 +149,14 @@ function showMap(){
   map.style.display="block";
   jobsList.classList.add("hidden");
   chatBox.classList.add("hidden");
+  accountBox.classList.add("hidden");
 }
 
 function showList(){
   map.style.display="none";
   jobsList.classList.remove("hidden");
   chatBox.classList.add("hidden");
+  accountBox.classList.add("hidden");
   loadJobsList();
 }
 
@@ -170,4 +164,5 @@ function showAccount(){
   map.style.display="none";
   accountBox.classList.remove("hidden");
   jobsList.classList.add("hidden");
-  }
+  chatBox.classList.add("hidden");
+    }
