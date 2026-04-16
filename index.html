@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JobMarket Pro</title>
+<title>JobMarket</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -31,11 +31,11 @@
 <div id="chatBox" class="hidden">
   <h2>Chat</h2>
   <div id="messages"></div>
-  <input id="msgInput">
+  <input id="msgInput" placeholder="Message">
   <button onclick="sendMessage()">Envoyer</button>
 </div>
 
-<div id="formBox" class="form hidden">
+<div id="formBox" class="hidden">
   <input id="title" placeholder="Titre">
   <textarea id="desc" placeholder="Description"></textarea>
   <input id="price" placeholder="Prix">
@@ -46,13 +46,13 @@
 <button class="fab" onclick="openForm()">+</button>
 
 <div class="bottom-nav">
-  <button onclick="showMap()">📍Carte</button>
-  <button onclick="showList()">📄Jobs</button>
-  <button onclick="showChat()">💬Chat</button>
-  <button onclick="showAccount()">👤Compte</button>
+  <button onclick="showMap()">📍</button>
+  <button onclick="showList()">📄</button>
+  <button onclick="showChat()">💬</button>
+  <button onclick="showAccount()">👤</button>
 </div>
 
 <script src="app.js"></script>
 
 </body>
-                </html>
+  </html>
