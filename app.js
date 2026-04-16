@@ -11,7 +11,7 @@ const db = firebase.database();
 const auth = firebase.auth();
 
 let currentUser;
-const ADMIN_UID = "TON_UID_ICI";
+const ADMIN_UID = "GrajEM98vOc1w3FUr9XeTN90rfl2";
 
 // AUTHENTICATION
 auth.onAuthStateChanged(user => {
