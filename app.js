@@ -1,168 +1,119 @@
-// 🔥 FIREBASE CONFIG
+// CONFIGURATION FIREBASE
 const firebaseConfig = {
-  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
-  authDomain: "jobmarketfuture.firebaseapp.com",
-  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
-  projectId: "jobmarketfuture"
+    apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+    authDomain: "jobmarketfuture.firebaseapp.com",
+    databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+    projectId: "jobmarketfuture"
 };
 
 firebase.initializeApp(firebaseConfig);
-
 const db = firebase.database();
 const auth = firebase.auth();
 
 let currentUser;
+const ADMIN_UID = "TON_UID_ICI";
 
-// 🔥 DOM FIX (IMPORTANT)
-const formBox = document.getElementById("formBox");
-const jobsList = document.getElementById("jobsList");
-const chatBox = document.getElementById("chatBox");
-const accountBox = document.getElementById("accountBox");
-const messages = document.getElementById("messages");
-
-// 🔐 AUTH
-auth.onAuthStateChanged(user=>{
-  currentUser = user;
+// AUTHENTICATION
+auth.onAuthStateChanged(user => {
+    currentUser = user;
+    if(user) document.getElementById('userDisplay').innerText = user.email;
 });
 
-function register(){
-  auth.createUserWithEmailAndPassword(email.value,password.value)
-  .then(()=>alert("Compte créé"));
-}
+function register() { auth.createUserWithEmailAndPassword(email.value, password.value).catch(alert); }
+function login() { auth.signInWithEmailAndPassword(email.value, password.value).catch(alert); }
 
-function login(){
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .then(()=>alert("Connecté"));
-}
+// CARTE SATELLITE HD
+let map = L.map("map", { zoomControl: false }).setView([3.848, 11.502], 14);
 
-// 🗺️ MAP
-let map = L.map("map").setView([3.848,11.502],15);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Esri, DigitalGlobe, GeoEye, Earthstar Geographics'
+}).addTo(map);
 
-L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  { maxZoom:19 }
-).addTo(map);
-
+// GPS TEMPS RÉEL
 let userMarker;
-
-navigator.geolocation.watchPosition(pos=>{
-  let lat=pos.coords.latitude;
-  let lng=pos.coords.longitude;
-
-  if(userMarker){
-    userMarker.setLatLng([lat,lng]);
-  }else{
-    userMarker = L.circleMarker([lat,lng],{radius:8,color:"blue"}).addTo(map);
-  }
-
-});
-
-// ➕ FORM
-function openForm(){
-  formBox.classList.toggle("hidden");
-}
-
-// 💾 ADD JOB
-function addJob(){
-
-  if(!currentUser){
-    alert("Connecte-toi");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(pos=>{
-
-    let ref = db.ref("jobs").push();
-
-    ref.set({
-      id: ref.key,
-      title:title.value,
-      desc:desc.value,
-      price:price.value,
-      phone:phone.value,
-      lat:pos.coords.latitude,
-      lng:pos.coords.longitude,
-      user: currentUser.uid
-    });
-
-    alert("Job ajouté");
-    formBox.classList.add("hidden");
-
-  });
-}
-
-// 📄 LISTE
-function loadJobsList(){
-
-  jobsList.innerHTML="Chargement...";
-
-  db.ref("jobs").limitToLast(50).once("value",snap=>{
-
-    jobsList.innerHTML="";
-
-    snap.forEach(d=>{
-      let j=d.val();
-
-      jobsList.innerHTML+=`
-      <div style="background:#222;margin:10px;padding:10px;border-radius:10px">
-        <b>${j.title}</b><br>
-        💰 ${j.price || ""}<br>
-
-        <a href="https://wa.me/${j.phone}">WhatsApp</a><br>
-        <a href="tel:${j.phone}">Appeler</a>
-      </div>
-      `;
-    });
-
-  });
-}
-
-// 💬 CHAT
-function showChat(){
-  map.style.display="none";
-  chatBox.classList.remove("hidden");
-  jobsList.classList.add("hidden");
-  accountBox.classList.add("hidden");
-}
-
-function sendMessage(){
-
-  if(!currentUser) return;
-
-  db.ref("messages").push({
-    text:msgInput.value
-  });
-
-  msgInput.value="";
-}
-
-db.ref("messages").limitToLast(20).on("value",snap=>{
-  messages.innerHTML="";
-
-  snap.forEach(d=>{
-    messages.innerHTML += `<div>${d.val().text}</div>`;
-  });
-});
-
-// 🧭 NAV
-function showMap(){
-  map.style.display="block";
-  jobsList.classList.add("hidden");
-  chatBox.classList.add("hidden");
-  accountBox.classList.add("hidden");
-}
-
-function showList(){
-  map.style.display="none";
-  jobsList.classList.remove("hidden");
-  chatBox.classList.add("hidden");
-  accountBox.classList.add("hidden");
-  loadJobsList();
-}
-
-function showAccount(){
-  map.style.display="none";
-  accountBox.classList.remove("hidden");
-  jobsList.classList.add("hidden");
-  chatBox.classList.add("hidden");
+navigator.geolocation.watchPosition(pos => {
+    let lat = pos.coords.latitude;
+    let lng = pos.coords.longitude;
+    if (userMarker) {
+        userMarker.setLatLng([lat, lng]);
+    } else {
+        userMarker = L.circleMarker([lat, lng], { radius: 10, color: "white", weight: 3, fillColor: "#3b82f6", fillOpacity: 1 }).addTo(map);
     }
+}, null, { enableHighAccuracy: true });
+
+// GESTION FORMULAIRE
+function toggleForm() { 
+    if(!currentUser) return alert("Veuillez vous connecter pour publier.");
+    document.getElementById('formBox').classList.toggle("hidden"); 
+}
+
+// AJOUTER UN JOB
+function addJob() {
+    navigator.geolocation.getCurrentPosition(pos => {
+        let jobRef = db.ref("jobs").push();
+        jobRef.set({
+            id: jobRef.key,
+            title: document.getElementById('title').value,
+            desc: document.getElementById('desc').value,
+            price: document.getElementById('price').value,
+            phone: document.getElementById('phone').value,
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            user: currentUser.uid,
+            time: Date.now()
+        });
+        alert("✅ Annonce publiée !");
+        toggleForm();
+    });
+}
+
+// CHARGEMENT DES MARQUEURS SUR LA CARTE
+db.ref("jobs").on("value", snap => {
+    map.eachLayer(layer => { if(layer instanceof L.Marker) map.removeLayer(layer); });
+    snap.forEach(d => {
+        let j = d.val();
+        let marker = L.marker([j.lat, j.lng]).addTo(map);
+        marker.bindPopup(`
+            <div class="job-card-map">
+                <b>${j.title}</b><br>
+                <small>${j.price} FCFA</small><br>
+                <p>${j.desc}</p>
+                <a href="https://wa.me/${j.phone}" class="btn-wa">WhatsApp</a>
+            </div>
+        `);
+    });
+});
+
+// NAVIGATION
+function showMap() {
+    hideAll();
+    document.getElementById('map').style.display = "block";
+}
+
+function showList() {
+    hideAll();
+    let list = document.getElementById('jobsList');
+    list.classList.remove("hidden");
+    list.innerHTML = "<h2>Dernières Offres</h2>";
+    db.ref("jobs").once("value", snap => {
+        snap.forEach(d => {
+            let j = d.val();
+            list.innerHTML += `
+                <div style="background:#222; padding:15px; border-radius:15px; margin-bottom:10px;">
+                    <h3>${j.title}</h3>
+                    <p>${j.price} FCFA</p>
+                    <a href="tel:${j.phone}" style="color:var(--primary)">Appeler</a>
+                </div>`;
+        });
+    });
+}
+
+function showChat() { hideAll(); document.getElementById('chatBox').classList.remove("hidden"); }
+function showAccount() { hideAll(); document.getElementById('accountBox').classList.remove("hidden"); }
+
+function hideAll() {
+    document.getElementById('jobsList').classList.add("hidden");
+    document.getElementById('chatBox').classList.add("hidden");
+    document.getElementById('accountBox').classList.add("hidden");
+    document.getElementById('formBox').classList.add("hidden");
+                              }
