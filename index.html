@@ -11,20 +11,15 @@
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-
 </head>
 
 <body>
 
-<!-- MAP -->
 <div id="map"></div>
 
-<!-- LIST -->
 <div id="jobsList" class="hidden"></div>
 
-<!-- ACCOUNT -->
 <div id="accountBox" class="hidden">
   <h2>Compte</h2>
   <input id="email" placeholder="Email">
@@ -33,29 +28,31 @@
   <button onclick="login()">Connexion</button>
 </div>
 
-<!-- FORM -->
+<div id="chatBox" class="hidden">
+  <h2>Chat</h2>
+  <div id="messages"></div>
+  <input id="msgInput">
+  <button onclick="sendMessage()">Envoyer</button>
+</div>
+
 <div id="formBox" class="form hidden">
   <input id="title" placeholder="Titre">
   <textarea id="desc" placeholder="Description"></textarea>
   <input id="price" placeholder="Prix">
   <input id="phone" placeholder="Téléphone">
-  <input type="file" id="image">
-  <label><input type="checkbox" id="boost"> BOOST</label>
   <button onclick="addJob()">Publier</button>
 </div>
 
-<!-- BUTTON -->
 <button class="fab" onclick="openForm()">+</button>
 
-<!-- NAV -->
 <div class="bottom-nav">
-  <button onclick="showMap()">📍<br>Carte</button>
-  <button onclick="showList()">📄<br>Jobs</button>
-  <button onclick="openForm()">➕<br>Publier</button>
-  <button onclick="showAccount()">👤<br>Compte</button>
+  <button onclick="showMap()">📍Carte</button>
+  <button onclick="showList()">📄Jobs</button>
+  <button onclick="showChat()">💬Chat</button>
+  <button onclick="showAccount()">👤Compte</button>
 </div>
 
 <script src="app.js"></script>
 
 </body>
-  </html>
+                </html>
