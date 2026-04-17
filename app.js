@@ -171,4 +171,4 @@ function hideAll() {
   document.getElementById('chatBox').classList.add("hidden");
   document.getElementById('accountBox').classList.add("hidden");
   document.getElementById('formBox').classList.add("hidden");
-                }
+}
