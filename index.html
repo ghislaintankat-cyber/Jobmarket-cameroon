@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JobMarket Pro | Cameroun</title>
-    
+    <title>JobMarket Pro | Cameroun HD</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -19,7 +17,7 @@
 
     <div class="top-info">
         <div class="dot active"></div>
-        <span id="userDisplay">JobMarket Live • Yaoundé</span>
+        <span id="userDisplay">JobMarket Live • Chargement...</span>
     </div>
 
     <div id="jobsList" class="overlay-section hidden"></div>
@@ -27,7 +25,7 @@
     <div id="accountBox" class="overlay-section hidden">
         <div class="modal-content">
             <h2>Compte Personnel</h2>
-            <input id="email" type="email" placeholder="Email professionnel">
+            <input id="email" type="email" placeholder="Email">
             <input id="password" type="password" placeholder="Mot de passe">
             <button class="btn-primary" onclick="register()">Créer mon compte</button>
             <button class="btn-outline" onclick="login()">Se connecter</button>
@@ -48,13 +46,25 @@
     <div id="formBox" class="drawer hidden">
         <div class="drawer-handle"></div>
         <h2>Publier un besoin</h2>
-        <input id="title" placeholder="Quel ouvrier ? (ex: Maçon)">
+        
+        <label style="font-size:12px; font-weight:800; color:#666; text-transform:uppercase;">Métier recherché</label>
+        <select id="category" class="form-select">
+            <option value="🔧|#EF4444|Maçon">Maçonnerie 🔧</option>
+            <option value="⚡|#F59E0B|Électricien">Électricité ⚡</option>
+            <option value="💧|#3B82F6|Plombier">Plomberie 💧</option>
+            <option value="🏠|#8B5CF6|Peintre">Peinture 🏠</option>
+            <option value="💇|#EC4899|Coiffure">Coiffure/Beauté 💇</option>
+            <option value="🚚|#10B981|Livreur">Livraison/Transport 🚚</option>
+            <option value="🛡️|#1E293B|Vigile">Sécurité 🛡️</option>
+        </select>
+
+        <input id="title" placeholder="Titre (ex: Chantier à Bastos)">
         <textarea id="desc" placeholder="Détails du travail..."></textarea>
-        <div class="row">
-            <input id="price" placeholder="Budget (FCFA)">
-            <input id="phone" placeholder="Numéro WhatsApp">
+        <div class="row" style="display:flex; gap:10px;">
+            <input id="price" placeholder="Budget (FCFA)" style="flex:1">
+            <input id="phone" placeholder="WhatsApp (6...)" style="flex:1">
         </div>
-        <button class="btn-post" onclick="addJob()">Publier sur la carte</button>
+        <button class="btn-post" onclick="addJob()">Publier l'annonce</button>
     </div>
 
     <button class="fab" onclick="toggleForm()">+</button>
@@ -69,4 +79,4 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="app.js"></script>
 </body>
-              </html>
+    </html>
