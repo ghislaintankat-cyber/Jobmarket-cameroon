@@ -1,64 +1,96 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JobMarket Pro</title>
-
-<link rel="stylesheet" href="style.css">
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Global - Elite</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
-
 <body>
 
-<div id="map"></div>
+    <div id="map"></div>
 
-<button class="gps-btn" onclick="goToMyPosition()">📍</button>
+    <div class="map-controls">
+        <button class="map-btn" onclick="locateMe()" title="Ma position">🎯</button>
+        <button class="map-btn plus" onclick="toggleForm()" title="Publier">+</button>
+    </div>
 
-<div id="jobsList" class="hidden"></div>
+    <div class="top-status">
+        <div class="pulse-dot"></div>
+        <span id="userStatus">Radar de confiance actif...</span>
+    </div>
 
-<div id="accountBox" class="hidden">
-  <h2>Compte</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Mot de passe">
-  <button onclick="register()">Créer</button>
-  <button onclick="login()">Connexion</button>
-  <button onclick="googleLogin()">Google</button>
-</div>
+    <div id="ratingBox" class="overlay hidden">
+        <div class="auth-card" style="margin-top: 20vh;">
+            <h2>Évaluer la mission</h2>
+            <p id="ratingJobTitle" style="color: #888;">Mission</p>
+            <div class="star-rating">
+                <span class="star" onclick="setScore(1)">★</span>
+                <span class="star" onclick="setScore(2)">★</span>
+                <span class="star" onclick="setScore(3)">★</span>
+                <span class="star" onclick="setScore(4)">★</span>
+                <span class="star" onclick="setScore(5)">★</span>
+            </div>
+            <input type="hidden" id="currentJobId">
+            <input type="hidden" id="currentScore" value="5">
+            <button class="btn-primary" onclick="submitRating()">Valider l'avis</button>
+            <button class="btn-outline" onclick="closeRating()">Annuler</button>
+        </div>
+    </div>
 
-<div id="chatBox" class="hidden">
-  <div id="messages"></div>
-  <input id="msgInput">
-  <button onclick="sendMessage()">Envoyer</button>
-</div>
+    <div id="jobsList" class="overlay hidden">
+        <div class="overlay-header"><h2>Missions Proches</h2></div>
+        <div id="listContent"></div>
+    </div>
 
-<div id="formBox" class="hidden">
-  <select id="category">
-    <option value="🔧|#EF4444">Maçon</option>
-    <option value="⚡|#F59E0B">Électricien</option>
-  </select>
-  <input id="title" placeholder="Titre">
-  <textarea id="desc"></textarea>
-  <input id="price" placeholder="Prix">
-  <input id="phone" placeholder="Téléphone">
-  <button onclick="addJob()">Publier</button>
-</div>
+    <div id="accountBox" class="overlay hidden">
+        <div class="auth-card">
+            <h2>Accès Global</h2>
+            <input id="email" class="auth-input" placeholder="Email">
+            <input id="password" type="password" class="auth-input" placeholder="Mot de passe">
+            <button class="btn-primary" onclick="login()">Connexion</button>
+            <div class="separator">OU</div>
+            <button class="btn-google" onclick="loginGoogle()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18">
+                Continuer avec Google
+            </button>
+        </div>
+    </div>
 
-<button class="fab" onclick="toggleForm()">+</button>
+    <div id="formBox" class="drawer hidden">
+        <div class="drawer-handle"></div>
+        <h2>Publier un besoin</h2>
+        <select id="category" class="form-input">
+            <option value="🔧|#FF416C">Maçonnerie 🔧</option>
+            <option value="⚡|#FFB75E">Électricité ⚡</option>
+            <option value="💧|#00B4DB">Plomberie 💧</option>
+            <option value="🚚|#2ecc71">Livraison 🚚</option>
+        </select>
+        <input id="title" class="form-input" placeholder="Titre">
+        <textarea id="desc" class="form-input" placeholder="Détails"></textarea>
+        <div class="row">
+            <input id="price" class="form-input" placeholder="Budget (FCFA)">
+            <input id="phone" class="form-input" placeholder="WhatsApp">
+        </div>
+        <button onclick="addJob()" class="btn-primary">Diffuser la mission</button>
+    </div>
 
-<div class="bottom-nav">
-  <button onclick="showMap()">📍</button>
-  <button onclick="showList()">📄</button>
-  <button onclick="showChat()">💬</button>
-  <button onclick="showAccount()">👤</button>
-</div>
+    <nav class="main-nav">
+        <button onclick="showMap()" class="nav-item active">📍<span>Carte</span></button>
+        <button onclick="showList()" class="nav-item">📋<span>Missions</span></button>
+        <button onclick="showAccount()" class="nav-item">👤<span>Profil</span></button>
+    </nav>
 
-<script src="app.js"></script>
-
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="app.js"></script>
 </body>
-    </html>
+      </html>
