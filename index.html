@@ -1,76 +1,64 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JobMarket Elite - Cameroun</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobMarket Pro</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
+
 <body>
 
-    <div id="map"></div>
+<div id="map"></div>
 
-    <div class="filter-bar">
-        <button onclick="filterByDist(0, this)" class="filter-btn active">Tout</button>
-        <button onclick="filterByDist(2, this)" class="filter-btn">2 km</button>
-        <button onclick="filterByDist(5, this)" class="filter-btn">5 km</button>
-        <button onclick="filterByDist(15, this)" class="filter-btn">15 km</button>
-    </div>
+<button class="gps-btn" onclick="goToMyPosition()">📍</button>
 
-    <div class="top-status">
-        <div class="pulse-dot"></div>
-        <span id="userStatus">Recherche de jobs autour de vous...</span>
-    </div>
+<div id="jobsList" class="hidden"></div>
 
-    <div id="formBox" class="drawer hidden">
-        <div class="drawer-handle"></div>
-        <h2>Publier un besoin</h2>
-        <select id="category" class="form-input">
-            <option value="🔧|#EF4444">Maçonnerie 🔧</option>
-            <option value="⚡|#F59E0B">Électricité ⚡</option>
-            <option value="💧|#3B82F6">Plomberie 💧</option>
-            <option value="🚚|#10B981">Livraison 🚚</option>
-            <option value="🏠|#8B5CF6">Peinture 🏠</option>
-            <option value="💇|#EC4899">Coiffure/Beauté 💇</option>
-        </select>
-        <input id="title" class="form-input" placeholder="Titre (ex: Électricien à Bastos)">
-        <textarea id="desc" class="form-input" placeholder="Détails du travail..."></textarea>
-        <div class="row">
-            <input id="price" class="form-input" placeholder="Budget (FCFA)">
-            <input id="phone" class="form-input" placeholder="WhatsApp (6...)">
-        </div>
-        <button onclick="addJob()" class="btn-primary">Publier sur la carte</button>
-    </div>
+<div id="accountBox" class="hidden">
+  <h2>Compte</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Mot de passe">
+  <button onclick="register()">Créer</button>
+  <button onclick="login()">Connexion</button>
+  <button onclick="googleLogin()">Google</button>
+</div>
 
-    <div id="jobsList" class="overlay hidden"></div>
-    <div id="accountBox" class="overlay hidden">
-        <div style="padding: 20px;">
-            <h2>Mon Compte</h2>
-            <input id="email" class="form-input" placeholder="Email">
-            <input id="password" type="password" class="form-input" placeholder="Mot de passe">
-            <button class="btn-primary" onclick="register()">Créer Compte</button>
-            <button class="btn-outline" onclick="login()">Se Connecter</button>
-        </div>
-    </div>
+<div id="chatBox" class="hidden">
+  <div id="messages"></div>
+  <input id="msgInput">
+  <button onclick="sendMessage()">Envoyer</button>
+</div>
 
-    <button class="fab" onclick="toggleForm()">+</button>
+<div id="formBox" class="hidden">
+  <select id="category">
+    <option value="🔧|#EF4444">Maçon</option>
+    <option value="⚡|#F59E0B">Électricien</option>
+  </select>
+  <input id="title" placeholder="Titre">
+  <textarea id="desc"></textarea>
+  <input id="price" placeholder="Prix">
+  <input id="phone" placeholder="Téléphone">
+  <button onclick="addJob()">Publier</button>
+</div>
 
-    <nav class="bottom-nav">
-        <button onclick="setActive(this); showMap()" class="nav-btn active">📍<span>Radar</span></button>
-        <button onclick="setActive(this); showList()" class="nav-btn">📄<span>Missions</span></button>
-        <button onclick="setActive(this); showAccount()" class="nav-btn">👤<span>Profil</span></button>
-    </nav>
+<button class="fab" onclick="toggleForm()">+</button>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-    <script src="app.js"></script>
+<div class="bottom-nav">
+  <button onclick="showMap()">📍</button>
+  <button onclick="showList()">📄</button>
+  <button onclick="showChat()">💬</button>
+  <button onclick="showAccount()">👤</button>
+</div>
+
+<script src="app.js"></script>
+
 </body>
     </html>
