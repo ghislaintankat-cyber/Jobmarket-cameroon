@@ -1,34 +1,38 @@
-/* Style des marqueurs avec Prix */
-.custom-marker {
-    background: white;
-    border: 2px solid #00f2fe;
-    border-radius: 12px;
-    padding: 4px 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    white-space: nowrap;
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
+:root { --primary: #00f2fe; --bg: #050505; }
+body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); overflow: hidden; }
 
-.marker-icon { font-size: 16px; }
-.marker-price { 
-    color: #050505; 
-    font-weight: 800; 
-    font-size: 13px; 
-}
+#map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #0b0b0b; }
 
-@keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+/* Marqueurs Pro (Style Image) */
+.job-marker-container {
+    background: white; border-radius: 12px; padding: 6px 10px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    min-width: 150px; position: relative;
+    animation: bounce 0.4s ease-out;
 }
+.job-marker-container::after {
+    content: ''; position: absolute; bottom: -8px; left: 15px;
+    border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid white;
+}
+.marker-icon-circle {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; color: white;
+}
+.marker-info { display: flex; flex-direction: column; }
+.marker-title { color: #111; font-weight: 800; font-size: 11px; margin: 0; }
+.marker-stats { font-size: 10px; font-weight: bold; margin-top: 2px; }
 
-/* Forcer la carte à prendre tout l'écran */
-#map {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 100%;
-    z-index: 1;
-}
+/* UI Elements */
+.map-controls { position: absolute; top: 20px; right: 15px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+.map-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; border: none; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.map-btn.plus { background: var(--primary); color: white; font-weight: bold; font-size: 24px; }
+
+.main-nav { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: space-around; padding: 15px 0; z-index: 2000; }
+.nav-item { background: none; border: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 10px; }
+.nav-item.active { color: var(--primary); }
+
+.overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: #000; z-index: 1500; padding: 20px; overflow-y: auto; }
+.hidden { display: none !important; }
+
+@keyframes bounce { 0% { transform: scale(0); } 100% { transform: scale(1); } }
