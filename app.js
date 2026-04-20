@@ -1,4 +1,4 @@
-// 🔥 CONFIGURATION FIREBASE
+// CONFIGURATION FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
     authDomain: "jobmarketfuture.firebaseapp.com",
@@ -6,84 +6,89 @@ const firebaseConfig = {
     projectId: "jobmarketfuture"
 };
 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const db = firebase.database(), auth = firebase.auth();
+const db = firebase.database();
 
-// 🗺️ INITIALISATION CARTE (On affiche la carte tout de suite)
-let map = L.map("map", { zoomControl: false, tap: false }).setView([3.848, 11.502], 13);
-L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{ 
-    subdomains:['mt0','mt1','mt2','mt3'],
-    attribution: '© Google Maps'
-}).addTo(map);
+// INITIALISATION CARTE
+let map = L.map("map", { zoomControl: false }).setView([3.848, 11.502], 13);
+L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{ subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
 
-// Couche dédiée aux jobs (pour pouvoir les rafraîchir proprement)
 let jobsLayer = L.featureGroup().addTo(map);
-let userMarker, userCoords = null;
+let userCoords = null;
 
-// --- 🛡️ FONCTION CORE : CHARGEMENT DES JOBS ---
-function loadJobsDirectly() {
-    console.log("Démarrage du flux de données...");
-    
-    // .on('value') : Écoute en temps réel. Si un job est ajouté, il apparaît SANS recharger.
+// CHARGEMENT INSTANTANÉ DES JOBS (Règle le problème de la carte vide)
+function loadJobs() {
     db.ref("jobs").on("value", snap => {
-        jobsLayer.clearLayers(); // On nettoie l'ancienne vue
-        
-        if (!snap.exists()) return console.log("Base de données vide.");
-
+        jobsLayer.clearLayers();
         snap.forEach(child => {
             const j = child.val();
             if (j.lat && j.lng) {
-                // Création du marqueur avec le prix visible
+                const dist = userCoords ? `${getDistance(userCoords.lat, userCoords.lng, j.lat, j.lng).toFixed(1)} km` : "";
+                
                 const customIcon = L.divIcon({
                     html: `
-                        <div class="custom-marker" style="border-color: ${j.color || '#00f2fe'}">
-                            <span class="marker-icon">${j.icon || '💼'}</span>
-                            <span class="marker-price">${j.price}</span>
-                        </div>
-                    `,
-                    className: '',
-                    iconSize:,
-                    iconAnchor:
+                        <div class="job-marker-container">
+                            <div class="marker-icon-circle" style="background:${j.color}">
+                                ${j.icon}
+                            </div>
+                            <div class="marker-info">
+                                <p class="marker-title">${j.title}</p>
+                                <div class="marker-stats">
+                                    <span style="color:#FFD700">★ 5.0</span> 
+                                    <span style="color:#888; margin-left:5px">${dist}</span>
+                                </div>
+                            </div>
+                        </div>`,
+                    className: '', iconSize:, iconAnchor:
                 });
 
-                const m = L.marker([j.lat, j.lng], { icon: customIcon });
-                m.bindPopup(`<b>${j.title}</b><br><button onclick="showList()">Détails</button>`);
-                jobsLayer.addLayer(m);
+                L.marker([j.lat, j.lng], { icon: customIcon })
+                 .on('click', () => { alert("Job: " + j.title); })
+                 .addTo(jobsLayer);
             }
         });
-        console.log("Marqueurs mis à jour sur la carte.");
     });
 }
 
-// --- 🎯 GESTION DU GPS (En parallèle) ---
+// GPS ET DISTANCE
 function locateMe() {
     navigator.geolocation.getCurrentPosition(pos => {
         userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        
-        if (userMarker) map.removeLayer(userMarker);
-        userMarker = L.circleMarker([userCoords.lat, userCoords.lng], { 
-            radius: 10, color: '#fff', weight: 3, fillColor: '#00f2fe', fillOpacity: 1 
-        }).addTo(map);
-
-        // On centre la carte une seule fois au début
+        L.circleMarker([userCoords.lat, userCoords.lng], { radius: 8, color: '#fff', fillColor: '#00f2fe', fillOpacity: 1 }).addTo(map);
         map.flyTo([userCoords.lat, userCoords.lng], 14);
-        
-        // On met à jour la liste pour le tri par proximité
-        updateJobsList(); 
-    }, (err) => {
-        console.warn("GPS non disponible, on reste sur la vue par défaut.");
-    }, { enableHighAccuracy: true });
+        loadJobs(); // Recharge avec les distances calculées
+    }, () => loadJobs());
 }
 
-// --- 🏁 LANCEMENT GÉNÉRAL ---
-// 1. On charge les jobs tout de suite (Priorité n°1)
-loadJobsDirectly();
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2-lat1)*Math.PI/180;
+    const dLon = (lon2-lon1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
 
-// 2. On cherche l'utilisateur (Priorité n°2)
-locateMe();
+// PUBLIER
+function addJob() {
+    const cat = document.getElementById('category').value.split('|');
+    navigator.geolocation.getCurrentPosition(pos => {
+        db.ref("jobs").push({
+            title: document.getElementById('title').value,
+            price: document.getElementById('price').value,
+            phone: document.getElementById('phone').value,
+            desc: document.getElementById('desc').value,
+            icon: cat, color: cat,
+            lat: pos.coords.latitude, lng: pos.coords.longitude
+        });
+        toggleForm();
+    });
+}
 
-// --- AUTRES FONCTIONS (Gardées du code précédent) ---
+// UI
 window.showMap = () => { hideAll(); document.getElementById('map').style.display="block"; map.invalidateSize(); };
-window.showList = () => { hideAll(); document.getElementById('jobsList').classList.remove("hidden"); updateJobsList(); };
-window.showAccount = () => { hideAll(); document.getElementById('accountBox').classList.remove("hidden"); };
+window.showList = () => { hideAll(); document.getElementById('jobsList').classList.remove("hidden"); };
 window.toggleForm = () => document.getElementById('formBox').classList.toggle("hidden");
-function hideAll() { ['jobsList','accountBox','formBox'].forEach(id => document.getElementById(id).classList.add("hidden")); }
+function hideAll() { ['jobsList','formBox'].forEach(id => document.getElementById(id).classList.add("hidden")); }
+
+// LANCEMENT
+locateMe();
+loadJobs();
