@@ -1,38 +1,82 @@
-:root { --primary: #00f2fe; --bg: #050505; }
-body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); overflow: hidden; }
+body { margin:0; font-family:sans-serif; background:#000; }
 
-#map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #0b0b0b; }
-
-/* Marqueurs Pro (Style Image) */
-.job-marker-container {
-    background: white; border-radius: 12px; padding: 6px 10px;
-    display: flex; align-items: center; gap: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    min-width: 150px; position: relative;
-    animation: bounce 0.4s ease-out;
+#map {
+ position:absolute;
+ width:100%;
+ height:100%;
+ z-index:1;
 }
-.job-marker-container::after {
-    content: ''; position: absolute; bottom: -8px; left: 15px;
-    border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid white;
+
+.controls {
+ position:absolute;
+ top:20px;
+ right:10px;
+ display:flex;
+ flex-direction:column;
+ gap:10px;
+ z-index:1000;
 }
-.marker-icon-circle {
-    width: 30px; height: 30px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; color: white;
+
+.controls button {
+ width:50px;
+ height:50px;
+ border-radius:50%;
+ border:none;
+ background:#fff;
 }
-.marker-info { display: flex; flex-direction: column; }
-.marker-title { color: #111; font-weight: 800; font-size: 11px; margin: 0; }
-.marker-stats { font-size: 10px; font-weight: bold; margin-top: 2px; }
 
-/* UI Elements */
-.map-controls { position: absolute; top: 20px; right: 15px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-.map-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; border: none; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-.map-btn.plus { background: var(--primary); color: white; font-weight: bold; font-size: 24px; }
+nav {
+ position:fixed;
+ bottom:0;
+ width:100%;
+ display:flex;
+ justify-content:space-around;
+ background:#111;
+ padding:10px;
+ z-index:2000;
+}
 
-.main-nav { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: space-around; padding: 15px 0; z-index: 2000; }
-.nav-item { background: none; border: none; color: #888; display: flex; flex-direction: column; align-items: center; font-size: 10px; }
-.nav-item.active { color: var(--primary); }
+nav button {
+ color:#fff;
+ background:none;
+ border:none;
+}
 
-.overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: #000; z-index: 1500; padding: 20px; overflow-y: auto; }
-.hidden { display: none !important; }
+#jobsList {
+ position:fixed;
+ top:0;
+ width:100%;
+ height:100%;
+ background:#000;
+ color:#fff;
+ padding:15px;
+ overflow:auto;
+ z-index:1500;
+}
 
-@keyframes bounce { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+#adminPanel {
+ position:fixed;
+ top:0;
+ left:0;
+ width:100%;
+ height:100%;
+ background:#000;
+ color:#fff;
+ z-index:3000;
+ padding:20px;
+}
+
+#adminBtn {
+ position:fixed;
+ bottom:80px;
+ left:20px;
+ width:55px;
+ height:55px;
+ border-radius:50%;
+ background:red;
+ color:#fff;
+ border:none;
+ z-index:3000;
+}
+
+.hidden { display:none; }
