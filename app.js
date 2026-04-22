@@ -1,94 +1,240 @@
-// CONFIGURATION FIREBASE
+// 🔥 FIREBASE CONFIG (OK à exposer mais protège avec rules)
 const firebaseConfig = {
-    apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
-    authDomain: "jobmarketfuture.firebaseapp.com",
-    databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
-    projectId: "jobmarketfuture"
+ apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+ authDomain: "jobmarketfuture.firebaseapp.com",
+ databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+ projectId: "jobmarketfuture"
 };
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
 
-// INITIALISATION CARTE
-let map = L.map("map", { zoomControl: false }).setView([3.848, 11.502], 13);
-L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{ subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+const auth = firebase.auth();
+
+// 🔐 ADMIN UID
+const ADMIN_UID = "GrajEM98vOc1w3FUr9XeTN90rfl2";
+
+let currentUser = null;
+
+auth.signInAnonymously();
+
+auth.onAuthStateChanged(user => {
+ currentUser = user;
+
+ if(isAdmin()){
+  document.getElementById("adminBtn").classList.remove("hidden");
+ }
+});
+
+function isAdmin(){
+ return currentUser && currentUser.uid === ADMIN_UID;
+}
+
+// 🗺️ MAP
+let map = L.map("map").setView([3.848,11.502],13);
+
+L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',{
+ subdomains:['mt0','mt1','mt2','mt3']
+}).addTo(map);
 
 let jobsLayer = L.featureGroup().addTo(map);
 let userCoords = null;
+let routeControl;
 
-// CHARGEMENT INSTANTANÉ DES JOBS (Règle le problème de la carte vide)
-function loadJobs() {
-    db.ref("jobs").on("value", snap => {
-        jobsLayer.clearLayers();
-        snap.forEach(child => {
-            const j = child.val();
-            if (j.lat && j.lng) {
-                const dist = userCoords ? `${getDistance(userCoords.lat, userCoords.lng, j.lat, j.lng).toFixed(1)} km` : "";
-                
-                const customIcon = L.divIcon({
-                    html: `
-                        <div class="job-marker-container">
-                            <div class="marker-icon-circle" style="background:${j.color}">
-                                ${j.icon}
-                            </div>
-                            <div class="marker-info">
-                                <p class="marker-title">${j.title}</p>
-                                <div class="marker-stats">
-                                    <span style="color:#FFD700">★ 5.0</span> 
-                                    <span style="color:#888; margin-left:5px">${dist}</span>
-                                </div>
-                            </div>
-                        </div>`,
-                    className: '', iconSize:, iconAnchor:
-                });
+// 📍 GPS
+navigator.geolocation.watchPosition(pos=>{
+ userCoords = {
+  lat: pos.coords.latitude,
+  lng: pos.coords.longitude
+ };
+});
 
-                L.marker([j.lat, j.lng], { icon: customIcon })
-                 .on('click', () => { alert("Job: " + j.title); })
-                 .addTo(jobsLayer);
-            }
-        });
-    });
+// ➕ AJOUT JOB
+function addJob(){
+
+ if(!currentUser) return alert("Connexion...");
+
+ let title = document.getElementById("title").value;
+ let price = document.getElementById("price").value;
+ let phone = document.getElementById("phone").value;
+
+ navigator.geolocation.getCurrentPosition(pos=>{
+
+  let ref = db.ref("jobs").push();
+
+  ref.set({
+   id: ref.key,
+   title, price, phone,
+   lat: pos.coords.latitude,
+   lng: pos.coords.longitude,
+   user: currentUser.uid,
+   rating:0,
+   ratingCount:0
+  });
+
+ });
+
 }
 
-// GPS ET DISTANCE
-function locateMe() {
-    navigator.geolocation.getCurrentPosition(pos => {
-        userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        L.circleMarker([userCoords.lat, userCoords.lng], { radius: 8, color: '#fff', fillColor: '#00f2fe', fillOpacity: 1 }).addTo(map);
-        map.flyTo([userCoords.lat, userCoords.lng], 14);
-        loadJobs(); // Recharge avec les distances calculées
-    }, () => loadJobs());
+// 📦 LOAD JOBS
+db.ref("jobs").on("value", snap=>{
+
+ jobsLayer.clearLayers();
+
+ snap.forEach(d=>{
+
+  let j = d.val();
+
+  let marker = L.marker([j.lat,j.lng]).addTo(jobsLayer);
+
+  marker.bindPopup(`
+  <b>${j.title}</b><br>
+  ${j.price}<br>
+  ⭐ ${getStars(j.rating,j.ratingCount)}
+
+  <br><br>
+
+  <a href="https://wa.me/${j.phone}">WhatsApp</a><br>
+  <a href="tel:${j.phone}">Appeler</a><br>
+
+  <button onclick="drawRoute(${j.lat},${j.lng})">Itinéraire</button>
+
+  ${isAdmin() || currentUser?.uid === j.user ?
+  `<button onclick="deleteJob('${j.id}')" style="background:red;color:white">Supprimer</button>` : ""}
+
+  `);
+
+ });
+
+});
+
+// 🗑️ DELETE
+function deleteJob(id){
+ db.ref("jobs/"+id).remove();
 }
 
-function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2-lat1)*Math.PI/180;
-    const dLon = (lon2-lon1)*Math.PI/180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+// ⭐ RATING
+function getStars(r,c){
+ if(!c) return "☆☆☆☆☆";
+ let avg=r/c;
+ return "★".repeat(Math.round(avg));
 }
 
-// PUBLIER
-function addJob() {
-    const cat = document.getElementById('category').value.split('|');
-    navigator.geolocation.getCurrentPosition(pos => {
-        db.ref("jobs").push({
-            title: document.getElementById('title').value,
-            price: document.getElementById('price').value,
-            phone: document.getElementById('phone').value,
-            desc: document.getElementById('desc').value,
-            icon: cat, color: cat,
-            lat: pos.coords.latitude, lng: pos.coords.longitude
-        });
-        toggleForm();
-    });
+// 🧭 ROUTE
+function drawRoute(lat,lng){
+
+ if(!userCoords) return alert("Active GPS");
+
+ if(routeControl) map.removeControl(routeControl);
+
+ routeControl = L.Routing.control({
+  waypoints:[
+   L.latLng(userCoords.lat,userCoords.lng),
+   L.latLng(lat,lng)
+  ],
+  createMarker:()=>null
+ }).addTo(map);
+
+}
+
+// 📄 LISTE TRIÉE
+function showList(){
+
+ document.getElementById("jobsList").classList.remove("hidden");
+
+ navigator.geolocation.getCurrentPosition(pos=>{
+
+  let lat=pos.coords.latitude;
+  let lng=pos.coords.longitude;
+
+  db.ref("jobs").once("value", snap=>{
+
+   let arr=[];
+
+   snap.forEach(d=>{
+    let j=d.val();
+    let dist=getDistance(lat,lng,j.lat,j.lng);
+    arr.push({...j,dist});
+   });
+
+   arr.sort((a,b)=>a.dist-b.dist);
+
+   let html="";
+
+   arr.forEach(j=>{
+    html+=`
+    <div>
+    <b>${j.title}</b> (${j.dist.toFixed(1)} km)<br>
+    ${j.price}
+    </div><hr>`;
+   });
+
+   document.getElementById("jobsList").innerHTML=html;
+
+  });
+
+ });
+
+}
+
+function getDistance(a,b,c,d){
+ let R=6371;
+ let dLat=(c-a)*Math.PI/180;
+ let dLon=(d-b)*Math.PI/180;
+ let x=Math.sin(dLat/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLon/2)**2;
+ return R*(2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)));
+}
+
+// 🛠 ADMIN PANEL
+function openAdmin(){
+ document.getElementById("adminPanel").classList.remove("hidden");
+}
+
+function loadAdminJobs(){
+
+ const c = document.getElementById("adminContent");
+ c.innerHTML="Chargement...";
+
+ db.ref("jobs").once("value", snap=>{
+  c.innerHTML="";
+  snap.forEach(d=>{
+   let j=d.val();
+   c.innerHTML+=`
+   <div>
+   ${j.title}
+   <button onclick="deleteJob('${j.id}')">❌</button>
+   </div>`;
+  });
+ });
+
+}
+
+function loadUsers(){
+
+ const c = document.getElementById("adminContent");
+ let users={};
+
+ db.ref("jobs").once("value", snap=>{
+  snap.forEach(d=>{
+   let j=d.val();
+   if(j.user) users[j.user]=true;
+  });
+
+  c.innerHTML="<h3>Users</h3>";
+
+  Object.keys(users).forEach(u=>{
+   c.innerHTML+=`<div>${u}</div>`;
+  });
+
+ });
+
 }
 
 // UI
-window.showMap = () => { hideAll(); document.getElementById('map').style.display="block"; map.invalidateSize(); };
-window.showList = () => { hideAll(); document.getElementById('jobsList').classList.remove("hidden"); };
-window.toggleForm = () => document.getElementById('formBox').classList.toggle("hidden");
-function hideAll() { ['jobsList','formBox'].forEach(id => document.getElementById(id).classList.add("hidden")); }
+function showMap(){
+ document.getElementById("jobsList").classList.add("hidden");
+}
 
-// LANCEMENT
-locateMe();
-loadJobs();
+function toggleForm(){
+ document.getElementById("formBox").classList.toggle("hidden");
+      }
