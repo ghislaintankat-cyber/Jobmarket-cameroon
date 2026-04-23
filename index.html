@@ -1,54 +1,54 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JobMarket Pro</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobMarket</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="style.css">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
+
 <body>
 
-    <div id="map"></div>
+<div id="map"></div>
 
-    <div class="map-controls">
-        <button class="map-btn" onclick="locateMe()">🎯</button>
-        <button class="map-btn plus" onclick="toggleForm()">+</button>
-    </div>
+<div class="controls">
+<button onclick="locateMe()">🎯</button>
+<button onclick="toggleForm()">＋</button>
+</div>
 
-    <div id="jobsList" class="overlay hidden">
-        <div class="overlay-header"><h2>Missions à proximité</h2></div>
-        <div id="listContent"></div>
-    </div>
+<div id="jobsList" class="hidden"></div>
 
-    <div id="formBox" class="drawer hidden">
-        <div class="drawer-handle"></div>
-        <h2>Publier un Job</h2>
-        <select id="category" class="form-input">
-            <option value="🔧|#FF416C">Maçonnerie 🔧</option>
-            <option value="⚡|#FFB75E">Électricité ⚡</option>
-            <option value="💧|#00B4DB">Plomberie 💧</option>
-        </select>
-        <input id="title" class="form-input" placeholder="Titre du job">
-        <input id="price" class="form-input" placeholder="Prix (ex: 5000 FCFA)">
-        <input id="phone" class="form-input" placeholder="Numéro WhatsApp">
-        <textarea id="desc" class="form-input" placeholder="Description courte"></textarea>
-        <button onclick="addJob()" class="btn-primary">Publier sur la carte</button>
-    </div>
+<div id="formBox" class="hidden">
+<input id="title" placeholder="Titre">
+<input id="price" placeholder="Prix">
+<input id="phone" placeholder="Téléphone">
+<button onclick="addJob()">Publier</button>
+</div>
 
-    <nav class="main-nav">
-        <button onclick="showMap()" class="nav-item active">📍<span>Carte</span></button>
-        <button onclick="showList()" class="nav-item">📋<span>Missions</span></button>
-    </nav>
+<!-- ADMIN -->
+<div id="adminPanel" class="hidden">
+<h2>🛠 Admin Panel</h2>
+<button onclick="loadAdminJobs()">📦 Jobs</button>
+<button onclick="loadUsers()">👤 Utilisateurs</button>
+<div id="adminContent"></div>
+</div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-    <script src="app.js"></script>
+<button id="adminBtn" onclick="openAdmin()" class="hidden">⚙️</button>
+
+<nav>
+<button onclick="showMap()">Carte</button>
+<button onclick="showList()">Publier</button>
+</nav>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="app.js"></script>
+
 </body>
-        </html>
+    </html>
