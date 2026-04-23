@@ -1,69 +1,42 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JobMarket Global</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobMarket</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="style.css">
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
 </head>
+
 <body>
 
-    <div id="map"></div>
+<div id="map"></div>
 
-    <div class="map-controls">
-        <button class="map-btn" onclick="locateMe()">🎯</button>
-        <button class="map-btn plus" onclick="toggleForm()">+</button>
-    </div>
+<!-- FORM -->
+<div id="formBox" class="hidden">
+    <input id="title" placeholder="Titre">
+    <input id="price" placeholder="Prix">
+    <input id="phone" placeholder="Téléphone">
+    <button onclick="addJob()">Publier</button>
+</div>
 
-    <button id="adminBtn" onclick="openAdmin()" class="hidden">⚙️ Admin</button>
-    
-    <div id="adminPanel" class="overlay hidden" style="z-index: 4000; background: #111;">
-        <div class="overlay-header">
-            <h2>🛠️ Panneau de Contrôle</h2>
-            <button onclick="closeAdmin()" style="background:none; border:none; color:white; font-size:20px;">✖</button>
-        </div>
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <button class="btn-primary" onclick="loadAdminJobs()">📦 Gérer les Jobs</button>
-            <button class="btn-outline" onclick="loadUsers()">👤 Utilisateurs</button>
-        </div>
-        <div id="adminContent"></div>
-    </div>
+<!-- NAV -->
+<div class="nav">
+    <button onclick="showMap()">📍</button>
+    <button onclick="showList()">📋</button>
+    <button onclick="toggleForm()">➕</button>
+</div>
 
-    <div id="jobsList" class="overlay hidden">
-        <div class="overlay-header"><h2>Missions Proches</h2></div>
-        <div id="listContent"></div>
-    </div>
+<div id="list" class="hidden"></div>
 
-    <div id="formBox" class="drawer hidden">
-        <div class="drawer-handle"></div>
-        <h2>Nouvelle Mission</h2>
-        <select id="category" class="form-input">
-            <option value="🔧|#FF416C">Maçonnerie 🔧</option>
-            <option value="⚡|#FFB75E">Électricité ⚡</option>
-            <option value="💧|#00B4DB">Plomberie 💧</option>
-            <option value="🚚|#2ecc71">Livraison 🚚</option>
-        </select>
-        <input id="title" class="form-input" placeholder="Titre (ex: Fuite d'eau)">
-        <input id="price" class="form-input" placeholder="Budget (FCFA)">
-        <input id="phone" class="form-input" placeholder="WhatsApp (ex: 237...)">
-        <textarea id="desc" class="form-input" placeholder="Détails de la mission..."></textarea>
-        <button onclick="addJob()" class="btn-primary">Publier sur la carte</button>
-    </div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="app.js"></script>
 
-    <nav class="main-nav">
-        <button onclick="showMap()" class="nav-item active">📍<span>Carte</span></button>
-        <button onclick="showList()" class="nav-item">📋<span>Missions</span></button>
-    </nav>
-
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-    <script src="app.js"></script>
 </body>
-        </html>
+    </html>
