@@ -1,82 +1,43 @@
-body { margin:0; font-family:sans-serif; background:#000; }
+:root { --primary: #00f2fe; --accent: #4facfe; --bg: #050505; --gold: #FFD700; }
+body { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: #fff; overflow: hidden; }
 
-#map {
- position:absolute;
- width:100%;
- height:100%;
- z-index:1;
+#map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #000; }
+
+/* Marqueurs Pro */
+.job-marker-container {
+    background: white; border-radius: 12px; padding: 6px 10px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5); min-width: 140px; position: relative;
 }
-
-.controls {
- position:absolute;
- top:20px;
- right:10px;
- display:flex;
- flex-direction:column;
- gap:10px;
- z-index:1000;
+.job-marker-container::after {
+    content: ''; position: absolute; bottom: -8px; left: 15px;
+    border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid white;
 }
-
-.controls button {
- width:50px;
- height:50px;
- border-radius:50%;
- border:none;
- background:#fff;
+.marker-icon-circle {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;
 }
+.marker-info { display: flex; flex-direction: column; line-height: 1.2; }
+.marker-title { color: #111; font-weight: 800; font-size: 11px; margin: 0; }
+.marker-stats { font-size: 10px; font-weight: bold; margin-top: 2px; }
 
-nav {
- position:fixed;
- bottom:0;
- width:100%;
- display:flex;
- justify-content:space-around;
- background:#111;
- padding:10px;
- z-index:2000;
-}
+/* UI Elements */
+.map-controls { position: absolute; top: 20px; right: 15px; z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
+.map-btn { width: 50px; height: 50px; border-radius: 50%; background: #fff; border: none; font-size: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); cursor: pointer; }
+.map-btn.plus { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; font-weight: 800; font-size: 24px;}
 
-nav button {
- color:#fff;
- background:none;
- border:none;
-}
+#adminBtn { position: absolute; top: 20px; left: 15px; z-index: 3000; background: #ff4757; color: white; border: none; padding: 10px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,71,87,0.4); }
 
-#jobsList {
- position:fixed;
- top:0;
- width:100%;
- height:100%;
- background:#000;
- color:#fff;
- padding:15px;
- overflow:auto;
- z-index:1500;
-}
+.main-nav { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: space-around; padding: 15px 0; z-index: 2000; border-top: 1px solid #222; }
+.nav-item { background: none; border: none; color: #666; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: bold; }
+.nav-item.active { color: var(--primary); }
 
-#adminPanel {
- position:fixed;
- top:0;
- left:0;
- width:100%;
- height:100%;
- background:#000;
- color:#fff;
- z-index:3000;
- padding:20px;
-}
+.overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: #000; z-index: 1500; padding: 20px; overflow-y: auto; padding-bottom: 80px; }
+.overlay-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+.hidden { display: none !important; }
 
-#adminBtn {
- position:fixed;
- bottom:80px;
- left:20px;
- width:55px;
- height:55px;
- border-radius:50%;
- background:red;
- color:#fff;
- border:none;
- z-index:3000;
-}
-
-.hidden { display:none; }
+/* Formulaires & Boutons */
+.drawer { position: fixed; bottom: 0; width: 100%; background: #111; z-index: 2500; padding: 20px; border-radius: 20px 20px 0 0; box-sizing: border-box; transition: transform 0.3s ease; }
+.form-input { width: 100%; padding: 15px; margin-bottom: 15px; background: #222; border: 1px solid #333; border-radius: 12px; color: white; font-family: inherit; box-sizing: border-box;}
+.btn-primary { background: linear-gradient(to right, var(--primary), var(--accent)); border: none; padding: 15px; border-radius: 12px; color: white; font-weight: 800; width: 100%; cursor: pointer;}
+.btn-outline { background: transparent; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 12px; width: 100%; cursor: pointer; }
