@@ -1,42 +1,71 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobMarket</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<link rel="stylesheet" href="style.css">
-
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroon</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
-
 <body>
 
-<div id="map"></div>
+    <div id="map"></div>
 
-<!-- FORM -->
-<div id="formBox" class="hidden">
-    <input id="title" placeholder="Titre">
-    <input id="price" placeholder="Prix">
-    <input id="phone" placeholder="Téléphone">
-    <button onclick="addJob()">Publier</button>
-</div>
+    <div class="filter-container">
+        <button class="filter-chip active" onclick="filterBy('all', this)">Tous</button>
+        <button class="filter-chip" onclick="filterBy('🔧', this)">🔧 BTP</button>
+        <button class="filter-chip" onclick="filterBy('⚡', this)">⚡ Élec</button>
+        <button class="filter-chip" onclick="filterBy('💧', this)">💧 Plomb</button>
+        <button class="filter-chip" onclick="filterBy('🚚', this)">🚚 Livreur</button>
+        <button class="filter-chip" onclick="filterBy('🧹', this)">🧹 Ménage</button>
+    </div>
 
-<!-- NAV -->
-<div class="nav">
-    <button onclick="showMap()">📍</button>
-    <button onclick="showList()">📋</button>
-    <button onclick="toggleForm()">➕</button>
-</div>
+    <div class="side-controls">
+        <button class="ctrl-btn" onclick="locateMe()">🎯</button>
+        <button class="ctrl-btn main-plus" onclick="toggleForm()">+</button>
+    </div>
 
-<div id="list" class="hidden"></div>
+    <div id="formBox" class="bottom-drawer hidden">
+        <div class="drag-handle" onclick="toggleForm()"></div>
+        <div class="drawer-content">
+            <h3>Publier une mission</h3>
+            <div class="grid-form">
+                <select id="category" class="f-input">
+                    <option value="🔧|#E74C3C">Maçonnerie / BTP 🔧</option>
+                    <option value="⚡|#F1C40F">Électricité ⚡</option>
+                    <option value="💧|#3498DB">Plomberie 💧</option>
+                    <option value="🚚|#2ECC71">Livraison 🚚</option>
+                    <option value="🧹|#9B59B6">Ménage 🧹</option>
+                </select>
+                <input id="price" class="f-input" placeholder="Budget (ex: 5000 FCFA)">
+            </div>
+            <input id="title" class="f-input" placeholder="Titre (ex: Réparer prise salon)">
+            <input id="phone" class="f-input" placeholder="WhatsApp (ex: 6...)">
+            <input id="landmark" class="f-input" placeholder="Point de repère (ex: Face Boulangerie)">
+            <textarea id="desc" class="f-input" placeholder="Détails importants..."></textarea>
+            <button onclick="addJob()" class="submit-btn">Publier Gratuitement</button>
+        </div>
+    </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-<script src="app.js"></script>
+    <div id="jobsList" class="full-overlay hidden">
+        <div class="overlay-header">
+            <h2>Missions Proches</h2>
+            <button class="close-btn" onclick="showMap()">✕</button>
+        </div>
+        <div id="listContent"></div>
+    </div>
 
+    <nav class="tab-bar">
+        <button onclick="showMap()" class="tab-item active" id="tabMap">📍<span>Carte</span></button>
+        <button onclick="showList()" class="tab-item" id="tabList">📋<span>Liste</span></button>
+    </nav>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
 </body>
-        </html>
+            </html>
