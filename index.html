@@ -1,51 +1,88 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobMarket</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<link rel="stylesheet" href="style.css">
-
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroon - Direct & Gratuit</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
-
 <body>
 
-<div id="map"></div>
+    <div id="map"></div>
 
-<div id="list" class="screen hidden"></div>
+    <header class="main-header">
+        <div class="logo">JobMarket Cameroon</div>
+        <nav class="header-nav">
+            <button onclick="showMap()" class="nav-item active">Carte</button>
+            <button onclick="showList()" class="nav-item">Liste</button>
+            <button id="adminBtn" onclick="openAdmin()" class="nav-item hidden">⚙️ Admin</button>
+        </div>
+        <button onclick="toggleForm()" class="btn-post">Post a Job</button>
+    </header>
 
-<div id="account" class="screen hidden">
-  <h2>Compte</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Mot de passe">
-  <button onclick="login()">Connexion</button>
-  <button onclick="register()">Créer compte</button>
-  <button onclick="googleLogin()">Google</button>
-</div>
+    <div class="category-bar">
+        <button class="cat-chip" onclick="filterJobs('all')">Tous</button>
+        <button class="cat-chip" onclick="filterJobs('🔧')">🔧 BTP</button>
+        <button class="cat-chip" onclick="filterJobs('⚡')">⚡ Élec</button>
+        <button class="cat-chip" onclick="filterJobs('🚚')">🚚 Livreur</button>
+        <button class="cat-chip" onclick="filterJobs('🧹')">🧹 Ménage</button>
+    </div>
 
-<div id="formBox" class="form hidden">
-  <input id="title" placeholder="Titre">
-  <input id="price" placeholder="Prix">
-  <input id="phone" placeholder="Téléphone">
-  <button onclick="addJob()">Publier</button>
-</div>
+    <div class="side-controls-right">
+        <button class="map-btn" title="Orientation"><img src="https://img.icons8.com/material-outlined/24/compass.png" alt="compass"/></button>
+        <button class="map-btn" id="rulerBtn" title="Outil de mesure"><img src="https://img.icons8.com/material-outlined/24/ruler.png" alt="ruler"/></button>
+        <button class="map-btn" onclick="locateMe()" title="Ma position"><img src="https://img.icons8.com/material-outlined/24/marker.png" alt="marker"/></button>
+    </div>
 
-<button id="fab" onclick="toggleForm()">+</button>
+    <div id="itineraryPanel" class="itinerary-panel hidden">
+        <div class="itinerary-header">
+            <img src="https://img.icons8.com/material-outlined/24/distance.png" alt="distance"/>
+            <span>Distance mesurée</span>
+        </div>
+        <div class="itinerary-body">
+            <div id="itineraryDistance" class="itinerary-value">0 km</div>
+            <div id="itineraryDirection" class="itinerary-label">Direction</div>
+            <div class="itinerary-path-dots">
+                <span class="dot active"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+            <button class="btn-itinerary">Voir l'itinéraire complet</button>
+        </div>
+    </div>
 
-<nav>
-  <button onclick="showMap()">📍 Carte</button>
-  <button onclick="showList()">📄 Publier</button>
-  <button onclick="showAccount()">👤 Compte</button>
-</nav>
+    <div id="formBox" class="drawer hidden">
+        <div class="drawer-handle" onclick="toggleForm()"></div>
+        <h3>Publier une mission gratuitement</h3>
+        <select id="category" class="form-input">
+            <option value="🔧|#E74C3C">Maçonnerie / BTP 🔧</option>
+            <option value="⚡|#F1C40F">Électricité ⚡</option>
+            <option value="💧|#3498DB">Plomberie 💧</option>
+            <option value="🚚|#2ECC71">Livraison 🚚</option>
+            <option value="🧹|#9B59B6">Ménage / Aide 🧹</option>
+        </select>
+        <input id="title" class="form-input" placeholder="Titre (ex: Pose de carrelage)">
+        <input id="price" class="form-input" placeholder="Budget estimé (FCFA)">
+        <input id="phone" class="form-input" placeholder="Numéro WhatsApp (ex: 699...)">
+        <input id="landmark" class="form-input" placeholder="Point de repère (ex: Face Boulangerie)">
+        <textarea id="desc" class="form-input" placeholder="Détails importants (Urgences, Lieu exact...)"></textarea>
+        <button onclick="addJob()" class="btn-primary">Publier</button>
+    </div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-<script src="app.js"></script>
+    <div id="jobsList" class="overlay hidden">
+        <div class="overlay-header"><h2>Missions à proximité</h2></div>
+        <div id="listContent"></div>
+    </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
 </body>
   </html>
