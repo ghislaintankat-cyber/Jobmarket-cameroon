@@ -17,10 +17,19 @@
 
 <div id="map"></div>
 
-<div id="jobsList" class="hidden"></div>
+<div id="list" class="screen hidden"></div>
 
-<div id="formBox" class="hidden form">
-  <input id="title" placeholder="Titre du job">
+<div id="account" class="screen hidden">
+  <h2>Compte</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Mot de passe">
+  <button onclick="login()">Connexion</button>
+  <button onclick="register()">Créer compte</button>
+  <button onclick="googleLogin()">Google</button>
+</div>
+
+<div id="formBox" class="form hidden">
+  <input id="title" placeholder="Titre">
   <input id="price" placeholder="Prix">
   <input id="phone" placeholder="Téléphone">
   <button onclick="addJob()">Publier</button>
@@ -29,8 +38,9 @@
 <button id="fab" onclick="toggleForm()">+</button>
 
 <nav>
-  <button onclick="showMap()">Carte</button>
-  <button onclick="showList()">Jobs</button>
+  <button onclick="showMap()">📍 Carte</button>
+  <button onclick="showList()">📄 Publier</button>
+  <button onclick="showAccount()">👤 Compte</button>
 </nav>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -38,4 +48,4 @@
 <script src="app.js"></script>
 
 </body>
-    </html>
+  </html>
