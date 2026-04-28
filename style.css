@@ -1,48 +1,30 @@
-body { margin:0; font-family:Arial,sans-serif; }
-#map { position:absolute; top:0; bottom:0; width:100%; }
+/* --- AMÉLIORATIONS PRO MAX ULTRA --- */
 
-.topbar {
- position:fixed; top:0; width:100%; z-index:2000;
- background:white; padding:10px;
+/* Masquer le gros panneau blanc natif du routing machine sur mobile */
+.leaflet-routing-container {
+    display: none !important;
 }
 
-.bottom-nav {
- position:fixed; bottom:0; width:100%;
- display:flex; justify-content:space-around;
- background:white; padding:12px 0; z-index:3000;
+/* En-tête flexible pour les menus avec bouton fermer */
+.header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
 
-.drawer {
- position:fixed; bottom:70px; left:0; width:100%;
- background:white; padding:20px; z-index:2500;
- border-radius:20px 20px 0 0;
-}
-.hidden { display:none; }
-
-.rainbow-marker {
- width:42px;
- height:42px;
- border-radius:50% 50% 50% 0;
- transform:rotate(-45deg);
- background:conic-gradient(
- #ff3b30,#ff9500,#ffcc00,#34c759,#00c7be,#007aff,#5856d6,#ff2d55,#ff3b30);
- border:3px solid white;
- box-shadow:0 6px 18px rgba(0,0,0,0.25);
+.close-btn {
+    background: #eee;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
 }
 
-.user-avatar {
- width:70px; height:70px; border-radius:50%;
- background:linear-gradient(135deg,#FFD700,#FFB800);
- color:white; display:flex; align-items:center; justify-content:center;
- font-size:28px; font-weight:bold;
+/* Fix z-index pour s'assurer que Leaflet ne passe pas au-dessus de la barre de navigation */
+.leaflet-top, .leaflet-bottom {
+    z-index: 900 !important;
 }
-
-.itinerary-panel {
- position:fixed;
- top:130px;
- left:15px;
- background:white;
- padding:15px;
- border-radius:15px;
- z-index:2000;
-    }
