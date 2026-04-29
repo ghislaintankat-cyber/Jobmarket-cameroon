@@ -2,59 +2,82 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JobMarket Cameroon PRO MAX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>JobMarket CM | Vanguard Ultimate</title>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
     <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
 </head>
 <body>
 
+<div id="loader" class="loader-overlay">
+    <div class="spinner"></div>
+    <p>Connexion au marché...</p>
+</div>
+
 <div id="map"></div>
 
-<header class="topbar">
-    <div class="logo">JobMarket Cameroon</div>
+<header class="apex-header">
+    <div class="brand">JobMarket <span>CM</span></div>
+    <div class="search-bar">
+        <input type="text" id="mainSearch" placeholder="Quartier, pro, ou métier..." oninput="smartSearch(this.value)">
+    </div>
 </header>
 
-<div class="category-bar">
-    <button onclick="filterJobs('all')">Tous</button>
-    <button onclick="filterJobs('🔧')">BTP</button>
-    <button onclick="filterJobs('⚡')">Électricité</button>
-    <button onclick="filterJobs('💧')">Plomberie</button>
-    <button onclick="filterJobs('🧹')">Ménage</button>
+<div class="category-strip">
+    <button class="chip active" data-cat="all">🌍 Tout</button>
+    <button class="chip" data-cat="🔧">🔧 BTP</button>
+    <button class="chip" data-cat="⚡">⚡ Élec</button>
+    <button class="chip" data-cat="💧">💧 Plomb</button>
+    <button class="chip" data-cat="🧹">🧹 Ménage</button>
 </div>
 
-<div id="itineraryPanel" class="itinerary-panel hidden">
-    <h3>Distance</h3>
-    <div id="itineraryDistance">0 km</div>
-    <div id="itineraryDirection">Direction</div>
+<div class="map-controls">
+    <button onclick="locateMe()" class="ctrl-btn pulse">🎯</button>
+    <button onclick="clearRoute()" id="btnItinerary" class="ctrl-btn hidden">🛑Itinéraire</button>
 </div>
 
-<div id="formBox" class="drawer hidden">
-    <h2>Publier un Job</h2>
-    <select id="category" class="form-input">
-        <option value="🔧|#ff4d4d">BTP</option>
-        <option value="⚡|#FFD700">Électricité</option>
-        <option value="💧|#00c3ff">Plomberie</option>
-        <option value="🧹|#a855f7">Ménage</option>
-    </select>
-    <input id="title" class="form-input" placeholder="Titre du job">
-    <input id="price" class="form-input" placeholder="Prix / Budget">
-    <input id="phone" class="form-input" placeholder="Téléphone WhatsApp">
-    <input id="landmark" class="form-input" placeholder="Repère / Quartier">
-    <textarea id="desc" class="form-input" placeholder="Description"></textarea>
-    <button onclick="addJob()" class="primary-btn">Publier</button>
+<div id="itineraryBox" class="itinerary-panel hidden animate__animated animate__fadeInUp">
+    <h3>Distance estimée</h3>
+    <div id="itDist">0 km</div>
+    <div id="itDirection">Direction</div>
+    <button onclick="clearRoute()" class="btn-clear-it">Annuller le guidage</button>
+</div>
+
+<div id="postDrawer" class="drawer hidden">
+    <div class="drawer-header">
+        <h3>Publier une mission</h3>
+        <button onclick="toggleForm()">✕</button>
+    </div>
+    <div class="form-grid">
+        <select id="j-cat" class="inp">
+            <option value="🔧|#ff4d4d">Maçonnerie / BTP</option>
+            <option value="⚡|#FFD700">Électricité</option>
+            <option value="💧|#00c3ff">Plomberie</option>
+            <option value="🧹|#a855f7">Ménage</option>
+        </select>
+        <input id="j-price" class="inp" placeholder="Budget (FCFA)">
+    </div>
+    <input id="j-title" class="inp" placeholder="Titre (ex: Fuite d'eau)">
+    <input id="j-phone" class="inp" type="tel" placeholder="WhatsApp (ex: 6...)">
+    <input id="j-landmark" class="inp" placeholder="Point de repère">
+    <textarea id="j-desc" class="inp" placeholder="Détails..."></textarea>
+    <button id="btnPublish" onclick="publishApexJob()" class="btn-prime">📸 Publier avec Photo</button>
 </div>
 
 <div id="jobsList" class="overlay hidden">
-    <h2>Jobs proches</h2>
+    <div class="overlay-header">
+        <h2>Jobs Proches</h2>
+        <button onclick="showMap()">✕</button>
+    </div>
     <div id="listContent"></div>
 </div>
 
@@ -63,18 +86,20 @@
     <h2>Compte utilisateur</h2>
     <input id="email" class="form-input" placeholder="Email">
     <input id="password" class="form-input" type="password" placeholder="Mot de passe">
-    <button onclick="loginEmail()" class="primary-btn">Connexion Email</button>
-    <button onclick="loginGoogle()" class="google-btn">Connexion Google</button>
+    <button onclick="loginEmail()" class="primary-btn">Connexion</button>
+    <button onclick="loginGoogle()" class="google-btn">Google</button>
+    <button onclick="showMap()" class="primary-btn" style="background:#666">Retour</button>
 </div>
 
-<nav class="bottom-nav">
-    <button onclick="showMap()">🗺️<span>Carte</span></button>
-    <button onclick="toggleForm()" class="center-btn">➕</button>
-    <button onclick="openAccount()">👤<span>Compte</span></button>
+<nav class="bottom-tab-bar">
+    <button onclick="showMap()" class="tab-btn active" id="btnMap">🗺️<span>Carte</span></button>
+    <button onclick="toggleForm()" class="center-btn pulse-add">➕</button>
+    <button onclick="showList()" class="tab-btn" id="btnList">📋<span>Missions</span></button>
+    <button onclick="openAccount()" class="tab-btn" id="btnAccount">👤<span>Compte</span></button>
 </nav>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 <script src="app.js"></script>
 </body>
-        </html>
+    </html>
