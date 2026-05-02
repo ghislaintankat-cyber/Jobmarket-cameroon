@@ -1,426 +1,623 @@
-// =============================
-// FIREBASE CONFIG
-// =============================
-const firebaseConfig = {
-    apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
-    authDomain: "jobmarketfuture.firebaseapp.com",
-    databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
-    projectId: "jobmarketfuture",
-    storageBucket: "jobmarketfuture.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:jobmarketpro"
-};
+// =============================== // JOBMARKET CAMEROON PRO MAX FINAL APP.JS // ===============================
+
+const firebaseConfig = { apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE", authDomain: "jobmarketfuture.firebaseapp.com", databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com", projectId: "jobmarketfuture", storageBucket: "jobmarketfuture.appspot.com", messagingSenderId: "123456789", appId: "1:123456789:web:jobmarketcameroon" };
 
 firebase.initializeApp(firebaseConfig);
 
-const db = firebase.database();
-const auth = firebase.auth();
-const ADMIN_UID = "GrajEM98vOc1w3FUr9XeTN90rfl2";
+const db = firebase.database(); const auth = firebase.auth();
 
-// =============================
-// CLOUDINARY CONFIG
-// =============================
-const CLOUDINARY_CLOUD_NAME = "dvoab3mzb";
-const CLOUDINARY_UPLOAD_PRESET = "job_preset";
+const CLOUDINARY_CLOUD_NAME = "dvoab3mzb"; const CLOUDINARY_UPLOAD_PRESET = "job_preset"; const ADMIN_UID = "GrajEM98vOc1w3FUr9XeTN90rfl2";
 
-// =============================
-// GLOBAL STATE
-// =============================
-let userCoords = null;
-let routeControl = null;
-let allJobs = [];
-let userMarker = null;
-let gpsWatch = null;
-let voiceEnabled = true;
+let userCoords = null; let routeControl = null; let allJobs = []; let currentUser = null; let userMarker = null; let accuracyCircle = null; let watchId = null;
 
-// =============================
-// MAP INIT
-// =============================
-const map = L.map('map', {
-    zoomControl: false,
-    minZoom: 5
-}).setView([3.848, 11.502], 13);
-
-L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-}).addTo(map);
+// =============================== // MAP // =============================== const map = L.map('map', { zoomControl: false, maxZoom: 20 }).setView([3.848, 11.502], 13);
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', { subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], maxZoom: 20 }).addTo(map);
+
 const jobsLayer = L.featureGroup().addTo(map);
 
-// =============================
-// AUTH INIT
-// =============================
+// =============================== // AUTH // =============================== auth.onAuthStateChanged(user => { if (user) { currentUser = user; updateAccountUI(user); } });
+
 auth.signInAnonymously().catch(console.error);
 
-auth.onAuthStateChanged(user => {
-    if (user) {
-        updateUserAvatar(user);
-    }
+function signupEmail() { auth.createUserWithEmailAndPassword(email.value, password.value) .then(res => { alert(Bienvenue dans JobMarket Cameroon, ${res.user.email}); }) .catch(err => alert(err.message)); }
+
+function loginEmail() { auth.signInWithEmailAndPassword(email.value, password.value) .then(res => { alert(Bienvenue de retour sur JobMarket Cameroon, ${res.user.email}); }) .catch(err => alert(err.message)); }
+
+function loginGoogle() { const provider = new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(provider) .then(res => { alert(Bienvenue dans JobMarket Cameroon, ${res.user.displayName}); }) .catch(err => alert(err.message)); }
+
+function logout() { auth.signOut(); alert("Déconnexion réussie"); }
+
+function updateAccountUI(user) { const avatar = document.getElementById("userAvatar"); if (!avatar) return;
+
+const name = user.displayName || user.email || "User";
+const initials = name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+avatar.innerHTML = initials;
+
+}
+
+// =============================== // GPS PREMIUM // =============================== function locateMe() { if (!navigator.geolocation) { alert("GPS non supporté"); return; }
+
+navigator.geolocation.getCurrentPosition(position => {
+    updateUserLocation(position);
+
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+
+    watchId = navigator.geolocation.watchPosition(updateUserLocation, console.error, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 15000
+    });
+
+    syncJobs();
+}, err => {
+    alert("Impossible d'obtenir votre position exacte");
+    syncJobs();
+}, {
+    enableHighAccuracy: true,
+    timeout: 20000,
+    maximumAge: 0
 });
 
-// =============================
-// GPS LIVE LOCATION
-// =============================
-function locateMe() {
-    if (!navigator.geolocation) {
-        alert("GPS non supporté");
-        return;
-    }
-
-    if (gpsWatch) navigator.geolocation.clearWatch(gpsWatch);
-
-    gpsWatch = navigator.geolocation.watchPosition(position => {
-        userCoords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-        };
-
-        if (userMarker) map.removeLayer(userMarker);
-
-        userMarker = L.circleMarker([userCoords.lat, userCoords.lng], {
-            radius: 10,
-            color: '#ffffff',
-            weight: 3,
-            fillColor: '#007AFF',
-            fillOpacity: 1
-        }).addTo(map);
-
-        map.setView([userCoords.lat, userCoords.lng], map.getZoom(), {
-            animate: true
-        });
-
-        syncJobs();
-    }, error => {
-        console.error(error);
-        syncJobs();
-    }, {
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 10000
-    });
 }
 
-// =============================
-// JOB SYNC
-// =============================
-function syncJobs() {
-    db.ref('jobs').on('value', snapshot => {
-        allJobs = [];
+function updateUserLocation(position) { userCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
 
-        snapshot.forEach(child => {
-            const job = child.val();
-            const dist = userCoords
-                ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng)
-                : 999;
+if (userMarker) map.removeLayer(userMarker);
+if (accuracyCircle) map.removeLayer(accuracyCircle);
 
-            allJobs.push({
-                ...job,
-                id: child.key,
-                dist
-            });
-        });
+accuracyCircle = L.circle([userCoords.lat, userCoords.lng], {
+    radius: position.coords.accuracy,
+    color: '#007AFF',
+    fillColor: '#007AFF',
+    fillOpacity: 0.15
+}).addTo(map);
 
-        allJobs.sort((a, b) => a.dist - b.dist);
-        renderJobs(allJobs);
-    });
+userMarker = L.circleMarker([userCoords.lat, userCoords.lng], {
+    radius: 10,
+    color: '#ffffff',
+    weight: 3,
+    fillColor: '#007AFF',
+    fillOpacity: 1
+}).addTo(map);
+
+map.flyTo([userCoords.lat, userCoords.lng], map.getZoom(), {
+    animate: true,
+    duration: 1.5
+});
+
 }
 
-// =============================
-// PREMIUM MARKERS
-// =============================
-function createPremiumMarker(job) {
-    return L.divIcon({
+// =============================== // JOBS // =============================== function syncJobs() { db.ref('jobs').on('value', snapshot => { allJobs = [];
+
+snapshot.forEach(child => {
+        const job = child.val();
+        const dist = userCoords ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng) : 999;
+        allJobs.push({
+            ...job,
+            id: child.key,
+            dist
+        });
+    });
+
+    allJobs.sort((a, b) => a.dist - b.dist);
+    renderJobs(allJobs);
+});
+
+}
+
+function renderJobs(jobs) { jobsLayer.clearLayers();
+
+jobs.forEach(job => {
+    const markerIcon = L.divIcon({
         className: '',
         html: `
-        <div style="
-            width:28px;
-            height:28px;
-            border-radius:50% 50% 50% 0;
-            transform:rotate(-45deg);
-            background:linear-gradient(135deg,#FFD700,#FFA500,#FF5E00);
-            border:3px solid white;
-            box-shadow:0 4px 15px rgba(0,0,0,0.45);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-        ">
-            <span style="
-                transform:rotate(45deg);
-                font-size:12px;
-                color:white;
-                font-weight:bold;
-            ">${job.icon || '💼'}</span>
-        </div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 28]
+            <div style="
+                width:26px;
+                height:26px;
+                border-radius:50%;
+                background: radial-gradient(circle, gold, orange, red);
+                border:3px solid white;
+                box-shadow:0 0 18px gold;
+            "></div>
+        `,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
     });
-}
 
-// =============================
-// RENDER JOBS
-// =============================
-function renderJobs(jobs) {
-    jobsLayer.clearLayers();
+    const popupButtons = `
+        <a href="https://wa.me/${job.phone}?text=J'ai vu votre offre sur JobMarket Cameroon et je suis intéressé." target="_blank" style="display:block;background:#25D366;color:white;padding:10px;text-align:center;border-radius:10px;margin-top:8px;text-decoration:none;">WhatsApp</a>
+        <a href="tel:${job.phone}" style="display:block;background:#007AFF;color:white;padding:10px;text-align:center;border-radius:10px;margin-top:8px;text-decoration:none;">Appeler</a>
+        <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:red;color:white;padding:10px;border:none;border-radius:10px;margin-top:8px;">Itinéraire vocal</button>
+        ${(currentUser && (currentUser.uid === job.user || currentUser.uid === ADMIN_UID)) ? `<button onclick="deleteJob('${job.id}')" style="width:100%;background:black;color:white;padding:10px;border:none;border-radius:10px;margin-top:8px;">Supprimer</button>` : ''}
+    `;
 
-    jobs.forEach(job => {
-        const marker = L.marker([job.lat, job.lng], {
-            icon: createPremiumMarker(job)
-        }).addTo(jobsLayer);
-
-        marker.bindPopup(`
+    L.marker([job.lat, job.lng], { icon: markerIcon })
+        .addTo(jobsLayer)
+        .bindPopup(`
             <div style="min-width:220px">
                 <b>${job.title}</b><br>
-                <small>${job.landmark || ''}</small><br>
                 <span style="color:green;font-weight:bold">${job.price}</span><br>
-                <small>${job.dist.toFixed(1)} km</small>
-                <div style="margin-top:8px;color:gold;text-align:center;">
-                    ${'★'.repeat(Math.round(job.ratingAvg || 5))}
-                </div>
-                <a href="https://wa.me/${job.phone}?text=${encodeURIComponent('J’ai vu votre offre sur JobMarket et je suis intéressé.')}" target="_blank"
-                   style="display:block;background:#25D366;color:white;padding:10px;border-radius:10px;text-align:center;margin-top:8px;text-decoration:none;">
-                   WhatsApp
-                </a>
-                <a href="tel:${job.phone}"
-                   style="display:block;background:#007AFF;color:white;padding:10px;border-radius:10px;text-align:center;margin-top:6px;text-decoration:none;">
-                   Appeler
-                </a>
-                <button onclick="drawRoute(${job.lat},${job.lng})"
-                   style="width:100%;background:red;color:white;padding:10px;border:none;border-radius:10px;margin-top:6px;">
-                   Itinéraire Vocal
-                </button>
-                ${(auth.currentUser && (auth.currentUser.uid === job.user || auth.currentUser.uid === ADMIN_UID))
-                    ? `<button onclick="deleteJob('${job.id}')"
-                       style="width:100%;background:#111;color:white;padding:10px;border:none;border-radius:10px;margin-top:6px;">
-                       Supprimer
-                       </button>`
-                    : ''}
+                <small>${job.landmark || ''}</small><br>
+                ${job.image ? `<img src="${job.image}" style="width:100%;margin-top:8px;border-radius:10px;">` : ''}
+                <div style="color:gold;text-align:center;margin-top:8px;">${'★'.repeat(Math.round(job.ratingAvg || 5))}</div>
+                ${popupButtons}
             </div>
         `);
-    });
+});
 
-    updateJobsList(jobs);
+updateJobsList(jobs);
+
 }
 
-// =============================
-// ADD JOB
-// =============================
-async function addJob() {
-    if (!auth.currentUser || auth.currentUser.isAnonymous) {
-        alert("Connectez-vous pour publier.");
-        return;
-    }
+async function addJob() { if (!currentUser || currentUser.isAnonymous) { alert("Connectez-vous pour publier un job"); return; }
 
-    const title = document.getElementById('title').value.trim();
-    const price = document.getElementById('price').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const landmark = document.getElementById('landmark').value.trim();
-    const desc = document.getElementById('desc').value.trim();
-    const category = document.getElementById('category').value.split('|');
+const publishBtn = document.getElementById("publishBtn");
+if (publishBtn) publishBtn.innerText = "Publication...";
 
-    if (!title || !price || !phone) {
-        alert("Remplissez les champs obligatoires.");
-        return;
-    }
+try {
+    const cat = document.getElementById('category').value.split('|');
 
     navigator.geolocation.getCurrentPosition(async pos => {
+        let imageUrl = "";
+        const imageFile = document.getElementById("jobImage")?.files[0];
+
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append("file", imageFile);
+            formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+            const data = await response.json();
+            imageUrl = data.secure_url;
+        }
+
         const jobData = {
-            title,
-            price,
-            phone,
-            landmark,
-            desc,
-            icon: category[0],
-            color: category[1],
+            title: title.value,
+            price: price.value,
+            phone: phone.value,
+            landmark: landmark.value,
+            desc: desc.value,
+            icon: cat[0],
+            color: cat[1],
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
-            user: auth.currentUser.uid,
-            userName: auth.currentUser.displayName || auth.currentUser.email,
-            verified: !!auth.currentUser.emailVerified,
+            user: currentUser.uid,
+            userName: currentUser.displayName || currentUser.email,
             ratingAvg: 5,
-            timestamp: Date.now()
+            verified: true,
+            timestamp: Date.now(),
+            image: imageUrl
         };
 
         await db.ref('jobs').push(jobData);
 
-        alert("Job bien publié. Félicitations !");
+        alert("Job bel et bien publié. Félicitations !");
+        resetJobForm();
         toggleForm();
-        clearForm();
+        syncJobs();
+
+        if (publishBtn) publishBtn.innerText = "Publier";
+    }, () => {
+        alert("GPS requis pour publier");
+    }, {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0
     });
+} catch (e) {
+    alert("Erreur publication");
+    if (publishBtn) publishBtn.innerText = "Publier";
 }
 
-function clearForm() {
-    ['title', 'price', 'phone', 'landmark', 'desc'].forEach(id => {
-        document.getElementById(id).value = '';
-    });
 }
 
-// =============================
-// DELETE JOB
-// =============================
-function deleteJob(jobId) {
-    if (confirm("Supprimer ce job ?")) {
-        db.ref('jobs/' + jobId).remove();
+function resetJobForm() { ["title", "price", "phone", "landmark", "desc", "jobImage"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; }); }
+
+function deleteJob(jobId) { if (!confirm("Supprimer ce job ?")) return; db.ref(jobs/${jobId}).remove(); }
+
+// =============================== // ROUTING + VOICE // =============================== function drawRoute(lat, lng) { if (!userCoords) { alert("Active GPS"); return; }
+
+if (routeControl) map.removeControl(routeControl);
+
+routeControl = L.Routing.control({
+    waypoints: [
+        L.latLng(userCoords.lat, userCoords.lng),
+        L.latLng(lat, lng)
+    ],
+    routeWhileDragging: false,
+    addWaypoints: false,
+    createMarker: () => null,
+    lineOptions: {
+        styles: [{ color: 'red', weight: 6 }]
     }
+}).addTo(map);
+
+routeControl.on('routesfound', function (e) {
+    const route = e.routes[0];
+    document.getElementById("itineraryPanel")?.classList.remove("hidden");
+    document.getElementById("itineraryDistance").innerText = `${(route.summary.totalDistance / 1000).toFixed(2)} km`;
+
+    speakInstructions(route.instructions);
+});
+
 }
 
-// =============================
-// ROUTING + VOICE
-// =============================
-function drawRoute(lat, lng) {
-    if (!userCoords) {
-        alert("Activez votre GPS");
-        return;
-    }
+function speakInstructions(instructions) { if (!('speechSynthesis' in window)) return;
 
-    if (routeControl) map.removeControl(routeControl);
+let index = 0;
 
-    routeControl = L.Routing.control({
-        waypoints: [
-            L.latLng(userCoords.lat, userCoords.lng),
-            L.latLng(lat, lng)
-        ],
-        routeWhileDragging: false,
-        addWaypoints: false,
-        draggableWaypoints: false,
-        fitSelectedRoutes: true,
-        createMarker: () => null,
-        lineOptions: {
-            styles: [{ color: 'red', weight: 6 }]
-        }
-    }).addTo(map);
+function speakNext() {
+    if (index >= instructions.length) return;
 
-    routeControl.on('routesfound', e => {
-        const route = e.routes[0];
-        speakDirections(route.instructions);
+    const utterance = new SpeechSynthesisUtterance(instructions[index].text);
+    utterance.lang = "fr-FR";
+    utterance.onend = () => {
+        index++;
+        setTimeout(speakNext, 1500);
+    };
+
+    speechSynthesis.speak(utterance);
+}
+
+speakNext();
+
+}
+
+// =============================== // UI HELPERS // =============================== function toggleForm() { formBox.classList.toggle('hidden'); }
+
+function showList() { jobsList.classList.remove('hidden'); accountPage.classList.add('hidden'); }
+
+function showMap() { jobsList.classList.add('hidden'); accountPage.classList.add('hidden'); formBox.classList.add('hidden'); }
+
+function openAccount() { accountPage.classList.remove('hidden'); jobsList.classList.add('hidden'); }
+
+function filterJobs(cat) { if (cat === 'all') return renderJobs(allJobs); renderJobs(allJobs.filter(job => job.icon === cat)); }
+
+function updateJobsList(jobs) { const list = document.getElementById('listContent'); if (!list) return;
+
+list.innerHTML = jobs.map(job => `
+    <div style="background:white;padding:15px;border-radius:16px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08)">
+        <b>${job.title}</b><br>
+        <small>${job.dist.toFixed(2)} km</small><br>
+        <span style="color:green;font-weight:bold">${job.price}</span><br>
+        <small>${job.userName || ''}</small>
+        <a href="https://wa.me/${job.phone}?text=J'ai vu votre offre sur JobMarket Cameroon et je suis intéressé." target="_blank" style="display:block;background:#25D366;color:white;padding:10px;text-align:center;border-radius:10px;margin-top:8px;text-decoration:none;">WhatsApp</a>
+    </div>
+`).join('');
+
+}
+
+function calcDist(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
+
+const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+
+}
+
+// =============================== // START // =============================== locateMe();// =============================== // JOBMARKET CAMEROON PRO MAX FINAL APP.JS // ===============================
+
+const firebaseConfig = { apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE", authDomain: "jobmarketfuture.firebaseapp.com", databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com", projectId: "jobmarketfuture", storageBucket: "jobmarketfuture.appspot.com", messagingSenderId: "123456789", appId: "1:123456789:web:jobmarketcameroon" };
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database(); const auth = firebase.auth();
+
+const CLOUDINARY_CLOUD_NAME = "dvoab3mzb"; const CLOUDINARY_UPLOAD_PRESET = "job_preset"; const ADMIN_UID = "GrajEM98vOc1w3FUr9XeTN90rfl2";
+
+let userCoords = null; let routeControl = null; let allJobs = []; let currentUser = null; let userMarker = null; let accuracyCircle = null; let watchId = null;
+
+// =============================== // MAP // =============================== const map = L.map('map', { zoomControl: false, maxZoom: 20 }).setView([3.848, 11.502], 13);
+
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', { subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], maxZoom: 20 }).addTo(map);
+
+const jobsLayer = L.featureGroup().addTo(map);
+
+// =============================== // AUTH // =============================== auth.onAuthStateChanged(user => { if (user) { currentUser = user; updateAccountUI(user); } });
+
+auth.signInAnonymously().catch(console.error);
+
+function signupEmail() { auth.createUserWithEmailAndPassword(email.value, password.value) .then(res => { alert(Bienvenue dans JobMarket Cameroon, ${res.user.email}); }) .catch(err => alert(err.message)); }
+
+function loginEmail() { auth.signInWithEmailAndPassword(email.value, password.value) .then(res => { alert(Bienvenue de retour sur JobMarket Cameroon, ${res.user.email}); }) .catch(err => alert(err.message)); }
+
+function loginGoogle() { const provider = new firebase.auth.GoogleAuthProvider(); auth.signInWithPopup(provider) .then(res => { alert(Bienvenue dans JobMarket Cameroon, ${res.user.displayName}); }) .catch(err => alert(err.message)); }
+
+function logout() { auth.signOut(); alert("Déconnexion réussie"); }
+
+function updateAccountUI(user) { const avatar = document.getElementById("userAvatar"); if (!avatar) return;
+
+const name = user.displayName || user.email || "User";
+const initials = name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+avatar.innerHTML = initials;
+
+}
+
+// =============================== // GPS PREMIUM // =============================== function locateMe() { if (!navigator.geolocation) { alert("GPS non supporté"); return; }
+
+navigator.geolocation.getCurrentPosition(position => {
+    updateUserLocation(position);
+
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+
+    watchId = navigator.geolocation.watchPosition(updateUserLocation, console.error, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 15000
     });
+
+    syncJobs();
+}, err => {
+    alert("Impossible d'obtenir votre position exacte");
+    syncJobs();
+}, {
+    enableHighAccuracy: true,
+    timeout: 20000,
+    maximumAge: 0
+});
+
 }
 
-function speakDirections(instructions) {
-    if (!voiceEnabled || !('speechSynthesis' in window)) return;
+function updateUserLocation(position) { userCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
 
-    instructions.forEach((step, index) => {
-        setTimeout(() => {
-            const utterance = new SpeechSynthesisUtterance(step.text);
-            utterance.lang = 'fr-FR';
-            speechSynthesis.speak(utterance);
-        }, index * 4000);
-    });
+if (userMarker) map.removeLayer(userMarker);
+if (accuracyCircle) map.removeLayer(accuracyCircle);
+
+accuracyCircle = L.circle([userCoords.lat, userCoords.lng], {
+    radius: position.coords.accuracy,
+    color: '#007AFF',
+    fillColor: '#007AFF',
+    fillOpacity: 0.15
+}).addTo(map);
+
+userMarker = L.circleMarker([userCoords.lat, userCoords.lng], {
+    radius: 10,
+    color: '#ffffff',
+    weight: 3,
+    fillColor: '#007AFF',
+    fillOpacity: 1
+}).addTo(map);
+
+map.flyTo([userCoords.lat, userCoords.lng], map.getZoom(), {
+    animate: true,
+    duration: 1.5
+});
+
 }
 
-// =============================
-// JOB LIST
-// =============================
-function updateJobsList(jobs) {
-    const list = document.getElementById('listContent');
+// =============================== // JOBS // =============================== function syncJobs() { db.ref('jobs').on('value', snapshot => { allJobs = [];
 
-    list.innerHTML = jobs.map(job => `
-        <div style="background:white;padding:15px;border-radius:16px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08)">
-            <b>${job.title}</b><br>
-            <small>${job.landmark || ''}</small><br>
-            <small>${job.dist.toFixed(1)} km</small><br>
-            <span style="color:green;font-weight:bold">${job.price}</span>
-            <a href="https://wa.me/${job.phone}?text=${encodeURIComponent('J’ai vu votre offre sur JobMarket et je suis intéressé.')}"
-               style="display:block;background:#25D366;color:white;padding:8px;border-radius:10px;text-align:center;margin-top:8px;text-decoration:none;">
-               WhatsApp
-            </a>
-        </div>
-    `).join('');
-}
-
-// =============================
-// AUTH FUNCTIONS
-// =============================
-function loginEmail() {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then(res => {
-            alert(`Bienvenue sur JobMarket, ${res.user.email}`);
-        })
-        .catch(err => {
-            if (err.code === 'auth/user-not-found') {
-                auth.createUserWithEmailAndPassword(email, password)
-                    .then(res => {
-                        alert(`Compte créé avec succès : ${res.user.email}`);
-                    });
-            } else {
-                alert(err.message);
-            }
+snapshot.forEach(child => {
+        const job = child.val();
+        const dist = userCoords ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng) : 999;
+        allJobs.push({
+            ...job,
+            id: child.key,
+            dist
         });
+    });
+
+    allJobs.sort((a, b) => a.dist - b.dist);
+    renderJobs(allJobs);
+});
+
 }
 
-function loginGoogle() {
-    const provider = new firebase.auth.GoogleAuthProvider();
+function renderJobs(jobs) { jobsLayer.clearLayers();
 
-    auth.signInWithPopup(provider)
-        .then(res => {
-            alert(`Bienvenue sur JobMarket, ${res.user.displayName}`);
-        })
-        .catch(err => alert(err.message));
+jobs.forEach(job => {
+    const markerIcon = L.divIcon({
+        className: '',
+        html: `
+            <div style="
+                width:26px;
+                height:26px;
+                border-radius:50%;
+                background: radial-gradient(circle, gold, orange, red);
+                border:3px solid white;
+                box-shadow:0 0 18px gold;
+            "></div>
+        `,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+    });
+
+    const popupButtons = `
+        <a href="https://wa.me/${job.phone}?text=J'ai vu votre offre sur JobMarket Cameroon et je suis intéressé." target="_blank" style="display:block;background:#25D366;color:white;padding:10px;text-align:center;border-radius:10px;margin-top:8px;text-decoration:none;">WhatsApp</a>
+        <a href="tel:${job.phone}" style="display:block;background:#007AFF;color:white;padding:10px;text-align:center;border-radius:10px;margin-top:8px;text-decoration:none;">Appeler</a>
+        <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:red;color:white;padding:10px;border:none;border-radius:10px;margin-top:8px;">Itinéraire vocal</button>
+        ${(currentUser && (currentUser.uid === job.user || currentUser.uid === ADMIN_UID)) ? `<button onclick="deleteJob('${job.id}')" style="width:100%;background:black;color:white;padding:10px;border:none;border-radius:10px;margin-top:8px;">Supprimer</button>` : ''}
+    `;
+
+    L.marker([job.lat, job.lng], { icon: markerIcon })
+        .addTo(jobsLayer)
+        .bindPopup(`
+            <div style="min-width:220px">
+                <b>${job.title}</b><br>
+                <span style="color:green;font-weight:bold">${job.price}</span><br>
+                <small>${job.landmark || ''}</small><br>
+                ${job.image ? `<img src="${job.image}" style="width:100%;margin-top:8px;border-radius:10px;">` : ''}
+                <div style="color:gold;text-align:center;margin-top:8px;">${'★'.repeat(Math.round(job.ratingAvg || 5))}</div>
+                ${popupButtons}
+            </div>
+        `);
+});
+
+updateJobsList(jobs);
+
 }
 
-function updateUserAvatar(user) {
-    const avatar = document.getElementById('userAvatar');
-    if (!avatar) return;
+async function addJob() { if (!currentUser || currentUser.isAnonymous) { alert("Connectez-vous pour publier un job"); return; }
 
-    const initials = (user.displayName || user.email || 'U')
-        .split(' ')
-        .map(x => x[0])
-        .join('')
-        .substring(0, 2)
-        .toUpperCase();
+const publishBtn = document.getElementById("publishBtn");
+if (publishBtn) publishBtn.innerText = "Publication...";
 
-    avatar.innerHTML = initials;
+try {
+    const cat = document.getElementById('category').value.split('|');
+
+    navigator.geolocation.getCurrentPosition(async pos => {
+        let imageUrl = "";
+        const imageFile = document.getElementById("jobImage")?.files[0];
+
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append("file", imageFile);
+            formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+            const data = await response.json();
+            imageUrl = data.secure_url;
+        }
+
+        const jobData = {
+            title: title.value,
+            price: price.value,
+            phone: phone.value,
+            landmark: landmark.value,
+            desc: desc.value,
+            icon: cat[0],
+            color: cat[1],
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            user: currentUser.uid,
+            userName: currentUser.displayName || currentUser.email,
+            ratingAvg: 5,
+            verified: true,
+            timestamp: Date.now(),
+            image: imageUrl
+        };
+
+        await db.ref('jobs').push(jobData);
+
+        alert("Job bel et bien publié. Félicitations !");
+        resetJobForm();
+        toggleForm();
+        syncJobs();
+
+        if (publishBtn) publishBtn.innerText = "Publier";
+    }, () => {
+        alert("GPS requis pour publier");
+    }, {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0
+    });
+} catch (e) {
+    alert("Erreur publication");
+    if (publishBtn) publishBtn.innerText = "Publier";
 }
 
-// =============================
-// UI CONTROLS
-// =============================
-function toggleForm() {
-    document.getElementById('formBox').classList.toggle('hidden');
 }
 
-function showList() {
-    document.getElementById('jobsList').classList.remove('hidden');
+function resetJobForm() { ["title", "price", "phone", "landmark", "desc", "jobImage"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; }); }
+
+function deleteJob(jobId) { if (!confirm("Supprimer ce job ?")) return; db.ref(jobs/${jobId}).remove(); }
+
+// =============================== // ROUTING + VOICE // =============================== function drawRoute(lat, lng) { if (!userCoords) { alert("Active GPS"); return; }
+
+if (routeControl) map.removeControl(routeControl);
+
+routeControl = L.Routing.control({
+    waypoints: [
+        L.latLng(userCoords.lat, userCoords.lng),
+        L.latLng(lat, lng)
+    ],
+    routeWhileDragging: false,
+    addWaypoints: false,
+    createMarker: () => null,
+    lineOptions: {
+        styles: [{ color: 'red', weight: 6 }]
+    }
+}).addTo(map);
+
+routeControl.on('routesfound', function (e) {
+    const route = e.routes[0];
+    document.getElementById("itineraryPanel")?.classList.remove("hidden");
+    document.getElementById("itineraryDistance").innerText = `${(route.summary.totalDistance / 1000).toFixed(2)} km`;
+
+    speakInstructions(route.instructions);
+});
+
 }
 
-function showMap() {
-    document.getElementById('jobsList').classList.add('hidden');
-    document.getElementById('accountPage').classList.add('hidden');
+function speakInstructions(instructions) { if (!('speechSynthesis' in window)) return;
+
+let index = 0;
+
+function speakNext() {
+    if (index >= instructions.length) return;
+
+    const utterance = new SpeechSynthesisUtterance(instructions[index].text);
+    utterance.lang = "fr-FR";
+    utterance.onend = () => {
+        index++;
+        setTimeout(speakNext, 1500);
+    };
+
+    speechSynthesis.speak(utterance);
 }
 
-function openAccount() {
-    document.getElementById('accountPage').classList.remove('hidden');
+speakNext();
+
 }
 
-function filterJobs(category) {
-    if (category === 'all') return renderJobs(allJobs);
-    renderJobs(allJobs.filter(job => job.icon === category));
+// =============================== // UI HELPERS // =============================== function toggleForm() { formBox.classList.toggle('hidden'); }
+
+function showList() { jobsList.classList.remove('hidden'); accountPage.classList.add('hidden'); }
+
+function showMap() { jobsList.classList.add('hidden'); accountPage.classList.add('hidden'); formBox.classList.add('hidden'); }
+
+function openAccount() { accountPage.classList.remove('hidden'); jobsList.classList.add('hidden'); }
+
+function filterJobs(cat) { if (cat === 'all') return renderJobs(allJobs); renderJobs(allJobs.filter(job => job.icon === cat)); }
+
+function updateJobsList(jobs) { const list = document.getElementById('listContent'); if (!list) return;
+
+list.innerHTML = jobs.map(job => `
+    <div style="background:white;padding:15px;border-radius:16px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08)">
+        <b>${job.title}</b><br>
+        <small>${job.dist.toFixed(2)} km</small><br>
+        <span style="color:green;font-weight:bold">${job.price}</span><br>
+        <small>${job.userName || ''}</small>
+        <a href="https://wa.me/${job.phone}?text=J'ai vu votre offre sur JobMarket Cameroon et je suis intéressé." target="_blank" style="display:block;background:#25D366;color:white;padding:10px;text-align:center;border-radius:10px;margin-top:8px;text-decoration:none;">WhatsApp</a>
+    </div>
+`).join('');
+
 }
 
-// =============================
-// DISTANCE CALC
-// =============================
-function calcDist(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
+function calcDist(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180;
 
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
+const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
-    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+
 }
 
-// =============================
-// START APP
-// =============================
-locateMe();
-syncJobs();
+// =============================== // START // =============================== locateMe();
