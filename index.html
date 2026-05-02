@@ -36,47 +36,47 @@
     <button onclick="showList()">📋</button>
 </div>
 
-<div id="itineraryPanel" class="itinerary-panel hidden">
-    <h3>Navigation</h3>
-    <div id="itineraryDistance">0 km</div>
-    <div id="itineraryDirection">Direction</div>
-</div>
-
 <div id="formBox" class="drawer hidden">
     <h2>Publier un Job</h2>
-    <input id="posterName" class="form-input" placeholder="Votre nom">
+
     <select id="category" class="form-input">
-        <option value="🔧|#FFD700">BTP</option>
-        <option value="⚡|#FFD700">Électricité</option>
-        <option value="💧|#FFD700">Plomberie</option>
-        <option value="🧹|#FFD700">Ménage</option>
+        <option value="🔧|#E74C3C">BTP</option>
+        <option value="⚡|#F1C40F">Électricité</option>
+        <option value="💧|#3498DB">Plomberie</option>
+        <option value="🧹|#9B59B6">Ménage</option>
     </select>
+
     <input id="title" class="form-input" placeholder="Titre du job">
     <input id="price" class="form-input" placeholder="Prix / Budget">
     <input id="phone" class="form-input" placeholder="Téléphone WhatsApp">
     <input id="landmark" class="form-input" placeholder="Repère / Quartier">
     <textarea id="desc" class="form-input" placeholder="Description"></textarea>
-    <button onclick="addJob()" class="primary-btn">Publier maintenant</button>
+
+    <input type="file" id="jobImage" class="form-input" accept="image/*">
+    <small>Ajouter une photo du job (optionnel)</small>
+
+    <button onclick="addJob()" class="primary-btn">
+        📍 Publier définitivement sur la carte
+    </button>
 </div>
 
 <div id="jobsList" class="overlay hidden">
-    <h2>Jobs publiés</h2>
+    <h2>Jobs proches</h2>
     <div id="listContent"></div>
 </div>
 
 <div id="accountPage" class="overlay hidden">
+    <div id="userAvatar" class="user-avatar">U</div>
     <h2>Compte utilisateur</h2>
-    <div id="userAvatar" class="avatar hidden"></div>
     <input id="email" class="form-input" placeholder="Email">
     <input id="password" class="form-input" type="password" placeholder="Mot de passe">
-    <button onclick="signupEmail()" class="primary-btn">Créer un compte</button>
     <button onclick="loginEmail()" class="primary-btn">Connexion Email</button>
     <button onclick="loginGoogle()" class="google-btn">Connexion Google</button>
 </div>
 
 <nav class="bottom-nav">
     <button onclick="showMap()">🗺️<span>Carte</span></button>
-    <button onclick="showList()" class="center-btn">📋</button>
+    <button onclick="toggleForm()" class="center-btn">➕</button>
     <button onclick="openAccount()">👤<span>Compte</span></button>
 </nav>
 
@@ -84,4 +84,4 @@
 <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 <script src="app.js"></script>
 </body>
-                                          </html>
+        </html>
