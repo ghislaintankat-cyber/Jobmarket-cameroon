@@ -1,12 +1,104 @@
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FFD700">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JobMarket Cameroon PRO MAX</title>
 
-<!-- Push Notifications -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFD700">
 
-<!-- Chat access -->
-<a href="chat.html" class="chat-link">Chat sécurisé</a>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 
-<!-- Admin access -->
-<a href="admin.html" class="admin-link">Dashboard Admin</a>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+</head>
+<body>
+
+<div id="map"></div>
+
+<header class="topbar">
+    <div class="logo">JobMarket Cameroon</div>
+    <button onclick="toggleForm()" class="post-btn">Publier</button>
+</header>
+
+<div class="category-bar">
+    <button onclick="filterJobs('all')">Tous</button>
+    <button onclick="filterJobs('🔧')">BTP</button>
+    <button onclick="filterJobs('⚡')">Électricité</button>
+    <button onclick="filterJobs('💧')">Plomberie</button>
+    <button onclick="filterJobs('🧹')">Ménage</button>
+</div>
+
+<div class="side-controls">
+    <button onclick="locateMe()">🎯</button>
+    <button onclick="showList()">📝</button>
+</div>
+
+<div id="itineraryPanel" class="itinerary-panel hidden">
+    <h3>Distance</h3>
+    <div id="itineraryDistance">0 km</div>
+</div>
+
+<div id="formBox" class="drawer hidden">
+    <h2>Publier un Job</h2>
+
+    <select id="category" class="form-input">
+        <option value="🔧|#FFD700">BTP</option>
+        <option value="⚡|#FFD700">Électricité</option>
+        <option value="💧|#FFD700">Plomberie</option>
+        <option value="🧹|#FFD700">Ménage</option>
+    </select>
+
+    <input id="title" class="form-input" placeholder="Titre du job">
+    <input id="price" class="form-input" placeholder="Prix / Budget">
+    <input id="phone" class="form-input" placeholder="Téléphone WhatsApp">
+    <input id="landmark" class="form-input" placeholder="Repère / Quartier">
+    <textarea id="desc" class="form-input" placeholder="Description"></textarea>
+
+    <label class="upload-label">Ajouter images (jusqu'à 5)</label>
+    <input id="jobImages" type="file" accept="image/*" multiple class="form-input">
+
+    <button id="publishBtn" onclick="addJob()" class="primary-btn">
+        Publier maintenant
+    </button>
+</div>
+
+<div id="jobsList" class="overlay hidden">
+    <h2>Jobs proches</h2>
+    <div id="listContent"></div>
+</div>
+
+<div id="accountPage" class="overlay hidden">
+    <div id="userAvatar" class="user-avatar">JM</div>
+    <h2>Compte utilisateur</h2>
+
+    <input id="email" class="form-input" placeholder="Email">
+    <input id="password" class="form-input" type="password" placeholder="Mot de passe">
+
+    <button onclick="signupEmail()" class="primary-btn">Créer compte</button>
+    <button onclick="loginEmail()" class="primary-btn">Connexion Email</button>
+    <button onclick="loginGoogle()" class="google-btn">Connexion Google</button>
+    <button onclick="logout()" class="danger-btn">Déconnexion</button>
+
+    <a href="admin.html" class="admin-link">Dashboard Admin</a>
+    <a href="chat.html" class="chat-link">Chat sécurisé</a>
+</div>
+
+<nav class="bottom-nav">
+    <button onclick="showMap()">🗺️<span>Carte</span></button>
+    <button onclick="toggleForm()" class="center-btn">➕</button>
+    <button onclick="openAccount()">👤<span>Compte</span></button>
+</nav>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+<script src="app.js"></script>
+</body>
+  </html>
