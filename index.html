@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#0A0A0F"/>
+<meta name="description" content="JobMarket Cameroon - Trouvez des artisans et jobs proches de vous"/>
+<title>JobMarket Cameroon PRO MAX</title>
+
+<!-- PWA Manifest inline -->
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22JobMarket%20Cameroon%22%2C%22short_name%22%3A%22JobMarket%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230A0A0F%22%2C%22theme_color%22%3A%22%23FFD700%22%7D"/>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --gold: #FFD700;
+  --gold-dim: #C9A800;
+  --gold-glow: rgba(255,215,0,0.18);
+  --blue: #007AFF;
+  --green: #25D366;
+  --red-cam: #CE1126;
+  --green-cam: #007A5E;
+  --dark: #0A0A0F;
+  --dark2: #13131A;
+  --dark3: #1C1C28;
+  --surface: #1E1E2E;
+  --surface2: #252538;
+  --border: rgba(255,255,255,0.07);
+  --text: #F0F0F8;
+  --text-dim: #8888A8;
+  --danger: #FF3B30;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-xl: 34px;
+  --shadow-gold: 0 0 30px rgba(255,215,0,0.15);
+  --transition: cubic-bezier(0.34,1.56,0.64,1);
+  --ease: cubic-bezier(0.25,0.46,0.45,0.94);
+}
+
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--dark);
+  color:var(--text);
+  overscroll-behavior:none;
+}
+
+/* ===== MAP ===== */
+#map{
+  position:fixed;inset:0;z-index:1;
+  filter:brightness(0.88) saturate(1.1);
+}
+
+/* ===== SPLASH SCREEN ===== */
+#splash{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--dark);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:20px;
+  transition:opacity 0.6s var(--ease),transform 0.6s var(--ease);
+}
+#splash.hide{opacity:0;transform:scale(1.04);pointer-events:none;}
+.splash-logo{
+  width:90px;height:90px;
+  background:linear-gradient(135deg,var(--gold),#B8860B);
+  border-radius:28px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;
+  font-weight:800;font-size:32px;color:#0A0A0F;
+  box-shadow:0 0 60px rgba(255,215,0,0.35);
+  animation:pulse-logo 2s ease-in-out infinite;
+}
+@keyframes pulse-logo{
+  0%,100%{box-shadow:0 0 40px rgba(255,215,0,0.35);}
+  50%{box-shadow:0 0 70px rgba(255,215,0,0.55);}
+}
+.splash-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:22px;
+  letter-spacing:-0.5px;color:var(--text);
+}
+.splash-sub{color:var(--text-dim);font-size:14px;}
+.splash-bar{
+  width:160px;height:3px;background:var(--dark3);border-radius:4px;overflow:hidden;margin-top:12px;
+}
+.splash-progress{
+  height:100%;width:0;background:linear-gradient(90deg,var(--gold),#FFA500);
+  border-radius:4px;animation:load-bar 2s ease forwards;
+}
+@keyframes load-bar{to{width:100%;}}
+
+/* ===== TOP BAR ===== */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  height:68px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;
+  background:rgba(10,10,15,0.82);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--border);
+}
+.logo-wrap{display:flex;align-items:center;gap:10px;}
+.logo-icon{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,var(--gold),#B8860B);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#0A0A0F;
+}
+.logo-text{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:16px;
+  line-height:1;
+}
+.logo-text span{color:var(--gold);}
+.logo-sub{font-size:10px;color:var(--text-dim);font-weight:400;letter-spacing:1px;text-transform:uppercase;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.icon-btn{
+  width:40px;height:40px;border:none;cursor:pointer;
+  background:var(--surface);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text);transition:background 0.2s,transform 0.15s;
+}
+.icon-btn:active{transform:scale(0.92);}
+.icon-btn svg{width:18px;height:18px;}
+.post-btn{
+  display:flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,var(--gold),#E6B800);
+  border:none;cursor:pointer;
+  padding:9px 16px;border-radius:22px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:13px;
+  color:#0A0A0F;
+  box-shadow:0 4px 15px rgba(255,215,0,0.3);
+  transition:transform 0.15s,box-shadow 0.2s;
+}
+.post-btn:active{transform:scale(0.95);box-shadow:0 2px 8px rgba(255,215,0,0.2);}
+.post-btn svg{width:14px;height:14px;}
+
+/* ===== CATEGORY BAR ===== */
+.category-bar{
+  position:fixed;top:68px;left:0;right:0;z-index:999;
+  display:flex;gap:8px;
+  padding:10px 16px;
+  overflow-x:auto;
+  background:rgba(10,10,15,0.6);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  scrollbar-width:none;
+}
+.category-bar::-webkit-scrollbar{display:none;}
+.cat-btn{
+  display:flex;align-items:center;gap:6px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text-dim);
+  padding:8px 14px;border-radius:22px;
+  font-family:'DM Sans',sans-serif;font-weight:500;font-size:13px;
+  white-space:nowrap;cursor:pointer;
+  transition:all 0.2s;
+  flex-shrink:0;
+}
+.cat-btn.active,.cat-btn:hover{
+  background:var(--gold);color:#0A0A0F;border-color:var(--gold);
+  font-weight:700;
+  box-shadow:0 4px 12px rgba(255,215,0,0.25);
+}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* ===== SIDE CONTROLS ===== */
+.side-controls{
+  position:fixed;right:14px;top:160px;z-index:999;
+  display:flex;flex-direction:column;gap:10px;
+}
+.side-btn{
+  width:50px;height:50px;border:none;cursor:pointer;
+  background:rgba(10,10,15,0.85);
+  backdrop-filter:blur(16px);
+  border-radius:14px;border:1px solid var(--border);
+  color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  transition:transform 0.15s,background 0.2s;
+}
+.side-btn:active{transform:scale(0.9);}
+.side-btn svg{width:20px;height:20px;}
+.dist-badge{
+  background:rgba(10,10,15,0.9);
+  backdrop-filter:blur(16px);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px 12px;
+  text-align:center;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+}
+.dist-badge-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);}
+.dist-badge-value{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--gold);}
+
+/* ===== DRAWERS & OVERLAYS ===== */
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:1001;
+  background:var(--dark2);
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  border-top:1px solid var(--border);
+  max-height:90vh;overflow-y:auto;
+  transform:translateY(100%);
+  transition:transform 0.4s var(--transition);
+  box-shadow:0 -20px 60px rgba(0,0,0,0.6);
+}
+.sheet.open{transform:translateY(0);}
+.sheet-handle{
+  width:40px;height:4px;background:var(--surface2);
+  border-radius:4px;margin:14px auto 0;
+}
+.sheet-header{
+  padding:16px 20px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sheet-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:18px;
+}
+.sheet-body{padding:0 20px 20px;}
+
+.overlay-page{
+  position:fixed;inset:0;z-index:1002;
+  background:var(--dark);
+  transform:translateX(100%);
+  transition:transform 0.38s var(--ease);
+  overflow-y:auto;
+}
+.overlay-page.open{transform:translateX(0);}
+.overlay-header{
+  position:sticky;top:0;z-index:10;
+  background:var(--dark2);
+  backdrop-filter:blur(20px);
+  padding:16px 20px;
+  display:flex;align-items:center;gap:14px;
+  border-bottom:1px solid var(--border);
+}
+.back-btn{
+  width:38px;height:38px;border:none;cursor:pointer;
+  background:var(--surface);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text);flex-shrink:0;
+}
+.back-btn svg{width:18px;height:18px;}
+.overlay-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:17px;
+}
+.overlay-body{padding:20px;}
+.hidden{display:none!important;}
+
+/* ===== FORM ELEMENTS ===== */
+.form-group{margin-bottom:14px;}
+.form-label{
+  display:block;margin-bottom:6px;
+  font-size:12px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.8px;
+  color:var(--text-dim);
+}
+.form-input,.form-select,.form-textarea{
+  width:100%;padding:14px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:15px;
+  outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+  -webkit-appearance:none;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(255,215,0,0.12);
+}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text-dim);}
+.form-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%238888A8' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:20px;padding-right:40px;}
+.form-select option{background:var(--dark2);color:var(--text);}
+.form-textarea{min-height:90px;resize:vertical;}
+
+.upload-zone{
+  border:2px dashed var(--border);
+  border-radius:var(--radius-md);
+  padding:24px;text-align:center;cursor:pointer;
+  background:var(--surface);
+  transition:border-color 0.2s,background 0.2s;
+}
+.upload-zone:hover{border-color:var(--gold);background:rgba(255,215,0,0.04);}
+.upload-zone input{display:none;}
+.upload-icon{margin-bottom:8px;color:var(--gold);}
+.upload-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+.upload-sub{font-size:12px;color:var(--text-dim);}
+.image-previews{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.image-preview-item{
+  width:60px;height:60px;border-radius:10px;
+  object-fit:cover;border:2px solid var(--gold);
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:15px;border:none;cursor:pointer;
+  border-radius:var(--radius-md);
+  font-family:'Syne',sans-serif;font-weight:700;font-size:15px;
+  transition:transform 0.15s,box-shadow 0.2s,opacity 0.2s;
+}
+.btn:active{transform:scale(0.97);}
+.btn:disabled{opacity:0.5;pointer-events:none;}
+.btn-primary{
+  background:linear-gradient(135deg,var(--gold),#E6B800);
+  color:#0A0A0F;
+  box-shadow:0 6px 20px rgba(255,215,0,0.3);
+}
+.btn-primary:hover{box-shadow:0 8px 28px rgba(255,215,0,0.4);}
+.btn-google{background:#DB4437;color:#fff;}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 6px 20px rgba(37,211,102,0.25);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+.btn+.btn{margin-top:10px;}
+.btn svg{width:18px;height:18px;flex-shrink:0;}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:1000;
+  height:82px;
+  display:flex;align-items:center;
+  background:rgba(10,10,15,0.9);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border-top:1px solid var(--border);
+  padding:0 8px;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:4px;border:none;background:none;cursor:pointer;
+  color:var(--text-dim);padding:8px;
+  transition:color 0.2s;
+  font-family:'DM Sans',sans-serif;font-weight:500;font-size:11px;
+}
+.nav-item.active{color:var(--gold);}
+.nav-item svg{width:22px;height:22px;}
+.nav-center-wrap{flex:0 0 80px;display:flex;justify-content:center;}
+.nav-center{
+  width:62px;height:62px;
+  background:linear-gradient(135deg,var(--gold),#E6B800);
+  border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 4px rgba(255,215,0,0.2),0 8px 25px rgba(255,215,0,0.4);
+  transform:translateY(-12px);
+  transition:transform 0.2s var(--transition),box-shadow 0.2s;
+  color:#0A0A0F;
+}
+.nav-center:active{transform:translateY(-8px) scale(0.95);}
+.nav-center svg{width:26px;height:26px;}
+
+/* ===== JOB LIST ===== */
+.jobs-sheet .sheet-body{padding-bottom:100px;}
+.job-card{
+  background:var(--surface);
+  border-radius:var(--radius-md);
+  padding:14px;margin-bottom:10px;
+  border:1px solid var(--border);
+  display:flex;gap:12px;align-items:flex-start;
+  cursor:pointer;
+  transition:background 0.2s,transform 0.15s;
+  animation:slide-up 0.3s var(--ease) both;
+}
+@keyframes slide-up{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.job-card:active{transform:scale(0.98);}
+.job-card-icon{
+  width:46px;height:46px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:20px;
+}
+.job-card-body{flex:1;min-width:0;}
+.job-card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.job-card-meta{display:flex;align-items:center;gap:6px;margin-top:4px;}
+.job-card-price{font-weight:700;font-size:14px;color:var(--green);}
+.job-card-dist{font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:3px;}
+.job-card-verified{width:14px;height:14px;color:var(--blue);}
+.job-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+
+/* ===== ACCOUNT PAGE ===== */
+.avatar{
+  width:82px;height:82px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),#B8860B);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:#0A0A0F;
+  margin:0 auto 8px;
+  box-shadow:0 0 0 4px rgba(255,215,0,0.2);
+}
+.account-name{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:20px;
+  text-align:center;margin-bottom:4px;
+}
+.account-email{font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:24px;}
+.account-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-md);overflow:hidden;margin-bottom:12px;
+}
+.account-item{
+  display:flex;align-items:center;gap:12px;
+  padding:15px 16px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background 0.2s;color:var(--text);
+  text-decoration:none;font-size:15px;font-weight:500;
+}
+.account-item:last-child{border-bottom:none;}
+.account-item:active{background:var(--surface2);}
+.account-item-icon{
+  width:34px;height:34px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.account-item-icon svg{width:18px;height:18px;}
+.account-item span{flex:1;}
+.account-item-arrow svg{width:16px;height:16px;color:var(--text-dim);}
+
+/* ===== ITINERARY PANEL ===== */
+.itin-panel{
+  position:fixed;bottom:96px;left:14px;z-index:999;
+  background:rgba(10,10,15,0.92);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:14px;min-width:150px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.5);
+}
+.itin-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:4px;}
+.itin-value{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--gold);}
+.itin-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+
+/* ===== AUTH TABS ===== */
+.auth-tabs{display:flex;gap:4px;background:var(--surface);border-radius:var(--radius-sm);padding:4px;margin-bottom:20px;}
+.auth-tab{
+  flex:1;padding:10px;border:none;background:none;cursor:pointer;
+  border-radius:10px;color:var(--text-dim);
+  font-family:'Syne',sans-serif;font-weight:700;font-size:14px;
+  transition:all 0.2s;
+}
+.auth-tab.active{background:var(--gold);color:#0A0A0F;}
+
+/* ===== DIVIDER ===== */
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0;}
+.divider-line{flex:1;height:1px;background:var(--border);}
+.divider-text{font-size:12px;color:var(--text-dim);}
+
+/* ===== TAGS / BADGES ===== */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:20px;
+  font-size:11px;font-weight:700;
+}
+.badge-gold{background:rgba(255,215,0,0.15);color:var(--gold);}
+.badge-green{background:rgba(37,211,102,0.12);color:var(--green);}
+.badge-blue{background:rgba(0,122,255,0.12);color:var(--blue);}
+
+/* ===== TOAST ===== */
+#toast{
+  position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);
+  z-index:9998;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:12px 20px;
+  font-size:14px;font-weight:500;
+  box-shadow:0 8px 30px rgba(0,0,0,0.5);
+  opacity:0;
+  transition:all 0.3s var(--ease);
+  white-space:nowrap;
+  max-width:calc(100vw - 32px);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.success{border-color:var(--green);color:var(--green);}
+#toast.error{border-color:var(--danger);color:var(--danger);}
+#toast.info{border-color:var(--gold);color:var(--gold);}
+
+/* ===== NOTIFICATION DOT ===== */
+.notif-dot{
+  position:absolute;top:-2px;right:-2px;
+  width:8px;height:8px;background:var(--red-cam);
+  border-radius:50%;border:2px solid var(--dark);
+}
+
+/* ===== LOADING STATE ===== */
+.spinner{
+  width:20px;height:20px;border-radius:50%;
+  border:2px solid rgba(10,10,15,0.3);
+  border-top-color:#0A0A0F;
+  animation:spin 0.7s linear infinite;
+  flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== CHAT UI ===== */
+.chat-messages{
+  padding:16px;display:flex;flex-direction:column;gap:10px;
+  min-height:300px;max-height:50vh;overflow-y:auto;
+}
+.chat-msg{
+  max-width:80%;padding:12px 15px;border-radius:18px;
+  font-size:14px;line-height:1.5;
+}
+.chat-msg.mine{
+  background:var(--blue);color:#fff;
+  align-self:flex-end;border-bottom-right-radius:4px;
+}
+.chat-msg.theirs{
+  background:var(--surface2);color:var(--text);
+  align-self:flex-start;border-bottom-left-radius:4px;
+}
+.chat-input-row{
+  display:flex;gap:10px;align-items:center;
+  padding:12px 16px;border-top:1px solid var(--border);
+}
+.chat-input{
+  flex:1;padding:12px 16px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:22px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px;
+  outline:none;
+}
+.chat-send{
+  width:42px;height:42px;border:none;cursor:pointer;
+  background:var(--blue);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.chat-send svg{width:18px;height:18px;}
+
+/* ===== ADMIN PANEL ===== */
+.admin-stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:16px;
+  text-align:center;
+}
+.admin-stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--gold);}
+.admin-stat-label{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+
+/* ===== LEAFLET OVERRIDES ===== */
+.leaflet-popup-content-wrapper{
+  background:var(--dark2)!important;border:1px solid var(--border)!important;
+  border-radius:var(--radius-md)!important;box-shadow:0 10px 40px rgba(0,0,0,0.6)!important;
+}
+.leaflet-popup-tip{background:var(--dark2)!important;}
+.leaflet-popup-content{color:var(--text)!important;margin:14px!important;}
+.leaflet-routing-container{background:var(--dark2)!important;color:var(--text)!important;border-radius:var(--radius-md)!important;}
+
+/* ===== MISC ===== */
+.section-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:16px;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.empty-state{
+  text-align:center;padding:40px 20px;
+  color:var(--text-dim);
+}
+.empty-state svg{width:48px;height:48px;margin-bottom:12px;opacity:0.4;}
+.empty-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text);margin-bottom:6px;}
+.empty-sub{font-size:14px;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- ===== SPLASH ===== -->
+<div id="splash">
+  <div class="splash-logo">JM</div>
+  <div>
+    <div class="splash-title">JobMarket Cameroon</div>
+    <div class="splash-sub">Artisans qualifies pres de vous</div>
+  </div>
+  <div class="splash-bar"><div class="splash-progress"></div></div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<!-- ===== MAP ===== -->
+<div id="map"></div>
+
+<!-- ===== TOPBAR ===== -->
+<header class="topbar">
+  <div class="logo-wrap">
+    <div class="logo-icon">JM</div>
+    <div>
+      <div class="logo-text">Job<span>Market</span></div>
+      <div class="logo-sub">Cameroon PRO</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="icon-btn" id="notifBtn" style="position:relative;" onclick="showToast('Aucune nouvelle notification','info')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="notif-dot"></div>
+    </button>
+    <button class="post-btn" onclick="toggleJobForm()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Publier
+    </button>
+  </div>
+</header>
+
+<!-- ===== CATEGORY BAR ===== -->
+<nav class="category-bar">
+  <button class="cat-btn active" onclick="filterJobs('all',this)">
+    <div class="cat-dot" style="background:var(--gold)"></div>
+    Tous
+  </button>
+  <button class="cat-btn" onclick="filterJobs('btp',this)">
+    <div class="cat-dot" style="background:#FF9500"></div>
+    BTP
+  </button>
+  <button class="cat-btn" onclick="filterJobs('electricite',this)">
+    <div class="cat-dot" style="background:#FFD700"></div>
+    Electricite
+  </button>
+  <button class="cat-btn" onclick="filterJobs('plomberie',this)">
+    <div class="cat-dot" style="background:#007AFF"></div>
+    Plomberie
+  </button>
+  <button class="cat-btn" onclick="filterJobs('menage',this)">
+    <div class="cat-dot" style="background:#25D366"></div>
+    Menage
+  </button>
+  <button class="cat-btn" onclick="filterJobs('jardinage',this)">
+    <div class="cat-dot" style="background:#34C759"></div>
+    Jardinage
+  </button>
+  <button class="cat-btn" onclick="filterJobs('mecanique',this)">
+    <div class="cat-dot" style="background:#FF3B30"></div>
+    Mecanique
+  </button>
+  <button class="cat-btn" onclick="filterJobs('informatique',this)">
+    <div class="cat-dot" style="background:#AF52DE"></div>
+    Informatique
+  </button>
+</nav>
+
+<!-- ===== SIDE CONTROLS ===== -->
+<div class="side-controls">
+  <button class="side-btn" onclick="locateMe()" title="Ma position">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+  </button>
+  <button class="side-btn" onclick="map.zoomIn()" title="Zoom +">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+  <button class="side-btn" onclick="map.zoomOut()" title="Zoom -">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+  <button class="side-btn" onclick="toggleMapStyle()" title="Style carte" id="mapStyleBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+  </button>
+  <div class="dist-badge">
+    <div class="dist-badge-label">Distance</div>
+    <div class="dist-badge-value" id="maxDistDisplay">--</div>
+    <div class="dist-badge-label">km</div>
+  </div>
+</div>
+
+<!-- ===== ITINERARY PANEL (hidden by default) ===== -->
+<div class="itin-panel hidden" id="itinPanel">
+  <div class="itin-label">Itineraire</div>
+  <div class="itin-value" id="itinDist">--</div>
+  <div class="itin-sub" id="itinTime">Calcul en cours...</div>
+  <button style="width:100%;margin-top:10px;padding:8px;background:var(--danger);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;" onclick="clearRoute()">Annuler</button>
+</div>
+
+<!-- ===== JOB PUBLISH FORM SHEET ===== -->
+<div class="sheet" id="jobFormSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Publier un Job</div>
+    <button class="icon-btn" onclick="toggleJobForm()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body">
+    <div class="form-group">
+      <label class="form-label">Categorie</label>
+      <select class="form-select" id="category">
+        <option value="btp|#FF9500">BTP / Maconnerie</option>
+        <option value="electricite|#FFD700">Electricite</option>
+        <option value="plomberie|#007AFF">Plomberie</option>
+        <option value="menage|#25D366">Menage / Nettoyage</option>
+        <option value="jardinage|#34C759">Jardinage</option>
+        <option value="mecanique|#FF3B30">Mecanique Auto</option>
+        <option value="informatique|#AF52DE">Informatique</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Titre du job</label>
+      <input class="form-input" id="title" type="text" placeholder="Ex: Pose de carrelage salle de bain"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="desc" placeholder="Decrivez le travail a effectuer..."></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group">
+        <label class="form-label">Prix (XAF)</label>
+        <input class="form-input" id="price" type="text" placeholder="Ex: 15 000 XAF"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Telephone</label>
+        <input class="form-input" id="phone" type="tel" placeholder="6XX XXX XXX"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Repere / Quartier</label>
+      <input class="form-input" id="landmark" type="text" placeholder="Ex: Bastos, pres du rond-point..."/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Photos (jusqu'a 5)</label>
+      <div class="upload-zone" onclick="document.getElementById('jobImages').click()">
+        <div class="upload-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <div class="upload-title">Ajouter des photos</div>
+        <div class="upload-sub">JPG, PNG — Max 5 images</div>
+        <input type="file" id="jobImages" multiple accept="image/*" onchange="previewImages(this)"/>
+      </div>
+      <div class="image-previews" id="imagePreviews"></div>
+    </div>
+    <button class="btn btn-primary" id="publishBtn" onclick="addJob()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Publier maintenant
+    </button>
+  </div>
+</div>
+
+<!-- ===== JOBS LIST SHEET ===== -->
+<div class="sheet jobs-sheet" id="jobsSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">
+      Jobs proches
+      <span class="badge badge-gold" id="jobCountBadge">0</span>
+    </div>
+    <button class="icon-btn" onclick="closeSheet('jobsSheet')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body">
+    <div id="listContent">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <div class="empty-title">Aucun job trouve</div>
+        <div class="empty-sub">Publiez le premier job dans cette zone</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ACCOUNT PAGE ===== -->
+<div class="overlay-page" id="accountPage">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('accountPage')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title">Mon Compte</div>
+  </div>
+  <div class="overlay-body">
+    <!-- Avatar -->
+    <div id="userAvatar" class="avatar">JM</div>
+    <div class="account-name" id="accountName">Utilisateur</div>
+    <div class="account-email" id="accountEmail">Non connecte</div>
+
+    <!-- Auth Section (shown when not logged in) -->
+    <div id="authSection">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('signup')">Creer compte</button>
+        <button class="auth-tab" onclick="switchAuthTab('login')">Connexion</button>
+      </div>
+      <div id="authForm">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="email" type="email" placeholder="exemple@email.com"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input class="form-input" id="password" type="password" placeholder="Minimum 6 caracteres"/>
+        </div>
+        <button class="btn btn-primary" id="authMainBtn" onclick="signupEmail()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Creer mon compte
+        </button>
+        <div class="divider"><div class="divider-line"></div><div class="divider-text">ou</div><div class="divider-line"></div></div>
+        <button class="btn btn-google" onclick="loginGoogle()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Continuer avec Google
+        </button>
+      </div>
+    </div>
+
+    <!-- User dashboard (shown when logged in) -->
+    <div id="userDashboard" class="hidden">
+      <div class="account-card">
+        <a class="account-item" href="#" onclick="openAdminPanel()">
+          <div class="account-item-icon" style="background:rgba(255,215,0,0.15);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <span>Dashboard Admin</span>
+          <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
+        <a class="account-item" href="#" onclick="openChat()">
+          <div class="account-item-icon" style="background:rgba(0,122,255,0.15);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <span>Chat securise</span>
+          <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
+        <a class="account-item" href="#" onclick="openMyJobs()">
+          <div class="account-item-icon" style="background:rgba(37,211,102,0.12);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          </div>
+          <span>Mes publications</span>
+          <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
+      </div>
+      <button class="btn btn-danger" onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Deconnexion
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div class="overlay-page" id="adminPanel">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('adminPanel')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title">Dashboard Admin</div>
+    <span class="badge badge-gold" style="margin-left:auto;">ADMIN</span>
+  </div>
+  <div class="overlay-body">
+    <div class="admin-grid">
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminTotalJobs">0</div>
+        <div class="admin-stat-label">Jobs total</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminTotalUsers">0</div>
+        <div class="admin-stat-label">Utilisateurs</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminTodayJobs">0</div>
+        <div class="admin-stat-label">Publies aujourd'hui</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val">CM</div>
+        <div class="admin-stat-label">Pays actif</div>
+      </div>
+    </div>
+    <div class="section-title">Tous les jobs</div>
+    <div id="adminJobsList"></div>
+  </div>
+</div>
+
+<!-- ===== CHAT PAGE ===== -->
+<div class="overlay-page" id="chatPage">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('chatPage')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title">Chat Support</div>
+    <span class="badge badge-green">En ligne</span>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg theirs">Bonjour ! Comment puis-je vous aider aujourd'hui ?</div>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" type="text" placeholder="Votre message..." onkeypress="handleChatKey(event)"/>
+    <button class="chat-send" onclick="sendChatMessage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="navMap" onclick="activateNav('map')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+    Carte
+  </button>
+  <button class="nav-item" id="navList" onclick="activateNav('list')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Liste
+  </button>
+  <div class="nav-center-wrap">
+    <button class="nav-center" onclick="toggleJobForm()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+  <button class="nav-item" id="navSearch" onclick="activateNav('search')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Chercher
+  </button>
+  <button class="nav-item" id="navAccount" onclick="activateNav('account')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Compte
+  </button>
+</nav>
+
+<!-- ===== SCRIPTS ===== -->
+<script>
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+  authDomain: "jobmarketfuture.firebaseapp.com",
+  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+  projectId: "jobmarketfuture",
+  storageBucket: "jobmarketfuture.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:jobmarketcameroon"
+};
+
+try {
+  firebase.initializeApp(firebaseConfig);
+} catch(e) { console.warn('Firebase init:', e.message); }
+
+const db = firebase.database();
+const auth = firebase.auth();
+
+const CLOUDINARY_CLOUD_NAME = "dvoab3mzb";
+const CLOUDINARY_UPLOAD_PRESET = "job_preset";
+const ADMIN_UID = "GrajEM98vOc1w3FUr9XeTN90rfl2";
+
+let currentUser = null;
+let userCoords = null;
+let allJobs = [];
+let userMarker = null;
+let accuracyCircle = null;
+let routeControl = null;
+let currentMapStyle = 'satellite';
+let currentAuthTab = 'signup';
+
+// ===== MAP INIT =====
+const map = L.map('map', {
+  zoomControl: false,
+  maxZoom: 20
+}).setView([3.848, 11.502], 13);
+
+const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+  subdomains: ['mt0','mt1','mt2','mt3'],
+  maxZoom: 20
+});
+
+const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 20
+});
+
+satelliteLayer.addTo(map);
+const jobsLayer = L.featureGroup().addTo(map);
+
+// ===== SPLASH =====
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => { document.getElementById('splash').style.display='none'; }, 600);
+  }, 2200);
+});
+
+// ===== TOAST =====
+let toastTimer;
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  t.className = `show ${type}`;
+  t.textContent = msg;
+  toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ===== FIREBASE AUTH =====
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  updateAccountUI(user);
+});
+
+try { auth.signInAnonymously().catch(console.error); } catch(e) {}
+
+function signupEmail() {
+  const emailEl = document.getElementById('email');
+  const passEl = document.getElementById('password');
+  if (!emailEl.value || !passEl.value) { showToast('Remplissez tous les champs', 'error'); return; }
+  auth.createUserWithEmailAndPassword(emailEl.value, passEl.value)
+    .then(res => {
+      res.user.sendEmailVerification();
+      showToast('Compte cree ! Verifiez votre email.', 'success');
+    })
+    .catch(err => showToast(err.message, 'error'));
+}
+
+function loginEmail() {
+  const emailEl = document.getElementById('email');
+  const passEl = document.getElementById('password');
+  auth.signInWithEmailAndPassword(emailEl.value, passEl.value)
+    .then(res => showToast(`Bon retour !`, 'success'))
+    .catch(err => showToast(err.message, 'error'));
+}
+
+function loginGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .then(res => showToast(`Bienvenue ${res.user.displayName}`, 'success'))
+    .catch(err => showToast(err.message, 'error'));
+}
+
+function logout() {
+  auth.signOut().then(() => showToast('Deconnecte', 'info'));
+}
+
+function updateAccountUI(user) {
+  const avatarEl = document.getElementById('userAvatar');
+  const nameEl = document.getElementById('accountName');
+  const emailEl = document.getElementById('accountEmail');
+  const authSection = document.getElementById('authSection');
+  const userDash = document.getElementById('userDashboard');
+
+  if (!user || user.isAnonymous) {
+    nameEl.textContent = 'Visiteur';
+    emailEl.textContent = 'Connectez-vous pour publier';
+    if (avatarEl) avatarEl.textContent = 'JM';
+    authSection.classList.remove('hidden');
+    userDash.classList.add('hidden');
+  } else {
+    const name = user.displayName || user.email || 'JM';
+    const initials = name.split(' ').map(v=>v[0]).join('').substring(0,2).toUpperCase();
+    if (avatarEl) avatarEl.textContent = initials;
+    nameEl.textContent = name;
+    emailEl.textContent = user.email || 'Connexion Google';
+    authSection.classList.add('hidden');
+    userDash.classList.remove('hidden');
+  }
+}
+
+function switchAuthTab(tab) {
+  currentAuthTab = tab;
+  document.querySelectorAll('.auth-tab').forEach((el,i) => {
+    el.classList.toggle('active', (i===0 && tab==='signup') || (i===1 && tab==='login'));
+  });
+  const btn = document.getElementById('authMainBtn');
+  if (tab === 'signup') {
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Creer mon compte`;
+    btn.onclick = signupEmail;
+  } else {
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Se connecter`;
+    btn.onclick = loginEmail;
+  }
+}
+
+// ===== GEOLOCATION =====
+function locateMe() {
+  if (!navigator.geolocation) { showToast('GPS non supporte', 'error'); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    updateUserLocation(pos);
+    navigator.geolocation.watchPosition(updateUserLocation, console.error, {
+      enableHighAccuracy: true, maximumAge: 0, timeout: 15000
+    });
+    syncJobs();
+  }, () => {
+    showToast('Position GPS non disponible', 'error');
+    syncJobs();
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+}
+
+function updateUserLocation(position) {
+  userCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
+  if (userMarker) map.removeLayer(userMarker);
+  if (accuracyCircle) map.removeLayer(accuracyCircle);
+
+  accuracyCircle = L.circle([userCoords.lat, userCoords.lng], {
+    radius: position.coords.accuracy,
+    color: '#007AFF', fillColor: '#007AFF', fillOpacity: 0.1
+  }).addTo(map);
+
+  userMarker = L.circleMarker([userCoords.lat, userCoords.lng], {
+    radius: 10, color: '#fff', weight: 3,
+    fillColor: '#007AFF', fillOpacity: 1
+  }).addTo(map);
+
+  map.setView([userCoords.lat, userCoords.lng], map.getZoom());
+  const dist = allJobs.length > 0 ? Math.max(...allJobs.map(j=>j.dist)).toFixed(1) : '--';
+  document.getElementById('maxDistDisplay').textContent = dist === '--' ? '--' : dist;
+}
+
+// ===== JOB PUBLISH =====
+async function addJob() {
+  if (!currentUser || currentUser.isAnonymous) {
+    showToast('Connectez-vous pour publier', 'error');
+    return;
+  }
+
+  const titleVal = document.getElementById('title').value.trim();
+  const priceVal = document.getElementById('price').value.trim();
+  const phoneVal = document.getElementById('phone').value.trim();
+
+  if (!titleVal || !priceVal || !phoneVal) {
+    showToast('Remplissez les champs obligatoires', 'error');
+    return;
+  }
+
+  const publishBtn = document.getElementById('publishBtn');
+  publishBtn.disabled = true;
+  publishBtn.innerHTML = '<div class="spinner"></div> Publication...';
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try {
+      const uploadedImages = [];
+      const files = document.getElementById('jobImages').files;
+      const maxFiles = Math.min(files.length, 5);
+
+      for (let i = 0; i < maxFiles; i++) {
+        const formData = new FormData();
+        formData.append('file', files[i]);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        try {
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            method: 'POST', body: formData
+          });
+          const data = await res.json();
+          if (data.secure_url) uploadedImages.push(data.secure_url);
+        } catch(imgErr) { console.warn('Image upload failed:', imgErr); }
+      }
+
+      const catVal = document.getElementById('category').value.split('|');
+      const jobData = {
+        title: titleVal,
+        price: priceVal,
+        phone: phoneVal,
+        landmark: document.getElementById('landmark').value.trim(),
+        desc: document.getElementById('desc').value.trim(),
+        icon: catVal[0],
+        color: catVal[1],
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        images: uploadedImages,
+        image: uploadedImages[0] || '',
+        user: currentUser.uid,
+        userName: currentUser.displayName || currentUser.email,
+        verified: true,
+        ratingAvg: 5,
+        timestamp: Date.now(),
+        country: 'Cameroon',
+        currency: 'XAF'
+      };
+
+      await db.ref('jobs').push(jobData);
+      showToast('Job publie avec succes !', 'success');
+      resetJobForm();
+      toggleJobForm();
+      syncJobs();
+    } catch (error) {
+      console.error(error);
+      showToast('Erreur lors de la publication', 'error');
+    }
+
+    publishBtn.disabled = false;
+    publishBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publier maintenant';
+  }, () => {
+    showToast('GPS requis pour publier', 'error');
+    publishBtn.disabled = false;
+    publishBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publier maintenant';
+  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+}
+
+function resetJobForm() {
+  ['title','price','phone','landmark','desc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('jobImages').value = '';
+  document.getElementById('imagePreviews').innerHTML = '';
+}
+
+// ===== IMAGE PREVIEW =====
+function previewImages(input) {
+  const container = document.getElementById('imagePreviews');
+  container.innerHTML = '';
+  const files = Array.from(input.files).slice(0, 5);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.className = 'image-preview-item';
+      img.src = e.target.result;
+      container.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ===== SYNC JOBS =====
+function getCatIcon(cat) {
+  const icons = {
+    btp: 'BTP', electricite: 'ELEC', plomberie: 'PLO',
+    menage: 'MEN', jardinage: 'JAR', mecanique: 'MEC', informatique: 'INFO'
+  };
+  return icons[cat] || 'JOB';
+}
+
+function getCatLabel(cat) {
+  const labels = {
+    btp: 'BTP / Maconnerie', electricite: 'Electricite', plomberie: 'Plomberie',
+    menage: 'Menage', jardinage: 'Jardinage', mecanique: 'Mecanique', informatique: 'Informatique'
+  };
+  return labels[cat] || cat;
+}
+
+function syncJobs() {
+  try {
+    db.ref('jobs').on('value', snap => {
+      allJobs = [];
+      jobsLayer.clearLayers();
+      let todayCount = 0;
+      const today = new Date().setHours(0,0,0,0);
+
+      snap.forEach(child => {
+        const job = child.val();
+        const jobId = child.key;
+        const dist = userCoords ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng) : 999;
+        allJobs.push({ ...job, id: jobId, dist });
+        if (job.timestamp > today) todayCount++;
+
+        const icon = L.divIcon({
+          html: `<div style="
+            background:${job.color || '#FFD700'};
+            color:#111;font-weight:800;font-size:9px;
+            padding:6px 8px;border-radius:10px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.3);
+            white-space:nowrap;
+            border:2px solid rgba(255,255,255,0.3);
+          ">${getCatIcon(job.icon)}</div>`,
+          iconSize: [null, null],
+          className: ''
+        });
+
+        L.marker([job.lat, job.lng], { icon })
+          .addTo(jobsLayer)
+          .bindPopup(`
+            <div style="min-width:240px;font-family:'DM Sans',sans-serif;">
+              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${job.title}</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+                <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
+                <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
+              </div>
+              ${job.landmark ? `<div style="font-size:12px;color:#8888A8;margin-bottom:8px;">${job.landmark}</div>` : ''}
+              ${job.desc ? `<div style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
+              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${img}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
+              <a href="https://wa.me/${job.phone}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;text-decoration:none;font-weight:700;font-size:14px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
+                WhatsApp
+              </a>
+              <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:var(--blue);color:white;padding:12px;border:none;border-radius:12px;margin-top:6px;font-weight:700;font-size:14px;cursor:pointer;">
+                Voir l'itineraire
+              </button>
+            </div>
+          `, { maxWidth: 280 });
+      });
+
+      allJobs.sort((a, b) => a.dist - b.dist);
+      updateJobsList(allJobs);
+      document.getElementById('jobCountBadge').textContent = allJobs.length;
+      document.getElementById('adminTotalJobs').textContent = allJobs.length;
+      document.getElementById('adminTodayJobs').textContent = todayCount;
+
+      if (userCoords && allJobs.length > 0) {
+        const maxDist = allJobs[allJobs.length-1].dist;
+        document.getElementById('maxDistDisplay').textContent = maxDist.toFixed(1);
+      }
+    });
+  } catch(e) {
+    console.error('Sync jobs error:', e);
+  }
+}
+
+function updateJobsList(jobs) {
+  const list = document.getElementById('listContent');
+  if (!list) return;
+
+  if (jobs.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div class="empty-title">Aucun job trouve</div>
+      <div class="empty-sub">Publiez le premier job dans cette zone</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = jobs.map((job, i) => `
+    <div class="job-card" style="animation-delay:${i*0.04}s" onclick="focusJob(${job.lat},${job.lng})">
+      <div class="job-card-icon" style="background:${job.color || '#FFD700'}22;">
+        <span style="font-size:11px;font-weight:800;color:${job.color || '#FFD700'};">${getCatIcon(job.icon)}</span>
+      </div>
+      <div class="job-card-body">
+        <div class="job-card-title">${job.title}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${job.landmark || getCatLabel(job.icon)}</div>
+        <div class="job-card-meta">
+          <span class="job-card-price">${job.price}</span>
+          <span style="color:var(--text-dim);font-size:11px;">XAF</span>
+        </div>
+      </div>
+      <div class="job-card-right">
+        <div class="job-card-dist">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+          ${job.dist >= 999 ? '-- km' : job.dist.toFixed(1) + ' km'}
+        </div>
+        ${job.verified ? `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke="none"/></svg>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function focusJob(lat, lng) {
+  closeSheet('jobsSheet');
+  map.setView([lat, lng], 16);
+}
+
+// ===== ROUTE =====
+function drawRoute(lat, lng) {
+  if (!userCoords) { showToast('Position GPS requise', 'error'); return; }
+  if (routeControl) { try { map.removeControl(routeControl); } catch(e){} }
+  try {
+    routeControl = L.Routing.control({
+      waypoints: [L.latLng(userCoords.lat, userCoords.lng), L.latLng(lat, lng)],
+      routeWhileDragging: false, addWaypoints: false,
+      createMarker: () => null,
+      lineOptions: { styles: [{ color: '#007AFF', weight: 5, opacity: 0.85 }] },
+      show: false
+    }).addTo(map);
+    routeControl.on('routesfound', e => {
+      const route = e.routes[0];
+      const dist = (route.summary.totalDistance / 1000).toFixed(1);
+      const mins = Math.ceil(route.summary.totalTime / 60);
+      document.getElementById('itinPanel').classList.remove('hidden');
+      document.getElementById('itinDist').textContent = dist + ' km';
+      document.getElementById('itinTime').textContent = `Environ ${mins} min en voiture`;
+    });
+    map.closePopup();
+  } catch(e) { console.error(e); }
+}
+
+function clearRoute() {
+  if (routeControl) { try { map.removeControl(routeControl); } catch(e){} routeControl = null; }
+  document.getElementById('itinPanel').classList.add('hidden');
+}
+
+// ===== FILTER =====
+function filterJobs(cat, el) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const filtered = cat === 'all' ? allJobs : allJobs.filter(j => j.icon === cat);
+  updateJobsList(filtered);
+}
+
+// ===== CALC DISTANCE =====
+function calcDist(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+// ===== MAP STYLE TOGGLE =====
+function toggleMapStyle() {
+  if (currentMapStyle === 'satellite') {
+    map.removeLayer(satelliteLayer);
+    streetLayer.addTo(map);
+    currentMapStyle = 'street';
+    showToast('Vue plan activee', 'info');
+  } else {
+    map.removeLayer(streetLayer);
+    satelliteLayer.addTo(map);
+    currentMapStyle = 'satellite';
+    showToast('Vue satellite activee', 'info');
+  }
+}
+
+// ===== NAVIGATION =====
+function activateNav(tab) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav' + tab.charAt(0).toUpperCase() + tab.slice(1))?.classList.add('active');
+
+  if (tab === 'map') {
+    closeSheet('jobsSheet');
+    closeOverlay('accountPage');
+  } else if (tab === 'list') {
+    closeOverlay('accountPage');
+    openSheet('jobsSheet');
+  } else if (tab === 'account') {
+    closeSheet('jobsSheet');
+    openOverlay('accountPage');
+  } else if (tab === 'search') {
+    closeOverlay('accountPage');
+    openSheet('jobsSheet');
+    showToast('Filtrez par categorie en haut', 'info');
+  }
+}
+
+function toggleJobForm() {
+  const sheet = document.getElementById('jobFormSheet');
+  sheet.classList.toggle('open');
+}
+
+function openSheet(id) { document.getElementById(id).classList.add('open'); }
+function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+function openOverlay(id) { document.getElementById(id).classList.add('open'); }
+function closeOverlay(id) {
+  document.getElementById(id).classList.remove('open');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('navMap').classList.add('active');
+}
+
+// ===== ADMIN =====
+function openAdminPanel() {
+  if (!currentUser || currentUser.uid !== ADMIN_UID) {
+    showToast('Acces reserve aux administrateurs', 'error');
+    return;
+  }
+  openOverlay('adminPanel');
+  loadAdminJobs();
+}
+
+function loadAdminJobs() {
+  const list = document.getElementById('adminJobsList');
+  list.innerHTML = allJobs.map(job => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">${job.title}</div>
+        <div style="font-size:12px;color:var(--text-dim);">${job.userName || 'Anonyme'} - ${getCatLabel(job.icon)}</div>
+      </div>
+      <button onclick="deleteJob('${job.id}')" style="background:var(--danger);border:none;color:white;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">Suppr.</button>
+    </div>
+  `).join('');
+  document.getElementById('adminTotalUsers').textContent = new Set(allJobs.map(j=>j.user)).size;
+}
+
+async function deleteJob(id) {
+  if (!confirm('Supprimer ce job ?')) return;
+  try {
+    await db.ref('jobs/' + id).remove();
+    showToast('Job supprime', 'success');
+    loadAdminJobs();
+  } catch(e) { showToast('Erreur lors de la suppression', 'error'); }
+}
+
+function openMyJobs() {
+  if (!currentUser || currentUser.isAnonymous) { showToast('Connectez-vous', 'error'); return; }
+  const myJobs = allJobs.filter(j => j.user === currentUser.uid);
+  if (myJobs.length === 0) { showToast('Aucune publication trouvee', 'info'); return; }
+  showToast(`Vous avez ${myJobs.length} publication(s)`, 'info');
+  closeOverlay('accountPage');
+  openSheet('jobsSheet');
+  updateJobsList(myJobs);
+}
+
+// ===== CHAT =====
+function openChat() {
+  closeOverlay('accountPage');
+  openOverlay('chatPage');
+}
+
+function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const container = document.getElementById('chatMessages');
+  const msgEl = document.createElement('div');
+  msgEl.className = 'chat-msg mine';
+  msgEl.textContent = msg;
+  container.appendChild(msgEl);
+  input.value = '';
+  container.scrollTop = container.scrollHeight;
+
+  // Simulated auto-reply
+  setTimeout(() => {
+    const replies = [
+      'Merci pour votre message. Un agent vous repondra sous peu.',
+      'Nous avons bien recu votre demande. Notre equipe vous contactera rapidement.',
+      'Votre satisfaction est notre priorite. Comment puis-je vous aider davantage ?'
+    ];
+    const reply = document.createElement('div');
+    reply.className = 'chat-msg theirs';
+    reply.textContent = replies[Math.floor(Math.random() * replies.length)];
+    container.appendChild(reply);
+    container.scrollTop = container.scrollHeight;
+  }, 1200);
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter') sendChatMessage();
+}
+
+// ===== PWA =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== PUSH NOTIFICATIONS =====
+try {
+  const messaging = firebase.messaging();
+  messaging.requestPermission()
+    .then(() => messaging.getToken())
+    .then(token => {
+      if (currentUser && token) db.ref('notificationTokens/' + currentUser.uid).set(token);
+    })
+    .catch(() => {});
+} catch(e) {}
+
+// ===== INIT =====
+locateMe();
+syncJobs();
+</script>
+</body>
+</html>
