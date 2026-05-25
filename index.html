@@ -1565,6 +1565,50 @@ db.ref('jobs').limitToLast(1).on('child_added', (snapshot) => {
   // On utilise ta fonction showToast pour afficher la bulle d'alerte en direct !
   showToast(`🎉 Nouveau job : ${nouveauJob.title} (${nouveauJob.landmark || 'Cameroun'}) vient d'être publié !`, 'info');
 });
+
+  // ===== PUBLIER UN JOB PAR APPUI LONG SUR LA CARTE =====
+map.on('contextmenu', function(e) {
+  const lat = e.latlng.lat;
+  const lng = e.latlng.lng;
+
+  // Crée un popup temporaire à l'endroit de l'appui long
+  L.popup()
+    .setLatLng(e.latlng)
+    .setContent(`
+      <div style="text-align:center; font-family:sans-serif; padding:5px;">
+        <b style="color:#333; display:block; margin-bottom:8px;">📍 Position sélectionnée</b>
+        <button onclick="preparerNouveauJob(${lat}, ${lng})" style="background:#007AFF; color:white; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">
+          ➕ Publier un job ici
+        </button>
+      </div>
+    `)
+    .openOn(map);
+});
+
+// Fonction déclenchée quand on clique sur le bouton du popup
+function preparerNouveauJob(lat, lng) {
+  // 1. On ferme le popup de la carte
+  map.closePopup();
+  
+  // 2. Si tu as des champs de coordonnées cachés ou visibles dans ton formulaire :
+  const inputLat = document.getElementById('jobLat') || document.getElementById('lat');
+  const inputLng = document.getElementById('jobLng') || document.getElementById('lng');
+  
+  if (inputLat && inputLng) {
+    inputLat.value = lat;
+    inputLng.value = lng;
+  }
+  
+  // 3. Ouvre ton formulaire de publication de job
+  // (Remplace 'jobFormModal' par l'ID réel de ton bouton ou de ta section de formulaire si nécessaire)
+  const btnOuvrirForm = document.querySelector('[onclick*="showPublish"], [onclick*="toggle"], #btn-add-job');
+  if (btnOuvrirForm) {
+    btnOuvrirForm.click();
+  } else {
+    // Si l'application utilise une autre méthode, on affiche au moins une alerte pour confirmer
+    showToast("Position enregistrée ! Remplissez le formulaire de job.", "success");
+  }
+}
   
 // ===== INIT =====
 locateMe();
