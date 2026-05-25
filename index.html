@@ -958,6 +958,14 @@ let accuracyCircle = null;
 let routeControl = null;
 let currentMapStyle = 'satellite';
 let currentAuthTab = 'signup';
+function genererLienPartage(nomArtisan, metierArtisan, idArtisan) {
+    const lienApp = `https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/?id=${idArtisan}`;
+
+    const message =
+    `Regarde ce profil sur JobMarket Cameroon : *${nomArtisan}* (${metierArtisan}). Tu peux le localiser et le contacter ici : ${lienApp}`;
+
+    return `https://wa.me/?text=${encodeURIComponent(message)}`;
+  }
 
 // ===== MAP INIT =====
 const map = L.map('map', {
