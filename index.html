@@ -1547,6 +1547,25 @@ try {
     .catch(() => {});
 } catch(e) {}
 
+  // ===== NOTIFICATIONS DES JOBS EN TEMPS RÉEL =====
+let chargementInitialJobs = true;
+
+// On attend que Firebase finisse de charger les anciens jobs au démarrage
+db.ref('jobs').once('value', () => {
+  chargementInitialJobs = false;
+});
+
+// Dès qu'un NOUVEAU job est validé dans la base de données au Cameroun
+db.ref('jobs').limitToLast(1).on('child_added', (snapshot) => {
+  // Si la page vient d'être ouverte, on ignore les anciens jobs
+  if (chargementInitialJobs) return;
+
+  const nouveauJob = snapshot.val();
+  
+  // On utilise ta fonction showToast pour afficher la bulle d'alerte en direct !
+  showToast(`🎉 Nouveau job : ${nouveauJob.title} (${nouveauJob.landmark || 'Cameroun'}) vient d'être publié !`, 'info');
+});
+  
 // ===== INIT =====
 locateMe();
 syncJobs();
