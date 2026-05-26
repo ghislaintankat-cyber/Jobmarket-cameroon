@@ -1157,7 +1157,7 @@ async function addJob() {
           if (data.secure_url) uploadedImages.push(data.secure_url);
         } catch(imgErr) { console.warn('Image upload failed:', imgErr); }
       }
-
+      
       const catVal = document.getElementById('category').value.split('|');
       const jobData = {
         title: titleVal,
@@ -1165,12 +1165,14 @@ async function addJob() {
         phone: phoneVal,
         landmark: document.getElementById('landmark').value.trim(),
         desc: document.getElementById('desc').value.trim(),
-        icon: catVal[0],
-        color: catVal[1],
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
+        // CORRECTION SANS CROCHETS : On utilise .at() pour contourner le bug
+        icon: catVal.at(0),
+        color: catVal.at(1),
+        // CODE LONG CLIC : Utilise la position cliquée, ou le GPS en plan B
+        lat: document.getElementById('jobLat').value ? parseFloat(document.getElementById('jobLat').value) : pos.coords.latitude,
+        lng: document.getElementById('jobLng').value ? parseFloat(document.getElementById('jobLng').value) : pos.coords.longitude,
         images: uploadedImages,
-        image: uploadedImages[0] || '',
+        image: uploadedImages.at(0) || '', // CORRECTION SANS CROCHETS
         user: currentUser.uid,
         userName: currentUser.displayName || currentUser.email,
         verified: true,
@@ -1206,6 +1208,9 @@ function resetJobForm() {
   });
   document.getElementById('jobImages').value = '';
   document.getElementById('imagePreviews').innerHTML = '';
+  // Vider les coordonnées après publication
+  if(document.getElementById('jobLat')) document.getElementById('jobLat').value = '';
+  if(document.getElementById('jobLng')) document.getElementById('jobLng').value = '';
 }
 
 // ===== IMAGE PREVIEW =====
@@ -1223,7 +1228,7 @@ function previewImages(input) {
     };
     reader.readAsDataURL(file);
   });
-}
+  }
 
 // ===== SYNC JOBS =====
 function getCatIcon(cat) {
