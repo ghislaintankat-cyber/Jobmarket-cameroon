@@ -1579,7 +1579,8 @@ map.on('contextmenu', function(e) {
   const lat = e.latlng.lat;
   const lng = e.latlng.lng;
 
-  // Crée un popup temporaire à l'endroit de l'appui long
+  if (navigator.vibrate) navigator.vibrate(150);
+
   L.popup()
     .setLatLng(e.latlng)
     .setContent(`
@@ -1622,5 +1623,15 @@ function preparerNouveauJob(lat, lng) {
 locateMe();
 syncJobs();
 </script>
+  
+// ===== VIBRATION POUR CHAQUE CLIC =====
+document.addEventListener('click', (e) => {
+  if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  }
+});
+  
 </body>
 </html>
