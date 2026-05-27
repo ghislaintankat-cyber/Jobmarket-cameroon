@@ -1003,8 +1003,16 @@ function showToast(msg, type='info') {
   clearTimeout(toastTimer);
   t.className = `show ${type}`;
   t.textContent = msg;
+
+  // 📳 DEGLENCHE LA VIBRATION SELON LE SUCCÈS OU L'ERREUR
+  if (type === 'success') {
+    triggerHaptic('success'); // Double vibration dynamique
+  } else if (type === 'error') {
+    triggerHaptic('error');   // Alerte lourde saccadée
+  }
+
   toastTimer = setTimeout(() => { t.className = ''; }, 3000);
-}
+  }
 
 // ===== FIREBASE AUTH =====
 auth.onAuthStateChanged(user => {
