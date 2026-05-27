@@ -991,11 +991,7 @@ const jobsLayer = L.featureGroup().addTo(map);
 // ===== SPLASH =====
 window.addEventListener('load', () => {
   setTimeout(() => {
-    document.getElementById('splash').classList.add('hide');
-    setTimeout(() => { document.getElementById('splash').style.display='none'; }, 600);
-  }, 2200);
-});
-
+    
 // ===== TOAST =====
 let toastTimer;
 function showToast(msg, type='info') {
@@ -1003,14 +999,6 @@ function showToast(msg, type='info') {
   clearTimeout(toastTimer);
   t.className = `show ${type}`;
   t.textContent = msg;
-
-  // 📳 DEGLENCHE LA VIBRATION SELON LE SUCCÈS OU L'ERREUR
-  if (type === 'success') {
-    triggerHaptic('success'); // Double vibration dynamique
-  } else if (type === 'error') {
-    triggerHaptic('error');   // Alerte lourde saccadée
-  }
-
   toastTimer = setTimeout(() => { t.className = ''; }, 3000);
   }
 
