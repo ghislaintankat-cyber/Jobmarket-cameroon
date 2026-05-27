@@ -1629,16 +1629,27 @@ function preparerNouveauJob(lat, lng) {
 // ===== INIT =====
 locateMe();
 syncJobs();
-</script>
+
+  // ===== SYSTEME DE VIBRATIONS AVANCÉ (HAPTIC) =====
+function triggerHaptic(type) {
+  if (!navigator.vibrate) return;
   
-// ===== VIBRATION POUR CHAQUE CLIC =====
+  if (type === 'light') {
+    navigator.vibrate(20); // Petit clic discret pour les boutons normaux
+  } else if (type === 'success') {
+    navigator.vibrate(); // Double vibration rapide pour une réussite
+  } else if (type === 'error') {
+    navigator.vibrate(); // Vibration lourde/saccadée pour les erreurs
+  }
+}
+
+// Écouteur automatique pour tous les clics standards du site
 document.addEventListener('click', (e) => {
-  if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-    if (navigator.vibrate) {
-      navigator.vibrate(50);
-    }
+  if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('.job-card')) {
+    triggerHaptic('light'); // Déclenche le clic léger par défaut
   }
 });
-  
+
+</script>
 </body>
 </html>
