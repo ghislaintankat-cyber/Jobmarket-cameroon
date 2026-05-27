@@ -1085,6 +1085,8 @@ function switchAuthTab(tab) {
 }
 
 // ===== GEOLOCATION =====
+let initialLocationSet = false; // Bloque le recentrage après le premier chargement
+
 function locateMe() {
   if (!navigator.geolocation) { showToast('GPS non supporte', 'error'); return; }
   navigator.geolocation.getCurrentPosition(pos => {
@@ -1114,10 +1116,15 @@ function updateUserLocation(position) {
     fillColor: '#007AFF', fillOpacity: 1
   }).addTo(map);
 
-  map.setView([userCoords.lat, userCoords.lng], map.getZoom());
+  // 🎯 FORCE LE CENTRAGE UNIQUEMENT LA TOUTE PREMIÈRE FOIS AU DÉMARRAGE
+  if (!initialLocationSet) {
+    map.setView([userCoords.lat, userCoords.lng], 16); // Centre et zoom (16) sur toi au départ
+    initialLocationSet = true; // Bloque les prochains recentrages forcés
+  }
+
   const dist = allJobs.length > 0 ? Math.max(...allJobs.map(j=>j.dist)).toFixed(1) : '--';
   document.getElementById('maxDistDisplay').textContent = dist === '--' ? '--' : dist;
-}
+  }
 
 // ===== JOB PUBLISH =====
 async function addJob() {
