@@ -1634,13 +1634,11 @@ function preparerNouveauJob(lat, lng) {
     inputLng.value = lng;
   }
   
-  // 3. Ouvre ton formulaire de publication de job
-  // (Remplace 'jobFormModal' par l'ID réel de ton bouton ou de ta section de formulaire si nécessaire)
+// 3. Ouvre ton formulaire de publication de job
   const btnOuvrirForm = document.querySelector('[onclick*="showPublish"], [onclick*="toggle"], #btn-add-job');
   if (btnOuvrirForm) {
     btnOuvrirForm.click();
   } else {
-    // Si l'application utilise une autre méthode, on affiche au moins une alerte pour confirmer
     showToast("Position enregistrée ! Remplissez le formulaire de job.", "success");
   }
 }
@@ -1648,16 +1646,23 @@ function preparerNouveauJob(lat, lng) {
 // ===== INIT =====
 locateMe();
 syncJobs();
-</script>
-  
-// ===== VIBRATION POUR CHAQUE CLIC =====
+
+// ===== AUTOMATION CLIC & MULTI-RÉSEAU =====
 document.addEventListener('click', (e) => {
   if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-    if (navigator.vibrate) {
-      navigator.vibrate(50);
-    }
+    if (navigator.vibrate) navigator.vibrate(50);
   }
 });
-  
+
+// Enregistrement du robot (Service Worker) pour le mode 2G/Hors-ligne
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker installé !'))
+      .catch(err => console.error('Erreur Service Worker:', err));
+  });
+}
+</script>
+
 </body>
 </html>
