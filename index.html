@@ -988,13 +988,20 @@ const map = L.map('map', {
   maxZoom: 20
 }).setView([3.848, 11.502], 13);
 
-const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
-  subdomains: ['mt0','mt1','mt2','mt3'],
-  maxZoom: 20
+// ===== CALQUES DE CARTE AVEC CACHE NAVIGATEUR ET ÉCONOMIE DATA =====
+const satelliteLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', { 
+  subdomains: ['mt0','mt1','mt2','mt3'], 
+  maxZoom: 20,
+  updateWhenIdle: true,       // Attend que l'utilisateur s'arrête de glisser pour charger (économie de Mo)
+  updateWhenZooming: false,   // Ne charge pas les images intermédiaires pendant un zoom rapide
+  keepBuffer: 6               // Garde en mémoire le quartier actuel pour un retour instantané sans internet
 });
 
-const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 20
+const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+  maxZoom: 20,
+  updateWhenIdle: true,
+  updateWhenZooming: false,
+  keepBuffer: 6
 });
 
 satelliteLayer.addTo(map);
