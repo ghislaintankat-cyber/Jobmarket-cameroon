@@ -66,10 +66,22 @@ body{
 }
 
 /* ===== MAP ===== */
-#map{
-  position:fixed;inset:0;z-index:1;
-  filter:brightness(0.88) saturate(1.1);
+#map {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  filter: brightness(0.9) saturate(1.15); /* Légèrement réajusté pour des couleurs plus éclatantes */
 }
+
+/* Ombrage cinématique pour faire ressortir l'interface par-dessus la carte */
+#map::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* Laisse passer les clics sur la carte */
+  z-index: 2;
+  background: linear-gradient(to bottom, rgba(10,10,15,0.4) 0%, rgba(10,10,15,0) 15%, rgba(10,10,15,0) 85%, rgba(10,10,15,0.5) 100%);
+  }
 
 /* ===== SPLASH SCREEN ===== */
 #splash{
