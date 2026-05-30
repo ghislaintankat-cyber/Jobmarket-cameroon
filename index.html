@@ -594,6 +594,114 @@ body{
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px;}
+  /* DESIGN DU VOLET COULISSANT PREMIUM */
+.preview-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #12121A;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1);
+  z-index: 9999;
+  padding: 20px;
+  box-sizing: border-box;
+  color: #E2E2EC;
+  font-family: 'DM Sans', sans-serif;
+}
+.preview-sheet.open {
+  transform: translateY(0);
+}
+.preview-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  margin: 0 auto 16px auto;
+}
+.preview-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.preview-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.preview-title-text {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: #FFF;
+}
+.preview-tag {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  width: fit-content;
+}
+.preview-price {
+  background: rgba(37, 211, 102, 0.15);
+  color: #25D366;
+  padding: 6px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 15px;
+}
+.preview-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  color: #A0A0B0;
+}
+.preview-landmark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #8888A8;
+  margin-bottom: 20px;
+}
+.preview-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.preview-buttons-row {
+  display: flex;
+  gap: 12px;
+}
+.preview-actions .btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+}
+.btn-blue {
+  background: #007AFF;
+  color: white;
+}
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFF;
+  width: 100%;
+}
+.btn-itin {
+  background: #FF9500;
+  color: white;
+  width: 100%;
+}
 </style>
 </head>
 <body>
@@ -788,6 +896,11 @@ body{
     </div>
   </div>
 </div>
+  <div id="jobPreviewSheet" class="preview-sheet">
+  <div class="preview-sheet-handle"></div>
+  <div id="previewSheetContent">
+    </div>
+</div>
 
 <!-- ===== ACCOUNT PAGE ===== -->
 <div class="overlay-page" id="accountPage">
@@ -868,7 +981,7 @@ body{
   <div class="overlay-header">
     <button class="back-btn" onclick="closeOverlay('adminPanel')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
+    </button>o
     <div class="overlay-title">Dashboard Admin</div>
     <span class="badge badge-gold" style="margin-left:auto;">ADMIN</span>
   </div>
@@ -1304,30 +1417,18 @@ function syncJobs() {
         L.marker([job.lat, job.lng], { icon })
           .addTo(jobsLayer)
           .bindPopup(`
-            <div style="min-width:240px;font-family:'DM Sans',sans-serif;">
-              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${job.title}</div>
-              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
-                <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
-                <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
-              </div>
-              ${job.landmark ? `<div style="font-size:12px;color:#8888A8;margin-bottom:8px;">${job.landmark}</div>` : ''}
-              ${job.desc ? `<div style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
-              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${img}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
-              <a href="https://wa.me/${job.phone}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;text-decoration:none;font-weight:700;font-size:14px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
-                WhatsApp
-              </a>
-              
-              <a href="${genererLienPartage(job.title, getCatLabel(job.icon), jobId)}"
-   target="_blank"
-   style="display:flex;align-items:center;justify-content:center;gap:8px;background:#007AFF;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;text-decoration:none;font-weight:700;font-size:14px;">
-   🔄 Partager sur WhatsApp
-</a>
-              <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:var(--blue);color:white;padding:12px;border:none;border-radius:12px;margin-top:6px;font-weight:700;font-size:14px;cursor:pointer;">
-                Voir l'itineraire
-              </button>
+            <div data-id="${jobId}"
+                 data-title="${job.title}" 
+                 data-cat="${getCatLabel ? getCatLabel(job.icon) : (job.category || 'Job')}" 
+                 data-color="${job.color || '#FFD700'}" 
+                 data-price="${job.price || 'À discuter'}" 
+                 data-desc="${(job.desc || '').replace(/"/g, '&quot;')}" 
+                 data-landmark="${(job.landmark || '').replace(/"/g, '&quot;')}" 
+                 data-phone="${job.phone || ''}"
+                 data-lat="${job.lat}"
+                 data-lng="${job.lng}">
             </div>
-          `, { maxWidth: 280 });
+          `);
       });
 
       allJobs.sort((a, b) => a.dist - b.dist);
@@ -1341,9 +1442,105 @@ function syncJobs() {
         document.getElementById('maxDistDisplay').textContent = maxDist.toFixed(1);
       }
     });
-  } catch(e) {
-    console.error('Sync jobs error:', e);
+  } catch (error) {
+    console.error("Erreur syncJobs:", error);
   }
+}
+
+// INTERCEPTEUR DE CLIC SUR LA CARTE POUR LE VOLET
+if (typeof map !== 'undefined') {
+  map.on('popupopen', function(e) {
+    const popup = e.popup;
+    if (popup && popup._content && popup._content.includes('data-title')) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(popup._content, 'text/html');
+      const container = doc.body.firstElementChild;
+      
+      if (container) {
+        const jobId = container.getAttribute('data-id');
+        const title = container.getAttribute('data-title');
+        const catName = container.getAttribute('data-cat');
+        const color = container.getAttribute('data-color');
+        const price = container.getAttribute('data-price');
+        const desc = container.getAttribute('data-desc');
+        const landmark = container.getAttribute('data-landmark');
+        const phone = container.getAttribute('data-phone');
+        const lat = container.getAttribute('data-lat');
+        const lng = container.getAttribute('data-lng');
+        
+        map.closePopup();
+        openJobPreview(jobId, title, catName, color, price, desc, landmark, phone, lat, lng);
+      }
+    }
+  });
+
+  map.on('click', () => {
+    closeJobPreview();
+  });
+}
+
+// LOGIQUE D'AFFICHAGE DU VOLET PREMIUM AVEC TOUS LES BOUTONS
+function openJobPreview(jobId, title, categoryName, color, price, desc, landmark, phone, lat, lng) {
+  const sheet = document.getElementById('jobPreviewSheet');
+  const content = document.getElementById('previewSheetContent');
+  
+  if (!sheet || !content) return;
+  
+  // Message WhatsApp automatique sur-mesure pour le Cameroun
+  const texteWhatsApp = encodeURIComponent(
+    `🚨 *Offre d'emploi sur JobMarket Cameroon !*\n\n` +
+    `💼 *Poste :* ${title}\n` +
+    `📂 *Catégorie :* ${categoryName}\n` +
+    `💰 *Salaire/Prix :* ${price} XAF\n` +
+    `📍 *Quartier/Repère :* ${landmark || 'Non spécifié'}\n` +
+    `📝 *Description :* ${desc || 'Aucune'}\n\n` +
+    `📞 Contactez l'annonceur : ${phone}\n\n` +
+    `👉 Découvre l'application ici : https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/`
+  );
+  
+  content.innerHTML = `
+    <div class="preview-header-row">
+      <div class="preview-title-block">
+        <div class="preview-title-text">${title}</div>
+        <span class="preview-tag" style="background:${color}22; color:${color}; border:1px solid ${color}44;">${categoryName}</span>
+      </div>
+      <div class="preview-price">${price} XAF</div>
+    </div>
+    
+    <div class="preview-desc">${desc || 'Aucune description fournie.'}</div>
+    
+    <div class="preview-landmark">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span><strong>Quartier/Repère :</strong> ${landmark || 'Non spécifié'}</span>
+    </div>
+    
+    <div class="preview-actions">
+      <div class="preview-buttons-row">
+        <a class="btn" href="https://api.whatsapp.com/send?text=${texteWhatsApp}" target="_blank" style="background:#25D366; color:white; text-decoration:none; margin:0; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+          Partager
+        </a>
+        <a class="btn btn-blue" href="tel:${phone}" style="text-decoration:none; margin:0; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Appeler
+        </a>
+      </div>
+      
+      <button class="btn btn-itin" onclick="closeJobPreview(); drawRoute(${lat},${lng})" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        Voir l'itinéraire
+      </button>
+
+      <button class="btn btn-ghost" onclick="closeJobPreview()">Fermer</button>
+    </div>
+  `;
+  
+  sheet.classList.add('open');
+}
+
+function closeJobPreview() {
+  const sheet = document.getElementById('jobPreviewSheet');
+  if (sheet) sheet.classList.remove('open');
 }
 
 function updateJobsList(jobs) {
