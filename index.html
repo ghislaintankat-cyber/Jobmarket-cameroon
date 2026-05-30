@@ -847,10 +847,10 @@ body{
         <input class="form-input" id="price" type="text" placeholder="Ex: 15 000 XAF"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Telephone</label>
-        <input class="form-input" id="phone" type="tel" placeholder="6XX XXX XXX"/>
+        <label class="form-label">Téléphone WhatsApp</label>
+        <input class="form-input" id="phone" type="tel" placeholder="Ex: 237650420710"/>
+        <small style="color: #8888A8; font-size: 10px; display: block; margin-top: 4px; line-height: 1.2;">⚠️ Mettez l'indicatif pays au début sans le + (Ex: 237... pour le Cameroun, 225... pour la Côte d'Ivoire).</small>
       </div>
-    </div>
     <div class="form-group">
       <label class="form-label">Repere / Quartier</label>
       <input class="form-input" id="landmark" type="text" placeholder="Ex: Bastos, pres du rond-point..."/>
@@ -1479,24 +1479,32 @@ if (typeof map !== 'undefined') {
   });
 }
 
-// LOGIQUE D'AFFICHAGE DU VOLET PREMIUM AVEC TOUS LES BOUTONS
 function openJobPreview(jobId, title, categoryName, color, price, desc, landmark, phone, lat, lng) {
   const sheet = document.getElementById('jobPreviewSheet');
   const content = document.getElementById('previewSheetContent');
   
   if (!sheet || !content) return;
   
-  // Message WhatsApp automatique sur-mesure pour le Cameroun
+  // Message de partage universel
   const texteWhatsApp = encodeURIComponent(
-    `🚨 *Offre d'emploi sur JobMarket Cameroon !*\n\n` +
+    `🚨 *Nouvelle offre sur JobMarket !*\n\n` +
     `💼 *Poste :* ${title}\n` +
     `📂 *Catégorie :* ${categoryName}\n` +
-    `💰 *Salaire/Prix :* ${price} XAF\n` +
-    `📍 *Quartier/Repère :* ${landmark || 'Non spécifié'}\n` +
+    `💰 *Salaire/Prix :* ${price}\n` +
+    `📍 *Lieu/Repère :* ${landmark || 'Non spécifié'}\n` +
     `📝 *Description :* ${desc || 'Aucune'}\n\n` +
-    `📞 Contactez l'annonceur : ${phone}\n\n` +
+    `📞 Contact : ${phone}\n\n` +
     `👉 Découvre l'application ici : https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/`
   );
+  
+  // NETTOYAGE INTERNATIONAL (Supprime espaces, tirets, +, et 00 au début)
+  let cleanPhone = phone.replace(/[\s\-\(\)]/g, ''); // Enlève espaces, tirets et parenthèses
+  if (cleanPhone.startsWith('+')) {
+    cleanPhone = cleanPhone.substring(1);
+  }
+  if (cleanPhone.startsWith('00')) {
+    cleanPhone = cleanPhone.substring(2);
+  }
   
   content.innerHTML = `
     <div class="preview-header-row">
@@ -1504,29 +1512,29 @@ function openJobPreview(jobId, title, categoryName, color, price, desc, landmark
         <div class="preview-title-text">${title}</div>
         <span class="preview-tag" style="background:${color}22; color:${color}; border:1px solid ${color}44;">${categoryName}</span>
       </div>
-      <div class="preview-price">${price} XAF</div>
+      <div class="preview-price">${price}</div>
     </div>
     
     <div class="preview-desc">${desc || 'Aucune description fournie.'}</div>
     
     <div class="preview-landmark">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span><strong>Quartier/Repère :</strong> ${landmark || 'Non spécifié'}</span>
+      <span><strong>Lieu/Repère :</strong> ${landmark || 'Non spécifié'}</span>
     </div>
     
     <div class="preview-actions">
       <div class="preview-buttons-row">
-        <a class="btn" href="https://wa.me/${phone.replace(/\s+/g, '')}" target="_blank" style="background:#25D366; color:white; text-decoration:none; margin:0; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <a class="btn" href="https://wa.me/${cleanPhone}" target="_blank" style="background:#25D366; color:white; text-decoration:none; margin:0; display:flex; align-items:center; justify-content:center; gap:8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-          WhatsApp
+          Discuter
         </a>
         <a class="btn btn-blue" href="tel:${phone}" style="text-decoration:none; margin:0; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-2.11-.45z"/></svg>
           Appeler
         </a>
       </div>
       
-      <a class="btn" href="https://api.whatsapp.com/send?text=${texteWhatsApp}" target="_blank" style="background:rgba(255,255,255,0.06); color:#FFF; text-decoration:none; margin:8px 0 0 0; display:flex; align-items:center; justify-content:center; gap:8px; border: 1px solid rgba(255,255,255,0.1);">
+      <a class="btn" href="https://api.whatsapp.com/send?text=${texteWhatsApp}" target="_blank" style="background:rgba(255,255,255,0.06); color:#FFF; text-decoration:none; margin:0; display:flex; align-items:center; justify-content:center; gap:8px; border: 1px solid rgba(255,255,255,0.1);">
         🔄 Partager à des amis
       </a>
       
@@ -1540,7 +1548,7 @@ function openJobPreview(jobId, title, categoryName, color, price, desc, landmark
   `;
   
   sheet.classList.add('open');
-}
+  }
 
 function closeJobPreview() {
   const sheet = document.getElementById('jobPreviewSheet');
