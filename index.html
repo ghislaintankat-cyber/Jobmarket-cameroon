@@ -1482,76 +1482,35 @@ if (typeof map !== 'undefined') {
 function openJobPreview(jobId, title, categoryName, color, price, desc, landmark, phone, lat, lng) {
   const sheet = document.getElementById('jobPreviewSheet');
   const content = document.getElementById('previewSheetContent');
-  
-  if (!sheet || !content) return;
- 
-  
-  // Message de partage universel
-  const texteWhatsApp = encodeURIComponent(
-    `🚨 *Nouvelle offre sur JobMarket !*\n\n` +
-    `💼 *Poste :* ${title}\n` +
-    `📂 *Catégorie :* ${categoryName}\n` +
-    `💰 *Salaire/Prix :* ${price}\n` +
-    `📍 *Lieu/Repère :* ${landmark || 'Non spécifié'}\n` +
-    `📝 *Description :* ${desc || 'Aucune'}\n\n` +
-    `📞 Contact : ${phone}\n\n` +
-    `👉 Découvre l'application ici : https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/`
-  );
-  
-  // NETTOYAGE INTERNATIONAL (Supprime espaces, tirets, +, et 00 au début)
-  let cleanPhone = phone.replace(/[\s\-\(\)]/g, ''); // Enlève espaces, tirets et parenthèses
-  if (cleanPhone.startsWith('+')) {
-    cleanPhone = cleanPhone.substring(1);
-  }
-  if (cleanPhone.startsWith('00')) {
-    cleanPhone = cleanPhone.substring(2);
-  }
-  
-  content.innerHTML = `
-    <div class="preview-header-row">
-      <div class="preview-title-block">
-        <div class="preview-title-text">${title}</div>
-        <span class="preview-tag" style="background:${color}22; color:${color}; border:1px solid ${color}44;">${categoryName}</span>
-      </div>
-      <div class="preview-price">${price}</div>
-    </div>
-    
-    <div class="preview-desc">${desc || 'Aucune description fournie.'}</div>
-    
-    <div class="preview-landmark">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span><strong>Lieu/Repère :</strong> ${landmark || 'Non spécifié'}</span>
-    </div>
-    
-    <div class="preview-actions">
-      <div class="preview-buttons-row">
-        <a href="https://wa.me/237${cleanPhone}" target="_blank" 
-           class="btn" style="background:#25D366; color:white; text-decoration:none; padding:12px; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:8px;">
-           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-           Discuter sur WhatsApp
-        </a>
-        <a class="btn btn-blue" href="tel:${phone}" style="text-decoration:none; margin:0; display:flex; align-items:center; justify-content:center; gap:8px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-2.11-.45z"/></svg>
-          Appeler
-        </a>
-      </div>
-      
-      <a class="btn" href="https://api.whatsapp.com/send?text=${texteWhatsApp}" target="_blank" style="background:rgba(255,255,255,0.06); color:#FFF; text-decoration:none; margin:0; display:flex; align-items:center; justify-content:center; gap:8px; border: 1px solid rgba(255,255,255,0.1);">
-        🔄 Partager à des amis
-      </a>
-      
-      <button class="btn btn-itin" onclick="closeJobPreview(); drawRoute(${lat},${lng})" style="display:flex; align-items:center; justify-content:center; gap:8px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-        Voir l'itinéraire
-      </button>
 
-      <button class="btn btn-ghost" onclick="closeJobPreview()">Fermer</button>
+  if (!sheet || !content) {
+    console.log("Erreur : La fenêtre n'est pas trouvée dans le HTML");
+    return;
+  }
+
+  // Nettoyage ultra-simple : ne garde que les chiffres
+  let cleanPhone = String(phone).replace(/\D/g, '');
+  if (cleanPhone.length > 8 && !cleanPhone.startsWith('237')) {
+    cleanPhone = '237' + cleanPhone;
+  }
+
+  // Construction simple pour éviter les erreurs d'affichage
+  content.innerHTML = `
+    <div style="padding: 20px; color: white;">
+      <h2>${title}</h2>
+      <p><strong>Prix :</strong> ${price}</p>
+      <p>${desc || 'Aucune description'}</p>
+      <a href="https://wa.me/${cleanPhone}" target="_blank" style="display:block; background:#25D366; color:white; padding:15px; text-align:center; border-radius:10px; text-decoration:none; margin-bottom:10px;">
+        💬 Discuter sur WhatsApp
+      </a>
+      <button onclick="document.getElementById('jobPreviewSheet').classList.remove('open')" style="width:100%; padding:15px; background:#333; color:white; border:none; border-radius:10px;">
+        Fermer
+      </button>
     </div>
   `;
-  
+
   sheet.classList.add('open');
   }
-
 function closeJobPreview() {
   const sheet = document.getElementById('jobPreviewSheet');
   if (sheet) sheet.classList.remove('open');
