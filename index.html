@@ -1617,6 +1617,83 @@ db.ref('jobs').limitToLast(1).on('child_added', (snapshot) => {
   showToast(`🎉 Nouveau job : ${nouveauJob.title} (${nouveauJob.landmark || 'Cameroun'}) vient d'être publié !`, 'info');
 });
 
+  // =======================================================
+//  FONCTION PRINCIPALE : OUVERTURE DE L'APERÇU DU JOB
+// =======================================================
+function openJobPreview(jobId, title, categoryName, color, price, desc, landmark, phone, lat, lng) {
+  const sheet = document.getElementById('jobPreviewSheet');
+  const content = document.getElementById('previewSheetContent');
+  const template = document.getElementById('jobPreviewTemplate');
+
+  // Sécurité anti-crash si un élément est absent du DOM
+  if (!sheet || !content || !template) return;
+
+  // Nettoyage complet du numéro (uniquement les chiffres pour l'API WhatsApp)
+  let cleanedPhone = String(phone || '').replace(/\D/g, '');
+  
+  // Formatage automatique pour le Cameroun (237) si le numéro fait 9 chiffres
+  if (cleanedPhone.length === 9 && (cleanedPhone.startsWith('6') || cleanedPhone.startsWith('2'))) {
+    cleanedPhone = '237' + cleanedPhone;
+  }
+
+  // Copie conforme (clonage) du modèle HTML
+  const clone = template.content.cloneNode(true);
+
+  // 1. Remplissage et personnalisation du badge de catégorie
+  const badge = clone.querySelector('.tpl-badge');
+  if (badge && categoryName) {
+    badge.textContent = categoryName;
+    badge.style.color = color || 'var(--gold)';
+    badge.style.backgroundColor = (color || 'var(--gold)') + '15'; // Effet translucide (alpha 8%)
+    badge.style.borderColor = (color || 'var(--gold)') + '30';
+  }
+
+  // 2. Remplissage des données textuelles de l'annonce
+  clone.querySelector('.tpl-title').textContent = title || 'Sans titre';
+  clone.querySelector('.tpl-price').textContent = Number(price || 0).toLocaleString('fr-FR') + " XAF";
+  clone.querySelector('.tpl-desc').textContent = desc || "Aucune description fournie pour ce job.";
+  clone.querySelector('.tpl-landmark').textContent = landmark || "Lieu non précisé sur la carte";
+
+  // 3. Configuration de la redirection WhatsApp Business
+  const whatsappBtn = clone.querySelector('.tpl-whatsapp');
+  if (whatsappBtn) {
+    const message = `Bonjour, je vous contacte via JobMarket au sujet de votre annonce : *${title}*`;
+    whatsappBtn.href = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`;
+  }
+
+  // 4. Lien avec le système d'itinéraire Leaflet OSRM de ton application
+  const routeBtn = clone.querySelector('.tpl-route');
+  if (routeBtn) {
+    routeBtn.onclick = function() {
+      sheet.classList.remove('open'); // Ferme l'aperçu
+      
+      // Si la fonction globale de ton projet existe, on l'appelle
+      if (typeof calculateRoute === 'function') {
+        calculateRoute(lat, lng);
+      } else if (window.map && window.userMarker) {
+        // Fallback sécurisé : trace directement l'itinéraire sur la carte
+        const userLatLng = window.userMarker.getLatLng();
+        if (window.routingControl) { window.map.removeControl(window.routingControl); }
+        
+        if (typeof L !== 'undefined' && L.Routing) {
+          window.routingControl = L.Routing.control({
+            waypoints: [L.latLng(userLatLng.lat, userLatLng.lng), L.latLng(lat, lng)],
+            router: L.Routing.osrmv1({ language: 'fr' }),
+            createMarker: function() { return null; }
+          }).addTo(window.map);
+          document.getElementById('itinPanel')?.classList.remove('hidden');
+        }
+      } else {
+        showToast("Activez votre position pour afficher l'itinéraire", "error");
+      }
+    };
+  }
+
+  // Effacer l'ancien aperçu, injecter le nouveau modèle complété et animer l'ouverture
+  content.innerHTML = '';
+  content.appendChild(clone);
+  sheet.classList.add('open');
+}
   // ===== PUBLIER UN JOB PAR APPUI LONG SUR LA CARTE =====
 map.on('contextmenu', function(e) {
   const lat = e.latlng.lat;
@@ -1676,28 +1753,52 @@ document.addEventListener('click', (e) => {
   }
 });
 
-  <div id="jobPreviewSheet" class="preview-sheet">
-  <div id="previewSheetContent"></div>
-</div>
-
-<template id="jobPreviewTemplate">
-  <div style="padding: 20px; color: #fff;">
-    <h2 class="tpl-title" style="margin-top:0;"></h2>
-    <p class="tpl-price" style="color: #FFD700;"></p>
-    <p class="tpl-desc" style="font-size: 14px; color: #ccc;"></p>
-    <p style="font-size: 14px;"><strong>Lieu :</strong> <span class="tpl-landmark"></span></p>
-    
-    <a class="tpl-whatsapp" href="#" target="_blank" 
-       style="display:block; background:#25D366; color:white; padding:15px; text-align:center; border-radius:10px; text-decoration:none; margin-top:20px; font-weight:bold;">
-       💬 Discuter sur WhatsApp
-    </a>
-    
-    <button onclick="document.getElementById('jobPreviewSheet').classList.remove('open')" 
-            style="width:100%; margin-top:10px; padding:15px; background:#444; color:white; border:none; border-radius:10px; cursor:pointer;">
-        Fermer
-    </button>
+  <div id="jobPreviewSheet" class="preview-sheet" onclick="if(event.target === this) this.classList.remove('open')">
+    <div id="previewSheetContent"></div>
   </div>
-</template>
-  
+
+  <template id="jobPreviewTemplate">
+    <div style="padding: 24px; color: var(--text); font-family: 'DM Sans', sans-serif;">
+      <div style="width: 40px; height: 4px; background: var(--surface2); border-radius: 4px; margin: 0 auto 20px;"></div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <span class="tpl-badge" style="font-size: 11px; font-weight: 700; padding: 6px 14px; border-radius: 20px; border: 1px solid ; text-transform: uppercase;"></span>
+        <button onclick="document.getElementById('jobPreviewSheet').classList.remove('open')" 
+                style="width: 36px; height: 36px; border: none; background: var(--surface); border-radius: 50%; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <h2 class="tpl-title" style="font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; line-height: 1.3; margin-bottom: 8px;"></h2>
+      <div class="tpl-price" style="font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--green); margin-bottom: 20px;"></div>
+      
+      <div style="height: 1px; background: var(--border); margin-bottom: 20px;"></div>
+
+      <div style="margin-bottom: 24px;">
+        <h4 style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px;">Description du besoin</h4>
+        <p class="tpl-desc" style="font-size: 15px; color: #D1D1E0; line-height: 1.6; background: var(--surface); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); max-height: 120px; overflow-y: auto; margin: 0;"></p>
+      </div>
+
+      <div style="margin-bottom: 24px; display: flex; align-items: center; gap: 10px; background: rgba(255,215,0,0.05); padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid rgba(255,215,0,0.1);">
+        <svg style="width: 20px; height: 20px; color: var(--gold); flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div>
+          <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);">Lieu / Repère</div>
+          <div class="tpl-landmark" style="font-size: 14px; font-weight: 700; color: var(--text);"></div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+        <a class="tpl-whatsapp btn btn-green" href="#" target="_blank" style="text-decoration: none; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width: 20px; height: 20px;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.457L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.863-9.832.002-2.623-1.023-5.09-2.885-6.957C16.528 1.95 14.066.924 11.444.924c-5.444 0-9.866 4.416-9.869 9.837-.001 1.76.467 3.479 1.354 5.016l-.993 3.626 3.712-.973zm13.045-6.844c-.33-.165-1.952-.964-2.251-1.074-.3-.109-.518-.165-.736.165-.218.33-.843 1.074-1.034 1.293-.19.219-.382.246-.712.082-.33-.165-1.393-.513-2.653-1.638-.98-.874-1.641-1.953-1.833-2.282-.19-.33-.02-.508.145-.671.148-.147.33-.384.495-.577.165-.192.22-.33.33-.55.11-.219.055-.411-.028-.576-.082-.165-.736-1.774-1.009-2.434-.266-.639-.536-.55-.736-.56-.189-.01-.405-.012-.622-.012-.216 0-.569.082-.867.411-.297.33-1.137 1.113-1.137 2.715 0 1.603 1.166 3.153 1.328 3.372.162.219 2.296 3.507 5.562 4.916.777.336 1.383.536 1.856.687.781.248 1.492.213 2.054.129.627-.094 1.952-.798 2.224-1.53.272-.734.272-1.363.19-1.493-.082-.13-.298-.213-.628-.377z"/></svg>
+          Discuter sur WhatsApp
+        </a>
+        
+        <button class="tpl-route btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          Tracer l'Itinéraire (GPS)
+        </button>
+      </div>
+    </div>
+  </template>
 </body>
-</html>
+  </html>
