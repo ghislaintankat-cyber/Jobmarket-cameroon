@@ -1320,6 +1320,8 @@ function syncJobs() {
 
         L.marker([job.lat, job.lng], { icon })
   .addTo(jobsLayer)
+  L.marker([job.lat, job.lng], { icon })
+  .addTo(jobsLayer)
   .bindPopup(`
     <div style="min-width:240px; font-family:'DM Sans',sans-serif; color: #fff;">
       <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:16px; margin-bottom:6px;">${job.title}</div>
@@ -1333,7 +1335,7 @@ function syncJobs() {
         📍 ${job.landmark || 'Position sur la carte'}
       </div>
       
-      <button onclick="map.closePopup(); openJobPreview('${jobId}', \`${job.title.replace(/'/g, "\\'")}\`, '${getCatLabel(job.icon)}', '${job.color}', '${job.price}', \`${(job.desc || '').replace(/'/g, "\\'")}\`, '${job.landmark}', '${job.phone}', ${job.lat}, ${job.lng})" 
+      <button onclick="map.closePopup(); openJobPreview('${id}', \`${job.title.replace(/'/g, "\\'")}\`, '${getCatLabel(job.icon)}', '${job.color}', '${job.price}', \`${(job.desc || '').replace(/'/g, "\\'")}\`, '${job.landmark}', '${job.phone}', ${job.lat}, ${job.lng})" 
               style="width:100%; background:var(--gold); border:none; color:#0A0A0F; padding:10px 12px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
         Voir les détails
       </button>
