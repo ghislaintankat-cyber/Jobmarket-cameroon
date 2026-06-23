@@ -1673,15 +1673,26 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ===== FONCTION PREMIUM DE L'APERÇU GLISSANT =====
+// ===== FONCTION PREMIUM DE L'APERÇU GLISSANT (CORRIGÉE INTERNATIONALE) =====
 function openJobPreview(id, title, catLabel, color, price, desc, landmark, phone, lat, lng) {
   const content = document.getElementById('previewSheetContent');
   if (!content) return;
   
-  // Nettoyage du numéro de téléphone pour WhatsApp
+  // NETTOYAGE UNIVERSEL DU NUMÉRO WHATSAPP
   let cleanedPhone = String(phone || '').replace(/\D/g, '');
-  if (cleanedPhone.length === 9 && (cleanedPhone.startsWith('6') || cleanedPhone.startsWith('2'))) {
+  
+  if (cleanedPhone.startsWith('00')) {
+    cleanedPhone = cleanedPhone.substring(2);
+  }
+  
+  // Si numéro Camerounais standard à 9 chiffres, on ajoute l'indicatif 237 automatiquement
+  if (cleanedPhone.length === 9 && /^[623]/.test(cleanedPhone)) {
     cleanedPhone = '237' + cleanedPhone;
+  }
+  
+  // Retrait du 0 initial pour les numéros internationaux saisis avec un 0 devant leur indicatif
+  if (cleanedPhone.startsWith('0') && cleanedPhone.length > 9) {
+    cleanedPhone = cleanedPhone.substring(1);
   }
   
   content.innerHTML = `
@@ -1717,8 +1728,7 @@ function openJobPreview(id, title, catLabel, color, price, desc, landmark, phone
   
   const sheet = document.getElementById('jobPreviewSheet');
   if (sheet) sheet.classList.add('open');
-}
-
+  }
 function closeJobPreview() {
   const sheet = document.getElementById('jobPreviewSheet');
   if (sheet) sheet.classList.remove('open');
