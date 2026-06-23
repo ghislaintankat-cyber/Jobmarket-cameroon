@@ -1323,7 +1323,7 @@ function syncJobs() {
             </div>
           `, { maxWidth: 280 });
 
-      }); // Fermeture propre du snapshot.forEach
+      }); // Fermeture de la boucle snapshot.forEach
 
       // ===== TRAITEMENT ET AFFICHAGE DES STATISTIQUES =====
       allJobs.sort((a, b) => a.dist - b.dist);
@@ -1336,12 +1336,11 @@ function syncJobs() {
         const maxDist = allJobs[allJobs.length-1].dist;
         document.getElementById('maxDistDisplay').textContent = maxDist.toFixed(1);
       }
-    }); // Fermeture du snapshot de Firebase
+    }); // Fermeture du snapshot Firebase
   } catch(e) {
     console.error('Sync jobs error:', e);
   }
   }
-
 function updateJobsList(jobs) {
   const list = document.getElementById('listContent');
   if (!list) return;
@@ -1652,7 +1651,6 @@ function demarrerApplication() {
   } catch(e) { console.error("Erreur locateMe:", e); }
 
   // Sécurité anti-blocage : On force le retrait du splash au bout de 2.5s maximum
-  // Même si le réseau ou le GPS tarde, l'application s'ouvrira quoi qu'il arrive.
   setTimeout(() => {
     const splash = document.getElementById('splash');
     if (splash && !splash.classList.contains('hide')) {
@@ -1678,7 +1676,7 @@ function openJobPreview(id, title, catLabel, color, price, desc, landmark, phone
   const content = document.getElementById('previewSheetContent');
   if (!content) return;
   
-  // NETTOYAGE UNIVERSEL DU NUMÉRO WHATSAPP
+  // NETTOYAGE UNIVERSEL DU NUMÉRO WHATSAPP (RÉPARE AUSSI LE BUG DU 0 CENTRAL !)
   let cleanedPhone = String(phone || '').replace(/\D/g, '');
   
   if (cleanedPhone.startsWith('00')) {
@@ -1728,7 +1726,8 @@ function openJobPreview(id, title, catLabel, color, price, desc, landmark, phone
   
   const sheet = document.getElementById('jobPreviewSheet');
   if (sheet) sheet.classList.add('open');
-  }
+}
+
 function closeJobPreview() {
   const sheet = document.getElementById('jobPreviewSheet');
   if (sheet) sheet.classList.remove('open');
@@ -1741,3 +1740,4 @@ function closeJobPreview() {
 
 </body>
 </html>
+  
