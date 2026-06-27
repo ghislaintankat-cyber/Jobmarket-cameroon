@@ -28,6 +28,128 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
 <style>
+  /* DESIGN DU PANNEAU DE PRÉVISUALISATION MOBILE-FIRST */
+.job-drawer {
+    position: fixed;
+    top: 0;
+    right: -400px; /* Masqué par défaut hors de l'écran */
+    width: 380px;
+    height: 100%;
+    background: #ffffff;
+    box-shadow: -5px 0 25px rgba(0,0,0,0.15);
+    z-index: 9999; /* Toujours au-dessus de la carte et du reste */
+    transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Version responsive pour les petits écrans de téléphones */
+@media (max-width: 480px) {
+    .job-drawer {
+        width: 100%;
+        right: -100%;
+    }
+}
+
+/* Classe activée par le JavaScript pour ouvrir le volet */
+.job-drawer.open {
+    right: 0;
+}
+
+.drawer-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+#previewCategory {
+    background: #007bff;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.close-drawer-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #666;
+}
+
+.drawer-body {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.drawer-body h2 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 22px;
+}
+
+.drawer-price-tag {
+    font-size: 20px;
+    color: #28a745;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.drawer-info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #555;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.drawer-divider {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 20px 0;
+}
+
+.drawer-footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+    background: #f8f9fa;
+}
+
+/* Bouton WhatsApp Vert Officiel et Moderne */
+.whatsapp-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #25D366;
+    color: white;
+    text-decoration: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    transition: background 0.3s;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.whatsapp-action-btn:hover {
+    background: #1ebd57;
+}
+
+.whatsapp-icon {
+    width: 20px;
+    height: 20px;
+    fill: white;
+}
 /* ===== DESIGN TOKENS ===== */
 :root {
   --gold: #FFD700;
@@ -1359,8 +1481,9 @@ function updateJobsList(jobs) {
     return;
   }
 
+  // On génère les cartes et on ajoute openJobPreview('${job.id}') au clic !
   list.innerHTML = jobs.map((job, i) => `
-    <div class="job-card" style="animation-delay:${i*0.04}s" onclick="focusJob(${job.lat},${job.lng})">
+    <div class="job-card" style="animation-delay:${i*0.04}s" onclick="focusJob(${job.lat},${job.lng}); openJobPreview('${job.id}')">
       <div class="job-card-icon" style="background:${job.color || '#FFD700'}22;">
         <span style="font-size:11px;font-weight:800;color:${job.color || '#FFD700'};">${getCatIcon(job.icon)}</span>
       </div>
@@ -1377,7 +1500,7 @@ function updateJobsList(jobs) {
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
           ${job.dist >= 999 ? '-- km' : job.dist.toFixed(1) + ' km'}
         </div>
-        ${job.verified ? `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke="none"/></svg>` : ''}
+        ${job.verified ? `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>` : ''}
       </div>
     </div>
   `).join('');
@@ -1644,7 +1767,73 @@ function preparerNouveauJob(lat, lng) {
     showToast("Position enregistrée ! Remplissez le formulaire de job.", "success");
   }
 }
-  
+// ==========================================
+// 1. FONCTION COMMUNE : GÉNÉRATEUR WHATSAPP INTERNATIONAL
+// ==========================================
+function genererLienWhatsApp(phone, titreJob) {
+    if (!phone) return '#';
+    
+    // Nettoie le numéro (enlève les espaces, tirets, parenthèses)
+    let numPropre = phone.toString().replace(/[\s\(\)\-\.]/g, '');
+
+    // Retire le '+' s'il est présent au début
+    if (numPropre.startsWith('+')) {
+        numPropre = numPropre.substring(1);
+    }
+
+    // REGLE CAMEROUN : Si 9 chiffres commençant par 6, 2 ou 3 -> Ajoute le 237 automatiquement
+    if (numPropre.length === 9 && (numPropre.startsWith('6') || numPropre.startsWith('2') || numPropre.startsWith('3'))) {
+        numPropre = '237' + numPropre;
+    }
+
+    // Encodage du message automatique pour le destinataire
+    const message = encodeURIComponent(`Bonjour, je vous contacte depuis JobMarket pour votre annonce : "${titreJob}". Est-elle toujours disponible ?`);
+    
+    return `https://wa.me/${numPropre}?text=${message}`;
+}
+
+// ==========================================
+// VERSION CORRIGÉE : OPEN JOB PREVIEW
+// ==========================================
+function openJobPreview(jobId) {
+    // Recherche le job dans ton tableau global allJobs
+    const job = allJobs.find(j => j.id === jobId);
+
+    if (!job) {
+        console.error("Impossible de trouver le job :", jobId);
+        return;
+    }
+
+    // Remplit le volet avec tes vraies données Firebase (desc, landmark et getCatLabel)
+    document.getElementById('previewTitle').innerText = job.title || 'Titre non spécifié';
+    document.getElementById('previewCategory').innerText = getCatLabel(job.icon) || 'Général';
+    document.getElementById('previewDescription').innerText = job.desc || 'Aucune description fournie.';
+    document.getElementById('previewLocation').innerText = job.landmark || 'Non spécifié';
+    document.getElementById('previewPrice').innerText = job.price ? `${job.price} XAF` : 'Prix à débattre';
+
+    // Configuration du bouton WhatsApp international automatique
+    const waButton = document.getElementById('previewWhatsAppBtn');
+    if (job.phone) {
+        waButton.href = genererLienWhatsApp(job.phone, job.title);
+        waButton.style.display = 'flex';
+    } else {
+        waButton.style.display = 'none';
+    }
+
+    // Ouvre le tiroir d'affichage
+    document.getElementById('jobPreviewDrawer').classList.add('open');
+}
+
+// ==========================================
+// FONCTION DE FERMETURE DU VOLET
+// ==========================================
+function closeJobPreview() {
+    const drawer = document.getElementById('jobPreviewDrawer');
+    if (drawer) {
+        drawer.classList.remove('open');
+    }
+}
+ 
 // ===== INIT =====
 locateMe();
 syncJobs();
@@ -1659,5 +1848,37 @@ document.addEventListener('click', (e) => {
   }
 });
   
+ <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
+<div id="jobPreviewDrawer" class="job-drawer">
+    <div class="drawer-header">
+        <span class="drawer-badge" id="previewCategory">Catégorie</span>
+        <button class="close-drawer-btn" onclick="closeJobPreview()">&times;</button>
+    </div>
+    
+    <div class="drawer-body">
+        <h2 id="previewTitle">Titre de l'annonce</h2>
+        <div class="drawer-price-tag" id="previewPrice">0 FCFA</div>
+        
+        <div class="drawer-info-row">
+            <span class="icon">📍</span>
+            <span id="previewLocation">Localisation...</span>
+        </div>
+        
+        <hr class="drawer-divider">
+        
+        <h3>Description du besoin :</h3>
+        <p id="previewDescription">Détails de l'emploi ou du service demandé...</p>
+    </div>
+    
+    <div class="drawer-footer">
+        <!-- Notre bouton de contact direct lié à l'API WhatsApp corrigée -->
+        <a id="previewWhatsAppBtn" href="#" target="_blank" class="whatsapp-action-btn">
+            <svg class="whatsapp-icon" viewBox="0 0 24 24">
+                <path fill="#currentColor" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91c0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.23 8.23c-1.45 0-2.88-.38-4.13-1.11l-.3-.18l-3.07.81l.82-3l-.2-.31a8.19 8.19 0 0 1-1.25-4.27c0-4.54 3.7-8.23 8.23-8.23m-4.52 4.81c-.25 0-.66.09-.91.37c-.25.28-.94.92-.94 2.25c0 1.32.96 2.6 1.1 2.78c.14.19 1.9 2.9 4.6 4.07c.64.27 1.14.44 1.53.57c.65.2 1.24.18 1.7.11c.52-.08 1.6-.66 1.83-1.29c.23-.63.23-1.17.16-1.28c-.07-.1-.25-.17-.53-.31c-.27-.14-1.62-.8-1.87-.89c-.25-.09-.43-.14-.62.14c-.18.27-.71.89-.87 1.07c-.16.18-.32.2-.6.06c-.27-.14-1.15-.42-2.19-1.35c-.81-.73-1.36-1.62-1.52-1.9c-.16-.28-.02-.43.12-.57c.13-.13.27-.32.41-.48c.14-.16.18-.27.28-.45c.1-.19.05-.35-.02-.49c-.07-.14-.62-1.5-.85-2.05c-.23-.54-.46-.45-.63-.46c-.16-.01-.34-.01-.52-.01Z"/>
+            </svg>
+            Discuter sur WhatsApp
+        </a>
+    </div>
+</div>
 </body>
 </html>
