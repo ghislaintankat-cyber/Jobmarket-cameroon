@@ -1400,66 +1400,71 @@ function getCatLabel(cat) {
   return labels[cat] || cat;
 }
 
-async function syncJobs() {
-    console.log("Synchronisation avec Supabase...");
+// ===== REMPLACEZ TOUTE VOTRE FONCTION syncJobs() PAR CELLE-CI =====
+function syncJobs() {
+  // On écoute la collection 'jobs' sur Firebase Realtime Database en temps réel
+  db.ref('jobs').on('value', (snapshot) => {
+    const data = snapshot.val();
     
-    // 1. Récupération des données depuis la table 'offres'
-    const { data: offres, error } = await supabase
-        .from('offres')
-        .select('*');
-
-    if (error) {
-        console.error("Erreur de récupération Supabase :", error);
-        return;
-    }
-
-    // 2. Initialisation des variables
+    // 1. Réinitialisation des variables et nettoyage de la carte
     allJobs = [];
     jobsLayer.clearLayers();
+    
     let todayCount = 0;
     const today = new Date().setHours(0,0,0,0);
-
-    // 3. Traitement de chaque offre
-    offres.forEach(job => {
-        // Calcul distance si userCoords est défini
+    
+    if (data) {
+      // 2. On parcourt tous les jobs récupérés de Firebase
+      Object.keys(data).forEach(key => {
+        const job = data[key];
+        
+        // Calcul de la distance si la position de l'utilisateur est disponible
         const dist = typeof userCoords !== 'undefined' ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng) : 999;
         
-        allJobs.push({ ...job, id: job.id, dist });
+        // HARMONISATION : On s'assure que les anciennes et nouvelles propriétés cohabitent sans bug
+        job.id = key;
+        job.title = job.title || job.titre || "Sans titre";
+        job.titre = job.title; // Sécurité au cas où le reste du code cherche 'titre'
+        job.image_offre = job.image || job.image_offre || ""; // Sécurité pour l'image
+        job.dist = dist;
         
-        // Comptage des offres du jour (basé sur created_at)
-        if (new Date(job.created_at).getTime() > today) todayCount++;
-
-        // 4. Création du marqueur sur la carte
-        const icon = L.divIcon({
-            html: `<div style="background:${job.color || '#FFD700'}; color:#111; font-weight:800; font-size:9px; padding:6px 8px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.3); white-space:nowrap; border:2px solid rgba(255,255,255,0.3);">${getCatIcon(job.icon)}</div>`,
-            iconSize: [null, null],
-            className: ''
+        allJobs.push(job);
+        
+        // Comptage des offres du jour (si timestamp existant)
+        if (job.timestamp && job.timestamp > today) {
+          todayCount++;
+        }
+        
+        // 3. Création du marqueur visuel sur la carte Leaflet
+        const icon = L.divIcon({ 
+          html: `<div style="background:${job.color || '#FFD700'}; color:#111; font-weight:800; font-size:9px; padding:6px 8px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.3); white-space:nowrap; border:2px solid rgba(255,255,255,0.3);">${getCatIcon(job.icon)}</div>`, 
+          iconSize: [null, null], 
+          className: '' 
         });
-
+        
+        // Contenu de la bulle d'info (Popup) de la carte
+        const popupContent = `
+          <div style="min-width:240px; font-family:'DM Sans',sans-serif;">
+            <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:16px; margin-bottom:6px;">${job.title}</div>
+            ${job.image_offre ? `<img src="${job.image_offre}" style="width:100%; margin-bottom:6px; border-radius:10px; max-height:120px; object-fit:cover;"/>` : ''}
+            <div style="color:var(--green); font-weight:700; margin-bottom:4px; font-size:14px;">${job.price || 'À discuter'}</div>
+            <div style="font-size:12px; color:var(--text-dim); margin-bottom:8px;">📍 ${job.landmark || 'Lieu non spécifié'}</div>
+            <button onclick="openJobPreview('${key}')" style="width:100%; background:var(--blue); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Syne',sans-serif;">Voir les détails</button>
+          </div>
+        `;
+        
         L.marker([job.lat, job.lng], { icon })
-            .addTo(jobsLayer)
-            .bindPopup(`
-                <div style="min-width:240px; font-family:'DM Sans',sans-serif;">
-                    <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:16px; margin-bottom:6px;">${job.titre}</div>
-                    
-                    ${job.image_offre ? `<img src="${job.image_offre}" style="width:100%; margin-bottom:6px; border-radius:10px; max-height:120px; object-fit:cover;">` : ''}
-                    
-                    <div style="font-size:13px; margin-bottom:10px; line-height:1.5;">${job.description}</div>
-                    
-                    <a href="https://wa.me/${job.whatsapp}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:white; padding:12px; border-radius:12px; text-decoration:none; font-weight:700;">
-                        💬 Postuler sur WhatsApp
-                    </a>
-                </div>
-            `, { maxWidth: 280 });
-    });
-
-    // 5. Mise à jour de l'UI
-    allJobs.sort((a, b) => a.dist - b.dist);
-    if (typeof updateJobsList === 'function') updateJobsList(allJobs);
+          .addTo(jobsLayer)
+          .bindPopup(popupContent);
+      });
+    }
     
-    // Mise à jour des compteurs (assure-toi que ces IDs existent dans ton HTML)
-    const badge = document.getElementById('jobCountBadge');
-    if (badge) badge.textContent = allJobs.length;
+    // 4. Mise à jour automatique de la liste HTML globale
+    updateJobsList();
+    
+  }, (error) => {
+    console.error("Erreur de synchronisation Firebase :", error);
+  });
 }
 function updateJobsList(jobs) {
   const list = document.getElementById('listContent');
