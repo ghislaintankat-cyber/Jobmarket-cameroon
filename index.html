@@ -1830,8 +1830,7 @@ function closeJobPreview() {
 // ===== INIT =====
 locateMe();
 syncJobs();
-</script>
-  
+
 // ===== VIBRATION POUR CHAQUE CLIC =====
 document.addEventListener('click', (e) => {
   if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
@@ -1840,8 +1839,62 @@ document.addEventListener('click', (e) => {
     }
   }
 });
-  
- <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
+
+// ===== AJOUT : NETTOYAGE INTERNATIONAL WHATSAPP =====
+function genererLienWhatsApp(phoneFormate, titreJob) {
+  if (!phoneFormate) return '#';
+  let numPropre = phoneFormate.toString().replace(/[\s\(\)\-\.]/g, '');
+
+  if (numPropre.startsWith('+')) {
+    numPropre = numPropre.substring(1);
+  }
+
+  if (numPropre.length === 9 && (numPropre.startsWith('6') || numPropre.startsWith('2') || numPropre.startsWith('3'))) {
+    numPropre = '237' + numPropre;
+  }
+
+  const message = encodeURIComponent(`Bonjour, je vous contacte depuis JobMarket pour votre annonce : "${titreJob}". Est-elle toujours disponible ?`);
+  return `https://wa.me/${numPropre}?text=${message}`;
+}
+
+// ===== AJOUT : OUVERTURE DU VOLET DE PRÉVISUALISATION PROPRE =====
+function openJobPreview(jobId) {
+    const job = allJobs.find(j => j.id === jobId);
+
+    if (!job) {
+        console.error("Impossible de trouver le job :", jobId);
+        return;
+    }
+
+    // Remplit les données dans le nouveau volet
+    document.getElementById('previewTitle').innerText = job.title || 'Titre non spécifié';
+    document.getElementById('previewCategory').innerText = getCatLabel(job.icon) || 'Général';
+    document.getElementById('previewDescription').innerText = job.desc || 'Aucune description fournie.';
+    document.getElementById('previewLocation').innerText = job.landmark || 'Non spécifié';
+    document.getElementById('previewPrice').innerText = job.price ? `${job.price} XAF` : 'Prix à débattre';
+
+    // Configuration du bouton WhatsApp
+    const waButton = document.getElementById('previewWhatsAppBtn');
+    if (job.phone) {
+        waButton.href = genererLienWhatsApp(job.phone, job.title);
+        waButton.style.display = 'flex';
+    } else {
+        waButton.style.display = 'none';
+    }
+
+    // Ouvre le tiroir d'affichage
+    document.getElementById('jobPreviewDrawer').classList.add('open');
+}
+
+// ===== AJOUT : FERMETURE DU VOLET =====
+function closeJobPreview() {
+    const drawer = document.getElementById('jobPreviewDrawer');
+    if (drawer) {
+        drawer.classList.remove('open');
+    }
+}
+</script>
+
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
         <span class="drawer-badge" id="previewCategory">Catégorie</span>
@@ -1850,7 +1903,7 @@ document.addEventListener('click', (e) => {
     
     <div class="drawer-body">
         <h2 id="previewTitle">Titre de l'annonce</h2>
-        <div class="drawer-price-tag" id="previewPrice">0 FCFA</div>
+        <div class="drawer-price-tag" id="previewPrice">0 XAF</div>
         
         <div class="drawer-info-row">
             <span class="icon">📍</span>
@@ -1864,14 +1917,136 @@ document.addEventListener('click', (e) => {
     </div>
     
     <div class="drawer-footer">
-        <!-- Notre bouton de contact direct lié à l'API WhatsApp corrigée -->
         <a id="previewWhatsAppBtn" href="#" target="_blank" class="whatsapp-action-btn">
-            <svg class="whatsapp-icon" viewBox="0 0 24 24">
-                <path fill="#currentColor" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91c0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.23 8.23c-1.45 0-2.88-.38-4.13-1.11l-.3-.18l-3.07.81l.82-3l-.2-.31a8.19 8.19 0 0 1-1.25-4.27c0-4.54 3.7-8.23 8.23-8.23m-4.52 4.81c-.25 0-.66.09-.91.37c-.25.28-.94.92-.94 2.25c0 1.32.96 2.6 1.1 2.78c.14.19 1.9 2.9 4.6 4.07c.64.27 1.14.44 1.53.57c.65.2 1.24.18 1.7.11c.52-.08 1.6-.66 1.83-1.29c.23-.63.23-1.17.16-1.28c-.07-.1-.25-.17-.53-.31c-.27-.14-1.62-.8-1.87-.89c-.25-.09-.43-.14-.62.14c-.18.27-.71.89-.87 1.07c-.16.18-.32.2-.6.06c-.27-.14-1.15-.42-2.19-1.35c-.81-.73-1.36-1.62-1.52-1.9c-.16-.28-.02-.43.12-.57c.13-.13.27-.32.41-.48c.14-.16.18-.27.28-.45c.1-.19.05-.35-.02-.49c-.07-.14-.62-1.5-.85-2.05c-.23-.54-.46-.45-.63-.46c-.16-.01-.34-.01-.52-.01Z"/>
+            <svg class="whatsapp-icon" viewBox="0 0 24 24" width="20" height="20">
+                <path fill="currentColor" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91c0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.23 8.23c-1.45 0-2.88-.38-4.13-1.11l-.3-.18l-3.07.81l.82-3l-.2-.31a8.19 8.19 0 0 1-1.25-4.27c0-4.54 3.7-8.23 8.23-8.23m-4.52 4.81c-.25 0-.66.09-.91.37c-.25.28-.94.92-.94 2.25c0 1.32.96 2.6 1.1 2.78c.14.19 1.9 2.9 4.6 4.07c.64.27 1.14.44 1.53.57c.65.2 1.24.18 1.7.11c.52-.08 1.6-.66 1.83-1.29c.23-.63.23-1.17.16-1.28c-.07-.1-.25-.17-.53-.31c-.27-.14-1.62-.8-1.87-.89c-.25-.09-.43-.14-.62.14c-.18.27-.71.89-.87 1.07c-.16.18-.32.2-.6.06c-.27-.14-1.15-.42-2.19-1.35c-.81-.73-1.62-1.36-1.52-1.9c-.16-.28-.02-.43.12-.57c.13-.13.27-.32.41-.48c.14-.16.18-.27.28-.45c.1-.19.05-.35-.02-.49c-.07-.14-.62-1.5-.85-2.05c-.23-.54-.46-.45-.63-.46c-.16-.01-.34-.01-.52-.01Z"/>
             </svg>
             Discuter sur WhatsApp
         </a>
     </div>
 </div>
+
+<style>
+.job-drawer {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 380px;
+    height: 100%;
+    background: #0D0D14; /* Assorti au fond sombre de ton app */
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.6);
+    z-index: 9999;
+    transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+    font-family: 'DM Sans', sans-serif;
+    color: #fff;
+}
+@media (max-width: 480px) {
+    .job-drawer {
+        width: 100%;
+        right: -100%;
+    }
+}
+.job-drawer.open {
+    right: 0;
+}
+.drawer-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #14141F;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+#previewCategory {
+    background: #FFD700;
+    color: #0A0A0F;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.close-drawer-btn {
+    background: none;
+    border: none;
+    font-size: 32px;
+    cursor: pointer;
+    color: #8888A8;
+    line-height: 1;
+}
+.drawer-body {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+}
+.drawer-body h2 {
+    margin: 0 0 8px 0;
+    color: #fff;
+    font-size: 24px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+}
+.drawer-price-tag {
+    font-size: 22px;
+    color: #25D366;
+    font-weight: 800;
+    margin-bottom: 24px;
+}
+.drawer-info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #8888A8;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+.drawer-divider {
+    border: 0;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin: 20px 0;
+}
+.drawer-body h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    color: #fff;
+    margin-bottom: 10px;
+}
+#previewDescription {
+    color: #B4B4D0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.drawer-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: #14141F;
+}
+.whatsapp-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #25D366;
+    color: white;
+    text-decoration: none;
+    padding: 15px;
+    border-radius: 14px;
+    font-weight: 700;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.2);
+}
+.whatsapp-action-btn:hover {
+    background: #1ebd57;
+    transform: translateY(-2px);
+}
+.whatsapp-icon {
+    fill: currentColor;
+}
+</style>
 </body>
 </html>
