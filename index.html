@@ -715,6 +715,41 @@ body{
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px;}
+
+  /* ========================================== */
+/* POPUPS LEAFLET SOMBRES (STYLE PREMIUM)     */
+/* ========================================== */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: #14141F !important; /* Fond sombre assorti à ton menu */
+    color: #FFFFFF !important;      /* Texte général en blanc */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Bordure subtile */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 16px !important; /* Angles arrondis plus modernes */
+}
+
+/* Ajustement de la marge interne du popup */
+.leaflet-popup-content {
+    margin: 16px 20px !important;
+    color: #FFFFFF !important;
+}
+
+/* Personnalisation de la petite croix de fermeture (X) */
+.leaflet-container a.leaflet-popup-close-button {
+    color: #8888A8 !important;
+    padding: 8px 8px 0 0 !important;
+    font-size: 16px !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+    color: #FFD700 !important; /* Devient dorée au survol */
+    background: transparent !important;
+}
+
+/* Ajustement pour les textes grisés à l'intérieur */
+.leaflet-popup-content [style*="color:var(--text-dim)"],
+.leaflet-popup-content div[style*="color:#8888A8"] {
+    color: #B4B4D0 !important; /* Rend le texte secondaire plus lisible sur fond sombre */
+}
 </style>
 </head>
 <body>
