@@ -25,6 +25,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -1399,79 +1400,67 @@ function getCatLabel(cat) {
   return labels[cat] || cat;
 }
 
-function syncJobs() {
-  try {
-    db.ref('jobs').on('value', snap => {
-      allJobs = [];
-      jobsLayer.clearLayers();
-      let todayCount = 0;
-      const today = new Date().setHours(0,0,0,0);
+async function syncJobs() {
+    console.log("Synchronisation avec Supabase...");
+    
+    // 1. Récupération des données depuis la table 'offres'
+    const { data: offres, error } = await supabase
+        .from('offres')
+        .select('*');
 
-      snap.forEach(child => {
-        const job = child.val();
-        const jobId = child.key;
-        const dist = userCoords ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng) : 999;
-        allJobs.push({ ...job, id: jobId, dist });
-        if (job.timestamp > today) todayCount++;
+    if (error) {
+        console.error("Erreur de récupération Supabase :", error);
+        return;
+    }
 
+    // 2. Initialisation des variables
+    allJobs = [];
+    jobsLayer.clearLayers();
+    let todayCount = 0;
+    const today = new Date().setHours(0,0,0,0);
+
+    // 3. Traitement de chaque offre
+    offres.forEach(job => {
+        // Calcul distance si userCoords est défini
+        const dist = typeof userCoords !== 'undefined' ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng) : 999;
+        
+        allJobs.push({ ...job, id: job.id, dist });
+        
+        // Comptage des offres du jour (basé sur created_at)
+        if (new Date(job.created_at).getTime() > today) todayCount++;
+
+        // 4. Création du marqueur sur la carte
         const icon = L.divIcon({
-          html: `<div style="
-            background:${job.color || '#FFD700'};
-            color:#111;font-weight:800;font-size:9px;
-            padding:6px 8px;border-radius:10px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.3);
-            white-space:nowrap;
-            border:2px solid rgba(255,255,255,0.3);
-          ">${getCatIcon(job.icon)}</div>`,
-          iconSize: [null, null],
-          className: ''
+            html: `<div style="background:${job.color || '#FFD700'}; color:#111; font-weight:800; font-size:9px; padding:6px 8px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.3); white-space:nowrap; border:2px solid rgba(255,255,255,0.3);">${getCatIcon(job.icon)}</div>`,
+            iconSize: [null, null],
+            className: ''
         });
 
         L.marker([job.lat, job.lng], { icon })
-          .addTo(jobsLayer)
-          .bindPopup(`
-            <div style="min-width:240px;font-family:'DM Sans',sans-serif;">
-              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${job.title}</div>
-              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
-                <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
-                <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
-              </div>
-              ${job.landmark ? `<div style="font-size:12px;color:#8888A8;margin-bottom:8px;">${job.landmark}</div>` : ''}
-              ${job.desc ? `<div style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
-              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${img}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
-              <a href="https://wa.me/${job.phone}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;text-decoration:none;font-weight:700;font-size:14px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
-                WhatsApp
-              </a>
-              
-              <a href="${genererLienPartage(job.title, getCatLabel(job.icon), jobId)}"
-   target="_blank"
-   style="display:flex;align-items:center;justify-content:center;gap:8px;background:#007AFF;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;text-decoration:none;font-weight:700;font-size:14px;">
-   🔄 Partager sur WhatsApp
-</a>
-              <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:var(--blue);color:white;padding:12px;border:none;border-radius:12px;margin-top:6px;font-weight:700;font-size:14px;cursor:pointer;">
-                Voir l'itineraire
-              </button>
-            </div>
-          `, { maxWidth: 280 });
-      });
-
-      allJobs.sort((a, b) => a.dist - b.dist);
-      updateJobsList(allJobs);
-      document.getElementById('jobCountBadge').textContent = allJobs.length;
-      document.getElementById('adminTotalJobs').textContent = allJobs.length;
-      document.getElementById('adminTodayJobs').textContent = todayCount;
-
-      if (userCoords && allJobs.length > 0) {
-        const maxDist = allJobs[allJobs.length-1].dist;
-        document.getElementById('maxDistDisplay').textContent = maxDist.toFixed(1);
-      }
+            .addTo(jobsLayer)
+            .bindPopup(`
+                <div style="min-width:240px; font-family:'DM Sans',sans-serif;">
+                    <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:16px; margin-bottom:6px;">${job.titre}</div>
+                    
+                    ${job.image_offre ? `<img src="${job.image_offre}" style="width:100%; margin-bottom:6px; border-radius:10px; max-height:120px; object-fit:cover;">` : ''}
+                    
+                    <div style="font-size:13px; margin-bottom:10px; line-height:1.5;">${job.description}</div>
+                    
+                    <a href="https://wa.me/${job.whatsapp}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#25D366; color:white; padding:12px; border-radius:12px; text-decoration:none; font-weight:700;">
+                        💬 Postuler sur WhatsApp
+                    </a>
+                </div>
+            `, { maxWidth: 280 });
     });
-  } catch(e) {
-    console.error('Sync jobs error:', e);
-  }
-}
 
+    // 5. Mise à jour de l'UI
+    allJobs.sort((a, b) => a.dist - b.dist);
+    if (typeof updateJobsList === 'function') updateJobsList(allJobs);
+    
+    // Mise à jour des compteurs (assure-toi que ces IDs existent dans ton HTML)
+    const badge = document.getElementById('jobCountBadge');
+    if (badge) badge.textContent = allJobs.length;
+}
 function updateJobsList(jobs) {
   const list = document.getElementById('listContent');
   if (!list) return;
