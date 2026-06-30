@@ -715,6 +715,134 @@ body{
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px;}
+  
+  /* ======================================================= */
+/* DESIGN DU PANNEAU DE PRÉVISUALISATION (VERSION SOMBRE) */
+/* ======================================================= */
+.job-drawer {
+    position: fixed;
+    top: 0;
+    right: -400px; /* Masqué par défaut hors de l'écran */
+    width: 380px;
+    height: 100%;
+    background: var(--dark2); /* Fond bleu nuit très sombre */
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+    z-index: 9999; /* Reste au-dessus de la carte */
+    transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+    font-family: 'DM Sans', sans-serif;
+    border-left: 1px solid var(--border);
+    color: var(--text);
+}
+
+/* Version responsive pour téléphones portables */
+@media (max-width: 480px) {
+    .job-drawer {
+        width: 100%;
+        right: -100%;
+    }
+}
+
+/* Classe activée par le JavaScript pour ouvrir le volet */
+.job-drawer.open {
+    right: 0;
+}
+
+.drawer-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface); /* Couleur de carte surélevée */
+    border-bottom: 1px solid var(--border);
+}
+
+#previewCategory {
+    background: var(--gold-glow);
+    color: var(--gold);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.close-drawer-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: color 0.2s;
+}
+
+.close-drawer-btn:hover {
+    color: var(--danger); /* Rouge ou doré au survol pour fermer */
+}
+
+.drawer-body {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Style du Titre principal */
+.drawer-body h2 {
+    margin: 0 0 6px 0;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+}
+
+/* Titre des sections comme "Description du besoin" */
+.drawer-body h3 {
+    color: var(--gold);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+}
+
+/* Texte de description */
+#previewDescription {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.drawer-price-tag {
+    font-size: 22px;
+    color: var(--green); /* Vert WhatsApp/Dollar éclatant */
+    font-weight: 700;
+    margin-bottom: 20px;
+    font-family: 'Syne', sans-serif;
+}
+
+.drawer-info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-dim); /* Texte secondaire grisé */
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.drawer-divider {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+}
+
+.drawer-footer {
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
 </style>
 </head>
 <body>
