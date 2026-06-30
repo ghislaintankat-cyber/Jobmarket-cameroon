@@ -716,69 +716,37 @@ body{
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px;}
 
- /* ========================================== */
-/* POPUPS LEAFLET - DESIGN PREMIUM & LISIBLE  */
+/* ========================================== */
+/* POPUP NET ET HAUTE LISIBILITÉ              */
 /* ========================================== */
 
-/* Structure du popup */
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-    background: #14141F !important;
-    color: #FFFFFF !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6) !important;
-    border-radius: 18px !important;
+    background: #101018 !important; /* Un noir un peu plus profond pour contraster */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Une bordure plus nette */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important;
+    border-radius: 16px !important;
 }
 
-/* Espacement interne */
+/* On force le texte à être d'un blanc pur et net */
 .leaflet-popup-content {
+    color: #FFFFFF !important; 
+    font-size: 15px !important; /* Légèrement plus grand pour la lisibilité */
+    font-weight: 400 !important;
     margin: 15px !important;
-    line-height: 1.5 !important;
 }
 
-/* Bouton fermeture */
-.leaflet-container a.leaflet-popup-close-button {
-    color: #8888A8 !important;
-    font-size: 18px !important;
-    margin-top: 5px;
-}
-
-.leaflet-container a.leaflet-popup-close-button:hover {
-    color: #FFD700 !important;
-}
-
-/* --- OPTIMISATION DU CONTENU INTERNE --- */
-/* Rend les images élégantes */
-.leaflet-popup-content img {
-    border-radius: 12px;
-    margin-bottom: 12px;
-    display: block;
-    width: 100%;
-}
-
-/* Rend les textes secondaires plus doux à lire */
-.leaflet-popup-content p, 
-.leaflet-popup-content div {
-    color: #D1D1E0 !important;
-}
-
-/* Style du bouton WhatsApp pour qu'il soit professionnel */
-.leaflet-popup-content a[href*="wa.me"] {
-    display: block;
-    background: #25D366 !important;
-    color: #000 !important;
-    padding: 10px 0 !important;
-    text-align: center;
-    border-radius: 10px !important;
-    text-decoration: none !important;
+/* Titre très blanc et très net */
+.popup-title {
+    color: #FFFFFF !important;
     font-weight: 800 !important;
-    margin-top: 12px;
-    transition: transform 0.2s;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
 }
 
-.leaflet-popup-content a[href*="wa.me"]:hover {
-    transform: scale(1.02);
-    background: #128C7E !important;
-    color: #fff !important;
+/* Description : on enlève l'effet "brumeux" en augmentant la luminosité */
+.popup-desc {
+    color: #E8E8FF !important; /* Un blanc bleuté très clair, beaucoup plus net que le gris */
+    line-height: 1.6 !important;
 }
 </style>
 </head>
