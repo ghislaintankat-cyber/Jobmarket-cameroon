@@ -1100,40 +1100,44 @@ body{
       </div>
     </div>
     
-<!-- User dashboard (shown when logged in) --> 
-  <div id="userDashboard" class="hidden">
-  <div class="account-card">
-    
-    <a class="account-item" href="#" onclick="openAdminPanel()">
-      <div class="account-item-icon" style="background:rgba(255,215,0,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
-      <span>Dashboard Admin</span>
-      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
-    </a>
+<div id="userDashboard" class="hidden">
+    <div class="account-card">
+        <a class="account-item" href="#" onclick="openAdminPanel()">
+            <div class="account-item-icon" style="background:rgba(255,215,0,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+            <span>Dashboard Admin</span>
+            <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
 
-    <a class="account-item" href="#" onclick="openChat()">
-      <div class="account-item-icon" style="background:rgba(0,122,255,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <span>Chat sécurisé</span>
-      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
-    </a>
+        <a class="account-item" href="#" onclick="openChat()">
+            <div class="account-item-icon" style="background:rgba(0,122,255,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <span>Chat sécurisé</span>
+            <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
 
-    <a class="account-item" href="#" onclick="openMyJobs()">
-      <div class="account-item-icon" style="background:rgba(37,211,102,0.12);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
-      <span>Mes publications</span>
-      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
-    </a>
+        <a class="account-item" href="#" onclick="openMyJobs()">
+            <div class="account-item-icon" style="background:rgba(37,211,102,0.12);"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div>
+            <span>Mes publications</span>
+            <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
 
-    <a class="account-item" href="#" onclick="openProfileSheet()">
-      <div class="account-item-icon" style="background:rgba(255,255,255,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <span>Mon Profil</span>
-      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
-    </a>
+        <a class="account-item" href="#" onclick="openProfileSheet()">
+            <div class="account-item-icon" style="background:rgba(255,255,255,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <span>Mon Profil</span>
+            <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </a>
+    </div> <button class="btn btn-danger" onclick="logout()" style="width: 100%; margin-top: 10px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Déconnexion
+    </button>
+</div> ```
 
-  </div> <button class="btn btn-danger" onclick="logout()" style="width: 100%; margin-top: 10px;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    Déconnexion
-  </button>
-</div>  
+### Le test final pour toi :
+Si après avoir mis ce bloc, tu ne le vois toujours pas :
+1.  **Va dans ton script de connexion.**
+2.  Cherche la partie où Firebase confirme que l'utilisateur est bien connecté (souvent `onAuthStateChanged`).
+3.  Vérifie que la ligne `document.getElementById('userDashboard').classList.remove('hidden');` est bien présente.
 
+Si le code ci-dessus est inséré et que tu ne vois rien, **c'est que l'élément qui contient ton `userDashboard` est lui-même masqué**. Vérifie le conteneur parent dans ton fichier `index.html`.
 <!-- ===== ADMIN PANEL ===== -->
 <div class="overlay-page" id="adminPanel">
   <div class="overlay-header">
