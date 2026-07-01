@@ -920,27 +920,27 @@ body{
   </button>
 </nav>
 
-<!-- ===== SIDE CONTROLS ===== -->
+  <!-- ===== SIDE CONTROLS ===== --> 
 <div class="side-controls">
-  <button class="side-btn" onclick="locateMe()" title="Ma position">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+  <button class="side-btn" onclick="openHome()" title="Accueil">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
   </button>
-  <button class="side-btn" onclick="map.zoomIn()" title="Zoom +">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+
+  <button class="side-btn" onclick="openProfileSheet()" title="Mon Profil" style="background:#25D366; color:white; border-color:#25D366;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
   </button>
-  <button class="side-btn" onclick="map.zoomOut()" title="Zoom -">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+
+  <button class="side-btn" onclick="logoutUser()" title="Déconnexion">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
   </button>
-  <button class="side-btn" onclick="toggleMapStyle()" title="Style carte" id="mapStyleBtn">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-  </button>
+
   <div class="dist-badge">
     <div class="dist-badge-label">Distance</div>
     <div class="dist-badge-value" id="maxDistDisplay">--</div>
     <div class="dist-badge-label">km</div>
   </div>
 </div>
-
+  
 <!-- ===== ITINERARY PANEL (hidden by default) ===== -->
 <div class="itin-panel hidden" id="itinPanel">
   <div class="itin-label">Itineraire</div>
@@ -1163,6 +1163,28 @@ body{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </div>
+</div>
+  <div id="profileSheet" class="sheet">
+    <div class="sheet-header">
+        <h2>Mon Profil Pro</h2>
+        <button onclick="closeSheet('profileSheet')" class="close-btn">✕</button>
+    </div>
+    
+    <div class="sheet-content" style="padding: 20px;">
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="color: #8888A8;">Ton métier</label>
+            <input type="text" id="jobTitle" placeholder="Ex: Maçon, Électricien..." style="width:100%; padding:12px; background:#1e1e2d; border:1px solid #333; border-radius:12px; color:white; margin-top:5px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="color: #8888A8;">Tes compétences (séparées par des virgules)</label>
+            <textarea id="skills" placeholder="Ex: Soudure, Design..." style="width:100%; padding:12px; background:#1e1e2d; border:1px solid #333; border-radius:12px; color:white; margin-top:5px; height:80px;"></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="color: #8888A8;">Années d'expérience</label>
+            <input type="number" id="experience" placeholder="Ex: 5" style="width:100%; padding:12px; background:#1e1e2d; border:1px solid #333; border-radius:12px; color:white; margin-top:5px;">
+        </div>
+        <button onclick="saveProfile()" style="width:100%; padding:14px; background:#25D366; color:white; border:none; border-radius:12px; font-weight:700; cursor:pointer;">Enregistrer mon profil</button>
+    </div>
 </div>
 
 <!-- ===== BOTTOM NAV ===== -->
@@ -1958,6 +1980,45 @@ function closeJobPreview() {
     const drawer = document.getElementById('jobPreviewDrawer');
     if (drawer) {
         drawer.classList.remove('open');
+    }
+}
+  
+// Fonction pour ouvrir et charger le profil
+async function openProfileSheet() {
+    const user = firebase.auth().currentUser;
+    if (!user) { alert("Tu dois être connecté !"); return; }
+
+    // On utilise ta fonction d'ouverture existante (supposée être openSheet)
+    openSheet('profileSheet');
+
+    // On récupère les données dans Firebase
+    const doc = await db.collection("users").doc(user.uid).get();
+    if (doc.exists) {
+        const data = doc.data();
+        document.getElementById('jobTitle').value = data.titre || '';
+        document.getElementById('skills').value = (data.competences || []).join(', ');
+        document.getElementById('experience').value = data.experience || '';
+    }
+}
+
+// Fonction pour sauvegarder le profil
+async function saveProfile() {
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+
+    const profileData = {
+        titre: document.getElementById('jobTitle').value,
+        competences: document.getElementById('skills').value.split(',').map(s => s.trim()),
+        experience: document.getElementById('experience').value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        await db.collection("users").doc(user.uid).set(profileData, { merge: true });
+        alert("Profil mis à jour avec succès !");
+        closeSheet('profileSheet'); // Utilise ta fonction de fermeture existante
+    } catch (error) {
+        console.error("Erreur:", error);
     }
 }
  
