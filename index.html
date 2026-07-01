@@ -847,15 +847,21 @@ body{
 </head>
 <body>
 
-  <div id="profile-drawer" style="position:fixed; top:0; right:-400px; width:350px; height:100%; background:#0A0A0F; z-index:2000; transition:0.3s; padding:20px; border-left:1px solid #333; overflow-y:auto;">
+ <div id="profile-drawer" style="position:fixed; top:0; right:-400px; width:350px; height:100%; background:#0A0A0F; z-index:2000; transition:0.3s; padding:20px; border-left:1px solid #333; overflow-y:auto;">
     <button onclick="toggleProfile()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">✕</button>
     
     <h2 style="color:white; margin-top:20px;">Mon Profil Pro</h2>
+    <p style="color:#8888A8; font-size:14px; margin-bottom:20px;">Gère tes compétences pour être visible sur la plateforme.</p>
     
     <div id="profile-form">
+        <h4 style="color:#25D366; font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Informations professionnelles</h4>
+        
         <input type="text" id="jobTitle" placeholder="Ton métier..." style="width:100%; padding:10px; margin-bottom:10px; background:#1e1e2d; border:none; color:white; border-radius:8px;">
-        <textarea id="skills" placeholder="Tes compétences..." style="width:100%; padding:10px; margin-bottom:10px; background:#1e1e2d; border:none; color:white; border-radius:8px;"></textarea>
-        <button onclick="saveProfile()" style="width:100%; padding:12px; background:#25D366; color:white; border:none; border-radius:8px; font-weight:bold;">Sauvegarder mes infos</button>
+        
+        <h4 style="color:#25D366; font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; margin-top:10px;">Tes expertises</h4>
+        <textarea id="skills" placeholder="Tes compétences (ex: Soudure, Design)..." style="width:100%; padding:10px; margin-bottom:10px; background:#1e1e2d; border:none; color:white; border-radius:8px;"></textarea>
+        
+        <button onclick="saveProfile()" style="width:100%; padding:12px; background:#25D366; color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px;">Sauvegarder mes infos</button>
     </div>
 </div>
   
