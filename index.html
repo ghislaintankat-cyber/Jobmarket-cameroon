@@ -24,8 +24,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
-
+  
 <style>
   /* DESIGN DU PANNEAU DE PRÉVISUALISATION MOBILE-FIRST */
 .job-drawer {
@@ -1117,13 +1118,15 @@ body{
 
   </div>
 
-  <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
+   <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     Déconnexion
   </button>
 </div>
+  </div>
+</div>
     
-    <!-- ===== ADMIN PANEL ===== -->
+ <!-- ===== ADMIN PANEL ===== -->
 <div class="overlay-page" id="adminPanel">
   <div class="overlay-header">
     <button class="back-btn" onclick="closeOverlay('adminPanel')">
@@ -1988,7 +1991,12 @@ async function openProfileSheet() {
     const user = firebase.auth().currentUser;
     if (!user) return;
 
-    try {
+       try {
+        if (!firebase.firestore) {
+            console.warn("Firestore non chargé");
+            return;
+        }
+
         const doc = await firebase.firestore().collection("users").doc(user.uid).get();
         if (doc.exists) {
             const data = doc.data();
@@ -1998,7 +2006,6 @@ async function openProfileSheet() {
     } catch (error) {
         console.error("Erreur de chargement du profil:", error);
     }
-}
 
 // Fonction universelle pour fermer le volet
 function closeSheet(id) {
@@ -2045,7 +2052,8 @@ async function saveProfile() {
 locateMe();
 syncJobs();
 </script>
-  
+
+<script>
 // ===== VIBRATION POUR CHAQUE CLIC =====
 document.addEventListener('click', (e) => {
   if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
@@ -2054,6 +2062,7 @@ document.addEventListener('click', (e) => {
     }
   }
 });
+</script>
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
@@ -2086,9 +2095,9 @@ document.addEventListener('click', (e) => {
             Discuter sur WhatsApp
         </a>
     </div>
-</div
+</div>
   <style>
-  .sheet {
+ .profile-sheet { 
     position: fixed;
     top: 0;
     right: -100%; /* Caché à droite par défaut */
@@ -2104,17 +2113,17 @@ document.addEventListener('click', (e) => {
     flex-direction: column;
     font-family: 'DM Sans', sans-serif;
   }
-  .sheet.open {
+  .profile-sheet.open {
     right: 0; /* Glisse vers l'écran */
   }
-  .sheet-header {
+  .profile-sheet-header {
     padding: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid #1E1E2F;
   }
-  .sheet-header h2 {
+.profile-sheet-header h2 {
     margin: 0;
     font-family: 'Syne', sans-serif;
     font-size: 20px;
@@ -2204,8 +2213,8 @@ document.addEventListener('click', (e) => {
   }
 </style>
 
-<div id="profileSheet" class="sheet">
-    <div class="sheet-header">
+<div id="profileSheet" class="profile-sheet">
+    <div class="profile-sheet-header">
         <h2>Mon Profil Pro</h2>
         <button onclick="closeSheet('profileSheet')" class="sheet-close-btn">✕</button>
     </div>
