@@ -2039,14 +2039,10 @@ async function saveProfile() {
 
         alert("Profil Pro enregistré avec succès !");
         closeSheet('profileSheet');
-    } catch (error) {
-        console.error("Erreur lors de la sauvegarde du profil:", error);
-        alert("Une erreur est survenue lors de la sauvegarde.");
-    } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
+        } catch (error) {
+        console.error("Erreur de chargement du profil:", error);
     }
-} 
+} // <--- C'EST CETTE ACCOLADE QUI MANQUAIT
  
 // ===== INIT =====
 locateMe();
@@ -2232,5 +2228,6 @@ document.addEventListener('click', (e) => {
         </div>
     </div>
 </div>
+  
 </body>
 </html>
