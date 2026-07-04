@@ -19,7 +19,10 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
-
+  
+<!-- CompressorJS pour réduire la taille des images -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js"></script>
+  
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -2050,26 +2053,39 @@ async function saveProfile() {
     // Récupération des textes
     const jobTitle = document.getElementById('jobTitle').value.trim();
     const skills = document.getElementById('skills').value.trim();
-
-    // NOUVEAU : On prépare une variable pour l'image
     let profileImageUrl = null;
-    const fileInput = document.getElementById('profileImageInput');
 
-    // NOUVEAU : S'il y a une photo sélectionnée, on l'envoie sur Cloudinary
+    const fileInput = document.getElementById('profileImageInput');
+    
+    // S'il y a une photo sélectionnée
     if (fileInput.files && fileInput.files[0]) {
-        btn.innerText = "Téléchargement de la photo...";
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); // Utilise votre preset Cloudinary
+        btn.innerText = "Compression de l'image...";
         
         try {
+            // 1. On compresse l'image avant de l'envoyer
+            const compressedFile = await new Promise((resolve, reject) => {
+                new Compressor(fileInput.files[0], {
+                    quality: 0.6, // Qualité à 60% (invisible à l'œil nu, mais très léger)
+                    maxWidth: 800, // On réduit la largeur max
+                    maxHeight: 800,
+                    success: resolve,
+                    error: reject
+                });
+            });
+
+            // 2. On envoie l'image compressée vers Cloudinary
+            btn.innerText = "Téléchargement...";
+            const formData = new FormData();
+            formData.append('file', compressedFile, compressedFile.name || 'profile.jpg');
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
                 method: 'POST', body: formData
             });
             const data = await res.json();
-            if (data.secure_url) profileImageUrl = data.secure_url; // On récupère le lien de l'image
+            if (data.secure_url) profileImageUrl = data.secure_url;
         } catch(e) { 
-            console.warn("Erreur upload photo", e); 
+            console.warn("Erreur upload/compression photo", e); 
             alert("Erreur lors de l'envoi de la photo.");
             btn.innerText = originalText;
             btn.disabled = false;
@@ -2087,19 +2103,18 @@ async function saveProfile() {
             profileUpdated: new Date()
         };
         
-        // Si on a téléchargé une nouvelle image, on l'ajoute aux données
         if (profileImageUrl) {
             updateData.profileImage = profileImageUrl;
         }
 
-        // On sauvegarde dans Firebase
+        // Sauvegarde Firebase
         await firebase.firestore().collection("users").doc(user.uid).set(updateData, { merge: true });
 
         // Mise à jour locale pour le bouton WhatsApp
         localStorage.setItem('userJobTitle', jobTitle);
         localStorage.setItem('userSkills', skills);
 
-        // NOUVEAU : Met à jour la bulle Avatar du menu instantanément (remplace "JM" par la photo)
+        // Met à jour la bulle Avatar instantanément
         if (profileImageUrl && document.getElementById('userAvatar')) {
             const avatarEl = document.getElementById('userAvatar');
             avatarEl.innerHTML = '';
