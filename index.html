@@ -1911,16 +1911,30 @@ function preparerNouveauJob(lat, lng) {
 // ==========================================
 // 1. FONCTION COMMUNE : GÉNÉRATEUR WHATSAPP INTERNATIONAL
 // ==========================================
-function genererLienWhatsApp(phone, titreJob) {
+function genererLienWhatsApp(phone, titreJob, metier = "", competences = "") {
     if (!phone) return '#';
     
-    // Nettoie le numéro (enlève les espaces, tirets, parenthèses)
-    let numPropre = phone.toString().replace(/[\s\(\)\-\.]/g, '');
-
-    // Retire le '+' s'il est présent au début
-    if (numPropre.startsWith('+')) {
+    // Nettoyage du numéro
+    let numPropre = phone.toString().replace(/[^\d+]/g, '');
+    if (numPropre.length === 9 && numPropre.startsWith('6')) {
+        numPropre = '237' + numPropre;
+    } else if (numPropre.startsWith('+')) {
         numPropre = numPropre.substring(1);
     }
+
+    // Construction du message avec les détails pro
+    let texte = `Bonjour, je vous contacte depuis JobMarket pour : "${titreJob}".`;
+    
+    if (metier || competences) {
+        texte += `\n\n--- Profil du prestataire ---\n`;
+        if (metier) texte += `Métier : ${metier}\n`;
+        if (competences) texte += `Compétences : ${competences}\n`;
+    }
+    
+    texte += `\nEst-ce toujours disponible ?`;
+    
+    return `https://wa.me/${numPropre}?text=${encodeURIComponent(texte)}`;
+}
 
     // REGLE CAMEROUN : Si 9 chiffres commençant par 6, 2 ou 3 -> Ajoute le 237 automatiquement
     if (numPropre.length === 9 && (numPropre.startsWith('6') || numPropre.startsWith('2') || numPropre.startsWith('3'))) {
@@ -1932,36 +1946,41 @@ function genererLienWhatsApp(phone, titreJob) {
     
     return `https://wa.me/${numPropre}?text=${message}`;
 }
-
+  
 // ==========================================
 // VERSION CORRIGÉE : OPEN JOB PREVIEW
 // ==========================================
 function openJobPreview(jobId) {
-    // Recherche le job dans ton tableau global allJobs
-    const job = allJobs.find(j => j.id === jobId);
+    // 1. Recherche le job
 
+    const job = allJobs.find(j => j.id === jobId);
     if (!job) {
         console.error("Impossible de trouver le job :", jobId);
         return;
     }
 
-    // Remplit le volet avec tes vraies données Firebase (desc, landmark et getCatLabel)
+    // 2. Remplit le volet (ton code existant)
     document.getElementById('previewTitle').innerText = job.title || 'Titre non spécifié';
     document.getElementById('previewCategory').innerText = getCatLabel(job.icon) || 'Général';
     document.getElementById('previewDescription').innerText = job.desc || 'Aucune description fournie.';
     document.getElementById('previewLocation').innerText = job.landmark || 'Non spécifié';
     document.getElementById('previewPrice').innerText = job.price ? `${job.price} XAF` : 'Prix à débattre';
 
-    // Configuration du bouton WhatsApp international automatique
+    // 3. RÉCUPÉRATION DE TON PROFIL ET CONFIGURATION WHATSAPP (C'est ici la modification)
     const waButton = document.getElementById('previewWhatsAppBtn');
     if (job.phone) {
-        waButton.href = genererLienWhatsApp(job.phone, job.title);
+        // On récupère ce que tu as enregistré dans ton profil
+        const monMetier = localStorage.getItem('userJobTitle') || "";
+        const mesCompetences = localStorage.getItem('userSkills') || "";
+
+        // On envoie le tout à la fonction
+        waButton.href = genererLienWhatsApp(job.phone, job.title, monMetier, mesCompetences);
         waButton.style.display = 'flex';
     } else {
         waButton.style.display = 'none';
     }
 
-    // Ouvre le tiroir d'affichage
+    // Ouvre le tiroir
     document.getElementById('jobPreviewDrawer').classList.add('open');
 }
 
@@ -1974,6 +1993,7 @@ function closeJobPreview() {
         drawer.classList.remove('open');
     }
 }
+ 
  // Fonction pour ouvrir un panneau et charger les données de l'utilisateur
 async function openProfileSheet() {
     // 1. Fermer le tiroir de prévisualisation de job pour éviter les superpositions
@@ -2014,7 +2034,7 @@ function closeSheet(id) {
     if (sheet) sheet.classList.remove('open');
 }
 
-// Fonction pour sauvegarder le profil dans la base de données
+// 1. Sauvegarde du profil
 async function saveProfile() {
     const user = firebase.auth().currentUser;
     if (!user) {
@@ -2027,23 +2047,31 @@ async function saveProfile() {
     btn.innerText = "Enregistrement en cours...";
     btn.disabled = true;
 
+    // Récupération des valeurs
     const jobTitle = document.getElementById('jobTitle').value.trim();
-    const skills = document.getElementById('skills').value.trim();
+    const skills = document.getElementById('skills').value.trim(); // ID correct ici
 
     try {
-        // Enregistrement sécurisé avec merge: true pour préserver l'email, le nom, etc.
         await firebase.firestore().collection("users").doc(user.uid).set({
             jobTitle: jobTitle,
             skills: skills,
             profileUpdated: new Date()
         }, { merge: true });
 
+        // Mise à jour locale pour le bouton WhatsApp
+        localStorage.setItem('userJobTitle', jobTitle);
+        localStorage.setItem('userSkills', skills);
+
         alert("Profil Pro enregistré avec succès !");
         closeSheet('profileSheet');
-        } catch (error) {
-        console.error("Erreur de chargement du profil:", error);
+    } catch (error) {
+        console.error("Erreur d'enregistrement:", error);
+        alert("Une erreur est survenue.");
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
-} // <--- C'EST CETTE ACCOLADE QUI MANQUAIT
+}
  
 // ===== INIT =====
 locateMe();
@@ -2213,6 +2241,15 @@ document.addEventListener('click', (e) => {
 <div id="profileSheet" class="profile-sheet">
     <div class="profile-sheet-header">
         <h2>Mon Profil Pro</h2>
+      <div class="profile-form-group" style="text-align: center; margin-bottom: 20px;">
+    <div id="profileImagePreview" style="width: 100px; height: 100px; border-radius: 50%; background: #222; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #FFD700;">
+        <span style="color: #666; font-size: 12px;">Photo</span>
+    </div>
+    <input type="file" id="profileImageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
+    <button type="button" onclick="document.getElementById('profileImageInput').click()" style="background:none; border:1px solid #FFD700; color:#FFD700; padding:5px 15px; border-radius:20px; cursor:pointer; font-size: 12px;">
+        Changer photo
+    </button>
+</div>
         <button onclick="closeSheet('profileSheet')" class="sheet-close-btn">✕</button>
     </div>
     <div class="sheet-content" style="padding: 24px; flex: 1; overflow-y: auto;">
@@ -2229,6 +2266,15 @@ document.addEventListener('click', (e) => {
         </div>
     </div>
 </div>
+  
+function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = function(){
+        const output = document.getElementById('profileImagePreview');
+        output.innerHTML = `<img src="${reader.result}" style="width:100%; height:100%; object-fit:cover;">`;
+    };
+    reader.readAsDataURL(event.target.files[0]);
+}
   
 </body>
 </html>
