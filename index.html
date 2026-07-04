@@ -2008,7 +2008,7 @@ async function openProfileSheet() {
     const user = firebase.auth().currentUser;
     if (!user) return;
 
-       try {
+    try {
         if (!firebase.firestore) {
             console.warn("Firestore non chargé");
             return;
@@ -2019,11 +2019,15 @@ async function openProfileSheet() {
             const data = doc.data();
             document.getElementById('jobTitle').value = data.jobTitle || '';
             document.getElementById('skills').value = data.skills || '';
+            // NOUVEAU : Si une image existe dans la base de données, on l'affiche dans le cercle
+            if (data.profileImage) {
+                document.getElementById('profileImagePreview').innerHTML = `<img src="${data.profileImage}" style="width:100%; height:100%; object-fit:cover;">`;
+            }
         }
     } catch (error) {
         console.error("Erreur de chargement du profil:", error);
     }
- }
+}
 
 // Fonction universelle pour fermer le volet
 function closeSheet(id) {
@@ -2041,23 +2045,68 @@ async function saveProfile() {
 
     const btn = document.getElementById('saveProfileBtn');
     const originalText = btn.innerText;
-    btn.innerText = "Enregistrement en cours...";
     btn.disabled = true;
 
-    // Récupération des valeurs
+    // Récupération des textes
     const jobTitle = document.getElementById('jobTitle').value.trim();
-    const skills = document.getElementById('skills').value.trim(); // ID correct ici
+    const skills = document.getElementById('skills').value.trim();
+
+    // NOUVEAU : On prépare une variable pour l'image
+    let profileImageUrl = null;
+    const fileInput = document.getElementById('profileImageInput');
+
+    // NOUVEAU : S'il y a une photo sélectionnée, on l'envoie sur Cloudinary
+    if (fileInput.files && fileInput.files[0]) {
+        btn.innerText = "Téléchargement de la photo...";
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET); // Utilise votre preset Cloudinary
+        
+        try {
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                method: 'POST', body: formData
+            });
+            const data = await res.json();
+            if (data.secure_url) profileImageUrl = data.secure_url; // On récupère le lien de l'image
+        } catch(e) { 
+            console.warn("Erreur upload photo", e); 
+            alert("Erreur lors de l'envoi de la photo.");
+            btn.innerText = originalText;
+            btn.disabled = false;
+            return;
+        }
+    }
+
+    btn.innerText = "Enregistrement en cours...";
 
     try {
-        await firebase.firestore().collection("users").doc(user.uid).set({
+        // On prépare les données à sauvegarder dans Firebase
+        const updateData = {
             jobTitle: jobTitle,
             skills: skills,
             profileUpdated: new Date()
-        }, { merge: true });
+        };
+        
+        // Si on a téléchargé une nouvelle image, on l'ajoute aux données
+        if (profileImageUrl) {
+            updateData.profileImage = profileImageUrl;
+        }
+
+        // On sauvegarde dans Firebase
+        await firebase.firestore().collection("users").doc(user.uid).set(updateData, { merge: true });
 
         // Mise à jour locale pour le bouton WhatsApp
         localStorage.setItem('userJobTitle', jobTitle);
         localStorage.setItem('userSkills', skills);
+
+        // NOUVEAU : Met à jour la bulle Avatar du menu instantanément (remplace "JM" par la photo)
+        if (profileImageUrl && document.getElementById('userAvatar')) {
+            const avatarEl = document.getElementById('userAvatar');
+            avatarEl.innerHTML = '';
+            avatarEl.style.backgroundImage = `url('${profileImageUrl}')`;
+            avatarEl.style.backgroundSize = 'cover';
+            avatarEl.style.backgroundPosition = 'center';
+        }
 
         alert("Profil Pro enregistré avec succès !");
         closeSheet('profileSheet');
