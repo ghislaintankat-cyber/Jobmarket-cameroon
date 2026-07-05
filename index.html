@@ -2138,7 +2138,7 @@ async function saveProfile() {
     }
 }
   
-  function openWhatsAppFromMap(jobId) {
+ function openWhatsAppFromMap(jobId) {
     const job = allJobs.find(j => j.id === jobId);
     if(job && job.phone) {
         window.open(genererLienWhatsApp(job.phone, job.title), '_blank');
