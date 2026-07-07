@@ -1951,36 +1951,35 @@ function genererLienWhatsApp(phone, titreJob, metier = "", competences = "") {
 // VERSION CORRIGÉE : OPEN JOB PREVIEW
 // ==========================================
 function openJobPreview(jobId) {
-    // 1. Recherche le job
-
     const job = allJobs.find(j => j.id === jobId);
     if (!job) {
         console.error("Impossible de trouver le job :", jobId);
         return;
     }
 
-    // 2. Remplit le volet (ton code existant)
+    window.currentPreviewJob = job;
+
+    // Titre
     document.getElementById('previewTitle').innerText = job.title || 'Titre non spécifié';
+
+    // Deux badges côte à côte (vert + doré) — comme sur ton image
+    const priceBadge = document.getElementById('previewPriceBadge');
+    if (priceBadge) priceBadge.innerText = (job.price ? job.price : '0') + ' XAF';
+
+    const catBadge = document.getElementById('previewCategoryBadge');
+    if (catBadge) catBadge.innerText = getCatLabel(job.icon) || 'Général';
+
+    // Badge dans l'en-tête
     document.getElementById('previewCategory').innerText = getCatLabel(job.icon) || 'Général';
+
+    // Email
+    const emailEl = document.getElementById('previewEmail');
+    if (emailEl) emailEl.innerText = job.email || job.phone || job.userName || 'Non spécifié';
+
+    // Description
     document.getElementById('previewDescription').innerText = job.desc || 'Aucune description fournie.';
-    document.getElementById('previewLocation').innerText = job.landmark || 'Non spécifié';
-    document.getElementById('previewPrice').innerText = job.price ? `${job.price} XAF` : 'Prix à débattre';
 
-    // 3. RÉCUPÉRATION DE TON PROFIL ET CONFIGURATION WHATSAPP (C'est ici la modification)
-    const waButton = document.getElementById('previewWhatsAppBtn');
-    if (job.phone) {
-        // On récupère ce que tu as enregistré dans ton profil
-        const monMetier = localStorage.getItem('userJobTitle') || "";
-        const mesCompetences = localStorage.getItem('userSkills') || "";
-
-        // On envoie le tout à la fonction
-        waButton.href = genererLienWhatsApp(job.phone, job.title, monMetier, mesCompetences);
-        waButton.style.display = 'flex';
-    } else {
-        waButton.style.display = 'none';
-    }
-
-    // Ouvre le tiroir
+    // Ouvre le volet
     document.getElementById('jobPreviewDrawer').classList.add('open');
 }
 
@@ -2159,11 +2158,15 @@ document.addEventListener('click', (e) => {
     
     <div class="drawer-body">
         <h2 id="previewTitle">Titre de l'annonce</h2>
-        <div class="drawer-price-tag" id="previewPrice">0 FCFA</div>
+        
+        <div style="display:flex; gap:8px; margin:8px 0 12px;">
+            <span id="previewPriceBadge" style="background:#25D366; color:white; padding:4px 12px; border-radius:12px; font-size:13px; font-weight:700;">0 XAF</span>
+            <span id="previewCategoryBadge" style="background:#FFD700; color:#111; padding:4px 12px; border-radius:12px; font-size:13px; font-weight:700;">Catégorie</span>
+        </div>
         
         <div class="drawer-info-row">
-            <span class="icon">📍</span>
-            <span id="previewLocation">Localisation...</span>
+            <span>📧</span>
+            <span id="previewEmail">Non spécifié</span>
         </div>
         
         <hr class="drawer-divider">
@@ -2172,14 +2175,16 @@ document.addEventListener('click', (e) => {
         <p id="previewDescription">Détails de l'emploi ou du service demandé...</p>
     </div>
     
-    <div class="drawer-footer">
-        <!-- Notre bouton de contact direct lié à l'API WhatsApp corrigée -->
-        <a id="previewWhatsAppBtn" href="#" target="_blank" class="whatsapp-action-btn">
-            <svg class="whatsapp-icon" viewBox="0 0 24 24">
-                <path fill="#currentColor" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91c0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.23 8.23c-1.45 0-2.88-.38-4.13-1.11l-.3-.18l-3.07.81l.82-3l-.2-.31a8.19 8.19 0 0 1-1.25-4.27c0-4.54 3.7-8.23 8.23-8.23m-4.52 4.81c-.25 0-.66.09-.91.37c-.25.28-.94.92-.94 2.25c0 1.32.96 2.6 1.1 2.78c.14.19 1.9 2.9 4.6 4.07c.64.27 1.14.44 1.53.57c.65.2 1.24.18 1.7.11c.52-.08 1.6-.66 1.83-1.29c.23-.63.23-1.17.16-1.28c-.07-.1-.25-.17-.53-.31c-.27-.14-1.62-.8-1.87-.89c-.25-.09-.43-.14-.62.14c-.18.27-.71.89-.87 1.07c-.16.18-.32.2-.6.06c-.27-.14-1.15-.42-2.19-1.35c-.81-.73-1.36-1.62-1.52-1.9c-.16-.28-.02-.43.12-.57c.13-.13.27-.32.41-.48c.14-.16.18-.27.28-.45c.1-.19.05-.35-.02-.49c-.07-.14-.62-1.5-.85-2.05c-.23-.54-.46-.45-.63-.46c-.16-.01-.34-.01-.52-.01Z"/>
-            </svg>
-            Discuter sur WhatsApp
-        </a>
+    <div class="drawer-footer" style="display:flex; flex-direction:column; gap:8px; padding:16px 20px;">
+        <button onclick="contactViaWhatsAppFromPreview()" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#25D366; color:white; padding:14px; border-radius:8px; font-weight:700; font-size:15px; border:none; width:100%; cursor:pointer;">
+            <span style="font-size:18px;">📞</span> WhatsApp
+        </button>
+        <button onclick="shareJobViaWhatsApp()" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#007AFF; color:white; padding:14px; border-radius:8px; font-weight:700; font-size:15px; border:none; width:100%; cursor:pointer;">
+            <span style="font-size:16px;">🔗</span> Partager sur WhatsApp
+        </button>
+        <button onclick="drawRouteFromPreview()" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#007AFF; color:white; padding:14px; border-radius:8px; font-weight:700; font-size:15px; border:none; width:100%; cursor:pointer;">
+            Voir l'itinéraire
+        </button>
     </div>
 </div>
   <style>
