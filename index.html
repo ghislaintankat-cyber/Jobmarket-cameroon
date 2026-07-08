@@ -1950,7 +1950,7 @@ function genererLienWhatsApp(phone, titreJob, metier = "", competences = "") {
 // ==========================================
 // VERSION CORRIGÉE : OPEN JOB PREVIEW
 // ==========================================
-function openJobPreview(jobId) {
+async function openJobPreview(jobId) {
     const job = allJobs.find(j => j.id === jobId);
     if (!job) {
         console.error("Impossible de trouver le job :", jobId);
@@ -1959,27 +1959,82 @@ function openJobPreview(jobId) {
 
     window.currentPreviewJob = job;
 
-    // Titre
     document.getElementById('previewTitle').innerText = job.title || 'Titre non spécifié';
 
-    // Deux badges côte à côte (vert + doré) — comme sur ton image
     const priceBadge = document.getElementById('previewPriceBadge');
     if (priceBadge) priceBadge.innerText = (job.price ? job.price : '0') + ' XAF';
 
     const catBadge = document.getElementById('previewCategoryBadge');
-    if (catBadge) catBadge.innerText = getCatLabel(job.icon) || 'Général';
+    if (catBadge) catBadge.innerText = (typeof getCatLabel === 'function') ? getCatLabel(job.icon) : 'Général';
 
-    // Badge dans l'en-tête
-    document.getElementById('previewCategory').innerText = getCatLabel(job.icon) || 'Général';
+    const prevCat = document.getElementById('previewCategory');
+    if (prevCat) prevCat.innerText = (typeof getCatLabel === 'function') ? getCatLabel(job.icon) : 'Général';
 
-    // Email
     const emailEl = document.getElementById('previewEmail');
     if (emailEl) emailEl.innerText = job.email || job.phone || job.userName || 'Non spécifié';
 
-    // Description
     document.getElementById('previewDescription').innerText = job.desc || 'Aucune description fournie.';
 
-    // Ouvre le volet
+    // AFFICHER LES CONTACTS SI C'EST MON ANNONCE
+    const contactsContainer = document.getElementById('previewContactsContainer');
+    if (contactsContainer) {
+        contactsContainer.innerHTML = '';
+        const user = firebase.auth().currentUser;
+        
+        if (user && job.user === user.uid) {
+            contactsContainer.innerHTML = '<div style="margin-top: 15px; font-size: 14px; color: #555;">Chargement des contacts WhatsApp...</div>';
+            
+            try {
+                const snapshot = await firebase.firestore().collection("job_contacts").where("jobId", "==", jobId).get();
+                    
+                if (snapshot.empty) {
+                    contactsContainer.innerHTML = `
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <h3 style="margin:0 0 10px 0; font-size: 16px; color: #333;">Personnes intéressées</h3>
+                            <p style="font-size: 13px; color: #666; margin: 0;">Personne ne vous a encore contacté pour ce besoin.</p>
+                        </div>`;
+                } else {
+                    const uniqueContacts = new Map();
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (!uniqueContacts.has(data.contactUid)) {
+                            uniqueContacts.set(data.contactUid, data);
+                        }
+                    });
+                    
+                    let html = `
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <h3 style="margin:0 0 10px 0; font-size: 16px; color: #333;">${uniqueContacts.size} personne(s) intéressée(s) :</h3>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">`;
+                    
+                    for (let [contactUid, data] of uniqueContacts) {
+                        const userDoc = await firebase.firestore().collection("users").doc(contactUid).get();
+                        const userData = userDoc.exists ? userDoc.data() : {};
+                        
+                        const name = userData.name || 'Utilisateur';
+                        const jobTitle = userData.jobTitle || 'Non spécifié';
+                        const profileImg = userData.profileImage || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=25D366&color=fff';
+                        
+                        // Clic sur l'utilisateur ouvre son profil
+                        html += `
+                            <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 5px; transition: background 0.2s;" onclick="viewUserProfile('${contactUid}')" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='transparent'">
+                                <img src="${profileImg}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #25D366;">
+                                <div>
+                                    <div style="font-weight: bold; color: #333; font-size: 14px;">${name}</div>
+                                    <div style="font-size: 12px; color: #666;">${jobTitle}</div>
+                                </div>
+                            </div>`;
+                    }
+                    html += `</div></div>`;
+                    contactsContainer.innerHTML = html;
+                }
+            } catch(e) {
+                console.error("Erreur chargement contacts", e);
+                contactsContainer.innerHTML = '<div style="margin-top: 15px; font-size: 14px; color: red;">Erreur de chargement.</div>';
+            }
+        }
+    }
+
     document.getElementById('jobPreviewDrawer').classList.add('open');
 }
 
@@ -1994,43 +2049,95 @@ function closeJobPreview() {
 }
  
  // Fonction pour ouvrir un panneau et charger les données de l'utilisateur
+// ==========================================
+// GESTION DES PROFILS (LECTURE SEULE ET ÉDITION)
+// ==========================================
+
+// 1. Voir le profil de quelqu'un d'autre (Lecture seule)
+async function viewUserProfile(uid) {
+    if (typeof closeJobPreview === 'function') closeJobPreview();
+    
+    const sheet = document.getElementById('profileSheet');
+    if (!sheet) return;
+
+    sheet.classList.add('open');
+
+    try {
+        const doc = await firebase.firestore().collection("users").doc(uid).get();
+        const data = doc.exists ? doc.data() : {};
+
+        const jobTitleInput = document.getElementById('jobTitle');
+        const skillsInput = document.getElementById('skills');
+        
+        // Bloquer l'écriture
+        if (jobTitleInput) { jobTitleInput.value = data.jobTitle || 'Non spécifié'; jobTitleInput.readOnly = true; }
+        if (skillsInput) { skillsInput.value = data.skills || 'Non spécifié'; skillsInput.readOnly = true; }
+        
+        // Cacher les boutons de modification
+        const saveBtn = document.getElementById('saveProfileBtn');
+        if (saveBtn) saveBtn.style.display = 'none';
+        
+        const changePhotoBtn = document.querySelector("button[onclick*='profileImageInput']");
+        if (changePhotoBtn) changePhotoBtn.style.display = 'none';
+
+        const headerTitle = document.querySelector('.profile-sheet-header h2');
+        if (headerTitle) headerTitle.innerText = "Profil de l'artisan";
+
+        if (data.profileImage) {
+            document.getElementById('profileImagePreview').innerHTML = `<img src="${data.profileImage}" style="width:100%; height:100%; object-fit:cover;">`;
+        } else {
+            const name = data.name || 'Utilisateur';
+            document.getElementById('profileImagePreview').innerHTML = `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=25D366&color=fff" style="width:100%; height:100%; object-fit:cover;">`;
+        }
+    } catch (error) {
+        console.error("Erreur profil:", error);
+    }
+}
+
+// 2. Ouvrir TON propre profil (Mode édition)
 async function openProfileSheet() {
-    // 1. Fermer le tiroir de prévisualisation de job pour éviter les superpositions
     const previewDrawer = document.getElementById('jobPreviewDrawer');
     if (previewDrawer) previewDrawer.classList.remove('open');
 
-    // 2. Afficher le volet de profil
     const sheet = document.getElementById('profileSheet');
     if (sheet) sheet.classList.add('open');
 
-    // 3. Vibration de confort sur mobile
     if (navigator.vibrate) navigator.vibrate(50);
 
-    // 4. Charger les données depuis Firestore
     const user = firebase.auth().currentUser;
     if (!user) return;
 
     try {
-        if (!firebase.firestore) {
-            console.warn("Firestore non chargé");
-            return;
-        }
-
         const doc = await firebase.firestore().collection("users").doc(user.uid).get();
-        if (doc.exists) {
-            const data = doc.data();
-            document.getElementById('jobTitle').value = data.jobTitle || '';
-            document.getElementById('skills').value = data.skills || '';
-            // NOUVEAU : Si une image existe dans la base de données, on l'affiche dans le cercle
-            if (data.profileImage) {
-                document.getElementById('profileImagePreview').innerHTML = `<img src="${data.profileImage}" style="width:100%; height:100%; object-fit:cover;">`;
-            }
+        const data = doc.exists ? doc.data() : {};
+        
+        const jobTitleInput = document.getElementById('jobTitle');
+        const skillsInput = document.getElementById('skills');
+        
+        // Débloquer l'écriture
+        if (jobTitleInput) { jobTitleInput.value = data.jobTitle || ''; jobTitleInput.readOnly = false; }
+        if (skillsInput) { skillsInput.value = data.skills || ''; skillsInput.readOnly = false; }
+        
+        // Remettre les boutons
+        const saveBtn = document.getElementById('saveProfileBtn');
+        if (saveBtn) saveBtn.style.display = 'block';
+        
+        const changePhotoBtn = document.querySelector("button[onclick*='profileImageInput']");
+        if (changePhotoBtn) changePhotoBtn.style.display = 'inline-block';
+
+        const headerTitle = document.querySelector('.profile-sheet-header h2');
+        if (headerTitle) headerTitle.innerText = "Mon Profil Pro";
+
+        if (data.profileImage) {
+            document.getElementById('profileImagePreview').innerHTML = `<img src="${data.profileImage}" style="width:100%; height:100%; object-fit:cover;">`;
+        } else {
+            document.getElementById('profileImagePreview').innerHTML = `<span style="color: #666; font-size: 12px;">Photo</span>`;
         }
     } catch (error) {
-        console.error("Erreur de chargement du profil:", error);
+        console.error("Erreur profil:", error);
     }
 }
-
+  
 // Fonction universelle pour fermer le volet
 function closeSheet(id) {
     const sheet = document.getElementById(id);
@@ -2132,6 +2239,87 @@ async function saveProfile() {
         btn.disabled = false;
     }
 }
+  
+  // ==========================================
+// NOUVEAUX BOUTONS DU PANNEAU
+// ==========================================
+async function contactViaWhatsAppFromPreview() {
+    const job = window.currentPreviewJob;
+    if (!job) return;
+
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        alert("Vous devez être connecté pour écrire sur WhatsApp.");
+        closeJobPreview();
+        if(typeof openOverlay === 'function') openOverlay('accountPage');
+        return;
+    }
+
+    try {
+        const doc = await firebase.firestore().collection("users").doc(user.uid).get();
+        if (!doc.exists || !doc.data().jobTitle) {
+            alert("Vous devez compléter votre profil (métier/spécialité) pour contacter cette personne.");
+            closeJobPreview();
+            openProfileSheet();
+            return;
+        }
+
+        const phone = job.phone;
+        if (!phone) {
+            alert("Numéro de téléphone indisponible.");
+            return;
+        }
+
+        // Sauvegarder le clic dans la base de données pour le propriétaire
+        const contactData = {
+            jobId: job.id,
+            jobOwnerUid: job.user,
+            contactUid: user.uid,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await firebase.firestore().collection("job_contacts").add(contactData);
+
+        // Ouvrir WhatsApp
+        let cleanPhone = phone.replace(/\D/g, '');
+        if (!cleanPhone.startsWith('237')) {
+             if (cleanPhone.startsWith('6') || cleanPhone.startsWith('2')) cleanPhone = '237' + cleanPhone;
+        }
+        
+        const message = `Bonjour, je suis un pro (${doc.data().jobTitle}). Je vous contacte via JobMarket concernant votre annonce: "${job.title}".`;
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+
+    } catch (e) {
+        console.error("Erreur", e);
+    }
+}
+
+function shareJobViaWhatsApp() {
+    const job = window.currentPreviewJob;
+    if (!job) return;
+    
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        alert("Vous devez être connecté pour partager ce besoin.");
+        closeJobPreview();
+        if(typeof openOverlay === 'function') openOverlay('accountPage');
+        return;
+    }
+    
+    const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}*. Tu peux voir plus de détails et contacter l'auteur ici : https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+}
+
+function drawRouteFromPreview() {
+    const job = window.currentPreviewJob;
+    if (!job) return;
+    closeJobPreview();
+    if (typeof userCoords !== 'undefined' && userCoords) {
+        focusJob(job.lat, job.lng);
+        drawRoute(job.lat, job.lng);
+    } else {
+        alert("Impossible de calculer l'itinéraire sans votre position.");
+    }
+}
  
 // ===== INIT =====
 locateMe();
@@ -2171,8 +2359,11 @@ document.addEventListener('click', (e) => {
         
         <hr class="drawer-divider">
         
-        <h3>Description du besoin :</h3>
+                <h3>Description du besoin :</h3>
         <p id="previewDescription">Détails de l'emploi ou du service demandé...</p>
+        
+        <!-- NOUVEAU : Conteneur pour afficher les personnes intéressées -->
+        <div id="previewContactsContainer"></div>
     </div>
     
     <div class="drawer-footer" style="display:flex; flex-direction:column; gap:8px; padding:16px 20px;">
