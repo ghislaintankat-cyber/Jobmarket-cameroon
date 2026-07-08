@@ -2258,7 +2258,7 @@ async function contactViaWhatsAppFromPreview() {
         if (!doc.exists || !doc.data().jobTitle) {
             alert("Vous devez compléter votre profil (métier/spécialité) pour contacter cette personne.");
             closeJobPreview();
-            openProfileSheet();
+            if(typeof openProfileSheet === 'function') openProfileSheet();
             return;
         }
 
@@ -2268,43 +2268,7 @@ async function contactViaWhatsAppFromPreview() {
             return;
         }
 
-        // Sauvegarder le clic dans la base de données pour le propriétaire
-        const contactData = {
-            jobId: job.id,
-            jobOwnerUid: job.user,
-            contactUid: user.uid,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await firebase.firestore().collection("job_contacts").add(contactData);
-
-        async function contactViaWhatsAppFromPreview() {
-    const job = window.currentPreviewJob;
-    if (!job) return;
-
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        alert("Vous devez être connecté pour écrire sur WhatsApp.");
-        closeJobPreview();
-        if(typeof openOverlay === 'function') openOverlay('accountPage');
-        return;
-    }
-
-    try {
-        const doc = await firebase.firestore().collection("users").doc(user.uid).get();
-        if (!doc.exists || !doc.data().jobTitle) {
-            alert("Vous devez compléter votre profil (métier/spécialité) pour contacter cette personne.");
-            closeJobPreview();
-            openProfileSheet();
-            return;
-        }
-
-        const phone = job.phone;
-        if (!phone) {
-            alert("Numéro de téléphone indisponible.");
-            return;
-        }
-
-        // Sauvegarder le clic dans la base de données pour le propriétaire
+        // Sauvegarder le clic dans la base de données
         const contactData = {
             jobId: job.id,
             jobOwnerUid: job.user,
@@ -2341,86 +2305,6 @@ function shareJobViaWhatsApp() {
     if (!user) {
         alert("Vous devez être connecté pour partager ce besoin.");
         closeJobPreview();
-        if(typeof openOverlay === 'function') openOverlay('accountPage');
-        return;
-    }
-    
-    const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}*. Tu peux voir plus de détails et contacter l'auteur ici : https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-}
-
-function drawRouteFromPreview() {
-    const job = window.currentPreviewJob;
-    if (!job) return;
-    closeJobPreview();
-    if (typeof userCoords !== 'undefined' && userCoords) {
-        focusJob(job.lat, job.lng);
-        drawRoute(job.lat, job.lng);
-    } else {
-        alert("Impossible de calculer l'itinéraire sans votre position.");
-    }
-}
-      
-  // ==========================================
-// SECURITE POUR LES BOUTONS SUR LA CARTE (INFOBULLE)
-// ==========================================
-window.popupWhatsAppClick = async function(jobId) {
-    const job = allJobs.find(j => j.id === jobId);
-    if (!job) return;
-
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        alert("Vous devez être connecté pour écrire sur WhatsApp.");
-        if(typeof openOverlay === 'function') openOverlay('accountPage');
-        return;
-    }
-
-    try {
-        const doc = await firebase.firestore().collection("users").doc(user.uid).get();
-        if (!doc.exists || !doc.data().jobTitle) {
-            alert("Vous devez compléter votre profil (métier/spécialité) pour contacter cette personne.");
-            if(typeof openProfileSheet === 'function') openProfileSheet();
-            return;
-        }
-
-        const phone = job.phone;
-        if (!phone) {
-            alert("Numéro de téléphone indisponible.");
-            return;
-        }
-
-        const contactData = {
-            jobId: job.id,
-            jobOwnerUid: job.user,
-            contactUid: user.uid,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        await firebase.firestore().collection("job_contacts").add(contactData);
-
-        let cleanPhone = phone.replace(/\D/g, '');
-        if (!cleanPhone.startsWith('237')) {
-             if (cleanPhone.startsWith('6') || cleanPhone.startsWith('2')) cleanPhone = '237' + cleanPhone;
-        }
-        
-        const proTitle = doc.data().jobTitle || 'Non spécifié';
-        const proSkills = doc.data().skills || 'Non spécifiées';
-        
-        const message = `Bonjour, je vous contacte depuis JobMarket pour : "${job.title}".\n\n--- Profil du prestataire ---\nMétier : ${proTitle}\nCompétences : ${proSkills}\n\nEst-ce toujours disponible ?`;
-        
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
-
-    } catch (e) {
-        console.error("Erreur", e);
-    }
-}
-
-window.popupShareClick = function(jobId) {
-    const job = allJobs.find(j => j.id === jobId);
-    if (!job) return;
-    
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        alert("Vous devez être connecté pour partager ce besoin.");
         if(typeof openOverlay === 'function') openOverlay('accountPage');
         return;
     }
