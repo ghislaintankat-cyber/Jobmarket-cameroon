@@ -2213,6 +2213,32 @@ window.popupShareClick = function(jobId) {
     const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}*. Tu peux voir plus de détails et contacter l'auteur ici : https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
 }
+  
+  // ===== WHATSAPP FROM PREVIEW DRAWER =====
+function contactViaWhatsAppFromPreview() {
+  if (!window.currentPreviewJob) {
+    showToast('Erreur: Job non charge', 'error');
+    return;
+  }
+  popupWhatsAppClick(window.currentPreviewJob.id);
+}
+
+function shareJobViaWhatsApp() {
+  if (!window.currentPreviewJob) {
+    showToast('Erreur: Job non charge', 'error');
+    return;
+  }
+  popupShareClick(window.currentPreviewJob.id);
+}
+
+function drawRouteFromPreview() {
+  if (!window.currentPreviewJob) {
+    showToast('Erreur: Job non charge', 'error');
+    return;
+  }
+  drawRoute(window.currentPreviewJob.lat, window.currentPreviewJob.lng);
+  closeJobPreview();
+}
  
 // ===== INIT =====
 locateMe();
