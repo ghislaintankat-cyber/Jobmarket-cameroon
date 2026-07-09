@@ -2296,6 +2296,30 @@ async function contactViaWhatsAppFromPreview() {
         console.error("Erreur", e);
     }
 }
+ function shareJobViaWhatsApp() {
+    const job = window.currentPreviewJob;
+
+    if (!job) {
+        alert("Annonce introuvable.");
+        return;
+    }
+
+    const url = `${location.origin}${location.pathname}?id=${job.id}`;
+
+    const message =
+`Découvre cette annonce sur JobMarket Cameroon
+
+${job.title}
+
+Prix : ${job.price} XAF
+
+${url}`;
+
+    window.open(
+        "https://wa.me/?text=" + encodeURIComponent(message),
+        "_blank"
+    );
+} 
  
 // ===== INIT =====
 locateMe();
