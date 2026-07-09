@@ -2289,8 +2289,8 @@ async function contactViaWhatsAppFromPreview() {
         
         const message = `Bonjour, je vous contacte depuis JobMarket pour : "${job.title}".\n\n--- Profil du prestataire ---\nMétier : ${proTitle}\nCompétences : ${proSkills}\n\nEst-ce toujours disponible ?`;
         
-        // Ouvrir WhatsApp avec le texte pré-rempli
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+       // Ouvrir WhatsApp avec le texte pré-rempli
+        window.location.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 
     } catch (e) {
         console.error("Erreur", e);
@@ -2310,7 +2310,7 @@ function shareJobViaWhatsApp() {
     }
     
     const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}*. Tu peux voir plus de détails et contacter l'auteur ici : https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    window.location.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
 
 function drawRouteFromPreview() {
