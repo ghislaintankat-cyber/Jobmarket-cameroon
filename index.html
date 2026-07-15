@@ -992,25 +992,25 @@ body{
     </div>
     <div class="form-group">
       <label class="form-label">Titre du job</label>
-      <input class="form-input" id="title" type="text" placeholder="Ex: Pose de carrelage salle de bain"/>
+      <input class="form-input" id="title" type="text" placeholder="Ex: Pose de carrelage salle de bain" required minlength="5" maxlength="150"/>
     </div>
     <div class="form-group">
       <label class="form-label">Description</label>
-      <textarea class="form-textarea" id="desc" placeholder="Decrivez le travail a effectuer..."></textarea>
+      <textarea class="form-textarea" id="desc" placeholder="Decrivez le travail a effectuer..." required minlength="10" maxlength="3000"></textarea>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group">
         <label class="form-label">Prix (XAF)</label>
-        <input class="form-input" id="price" type="text" placeholder="Ex: 15 000 XAF"/>
+        <input class="form-input" id="price" type="text" placeholder="Ex: 15 000 XAF" required maxlength="30"/>
       </div>
       <div class="form-group">
         <label class="form-label">Telephone</label>
-        <input class="form-input" id="phone" type="tel" placeholder="6XX XXX XXX"/>
+        <input class="form-input" id="phone" type="tel" placeholder="6XX XXX XXX" required pattern="[0-9 ]{9,15}" title="Numero de telephone valide, ex: 6XX XXX XXX" maxlength="20"/>
       </div>
     </div>
     <div class="form-group">
       <label class="form-label">Repere / Quartier</label>
-      <input class="form-input" id="landmark" type="text" placeholder="Ex: Bastos, pres du rond-point..."/>
+      <input class="form-input" id="landmark" type="text" placeholder="Ex: Bastos, pres du rond-point..." maxlength="150"/>
     </div>
     <div class="form-group">
       <label class="form-label">Photos (jusqu'a 5)</label>
@@ -1078,11 +1078,11 @@ body{
       <div id="authForm">
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input class="form-input" id="email" type="email" placeholder="exemple@email.com"/>
+          <input class="form-input" id="email" type="email" placeholder="exemple@email.com" required maxlength="100"/>
         </div>
         <div class="form-group">
           <label class="form-label">Mot de passe</label>
-          <input class="form-input" id="password" type="password" placeholder="Minimum 6 caracteres"/>
+          <input class="form-input" id="password" type="password" placeholder="Minimum 6 caracteres" required minlength="6" maxlength="100"/>
         </div>
         <button class="btn btn-primary" id="authMainBtn" onclick="signupEmail()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1322,6 +1322,7 @@ try { auth.signInAnonymously().catch(console.error); } catch(e) {}
 function signupEmail() {
   const emailEl = document.getElementById('email');
   const passEl = document.getElementById('password');
+  if (!validateFields(['email', 'password'])) return;
   if (!emailEl.value || !passEl.value) { showToast('Remplissez tous les champs', 'error'); return; }
   auth.createUserWithEmailAndPassword(emailEl.value, passEl.value)
     .then(res => {
@@ -1334,6 +1335,7 @@ function signupEmail() {
 function loginEmail() {
   const emailEl = document.getElementById('email');
   const passEl = document.getElementById('password');
+  if (!validateFields(['email', 'password'])) return;
   auth.signInWithEmailAndPassword(emailEl.value, passEl.value)
     .then(res => showToast(`Bon retour !`, 'success'))
     .catch(err => showToast(err.message, 'error'));
@@ -1455,6 +1457,8 @@ async function addJob() {
     return;
   }
 
+  if (!validateFields(['title', 'desc', 'price', 'phone'])) return;
+
   const titleVal = document.getElementById('title').value.trim();
   const priceVal = document.getElementById('price').value.trim();
   const phoneVal = document.getElementById('phone').value.trim();
@@ -1571,6 +1575,20 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// Vérifie une liste de champs par leur id avec les règles HTML natives
+// (required, minlength, maxlength, pattern...) et affiche le message
+// d'aide du navigateur sur le premier champ invalide trouvé.
+function validateFields(ids) {
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (el && typeof el.checkValidity === 'function' && !el.checkValidity()) {
+      el.reportValidity();
+      return false;
+    }
+  }
+  return true;
 }
 
 // ===== SYNC JOBS =====
@@ -2330,6 +2348,7 @@ async function saveProfile() {
     }
 
     const btn = document.getElementById('saveProfileBtn');
+    if (!validateFields(['profileName', 'profileCompany', 'jobTitle', 'skills'])) return;
     const originalText = btn.innerText;
     btn.disabled = true;
 
@@ -2786,19 +2805,19 @@ document.addEventListener('click', (e) => {
     <div class="sheet-content" style="padding: 24px; flex: 1; overflow-y: auto;">
         <div class="profile-form-group">
             <label>Nom / Société</label>
-            <input type="text" id="profileName" class="profile-input" placeholder="Ex: Jean Dupont ou Dupont Entreprise">
+            <input type="text" id="profileName" class="profile-input" placeholder="Ex: Jean Dupont ou Dupont Entreprise" required maxlength="100">
         </div>
         <div class="profile-form-group">
             <label>Société</label>
-            <input type="text" id="profileCompany" class="profile-input" placeholder="Ex: Les Bâtisseurs du Cameroun">
+            <input type="text" id="profileCompany" class="profile-input" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
         </div>
         <div class="profile-form-group">
             <label>Ton métier / Spécialité</label>
-            <input type="text" id="jobTitle" class="profile-input" placeholder="Ex: Électricien, Maçon, Designer...">
+            <input type="text" id="jobTitle" class="profile-input" placeholder="Ex: Électricien, Maçon, Designer..." maxlength="100">
         </div>
         <div class="profile-form-group">
             <label>Compétences (séparées par des virgules)</label>
-            <textarea id="skills" class="profile-textarea" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..."></textarea>
+            <textarea id="skills" class="profile-textarea" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..." maxlength="1000"></textarea>
         </div>
         <div style="margin-top: 10px;">
             <button onclick="saveProfile()" id="saveProfileBtn" class="profile-save-btn">Enregistrer les modifications</button>
