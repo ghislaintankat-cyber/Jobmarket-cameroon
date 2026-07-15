@@ -2038,17 +2038,19 @@ function registerPushToken() {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
   if (!FCM_VAPID_KEY || FCM_VAPID_KEY === 'COLLE_TA_CLE_VAPID_ICI') return;
 
-  try {
-    const messaging = firebase.messaging();
-    Notification.requestPermission().then(permission => {
-      if (permission !== 'granted') return;
-      messaging.getToken({ vapidKey: FCM_VAPID_KEY })
-        .then(token => {
-          if (currentUser && token) db.ref('notificationTokens/' + currentUser.uid).set(token);
-        })
-        .catch(err => console.warn('Jeton notification indisponible:', err.message));
-    });
-  } catch (e) { console.warn('Messaging indisponible:', e.message); }
+  navigator.serviceWorker.register('firebase-messaging-sw.js')
+    .then(registration => {
+      const messaging = firebase.messaging();
+      Notification.requestPermission().then(permission => {
+        if (permission !== 'granted') return;
+        messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: registration })
+          .then(token => {
+            if (currentUser && token) db.ref('notificationTokens/' + currentUser.uid).set(token);
+          })
+          .catch(err => console.warn('Jeton notification indisponible:', err.message));
+      });
+    })
+    .catch(err => console.warn('Service worker de notifications indisponible:', err.message));
 }
 
   // ===== NOTIFICATIONS DES JOBS EN TEMPS RÉEL =====
