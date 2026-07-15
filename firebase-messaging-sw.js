@@ -18,7 +18,7 @@ messaging.onBackgroundMessage((payload) => {
   const title = (payload.notification && payload.notification.title) || 'JobMarket Cameroon';
   const options = {
     body: (payload.notification && payload.notification.body) || '',
-    icon: '/icon-192.png' // adapte ce chemin si ton icône a un autre nom/emplacement
+    icon: 'icon-192.png' // chemin relatif : adapte le nom si ton icône s'appelle autrement
   };
   self.registration.showNotification(title, options);
 });
