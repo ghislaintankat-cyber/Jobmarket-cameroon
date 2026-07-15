@@ -1234,9 +1234,9 @@ const firebaseConfig = {
   authDomain: "jobmarketfuture.firebaseapp.com",
   databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
   projectId: "jobmarketfuture",
-  storageBucket: "jobmarketfuture.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:jobmarketcameroon"
+  storageBucket: "jobmarketfuture.firebasestorage.app",
+  messagingSenderId: "351669024349",
+  appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
 };
 
 try {
@@ -1315,6 +1315,7 @@ function showToast(msg, type='info') {
 auth.onAuthStateChanged(user => {
   currentUser = user;
   updateAccountUI(user);
+  if (user && !user.isAnonymous) registerPushToken();
 });
 
 try { auth.signInAnonymously().catch(console.error); } catch(e) {}
@@ -2029,15 +2030,26 @@ if ('serviceWorker' in navigator) {
 }
 
 // ===== PUSH NOTIFICATIONS =====
-try {
-  const messaging = firebase.messaging();
-  messaging.requestPermission()
-    .then(() => messaging.getToken())
-    .then(token => {
-      if (currentUser && token) db.ref('notificationTokens/' + currentUser.uid).set(token);
-    })
-    .catch(() => {});
-} catch(e) {}
+// Clé VAPID publique (Firebase Console > Paramètres du projet > Cloud
+// Messaging > Certificats Web Push). Obligatoire pour obtenir un jeton.
+const FCM_VAPID_KEY = 'BDjptctrpoeyowsCJT_qcpnUzy15FJm6lCcmq6rtNlCh9BpqS1MpQMSuQsvoMslA_PIreqDR3PAS12xvsgbvRAg';
+
+function registerPushToken() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  if (!FCM_VAPID_KEY || FCM_VAPID_KEY === 'COLLE_TA_CLE_VAPID_ICI') return;
+
+  try {
+    const messaging = firebase.messaging();
+    Notification.requestPermission().then(permission => {
+      if (permission !== 'granted') return;
+      messaging.getToken({ vapidKey: FCM_VAPID_KEY })
+        .then(token => {
+          if (currentUser && token) db.ref('notificationTokens/' + currentUser.uid).set(token);
+        })
+        .catch(err => console.warn('Jeton notification indisponible:', err.message));
+    });
+  } catch (e) { console.warn('Messaging indisponible:', e.message); }
+}
 
   // ===== NOTIFICATIONS DES JOBS EN TEMPS RÉEL =====
 let chargementInitialJobs = true;
