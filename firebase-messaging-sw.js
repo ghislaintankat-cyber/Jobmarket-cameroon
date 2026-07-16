@@ -11,6 +11,13 @@ firebase.initializeApp({
   appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
 });
 
+// Force l'activation immédiate de ce service worker, sans attendre que
+// tous les onglets du site soient fermés (comportement par défaut).
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 const messaging = firebase.messaging();
 
 // Gère les notifications reçues quand l'app est fermée ou en arrière-plan
