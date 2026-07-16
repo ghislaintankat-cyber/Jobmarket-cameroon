@@ -1237,8 +1237,27 @@ auth.onAuthStateChanged(user => {
   if (user && !user.isAnonymous) {
     registerPushToken();
     checkPendingReviews(user.uid);
+    syncEmailVerifiedBadge(user);
   }
 });
+
+// Badge automatique et gratuit : dès que Firebase confirme que l'email est
+// vérifié (lien cliqué, ou compte Google — toujours pré-vérifié), on
+// l'enregistre dans le profil public. Aucune action manuelle, aucun coût,
+// aucune limite de volume — ça marche pareil pour 10 ou 200 000 comptes.
+async function syncEmailVerifiedBadge(user) {
+  try {
+    await user.reload(); // rafraîchit le statut depuis les serveurs Firebase
+    if (user.emailVerified) {
+      const snap = await db.ref('profiles/' + user.uid + '/emailVerified').once('value');
+      if (snap.val() !== true) {
+        await db.ref('profiles/' + user.uid).update({ emailVerified: true });
+      }
+    }
+  } catch (e) {
+    console.warn('syncEmailVerifiedBadge error', e);
+  }
+}
 
 try { auth.signInAnonymously().catch(console.error); } catch(e) {}
 
@@ -1723,7 +1742,12 @@ function updateJobsList(jobs) {
         </div>
         ${(() => {
           const p = profilesCache[job.user] || {};
-          const badge = p.verified ? `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>` : '';
+          let badge = '';
+          if (p.verified) {
+            badge = `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>`;
+          } else if (p.emailVerified) {
+            badge = `<span title="Email vérifié" style="font-size:11px;color:var(--text-dim);">✉️</span>`;
+          }
           const rating = p.ratingCount ? `<span style="font-size:11px;color:#FFD700;font-weight:700;">★ ${p.ratingAvg.toFixed(1)}</span>` : '';
           return badge + rating;
         })()}
@@ -2620,8 +2644,12 @@ function renderVerificationStatus(profile, user) {
     const box = document.getElementById('verificationStatusBox');
     if (!box) return;
 
+    const emailBadge = profile.emailVerified
+        ? `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">✉️ Email vérifié</div>`
+        : `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">Email non vérifié — cliquez le lien reçu par email à l'inscription.</div>`;
+
     if (profile.verified) {
-        box.innerHTML = `
+        box.innerHTML = emailBadge + `
             <div style="display:flex;align-items:center;gap:8px;color:var(--blue);font-weight:700;font-size:14px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
                 Profil vérifié
@@ -2630,7 +2658,7 @@ function renderVerificationStatus(profile, user) {
     }
 
     const requestSent = profile.verificationRequested;
-    box.innerHTML = `
+    box.innerHTML = emailBadge + `
         <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-bottom:${requestSent ? '0' : '10px'};">
             ${requestSent ? '⏳ Demande envoyée, en attente de validation.' : "Profil non vérifié. Une pièce d'identité ou une preuve de métier peut débloquer le badge ✓."}
         </div>
