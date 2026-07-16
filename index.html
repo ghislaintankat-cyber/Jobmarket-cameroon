@@ -1059,6 +1059,9 @@ body{
         <div class="admin-stat-label">Pays actif</div>
       </div>
     </div>
+    <div class="section-title">Vérifications en attente</div>
+    <div id="adminVerificationsList"></div>
+
     <div class="section-title">Tous les jobs</div>
     <div id="adminJobsList"></div>
   </div>
@@ -1851,6 +1854,66 @@ function openAdminPanel() {
   }
   openOverlay('adminPanel');
   loadAdminJobs();
+  loadPendingVerifications();
+}
+
+async function loadPendingVerifications() {
+  const list = document.getElementById('adminVerificationsList');
+  if (!list) return;
+  list.innerHTML = '<div style="font-size:13px;color:var(--text-dim);">Chargement...</div>';
+
+  try {
+    const snap = await db.ref('profiles').orderByChild('verificationRequested').startAt(1).once('value');
+    const pending = [];
+    snap.forEach(child => {
+      const p = child.val();
+      if (p && !p.verified) pending.push({ uid: child.key, ...p });
+    });
+
+    if (pending.length === 0) {
+      list.innerHTML = '<div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Aucune demande en attente.</div>';
+      return;
+    }
+
+    list.innerHTML = pending.map(p => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div>
+          <div style="font-weight:700;font-size:14px;">${escapeHtml(p.name || p.company || 'Sans nom')}</div>
+          <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(p.jobTitle || 'Métier non renseigné')}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button onclick="approveVerification('${p.uid}')" style="background:var(--blue);border:none;color:white;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">Valider ✓</button>
+          <button onclick="rejectVerification('${p.uid}')" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">Refuser</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('loadPendingVerifications error', e);
+    list.innerHTML = '<div style="font-size:13px;color:var(--danger);">Erreur de chargement.</div>';
+  }
+}
+
+async function approveVerification(uid) {
+  try {
+    await db.ref('profiles/' + uid).update({ verified: true, verificationRequested: null });
+    showToast('Profil vérifié !', 'success');
+    loadPendingVerifications();
+  } catch (e) {
+    console.error('approveVerification error', e);
+    showToast('Erreur lors de la validation', 'error');
+  }
+}
+
+async function rejectVerification(uid) {
+  if (!confirm('Refuser cette demande ? La personne pourra en refaire une plus tard.')) return;
+  try {
+    await db.ref('profiles/' + uid).update({ verificationRequested: null });
+    showToast('Demande refusée', 'info');
+    loadPendingVerifications();
+  } catch (e) {
+    console.error('rejectVerification error', e);
+    showToast('Erreur', 'error');
+  }
 }
 
 function loadAdminJobs() {
