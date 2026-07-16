@@ -32,19 +32,22 @@
   
 <style>
   /* DESIGN DU PANNEAU DE PRÉVISUALISATION MOBILE-FIRST */
+  /* Harmonisé avec le thème sombre/doré de l'application (avant : fond blanc
+     et couleurs Bootstrap qui juraient avec le reste de l'interface). */
 .job-drawer {
     position: fixed;
     top: 0;
     right: -400px; /* Masqué par défaut hors de l'écran */
     width: 380px;
     height: 100%;
-    background: #ffffff;
-    box-shadow: -5px 0 25px rgba(0,0,0,0.15);
+    background: var(--dark2, #13131A);
+    border-left: 1px solid var(--border, rgba(255,255,255,0.07));
+    box-shadow: -10px 0 30px rgba(0,0,0,0.6);
     z-index: 9999; /* Toujours au-dessus de la carte et du reste */
     transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     display: flex;
     flex-direction: column;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'DM Sans', sans-serif;
 }
 
 /* Version responsive pour les petits écrans de téléphones */
@@ -65,13 +68,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #f8f9fa;
-    border-bottom: 1px solid #eee;
+    background: var(--dark2, #13131A);
+    border-bottom: 1px solid var(--border, rgba(255,255,255,0.07));
 }
 
 #previewCategory {
-    background: #007bff;
-    color: white;
+    background: rgba(255,215,0,0.15);
+    color: var(--gold, #FFD700);
+    border: 1px solid rgba(255,215,0,0.3);
     padding: 5px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -80,11 +84,24 @@
 }
 
 .close-drawer-btn {
-    background: none;
+    background: rgba(255,255,255,0.05);
     border: none;
-    font-size: 28px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
     cursor: pointer;
-    color: #666;
+    color: var(--text-dim, #8888A8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.close-drawer-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text, #F0F0F8);
 }
 
 .drawer-body {
@@ -95,13 +112,23 @@
 
 .drawer-body h2 {
     margin: 0 0 10px 0;
-    color: #333;
+    color: var(--text, #F0F0F8);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
     font-size: 22px;
+}
+
+.drawer-body h3 {
+    margin: 0 0 8px 0;
+    color: var(--text, #F0F0F8);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
 }
 
 .drawer-price-tag {
     font-size: 20px;
-    color: #28a745;
+    color: var(--green, #25D366);
     font-weight: bold;
     margin-bottom: 20px;
 }
@@ -110,48 +137,21 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #555;
+    color: var(--text-dim, #8888A8);
     font-size: 14px;
     margin-bottom: 15px;
 }
 
 .drawer-divider {
     border: 0;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border, rgba(255,255,255,0.07));
     margin: 20px 0;
 }
 
 .drawer-footer {
     padding: 20px;
-    border-top: 1px solid #eee;
-    background: #f8f9fa;
-}
-
-/* Bouton WhatsApp Vert Officiel et Moderne */
-.whatsapp-action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background: #25D366;
-    color: white;
-    text-decoration: none;
-    padding: 14px;
-    border-radius: 8px;
-    font-weight: bold;
-    text-align: center;
-    transition: background 0.3s;
-    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
-}
-
-.whatsapp-action-btn:hover {
-    background: #1ebd57;
-}
-
-.whatsapp-icon {
-    width: 20px;
-    height: 20px;
-    fill: white;
+    border-top: 1px solid var(--border, rgba(255,255,255,0.07));
+    background: var(--dark2, #13131A);
 }
 /* ===== DESIGN TOKENS ===== */
 :root {
@@ -713,6 +713,10 @@ body{
 .leaflet-popup-tip{background:var(--dark2)!important;}
 .leaflet-popup-content{color:var(--text)!important;margin:14px!important;}
 .leaflet-routing-container{background:var(--dark2)!important;color:var(--text)!important;border-radius:var(--radius-md)!important;}
+/* Le bouton de fermeture (x) de Leaflet est gris foncé par défaut (prévu pour un
+   fond blanc) : sur notre thème sombre il devient quasi invisible. On l'éclaircit. */
+.leaflet-popup-close-button{color:var(--text-dim)!important;font-size:20px!important;}
+.leaflet-popup-close-button:hover{color:var(--text)!important;}
 
 /* ===== MISC ===== */
 .section-title{
@@ -1195,6 +1199,7 @@ body{
     <button class="chat-suggestion" type="button" onclick="askChatSuggestion(this)">Comment publier un job ?</button>
     <button class="chat-suggestion" type="button" onclick="askChatSuggestion(this)">Comment éviter une arnaque ?</button>
     <button class="chat-suggestion" type="button" onclick="askChatSuggestion(this)">Comment calculer ma marge ?</button>
+    <button class="chat-suggestion" type="button" onclick="askChatSuggestion(this)">Comment gérer mes publications ?</button>
   </div>
   <div class="chat-safety">Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d’identité dans le chat.</div>
   <div class="chat-input-row">
@@ -1313,6 +1318,18 @@ function showToast(msg, type='info') {
   t.className = `show ${type}`;
   t.textContent = msg;
   toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ===== VIBRATION (retour haptique) =====
+// Fonction unique et sécurisée utilisée partout dans l'app.
+// Remarque : la vibration ne fonctionne que sur téléphone Android (Chrome/Edge/Samsung
+// Internet). Elle n'existe pas sur iPhone (Safari ne l'a jamais implémentée) ni sur
+// ordinateur (pas de moteur de vibration), et Firefox l'a retirée en 2024 : dans ces cas
+// navigator.vibrate est absent ou inactif, ce n'est pas un bug de l'application.
+function vibrateDevice(ms) {
+  try {
+    if (navigator.vibrate) navigator.vibrate(ms);
+  } catch (e) { /* ignore silencieusement si le navigateur refuse l'appel */ }
 }
 
 // ===== FIREBASE AUTH =====
@@ -1477,7 +1494,13 @@ async function addJob() {
   publishBtn.disabled = true;
   publishBtn.innerHTML = '<div class="spinner"></div> Publication...';
 
-  navigator.geolocation.getCurrentPosition(async pos => {
+  const resetPublishBtn = () => {
+    publishBtn.disabled = false;
+    publishBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publier maintenant';
+  };
+
+  // Termine la publication une fois qu'on connait la position (GPS ou appui long sur la carte)
+  const publishWithPosition = async (latitude, longitude) => {
     try {
       const uploadedImages = [];
       const files = document.getElementById('jobImages').files;
@@ -1506,9 +1529,8 @@ async function addJob() {
         // CORRECTION SANS CROCHETS : On utilise .at() pour contourner le bug
         icon: catVal.at(0),
         color: catVal.at(1),
-        // CODE LONG CLIC : Utilise la position cliquée, ou le GPS en plan B
-        lat: document.getElementById('jobLat').value ? parseFloat(document.getElementById('jobLat').value) : pos.coords.latitude,
-        lng: document.getElementById('jobLng').value ? parseFloat(document.getElementById('jobLng').value) : pos.coords.longitude,
+        lat: latitude,
+        lng: longitude,
         images: uploadedImages,
         image: uploadedImages.at(0) || '', // CORRECTION SANS CROCHETS
         user: currentUser.uid,
@@ -1529,14 +1551,28 @@ async function addJob() {
       console.error(error);
       showToast('Erreur lors de la publication', 'error');
     }
+    resetPublishBtn();
+  };
 
-    publishBtn.disabled = false;
-    publishBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publier maintenant';
-  }, () => {
-    showToast('GPS requis pour publier', 'error');
-    publishBtn.disabled = false;
-    publishBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publier maintenant';
-  }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  // CORRECTION : si une position a déjà été choisie par appui long sur la carte
+  // (champs jobLat/jobLng déjà remplis), on publie directement avec cette position
+  // au lieu d'exiger en plus l'autorisation GPS de l'appareil — sinon la publication
+  // échouait avec "GPS requis pour publier" même quand la position était déjà connue.
+  const presetLat = document.getElementById('jobLat').value;
+  const presetLng = document.getElementById('jobLng').value;
+  if (presetLat && presetLng) {
+    await publishWithPosition(parseFloat(presetLat), parseFloat(presetLng));
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => publishWithPosition(pos.coords.latitude, pos.coords.longitude),
+    () => {
+      showToast('GPS requis pour publier', 'error');
+      resetPublishBtn();
+    },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+  );
 }
 
 function resetJobForm() {
@@ -1930,15 +1966,35 @@ function hideChatTyping() {
 
 // Clé API Gemini gratuite (aistudio.google.com).
 // No external model or API key is used by this chat.
+// NOTE : le chat reste volontairement 100% local (voir callChatAI plus bas) plutôt que
+// d'appeler une IA distante. Sur un site statique comme celui-ci, une clé d'API IA
+// placée dans le code serait visible par n'importe qui et pourrait être volée/abusée —
+// ce qui contredirait la promesse « Hors ligne · privé » affichée dans le chat. On
+// élargit donc ici la base de connaissances locale pour couvrir plus de sujets.
 const LOCAL_CHAT_KNOWLEDGE = [
-  { terms:['publier','poster','ajouter','creer','demande','annonce','job'], answer:"Pour publier une demande, appuyez sur le bouton +, choisissez une catégorie, ajoutez un titre clair, le budget, votre zone et une description précise. Ne publiez pas de mot de passe, code SMS ou document d'identité. Une bonne annonce indique le travail, le lieu, le délai et les compétences attendues." },
-  { terms:['trouver','rechercher','artisan','prestataire','proche','carte','filtre','categorie'], answer:"Utilisez la carte ou la liste, puis filtrez par catégorie. Ouvrez une annonce pour comparer la description, le prix et les informations visibles. Avant de choisir un artisan, demandez un devis écrit, vérifiez son profil et convenez du travail avant tout paiement." },
+  { terms:['mes publications','ma publication','supprimer une annonce','supprimer mon job','modifier une annonce','modifier mon job'], answer:"Ouvrez Compte → « Mes publications » (connexion requise) pour voir toutes vos annonces, avec un bouton pour supprimer celles que vous avez publiées. Il n'y a pas encore de modification directe : supprimez l'ancienne annonce puis republiez-en une nouvelle à jour." },
+  { terms:['profil pro','mon profil','completer mon profil','photo de profil','competences','specialite','metier'], answer:"Dans Compte → « Mon Profil Pro », renseignez votre nom (ou société), votre métier/spécialité, vos compétences et une photo si vous le souhaitez. Un profil complet (nom ou société, et métier/spécialité) est nécessaire pour contacter un artisan par WhatsApp ou partager une annonce." },
+  { terms:['photo','photos','image','images'], answer:"Vous pouvez ajouter jusqu'à 5 photos (JPG ou PNG) à une annonce depuis la zone « Ajouter des photos » du formulaire de publication. Elles sont compressées automatiquement pour rester rapides à charger, même avec une connexion lente." },
+  { terms:['zoom','satellite','style carte','style de carte','vue plan','ma position','localiser','distance'], answer:"Les boutons sur le côté droit de la carte permettent de centrer sur votre position, zoomer/dézoomer, et basculer entre vue satellite et plan. Le badge « Distance » indique la distance jusqu'au job le plus éloigné actuellement affiché." },
+  { terms:['itineraire','trajet','chemin','route vers'], answer:"Ouvrez une annonce puis appuyez sur « Voir l'itinéraire » : la carte trace le chemin depuis votre position et affiche la distance et le temps estimé. Utilisez « Annuler » dans le panneau itinéraire pour l'effacer." },
+  { terms:['notification','notifications','cloche','alerte'], answer:"La cloche en haut de l'écran affiche les nouveaux jobs publiés autour de vous. Un point s'allume quand il y a du nouveau ; appuyez dessus pour voir la liste." },
+  { terms:['gps requis','gps bloque','position refusee','autoriser ma position'], answer:"Si « GPS requis pour publier » s'affiche, votre téléphone ou navigateur a refusé l'accès à la position. Autorisez la localisation dans les réglages du navigateur pour ce site, puis réessayez. Si vous avez choisi l'emplacement par appui long sur la carte, cette autorisation n'est pas nécessaire : la position choisie est utilisée directement." },
   { terms:['contact','whatsapp','appeler','message','joindre'], answer:"Ouvrez l'annonce puis utilisez WhatsApp seulement si vous êtes connecté et votre profil est complet. Gardez une trace écrite de ce qui est convenu : prestation, prix, délai et conditions. Ne communiquez jamais de code de connexion ou de carte bancaire." },
   { terms:['arnaque','fraude','faux','fake','escroquerie','suspect','securite','verification'], answer:"Un signal n'est pas une preuve de fraude. Soyez prudent si un profil est très récent, refuse un devis écrit, demande un paiement immédiat ou vous pousse à quitter la plateforme. Vérifiez les informations, gardez les échanges, et demandez une revue humaine avant d'accuser ou de bloquer quelqu'un." },
-  { terms:['prix','tarif','cout','marge','benefice','budget','devis','rentable'], answer:"Pour évaluer un prix : marge brute = prix de vente − coût direct. Pour une activité, ajoutez aussi transport, matériel, commission, temps et taxes. Demandez plusieurs devis comparables et évitez les promesses de prix ou de bénéfice garanti." },
-  { terms:['compte','connexion','connecter','mot de passe','password','profil','modifier'], answer:"Pour accéder aux fonctions de contact et de publication, connectez-vous et complétez votre profil avec des informations exactes. Ne partagez votre mot de passe ou un code reçu par SMS avec personne, même si elle prétend être du support." },
+  { terms:['prix','tarif','cout','marge','benefice','budget','devis','rentable'], answer:"Pour évaluer un prix : marge brute = prix de vente − coût direct. Pour une activité, ajoutez aussi transport, matériel, commission, temps et taxes. Demandez plusieurs devis comparables et évitez les promesses de prix ou de bénéfice garanti. Astuce : donnez-moi un coût et un prix de vente (deux nombres) et je calcule la marge pour vous." },
+  { terms:['compte','connexion','connecter','creer un compte','inscription','mot de passe','password'], answer:"Ouvrez Compte, puis « Créer compte » (email + mot de passe, ou Google) ou « Connexion » si vous en avez déjà un. Il faut être connecté pour publier une demande ou contacter quelqu'un par WhatsApp. Ne partagez jamais votre mot de passe ou un code reçu par SMS, même à quelqu'un qui prétend être du support." },
+  { terms:['trouver','rechercher','artisan','prestataire','proche','filtre','categorie'], answer:"Utilisez la carte ou la liste, puis filtrez par catégorie (BTP, Électricité, Plomberie, Ménage, Jardinage, Mécanique, Informatique). Ouvrez une annonce pour comparer la description, le prix et les informations visibles. Avant de choisir un artisan, demandez un devis écrit, vérifiez son profil et convenez du travail avant tout paiement." },
+  { terms:['publier','poster','ajouter','creer','demande','appui long'], answer:"Deux façons de publier : appuyez sur le bouton + (en haut ou en bas de l'écran), ou faites un appui long (clic droit sur ordinateur) directement à l'endroit voulu sur la carte puis « Publier un job ici ». Choisissez une catégorie, ajoutez un titre clair, le budget, votre téléphone et une description précise. Ne publiez pas de mot de passe, code SMS ou document d'identité." },
   { terms:['supprimer','effacer','donnees','confidentialite','privacy'], answer:"L'assistant local ne stocke pas vos questions sur un serveur. Pour les données de votre compte JobMarket, utilisez le support officiel afin de demander la procédure adaptée; ne partagez pas de documents sensibles dans le chat." }
 ];
+
+// Remarque sur l'ordre ci-dessus : en cas d'égalité de score entre deux sujets, le
+// premier du tableau l'emporte (tri stable). Les sujets les plus spécifiques sont donc
+// volontairement placés avant les sujets génériques ("publier", "trouver") pour éviter
+// qu'un mot très fréquent (ex: "annonce", "job") ne détourne systématiquement vers le
+// mauvais sujet. Ordre et mots-clés vérifiés par une batterie de tests avant mise en ligne.
+
+const CHAT_TOPICS_SUMMARY = "publier une demande (bouton + ou appui long sur la carte), trouver un artisan, contacter par WhatsApp, repérer une arnaque, calculer un prix ou une marge, le compte et le Profil Pro, gérer vos publications, les photos, la carte et l'itinéraire, et les notifications";
 
 function normaliseChatText(value) {
   return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -1957,12 +2013,28 @@ function getMarginAnswer(text) {
 function localChatAnswer(question) {
   const text = normaliseChatText(question);
   if (!text) return "Écrivez votre question et je vous répondrai sur les fonctions de JobMarket, les prix ou la sécurité.";
+
+  // Petites formules de politesse reconnues seulement quand c'est tout le message
+  // (une vraie question qui contient juste un de ces mots ailleurs n'est pas affectée).
+  if (/^(bonjour|salut|bonsoir|hello|coucou|bjr|slt)[ !?.]*$/.test(text)) {
+    return "Bonjour ! Posez-moi une question sur JobMarket, un prix, une marge ou la sécurité d'un profil.";
+  }
+  if (/^(merci|merci beaucoup|ok merci|top merci)[ !?.]*$/.test(text)) {
+    return "Avec plaisir ! N'hésitez pas si vous avez une autre question.";
+  }
+  if (/^(au revoir|a bientot|bye|bonne journee|bonne soiree)[ !?.]*$/.test(text)) {
+    return "À bientôt sur JobMarket !";
+  }
+  if (/^(aide|help|menu|que peux tu faire|qu est ce que tu sais faire)[ !?.]*$/.test(text)) {
+    return `Je peux vous aider sur : ${CHAT_TOPICS_SUMMARY}. Posez votre question directement, ou touchez une suggestion ci-dessus.`;
+  }
+
   const marginAnswer = getMarginAnswer(question);
   if (marginAnswer) return marginAnswer;
-  if (/^(bonjour|salut|bonsoir|hello|coucou)[ !?.]*$/.test(text)) return "Bonjour ! Posez-moi une question sur JobMarket, un prix, une marge ou la sécurité d'un profil.";
+
   const ranked = LOCAL_CHAT_KNOWLEDGE.map(item => ({ item, score: item.terms.reduce((n, term) => n + (text.includes(normaliseChatText(term)) ? 1 : 0), 0) })).sort((a,b) => b.score - a.score)[0];
   if (ranked && ranked.score > 0) return ranked.item.answer;
-  return "Je n'ai pas de réponse approuvée pour ce sujet. Je peux aider avec la publication d'un job, la recherche d'un artisan, les contacts, les prix et marges, le compte et les signaux de fraude. Pour une décision financière importante ou une accusation de fraude, demandez une vérification humaine.";
+  return `Je n'ai pas de réponse approuvée pour ce sujet précis. Je peux aider avec : ${CHAT_TOPICS_SUMMARY}. Pour une décision financière importante ou une accusation de fraude, demandez une vérification humaine.`;
 }
 
 function askChatSuggestion(button) {
@@ -2152,14 +2224,14 @@ map.on('contextmenu', function(e) {
   const lat = e.latlng.lat;
   const lng = e.latlng.lng;
 
-  if (navigator.vibrate) navigator.vibrate(150);
+  vibrateDevice(150);
 
   L.popup()
     .setLatLng(e.latlng)
     .setContent(`
-      <div style="text-align:center; font-family:sans-serif; padding:5px;">
-        <b style="color:#333; display:block; margin-bottom:8px;">📍 Position sélectionnée</b>
-        <button onclick="preparerNouveauJob(${lat}, ${lng})" style="background:#007AFF; color:white; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">
+      <div style="text-align:center; font-family:'DM Sans',sans-serif; padding:5px;">
+        <b style="color:var(--text,#F0F0F8); display:block; margin-bottom:10px; font-family:'Syne',sans-serif;">📍 Position sélectionnée</b>
+        <button onclick="preparerNouveauJob(${lat}, ${lng})" style="background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800); color:#0A0A0F; border:none; padding:10px 16px; border-radius:12px; font-family:'Syne',sans-serif; font-weight:700; cursor:pointer;">
           ➕ Publier un job ici
         </button>
       </div>
@@ -2172,22 +2244,27 @@ function preparerNouveauJob(lat, lng) {
   // 1. On ferme le popup de la carte
   map.closePopup();
   
-  // 2. Si tu as des champs de coordonnées cachés ou visibles dans ton formulaire :
-  const inputLat = document.getElementById('jobLat') || document.getElementById('lat');
-  const inputLng = document.getElementById('jobLng') || document.getElementById('lng');
+  // 2. On renseigne les champs de coordonnées cachés du formulaire
+  const inputLat = document.getElementById('jobLat');
+  const inputLng = document.getElementById('jobLng');
   
   if (inputLat && inputLng) {
     inputLat.value = lat;
     inputLng.value = lng;
   }
   
-  // 3. Ouvre ton formulaire de publication de job
-  // (Remplace 'jobFormModal' par l'ID réel de ton bouton ou de ta section de formulaire si nécessaire)
-  const btnOuvrirForm = document.querySelector('[onclick*="showPublish"], [onclick*="toggle"], #btn-add-job');
-  if (btnOuvrirForm) {
-    btnOuvrirForm.click();
+  // 3. On ouvre directement le formulaire de publication (jobFormSheet).
+  // CORRECTION : l'ancien code cliquait sur le premier bouton dont le onclick
+  // contenait "toggle" — or c'est le bouton des notifications (toggleNotifPanel)
+  // qui arrive avant le bouton "Publier" (toggleJobForm) dans la page. Résultat :
+  // le panneau de notifications s'ouvrait à la place du formulaire, et il était
+  // impossible d'ajouter un job depuis la carte. On cible maintenant directement
+  // le bon panneau, sans ambiguïté.
+  const sheet = document.getElementById('jobFormSheet');
+  if (sheet) {
+    sheet.classList.add('open');
+    showToast("Position enregistrée ! Complétez le formulaire.", "success");
   } else {
-    // Si l'application utilise une autre méthode, on affiche au moins une alerte pour confirmer
     showToast("Position enregistrée ! Remplissez le formulaire de job.", "success");
   }
 }
@@ -2387,7 +2464,7 @@ async function openProfileSheet() {
     const sheet = document.getElementById('profileSheet');
     if (sheet) sheet.classList.add('open');
 
-    if (navigator.vibrate) navigator.vibrate(50);
+    vibrateDevice(50);
 
     const user = auth.currentUser;
     if (!user || user.isAnonymous) {
@@ -2712,9 +2789,7 @@ syncJobs();
 // ===== VIBRATION POUR CHAQUE CLIC =====
 document.addEventListener('click', (e) => {
   if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-    if (navigator.vibrate) {
-      navigator.vibrate(50);
-    }
+    vibrateDevice(50);
   }
 });
 </script>
@@ -2748,14 +2823,14 @@ document.addEventListener('click', (e) => {
         <div id="previewContactsContainer"></div>
     </div>
     
-    <div class="drawer-footer" style="display:flex; flex-direction:column; gap:8px; padding:16px 20px;">
-        <button onclick="contactViaWhatsAppFromPreview()" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#25D366; color:white; padding:14px; border-radius:8px; font-weight:700; font-size:15px; border:none; width:100%; cursor:pointer;">
+    <div class="drawer-footer">
+        <button class="btn btn-green" onclick="contactViaWhatsAppFromPreview()">
             <span style="font-size:18px;">📞</span> WhatsApp
         </button>
-        <button onclick="shareJobViaWhatsApp()" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#007AFF; color:white; padding:14px; border-radius:8px; font-weight:700; font-size:15px; border:none; width:100%; cursor:pointer;">
+        <button class="btn btn-blue" onclick="shareJobViaWhatsApp()">
             <span style="font-size:16px;">🔗</span> Partager sur WhatsApp
         </button>
-        <button onclick="drawRouteFromPreview()" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#007AFF; color:white; padding:14px; border-radius:8px; font-weight:700; font-size:15px; border:none; width:100%; cursor:pointer;">
+        <button class="btn btn-blue" onclick="drawRouteFromPreview()">
             Voir l'itinéraire
         </button>
     </div>
