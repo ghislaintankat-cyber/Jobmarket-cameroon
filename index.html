@@ -908,7 +908,7 @@ body{
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
         </div>
         <div class="upload-title">Ajouter des photos</div>
-        <div class="upload-sub">JPG, PNG — Max 5 images</div>
+        <div class="upload-sub">JPG, PNG, WEBP — Max 5 images, 8 Mo chacune</div>
         <input type="file" id="jobImages" multiple accept="image/*" onchange="previewImages(this)"/>
       </div>
       <div class="image-previews" id="imagePreviews"></div>
@@ -1395,8 +1395,15 @@ async function addJob() {
       const maxFiles = Math.min(files.length, 5);
 
       for (let i = 0; i < maxFiles; i++) {
+        const file = files[i];
+        // Filet de sécurité : revalidation avant l'envoi, même si le fichier
+        // a déjà été filtré à la sélection.
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+          console.warn('Fichier rejeté avant envoi (type/taille invalide):', file.name);
+          continue;
+        }
         const formData = new FormData();
-        formData.append('file', files[i]);
+        formData.append('file', file);
         formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
         try {
           const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
@@ -1487,11 +1494,50 @@ function resetJobForm() {
 }
 
 // ===== IMAGE PREVIEW =====
+// ===== VALIDATION DES PHOTOS AVANT ENVOI =====
+// Empêche l'envoi de fichiers qui ne sont pas des images ou trop volumineux :
+// sans ça, n'importe qui peut envoyer n'importe quel fichier (taille illimitée,
+// type quelconque) via le formulaire, ce qui abuse le compte Cloudinary de l'app.
+const MAX_IMAGE_SIZE_MB = 8;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+function validateImageFiles(fileList) {
+  const files = Array.from(fileList).slice(0, 5);
+  const valid = [];
+  let rejectedWrongType = 0;
+  let rejectedTooBig = 0;
+  files.forEach(file => {
+    const tooBig = file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024;
+    const wrongType = !ALLOWED_IMAGE_TYPES.includes(file.type);
+    if (wrongType) rejectedWrongType++;
+    else if (tooBig) rejectedTooBig++;
+    else valid.push(file);
+  });
+  return { valid, rejectedWrongType, rejectedTooBig };
+}
+
 function previewImages(input) {
   const container = document.getElementById('imagePreviews');
   container.innerHTML = '';
-  const files = Array.from(input.files).slice(0, 5);
-  files.forEach(file => {
+
+  const { valid, rejectedWrongType, rejectedTooBig } = validateImageFiles(input.files);
+
+  if (rejectedWrongType > 0) {
+    showToast(`${rejectedWrongType} fichier(s) ignoré(s) : format non supporté (JPG, PNG, WEBP ou GIF uniquement)`, 'error');
+  }
+  if (rejectedTooBig > 0) {
+    showToast(`${rejectedTooBig} photo(s) ignorée(s) : plus de ${MAX_IMAGE_SIZE_MB} Mo`, 'error');
+  }
+
+  // On remplace la sélection par uniquement les fichiers valides, pour être
+  // certain que seules ces images pourront réellement être envoyées ensuite.
+  try {
+    const dt = new DataTransfer();
+    valid.forEach(file => dt.items.add(file));
+    input.files = dt.files;
+  } catch (e) { /* DataTransfer non supporté : la vérification à l'envoi reste active */ }
+
+  valid.forEach(file => {
     const reader = new FileReader();
     reader.onload = e => {
       const img = document.createElement('img');
@@ -2502,10 +2548,16 @@ async function saveProfile() {
 
     const fileInput = document.getElementById('profileImageInput');
     if (fileInput && fileInput.files && fileInput.files[0]) {
+        const profileFile = fileInput.files[0];
+        if (!ALLOWED_IMAGE_TYPES.includes(profileFile.type) || profileFile.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+            alert(`Photo invalide : formats acceptés JPG, PNG, WEBP, GIF — taille max ${MAX_IMAGE_SIZE_MB} Mo.`);
+            btn.disabled = false;
+            return;
+        }
         btn.innerText = "Téléchargement...";
         try {
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            formData.append('file', profileFile);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
                 method: 'POST', body: formData
