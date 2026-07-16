@@ -1137,6 +1137,9 @@ const db = firebase.database();
 const auth = firebase.auth();
 
 const CLOUDINARY_CLOUD_NAME = "dvoab3mzb";
+// ⚠️ Remplacez par VOTRE numéro WhatsApp (format international, sans + ni espaces,
+// ex: "2376XXXXXXXX") : c'est là que les demandes de vérification seront envoyées.
+const ADMIN_WHATSAPP_NUMBER = "237650420710";
 const CLOUDINARY_UPLOAD_PRESET = "job_preset";
 const ADMIN_UID = "GrajEM98vOc1w3FUr9XeTN90rfl2";
 
@@ -1144,6 +1147,16 @@ let currentUser = null;
 let userCoords = null;
 let allJobs = [];
 let jobsById = {}; // Map pour retrouver les jobs par ID
+let profilesCache = {}; // uid -> {verified, ratingAvg, ratingCount, ...} tenu à jour en temps réel
+
+// On écoute les profils en continu pour toujours avoir le vrai statut de
+// vérification et la vraie note moyenne, sans faire un appel réseau par carte.
+function syncProfilesCache() {
+  db.ref('profiles').on('value', snap => {
+    profilesCache = snap.val() || {};
+    if (allJobs.length) updateJobsList(allJobs); // rafraîchit badges/notes affichés
+  });
+}
 let userMarker = null;
 let accuracyCircle = null;
 let routeControl = null;
@@ -1218,7 +1231,10 @@ function vibrateDevice(ms) {
 auth.onAuthStateChanged(user => {
   currentUser = user;
   updateAccountUI(user);
-  if (user && !user.isAnonymous) registerPushToken();
+  if (user && !user.isAnonymous) {
+    registerPushToken();
+    checkPendingReviews(user.uid);
+  }
 });
 
 try { auth.signInAnonymously().catch(console.error); } catch(e) {}
@@ -1435,8 +1451,6 @@ async function addJob() {
         image: uploadedImages.at(0) || '', // CORRECTION SANS CROCHETS
         user: currentUser.uid,
         userName: currentUser.displayName || currentUser.email,
-        verified: true,
-        ratingAvg: 5,
         timestamp: (editingJobId && existingJob) ? existingJob.timestamp : Date.now(),
         country: 'Cameroon',
         currency: 'XAF'
@@ -1704,7 +1718,12 @@ function updateJobsList(jobs) {
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
           ${job.dist >= 999 ? '-- km' : job.dist.toFixed(1) + ' km'}
         </div>
-        ${job.verified ? `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>` : ''}
+        ${(() => {
+          const p = profilesCache[job.user] || {};
+          const badge = p.verified ? `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>` : '';
+          const rating = p.ratingCount ? `<span style="font-size:11px;color:#FFD700;font-weight:700;">★ ${p.ratingAvg.toFixed(1)}</span>` : '';
+          return badge + rating;
+        })()}
       </div>
     </div>
   `).join('');
@@ -2522,8 +2541,60 @@ async function openProfileSheet() {
         } else {
             document.getElementById('profileImagePreview').innerHTML = `<span style="color: #666; font-size: 12px;">Photo</span>`;
         }
+
+        renderVerificationStatus(data, user);
     } catch (error) {
         console.error("Erreur profil:", error);
+    }
+}
+
+// Affiche le badge "Vérifié" ou un bouton pour demander la vérification.
+// La vérification elle-même reste 100% manuelle : vous recevez la demande
+// sur WhatsApp, vous vérifiez la personne vous-même, puis vous passez
+// "verified" à true directement dans Firebase Console (Realtime Database
+// → profiles → {uid} → verified = true). Aucun code à toucher pour valider.
+function renderVerificationStatus(profile, user) {
+    const box = document.getElementById('verificationStatusBox');
+    if (!box) return;
+
+    if (profile.verified) {
+        box.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;color:var(--blue);font-weight:700;font-size:14px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+                Profil vérifié
+            </div>`;
+        return;
+    }
+
+    const requestSent = profile.verificationRequested;
+    box.innerHTML = `
+        <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-bottom:${requestSent ? '0' : '10px'};">
+            ${requestSent ? '⏳ Demande envoyée, en attente de validation.' : "Profil non vérifié. Une pièce d'identité ou une preuve de métier peut débloquer le badge ✓."}
+        </div>
+        ${requestSent ? '' : `<button type="button" onclick="requestVerification()" style="background:none;border:1px solid var(--blue);color:var(--blue);padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;">Demander la vérification</button>`}
+    `;
+}
+
+async function requestVerification() {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) return;
+
+    try {
+        const snap = await db.ref('profiles/' + user.uid).once('value');
+        const profile = snap.val() || {};
+        const name = profile.name || profile.company || user.displayName || 'Utilisateur';
+        const jobTitle = profile.jobTitle || 'Non spécifié';
+
+        await db.ref('profiles/' + user.uid).update({ verificationRequested: Date.now() });
+
+        const message = `Bonjour, je souhaite faire vérifier mon profil JobMarket.\nNom : ${name}\nMétier : ${jobTitle}\nMerci de me dire quelle pièce/preuve envoyer.`;
+        window.open(`https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+
+        renderVerificationStatus({ ...profile, verificationRequested: true }, user);
+        showToast('Demande envoyée !', 'success');
+    } catch (e) {
+        console.error('requestVerification error', e);
+        showToast('Erreur lors de la demande', 'error');
     }
 }
    
@@ -2652,7 +2723,8 @@ async function contactViaWhatsAppFromPreview() {
             jobId: job.id,
             jobOwnerUid: job.user,
             contactUid: user.uid,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            reviewed: false // passera à true quand un avis aura été laissé ou ignoré
         };
         await db.ref('job_contacts').push(contactData);
 
@@ -2751,7 +2823,8 @@ window.popupWhatsAppClick = async function(jobId) {
             jobId: job.id,
             jobOwnerUid: job.user,
             contactUid: user.uid,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            reviewed: false // passera à true quand un avis aura été laissé ou ignoré
         };
         await db.ref('job_contacts').push(contactData);
 
@@ -2808,9 +2881,115 @@ window.popupShareClick = async function(jobId) {
     showToast('Partage sur WhatsApp!', 'success');
 }
  
+// ===== SYSTÈME D'AVIS =====
+// Après un contact WhatsApp, on propose au client de noter la prestation
+// à son retour dans l'app (au moins 3h après le contact, pour laisser le
+// temps que la prestation ait vraiment eu lieu).
+const REVIEW_DELAY_MS = 3 * 60 * 60 * 1000; // 3 heures
+
+async function checkPendingReviews(uid) {
+  try {
+    const snap = await db.ref('job_contacts').orderByChild('contactUid').equalTo(uid).once('value');
+    if (!snap.exists()) return;
+
+    let pending = null;
+    let pendingKey = null;
+    snap.forEach(child => {
+      const data = child.val();
+      if (!pending && data && data.reviewed === false && (Date.now() - data.timestamp) > REVIEW_DELAY_MS) {
+        pending = data;
+        pendingKey = child.key;
+      }
+    });
+    if (!pending) return;
+
+    const jobSnap = await db.ref('jobs/' + pending.jobId).once('value');
+    const job = jobSnap.val();
+    const jobTitle = job ? job.title : 'ce besoin';
+    const ownerProfile = profilesCache[pending.jobOwnerUid] || {};
+    const ownerName = ownerProfile.name || ownerProfile.company || 'ce prestataire';
+
+    showReviewPrompt(pendingKey, pending.jobOwnerUid, jobTitle, ownerName);
+  } catch (e) {
+    console.warn('checkPendingReviews error', e);
+  }
+}
+
+function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
+  if (document.getElementById('reviewPromptOverlay')) return; // déjà affiché
+
+  let selectedRating = 0;
+  const overlay = document.createElement('div');
+  overlay.id = 'reviewPromptOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:var(--surface,#1a1a1a);border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center;">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:6px;">Comment ça s'est passé ?</div>
+      <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-bottom:16px;">Avec ${escapeHtml(ownerName)} pour "${escapeHtml(jobTitle)}"</div>
+      <div id="reviewStars" style="font-size:32px;letter-spacing:6px;margin-bottom:16px;cursor:pointer;">☆☆☆☆☆</div>
+      <textarea id="reviewComment" placeholder="Commentaire (optionnel)" maxlength="500" style="width:100%;min-height:70px;border-radius:10px;padding:10px;background:#111;color:#fff;border:1px solid var(--border,#333);margin-bottom:14px;box-sizing:border-box;"></textarea>
+      <div style="display:flex;gap:10px;">
+        <button id="reviewSkipBtn" style="flex:1;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#8888A8);padding:12px;border-radius:12px;cursor:pointer;font-weight:600;">Plus tard</button>
+        <button id="reviewSubmitBtn" style="flex:1;background:#FFD700;color:#111;padding:12px;border:none;border-radius:12px;cursor:pointer;font-weight:800;">Envoyer</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const starsEl = overlay.querySelector('#reviewStars');
+  starsEl.addEventListener('click', (e) => {
+    const rect = starsEl.getBoundingClientRect();
+    const relX = e.clientX - rect.left;
+    selectedRating = Math.min(5, Math.max(1, Math.ceil((relX / rect.width) * 5)));
+    starsEl.textContent = '★★★★★☆☆☆☆☆'.slice(5 - selectedRating, 10 - selectedRating);
+  });
+
+  overlay.querySelector('#reviewSkipBtn').onclick = async () => {
+    await db.ref('job_contacts/' + contactKey + '/reviewed').set(true);
+    overlay.remove();
+  };
+
+  overlay.querySelector('#reviewSubmitBtn').onclick = async () => {
+    if (selectedRating === 0) {
+      showToast("Choisissez une note avant d'envoyer", 'error');
+      return;
+    }
+    const comment = overlay.querySelector('#reviewComment').value.trim();
+    try {
+      await db.ref('reviews').push({
+        jobOwnerUid,
+        reviewerUid: auth.currentUser.uid,
+        rating: selectedRating,
+        comment,
+        timestamp: Date.now()
+      });
+
+      // Met à jour la moyenne du profil de façon atomique (transaction),
+      // pour éviter les erreurs si deux avis arrivent en même temps.
+      await db.ref('profiles/' + jobOwnerUid).transaction(profile => {
+        profile = profile || {};
+        const oldCount = profile.ratingCount || 0;
+        const oldAvg = profile.ratingAvg || 0;
+        const newCount = oldCount + 1;
+        profile.ratingCount = newCount;
+        profile.ratingAvg = (oldAvg * oldCount + selectedRating) / newCount;
+        return profile;
+      });
+
+      await db.ref('job_contacts/' + contactKey + '/reviewed').set(true);
+      showToast('Merci pour votre avis !', 'success');
+      overlay.remove();
+    } catch (e) {
+      console.error('submitReview error', e);
+      showToast("Erreur lors de l'envoi de l'avis", 'error');
+    }
+  };
+}
+
 // ===== INIT =====
 locateMe();
 syncJobs();
+syncProfilesCache();
 </script>
 
 <script>
@@ -3020,6 +3199,9 @@ document.addEventListener('click', (e) => {
         <div class="profile-form-group">
             <label>Compétences (séparées par des virgules)</label>
             <textarea id="skills" class="profile-textarea" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..." maxlength="1000"></textarea>
+        </div>
+        <div id="verificationStatusBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
+            <!-- Rempli dynamiquement par renderVerificationStatus() -->
         </div>
         <div style="margin-top: 10px;">
             <button onclick="saveProfile()" id="saveProfileBtn" class="profile-save-btn">Enregistrer les modifications</button>
