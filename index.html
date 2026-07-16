@@ -31,128 +31,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
   
 <style>
-  /* DESIGN DU PANNEAU DE PRÉVISUALISATION MOBILE-FIRST */
-  /* Harmonisé avec le thème sombre/doré de l'application (avant : fond blanc
-     et couleurs Bootstrap qui juraient avec le reste de l'interface). */
-.job-drawer {
-    position: fixed;
-    top: 0;
-    right: -400px; /* Masqué par défaut hors de l'écran */
-    width: 380px;
-    height: 100%;
-    background: var(--dark2, #13131A);
-    border-left: 1px solid var(--border, rgba(255,255,255,0.07));
-    box-shadow: -10px 0 30px rgba(0,0,0,0.6);
-    z-index: 9999; /* Toujours au-dessus de la carte et du reste */
-    transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    display: flex;
-    flex-direction: column;
-    font-family: 'DM Sans', sans-serif;
-}
-
-/* Version responsive pour les petits écrans de téléphones */
-@media (max-width: 480px) {
-    .job-drawer {
-        width: 100%;
-        right: -100%;
-    }
-}
-
-/* Classe activée par le JavaScript pour ouvrir le volet */
-.job-drawer.open {
-    right: 0;
-}
-
-.drawer-header {
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--dark2, #13131A);
-    border-bottom: 1px solid var(--border, rgba(255,255,255,0.07));
-}
-
-#previewCategory {
-    background: rgba(255,215,0,0.15);
-    color: var(--gold, #FFD700);
-    border: 1px solid rgba(255,215,0,0.3);
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.close-drawer-btn {
-    background: rgba(255,255,255,0.05);
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    font-size: 18px;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--text-dim, #8888A8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.2s;
-}
-
-.close-drawer-btn:hover {
-    background: rgba(255,255,255,0.1);
-    color: var(--text, #F0F0F8);
-}
-
-.drawer-body {
-    padding: 24px;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.drawer-body h2 {
-    margin: 0 0 10px 0;
-    color: var(--text, #F0F0F8);
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 22px;
-}
-
-.drawer-body h3 {
-    margin: 0 0 8px 0;
-    color: var(--text, #F0F0F8);
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
-}
-
-.drawer-price-tag {
-    font-size: 20px;
-    color: var(--green, #25D366);
-    font-weight: bold;
-    margin-bottom: 20px;
-}
-
-.drawer-info-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text-dim, #8888A8);
-    font-size: 14px;
-    margin-bottom: 15px;
-}
-
-.drawer-divider {
-    border: 0;
-    border-top: 1px solid var(--border, rgba(255,255,255,0.07));
-    margin: 20px 0;
-}
-
-.drawer-footer {
-    padding: 20px;
-    border-top: 1px solid var(--border, rgba(255,255,255,0.07));
-    background: var(--dark2, #13131A);
-}
+/* Le style du panneau de détail (job-drawer) est défini plus bas, dans le
+   bloc "VERSION SOMBRE" harmonisé avec le thème doré de l'application. */
 /* ===== DESIGN TOKENS ===== */
 :root {
   --gold: #FFD700;
@@ -863,6 +743,7 @@ body{
     border-top: 1px solid var(--border);
     background: var(--surface);
 }
+#previewOwnerActions{margin-bottom:10px;}
 </style>
 </head>
 <body>
@@ -1268,6 +1149,7 @@ let accuracyCircle = null;
 let routeControl = null;
 let currentMapStyle = 'satellite';
 let currentAuthTab = 'signup';
+let editingJobId = null; // ID du job en cours de modification (null = mode "nouvelle publication")
 function genererLienPartage(nomArtisan, metierArtisan, idArtisan) {
     const lienApp = `https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/?id=${idArtisan}`;
 
@@ -1472,7 +1354,7 @@ function updateUserLocation(position) {
   document.getElementById('maxDistDisplay').textContent = dist === '--' ? '--' : dist;
   }
 
-// ===== JOB PUBLISH =====
+// ===== JOB PUBLISH (création ou modification) =====
 async function addJob() {
   if (!currentUser || currentUser.isAnonymous) {
     showToast('Connectez-vous pour publier', 'error');
@@ -1490,19 +1372,25 @@ async function addJob() {
     return;
   }
 
+  // Si on modifie une annonce existante, on la retrouve pour garder sa date
+  // d'origine et ses photos si l'utilisateur n'en choisit pas de nouvelles.
+  const existingJob = editingJobId ? allJobs.find(j => j.id === editingJobId) : null;
+
   const publishBtn = document.getElementById('publishBtn');
   publishBtn.disabled = true;
-  publishBtn.innerHTML = '<div class="spinner"></div> Publication...';
+  publishBtn.innerHTML = '<div class="spinner"></div> ' + (editingJobId ? 'Enregistrement...' : 'Publication...');
 
   const resetPublishBtn = () => {
     publishBtn.disabled = false;
-    publishBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publier maintenant';
+    publishBtn.innerHTML = editingJobId
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Enregistrer les modifications'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publier maintenant';
   };
 
   // Termine la publication une fois qu'on connait la position (GPS ou appui long sur la carte)
   const publishWithPosition = async (latitude, longitude) => {
     try {
-      const uploadedImages = [];
+      let uploadedImages = [];
       const files = document.getElementById('jobImages').files;
       const maxFiles = Math.min(files.length, 5);
 
@@ -1518,7 +1406,12 @@ async function addJob() {
           if (data.secure_url) uploadedImages.push(data.secure_url);
         } catch(imgErr) { console.warn('Image upload failed:', imgErr); }
       }
-      
+
+      // En modification, si aucune nouvelle photo n'est choisie, on garde les anciennes
+      if (editingJobId && uploadedImages.length === 0 && existingJob) {
+        uploadedImages = existingJob.images || (existingJob.image ? [existingJob.image] : []);
+      }
+
       const catVal = document.getElementById('category').value.split('|');
       const jobData = {
         title: titleVal,
@@ -1537,13 +1430,19 @@ async function addJob() {
         userName: currentUser.displayName || currentUser.email,
         verified: true,
         ratingAvg: 5,
-        timestamp: Date.now(),
+        timestamp: (editingJobId && existingJob) ? existingJob.timestamp : Date.now(),
         country: 'Cameroon',
         currency: 'XAF'
       };
 
-      await db.ref('jobs').push(jobData);
-      showToast('Job publie avec succes !', 'success');
+      if (editingJobId) {
+        await db.ref('jobs/' + editingJobId).update(jobData);
+        showToast('Annonce mise à jour !', 'success');
+      } else {
+        await db.ref('jobs').push(jobData);
+        showToast('Job publie avec succes !', 'success');
+      }
+      editingJobId = null;
       resetJobForm();
       toggleJobForm();
       syncJobs();
@@ -1854,7 +1753,20 @@ function activateNav(tab) {
 
 function toggleJobForm() {
   const sheet = document.getElementById('jobFormSheet');
+  const willOpen = !sheet.classList.contains('open');
   sheet.classList.toggle('open');
+  if (!willOpen) {
+    // Fermeture sans avoir publié/enregistré : on sort du mode édition et on
+    // efface la position pré-sélectionnée, pour ne pas modifier le mauvais
+    // job ou réutiliser une position périmée la prochaine fois.
+    editingJobId = null;
+    const inputLat = document.getElementById('jobLat');
+    const inputLng = document.getElementById('jobLng');
+    if (inputLat) inputLat.value = '';
+    if (inputLng) inputLng.value = '';
+    const publishBtn = document.getElementById('publishBtn');
+    if (publishBtn) publishBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publier maintenant';
+  }
 }
 
 function openSheet(id) { document.getElementById(id).classList.add('open'); }
@@ -2316,6 +2228,14 @@ async function openJobPreview(jobId) {
 
     window.currentPreviewJob = job;
 
+    // Est-ce ma propre annonce ? On affiche "Modifier"/"Supprimer" dans ce cas,
+    // et on masque le bouton "Contacter par WhatsApp" (inutile pour se contacter soi-même).
+    const isOwner = !!(auth.currentUser && job.user === auth.currentUser.uid);
+    const ownerActionsEl = document.getElementById('previewOwnerActions');
+    const whatsAppBtnEl = document.getElementById('previewWhatsAppBtn');
+    if (ownerActionsEl) ownerActionsEl.classList.toggle('hidden', !isOwner);
+    if (whatsAppBtnEl) whatsAppBtnEl.classList.toggle('hidden', isOwner);
+
     document.getElementById('previewTitle').innerText = job.title || 'Titre non spécifié';
 
     const priceBadge = document.getElementById('previewPriceBadge');
@@ -2339,15 +2259,15 @@ async function openJobPreview(jobId) {
         const user = auth.currentUser;
         
         if (user && job.user === user.uid) {
-            contactsContainer.innerHTML = '<div style="margin-top: 15px; font-size: 14px; color: #555;">Chargement des contacts WhatsApp...</div>';
+            contactsContainer.innerHTML = '<div style="margin-top: 15px; font-size: 14px; color: var(--text-dim);">Chargement des contacts WhatsApp...</div>';
             
             try {
                 const snapshot = await db.ref('job_contacts').orderByChild('jobId').equalTo(jobId).once('value');
                 if (!snapshot.exists()) {
                     contactsContainer.innerHTML = `
-                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                            <h3 style="margin:0 0 10px 0; font-size: 16px; color: #333;">Personnes intéressées</h3>
-                            <p style="font-size: 13px; color: #666; margin: 0;">Personne ne vous a encore contacté pour ce besoin.</p>
+                        <div style="margin-top: 20px; padding: 15px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;">
+                            <h3 style="margin:0 0 10px 0; font-size: 16px; color: var(--text);">Personnes intéressées</h3>
+                            <p style="font-size: 13px; color: var(--text-dim); margin: 0;">Personne ne vous a encore contacté pour ce besoin.</p>
                         </div>`;
                 } else {
                     const uniqueContacts = new Map();
@@ -2360,14 +2280,14 @@ async function openJobPreview(jobId) {
                     
                     if (uniqueContacts.size === 0) {
                         contactsContainer.innerHTML = `
-                            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                                <h3 style="margin:0 0 10px 0; font-size: 16px; color: #333;">Personnes intéressées</h3>
-                                <p style="font-size: 13px; color: #666; margin: 0;">Personne ne vous a encore contacté pour ce besoin.</p>
+                            <div style="margin-top: 20px; padding: 15px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;">
+                                <h3 style="margin:0 0 10px 0; font-size: 16px; color: var(--text);">Personnes intéressées</h3>
+                                <p style="font-size: 13px; color: var(--text-dim); margin: 0;">Personne ne vous a encore contacté pour ce besoin.</p>
                             </div>`;
                     } else {
                         let html = `
-                            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                                <h3 style="margin:0 0 10px 0; font-size: 16px; color: #333;">${uniqueContacts.size} personne(s) intéressée(s) :</h3>
+                            <div style="margin-top: 20px; padding: 15px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;">
+                                <h3 style="margin:0 0 10px 0; font-size: 16px; color: var(--text);">${uniqueContacts.size} personne(s) intéressée(s) :</h3>
                                 <div style="display: flex; flex-direction: column; gap: 10px;">`;
                         for (let [contactUid] of uniqueContacts) {
                             const userSnapshot = await db.ref(`profiles/${contactUid}`).once('value');
@@ -2376,11 +2296,11 @@ async function openJobPreview(jobId) {
                             const jobTitle = userData.jobTitle || 'Non spécifié';
                             const profileImg = userData.profileImage || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=25D366&color=fff';
                             html += `
-                                <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 5px; transition: background 0.2s;" onclick="viewUserProfile('${contactUid}')" onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='transparent'">
+                                <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 10px; transition: background 0.2s;" onclick="viewUserProfile('${contactUid}')" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
                                     <img src="${escapeHtml(profileImg)}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #25D366;">
                                     <div>
-                                        <div style="font-weight: bold; color: #333; font-size: 14px;">${escapeHtml(name)}</div>
-                                        <div style="font-size: 12px; color: #666;">${escapeHtml(jobTitle)}</div>
+                                        <div style="font-weight: bold; color: var(--text); font-size: 14px;">${escapeHtml(name)}</div>
+                                        <div style="font-size: 12px; color: var(--text-dim);">${escapeHtml(jobTitle)}</div>
                                     </div>
                                 </div>`;
                         }
@@ -2390,12 +2310,68 @@ async function openJobPreview(jobId) {
                 }
             } catch(e) {
                 console.error("Erreur chargement contacts", e);
-                contactsContainer.innerHTML = '<div style="margin-top: 15px; font-size: 14px; color: red;">Erreur de chargement.</div>';
+                contactsContainer.innerHTML = '<div style="margin-top: 15px; font-size: 14px; color: var(--danger);">Erreur de chargement.</div>';
             }
         }
     }
 
     document.getElementById('jobPreviewDrawer').classList.add('open');
+}
+
+// Pré-remplit le formulaire avec les données existantes pour modifier une annonce
+function editJobFromPreview() {
+    const job = window.currentPreviewJob;
+    if (!job) return;
+    if (!currentUser || job.user !== currentUser.uid) {
+        showToast('Vous ne pouvez modifier que vos propres publications', 'error');
+        return;
+    }
+
+    editingJobId = job.id;
+
+    document.getElementById('title').value = job.title || '';
+    document.getElementById('price').value = job.price || '';
+    document.getElementById('phone').value = job.phone || '';
+    document.getElementById('landmark').value = job.landmark || '';
+    document.getElementById('desc').value = job.desc || '';
+
+    const catSelect = document.getElementById('category');
+    if (catSelect) {
+        const opt = Array.from(catSelect.options).find(o => o.value.split('|')[0] === job.icon);
+        if (opt) catSelect.value = opt.value;
+    }
+
+    const inputLat = document.getElementById('jobLat');
+    const inputLng = document.getElementById('jobLng');
+    if (inputLat) inputLat.value = job.lat;
+    if (inputLng) inputLng.value = job.lng;
+
+    const publishBtn = document.getElementById('publishBtn');
+    if (publishBtn) publishBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Enregistrer les modifications';
+
+    document.getElementById('jobPreviewDrawer').classList.remove('open');
+    document.getElementById('jobFormSheet').classList.add('open');
+    showToast('Modifiez les champs puis validez', 'info');
+}
+
+// Supprime l'annonce actuellement affichée dans le drawer (réservé au propriétaire)
+async function deleteJobFromPreview() {
+    const job = window.currentPreviewJob;
+    if (!job) return;
+    if (!currentUser || job.user !== currentUser.uid) {
+        showToast('Vous ne pouvez supprimer que vos propres publications', 'error');
+        return;
+    }
+    if (!confirm('Supprimer définitivement cette annonce ?')) return;
+    try {
+        await db.ref('jobs/' + job.id).remove();
+        showToast('Annonce supprimée', 'success');
+        document.getElementById('jobPreviewDrawer').classList.remove('open');
+        syncJobs();
+    } catch (e) {
+        console.error(e);
+        showToast('Erreur lors de la suppression', 'error');
+    }
 }
 
 // ==========================================
@@ -2824,7 +2800,17 @@ document.addEventListener('click', (e) => {
     </div>
     
     <div class="drawer-footer">
-        <button class="btn btn-green" onclick="contactViaWhatsAppFromPreview()">
+        <div id="previewOwnerActions" class="hidden">
+            <button class="btn btn-primary" onclick="editJobFromPreview()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Modifier l'annonce
+            </button>
+            <button class="btn btn-danger" onclick="deleteJobFromPreview()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                Supprimer l'annonce
+            </button>
+        </div>
+        <button class="btn btn-green" id="previewWhatsAppBtn" onclick="contactViaWhatsAppFromPreview()">
             <span style="font-size:18px;">📞</span> WhatsApp
         </button>
         <button class="btn btn-blue" onclick="shareJobViaWhatsApp()">
