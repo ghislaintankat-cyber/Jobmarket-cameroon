@@ -889,10 +889,14 @@ body{
     </div>
   </div>
   <div class="topbar-right">
-    <button class="icon-btn" id="notifBtn" style="position:relative;" onclick="showToast('Aucune nouvelle notification','info')">
+    <button class="icon-btn" id="notifBtn" style="position:relative;" onclick="toggleNotifPanel()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <div class="notif-dot"></div>
+      <div class="notif-dot" id="notifDot" style="display:none;"></div>
     </button>
+    <div id="notifPanel" style="display:none;position:absolute;top:60px;right:16px;width:320px;max-height:400px;overflow-y:auto;background:var(--dark);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:2000;">
+      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:700;">Nouveaux jobs</div>
+      <div id="notifList" style="padding:8px;"></div>
+    </div>
     <button class="post-btn" onclick="toggleJobForm()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Publier
@@ -1679,6 +1683,8 @@ function syncJobs() {
         const maxDist = allJobs[allJobs.length-1].dist;
         document.getElementById('maxDistDisplay').textContent = maxDist.toFixed(1);
       }
+
+      if (typeof refreshNotifPanel === 'function') refreshNotifPanel();
     });
   } catch(e) {
     console.error('Sync jobs error:', e);
@@ -2049,6 +2055,16 @@ function registerPushToken() {
           })
           .catch(err => console.warn('Jeton notification indisponible:', err.message));
       });
+
+      // Gère les notifications reçues pendant que l'onglet est ouvert et actif
+      // (le fichier firebase-messaging-sw.js ne gère, lui, que l'arrière-plan)
+      messaging.onMessage(payload => {
+        const title = (payload.notification && payload.notification.title) || 'JobMarket Cameroon';
+        const body = (payload.notification && payload.notification.body) || '';
+        if (Notification.permission === 'granted') {
+          registration.showNotification(title, { body, icon: 'icon-192.png' });
+        }
+      });
     })
     .catch(err => console.warn('Service worker de notifications indisponible:', err.message));
 }
@@ -2059,6 +2075,7 @@ let chargementInitialJobs = true;
 // On attend que Firebase finisse de charger les anciens jobs au démarrage
 db.ref('jobs').once('value', () => {
   chargementInitialJobs = false;
+  refreshNotifPanel();
 });
 
 // Dès qu'un NOUVEAU job est validé dans la base de données au Cameroun
@@ -2070,7 +2087,65 @@ db.ref('jobs').limitToLast(1).on('child_added', (snapshot) => {
   
   // On utilise ta fonction showToast pour afficher la bulle d'alerte en direct !
   showToast(`🎉 Nouveau job : ${nouveauJob.title} (${nouveauJob.landmark || 'Cameroun'}) vient d'être publié !`, 'info');
+  refreshNotifPanel();
 });
+
+// ===== PANNEAU DE NOTIFICATIONS (jobs manqués depuis la dernière visite) =====
+const NOTIF_SEEN_KEY = 'jobmarket_dernier_vu';
+
+function getLastSeenNotifTime() {
+  const stored = localStorage.getItem(NOTIF_SEEN_KEY);
+  return stored ? parseInt(stored, 10) : Date.now();
+}
+
+function timeAgo(timestamp) {
+  const diffMin = Math.floor((Date.now() - timestamp) / 60000);
+  if (diffMin < 1) return "à l'instant";
+  if (diffMin < 60) return `il y a ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `il y a ${diffH} h`;
+  return `il y a ${Math.floor(diffH / 24)} j`;
+}
+
+function refreshNotifPanel() {
+  const lastSeen = getLastSeenNotifTime();
+  const newJobs = allJobs.filter(j => j.timestamp > lastSeen).sort((a, b) => b.timestamp - a.timestamp);
+
+  const dot = document.getElementById('notifDot');
+  if (dot) dot.style.display = newJobs.length > 0 ? 'block' : 'none';
+
+  const list = document.getElementById('notifList');
+  if (!list) return;
+
+  if (newJobs.length === 0) {
+    list.innerHTML = '<div style="padding:16px;color:var(--text-dim);text-align:center;font-size:13px;">Aucun nouveau job pour l\'instant</div>';
+    return;
+  }
+
+  list.innerHTML = newJobs.map(j => `
+    <div style="padding:10px 8px;border-radius:8px;cursor:pointer;" onclick="closeNotifPanel();focusJob(${j.lat}, ${j.lng})" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      <div style="font-weight:600;font-size:13px;">${escapeHtml(j.title)}</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${escapeHtml(j.landmark) || getCatLabel(j.icon)} · ${timeAgo(j.timestamp)}</div>
+    </div>
+  `).join('');
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  const isOpen = panel.style.display === 'block';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    refreshNotifPanel();
+    // Marque comme vues : la prochaine ouverture ne montrera que les jobs postérieurs à maintenant
+    localStorage.setItem(NOTIF_SEEN_KEY, Date.now().toString());
+    setTimeout(() => { const dot = document.getElementById('notifDot'); if (dot) dot.style.display = 'none'; }, 300);
+  }
+}
+
+function closeNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  if (panel) panel.style.display = 'none';
+}
 
   // ===== PUBLIER UN JOB PAR APPUI LONG SUR LA CARTE =====
 map.on('contextmenu', function(e) {
