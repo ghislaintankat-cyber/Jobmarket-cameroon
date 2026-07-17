@@ -774,17 +774,29 @@ body{
     </div>
   </div>
   <div class="topbar-right">
+    <div style="position:relative;">
+      <button class="icon-btn" id="langBtn" onclick="toggleLangMenu()" title="Language / Langue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </button>
+      <div id="langMenu" style="display:none;position:absolute;top:48px;right:0;background:var(--dark);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:2100;min-width:170px;overflow:hidden;">
+        <button class="lang-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇫🇷 Français</button>
+        <button class="lang-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇬🇧 English</button>
+        <button class="lang-option" onclick="setLanguage('it')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇮🇹 Italiano</button>
+        <button class="lang-option" onclick="setLanguage('de')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇩🇪 Deutsch</button>
+        <button class="lang-option" onclick="setLanguage('zh')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇨🇳 中文</button>
+      </div>
+    </div>
     <button class="icon-btn" id="notifBtn" style="position:relative;" onclick="toggleNotifPanel()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <div class="notif-dot" id="notifDot" style="display:none;"></div>
     </button>
     <div id="notifPanel" style="display:none;position:absolute;top:60px;right:16px;width:320px;max-height:400px;overflow-y:auto;background:var(--dark);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:2000;">
-      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:700;">Nouveaux jobs</div>
+      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:700;" data-i18n="notifTitle">Nouveaux jobs</div>
       <div id="notifList" style="padding:8px;"></div>
     </div>
     <button class="post-btn" onclick="toggleJobForm()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Publier
+      <span data-i18n="publishBtn">Publier</span>
     </button>
   </div>
 </header>
@@ -793,54 +805,54 @@ body{
 <nav class="category-bar">
   <button class="cat-btn active" onclick="filterJobs('all',this)">
     <div class="cat-dot" style="background:var(--gold)"></div>
-    Tous
+    <span data-i18n="catAll">Tous</span>
   </button>
   <button class="cat-btn" onclick="filterJobs('btp',this)">
     <div class="cat-dot" style="background:#FF9500"></div>
-    BTP
+    <span data-i18n="catBtp">BTP</span>
   </button>
   <button class="cat-btn" onclick="filterJobs('electricite',this)">
     <div class="cat-dot" style="background:#FFD700"></div>
-    Electricite
+    <span data-i18n="catElec">Electricite</span>
   </button>
   <button class="cat-btn" onclick="filterJobs('plomberie',this)">
     <div class="cat-dot" style="background:#007AFF"></div>
-    Plomberie
+    <span data-i18n="catPlomberie">Plomberie</span>
   </button>
   <button class="cat-btn" onclick="filterJobs('menage',this)">
     <div class="cat-dot" style="background:#25D366"></div>
-    Menage
+    <span data-i18n="catMenage">Menage</span>
   </button>
   <button class="cat-btn" onclick="filterJobs('jardinage',this)">
     <div class="cat-dot" style="background:#34C759"></div>
-    Jardinage
+    <span data-i18n="catJardinage">Jardinage</span>
   </button>
   <button class="cat-btn" onclick="filterJobs('mecanique',this)">
     <div class="cat-dot" style="background:#FF3B30"></div>
-    Mecanique
+    <span data-i18n="catMecanique">Mecanique</span>
   </button>
   <button class="cat-btn" onclick="filterJobs('informatique',this)">
     <div class="cat-dot" style="background:#AF52DE"></div>
-    Informatique
+    <span data-i18n="catInfo">Informatique</span>
   </button>
 </nav>
 
 <!-- ===== SIDE CONTROLS ===== -->
 <div class="side-controls">
-  <button class="side-btn" onclick="locateMe()" title="Ma position">
+  <button class="side-btn" onclick="locateMe()" data-i18n-title="tipLocate" title="Ma position">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
   </button>
-  <button class="side-btn" onclick="map.zoomIn()" title="Zoom +">
+  <button class="side-btn" onclick="map.zoomIn()" data-i18n-title="tipZoomIn" title="Zoom +">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </button>
-  <button class="side-btn" onclick="map.zoomOut()" title="Zoom -">
+  <button class="side-btn" onclick="map.zoomOut()" data-i18n-title="tipZoomOut" title="Zoom -">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </button>
-  <button class="side-btn" onclick="toggleMapStyle()" title="Style carte" id="mapStyleBtn">
+  <button class="side-btn" onclick="toggleMapStyle()" data-i18n-title="tipMapStyle" title="Style carte" id="mapStyleBtn">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
   </button>
   <div class="dist-badge">
-    <div class="dist-badge-label">Distance</div>
+    <div class="dist-badge-label" data-i18n="distanceLabel">Distance</div>
     <div class="dist-badge-value" id="maxDistDisplay">--</div>
     <div class="dist-badge-label">km</div>
   </div>
@@ -848,17 +860,17 @@ body{
 
 <!-- ===== ITINERARY PANEL (hidden by default) ===== -->
 <div class="itin-panel hidden" id="itinPanel">
-  <div class="itin-label">Itineraire</div>
+  <div class="itin-label" data-i18n="itinLabel">Itineraire</div>
   <div class="itin-value" id="itinDist">--</div>
-  <div class="itin-sub" id="itinTime">Calcul en cours...</div>
-  <button style="width:100%;margin-top:10px;padding:8px;background:var(--danger);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;" onclick="clearRoute()">Annuler</button>
+  <div class="itin-sub" id="itinTime" data-i18n="calculating">Calcul en cours...</div>
+  <button style="width:100%;margin-top:10px;padding:8px;background:var(--danger);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;" onclick="clearRoute()" data-i18n="cancelBtn">Annuler</button>
 </div>
 
 <!-- ===== JOB PUBLISH FORM SHEET ===== -->
 <div class="sheet" id="jobFormSheet">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
-    <div class="sheet-title">Publier un Job</div>
+    <div class="sheet-title" data-i18n="publishTitle">Publier un Job</div>
     <button class="icon-btn" onclick="toggleJobForm()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
@@ -868,54 +880,54 @@ body{
     <input type="hidden" id="jobLng" value="">
     
     <div class="form-group">
-      <label class="form-label">Categorie</label>
+      <label class="form-label" data-i18n="fieldCategory">Categorie</label>
       <select class="form-select" id="category">
-        <option value="btp|#FF9500">BTP / Maconnerie</option>
-        <option value="electricite|#FFD700">Electricite</option>
-        <option value="plomberie|#007AFF">Plomberie</option>
-        <option value="menage|#25D366">Menage / Nettoyage</option>
-        <option value="jardinage|#34C759">Jardinage</option>
-        <option value="mecanique|#FF3B30">Mecanique Auto</option>
-        <option value="informatique|#AF52DE">Informatique</option>
+        <option value="btp|#FF9500" data-i18n="optBtp">BTP / Maconnerie</option>
+        <option value="electricite|#FFD700" data-i18n="optElec">Electricite</option>
+        <option value="plomberie|#007AFF" data-i18n="optPlomberie">Plomberie</option>
+        <option value="menage|#25D366" data-i18n="optMenage">Menage / Nettoyage</option>
+        <option value="jardinage|#34C759" data-i18n="optJardinage">Jardinage</option>
+        <option value="mecanique|#FF3B30" data-i18n="optMecanique">Mecanique Auto</option>
+        <option value="informatique|#AF52DE" data-i18n="optInfo">Informatique</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Titre du job</label>
-      <input class="form-input" id="title" type="text" placeholder="Ex: Pose de carrelage salle de bain" required minlength="5" maxlength="150"/>
+      <label class="form-label" data-i18n="fieldTitle">Titre du job</label>
+      <input class="form-input" id="title" type="text" data-i18n-placeholder="phTitle" placeholder="Ex: Pose de carrelage salle de bain" required minlength="5" maxlength="150"/>
     </div>
     <div class="form-group">
-      <label class="form-label">Description</label>
-      <textarea class="form-textarea" id="desc" placeholder="Decrivez le travail a effectuer..." required minlength="10" maxlength="3000"></textarea>
+      <label class="form-label" data-i18n="fieldDesc">Description</label>
+      <textarea class="form-textarea" id="desc" data-i18n-placeholder="phDesc" placeholder="Decrivez le travail a effectuer..." required minlength="10" maxlength="3000"></textarea>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group">
-        <label class="form-label">Prix (XAF)</label>
-        <input class="form-input" id="price" type="text" placeholder="Ex: 15 000 XAF" required maxlength="30"/>
+        <label class="form-label" data-i18n="fieldPrice">Prix (XAF)</label>
+        <input class="form-input" id="price" type="text" data-i18n-placeholder="phPrice" placeholder="Ex: 15 000 XAF" required maxlength="30"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Telephone</label>
+        <label class="form-label" data-i18n="fieldPhone">Telephone</label>
         <input class="form-input" id="phone" type="tel" placeholder="6XX XXX XXX" required pattern="[0-9 ]{9,15}" title="Numero de telephone valide, ex: 6XX XXX XXX" maxlength="20"/>
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Repere / Quartier</label>
-      <input class="form-input" id="landmark" type="text" placeholder="Ex: Bastos, pres du rond-point..." maxlength="150"/>
+      <label class="form-label" data-i18n="fieldLandmark">Repere / Quartier</label>
+      <input class="form-input" id="landmark" type="text" data-i18n-placeholder="phLandmark" placeholder="Ex: Bastos, pres du rond-point..." maxlength="150"/>
     </div>
     <div class="form-group">
-      <label class="form-label">Photos (jusqu'a 5)</label>
+      <label class="form-label" data-i18n="fieldPhotos">Photos (jusqu'a 5)</label>
       <div class="upload-zone" onclick="document.getElementById('jobImages').click()">
         <div class="upload-icon">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
         </div>
-        <div class="upload-title">Ajouter des photos</div>
-        <div class="upload-sub">JPG, PNG, WEBP — Max 5 images, 8 Mo chacune</div>
+        <div class="upload-title" data-i18n="uploadTitle">Ajouter des photos</div>
+        <div class="upload-sub" data-i18n="uploadSub">JPG, PNG, WEBP — Max 5 images, 8 Mo chacune</div>
         <input type="file" id="jobImages" multiple accept="image/*" onchange="previewImages(this)"/>
       </div>
       <div class="image-previews" id="imagePreviews"></div>
     </div>
     <button class="btn btn-primary" id="publishBtn" onclick="addJob()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      Publier maintenant
+      <span data-i18n="publishNow">Publier maintenant</span>
     </button>
   </div>
 </div>
@@ -925,7 +937,7 @@ body{
   <div class="sheet-handle"></div>
   <div class="sheet-header">
     <div class="sheet-title">
-      Jobs proches
+      <span data-i18n="jobsNearby">Jobs proches</span>
       <span class="badge badge-gold" id="jobCountBadge">0</span>
     </div>
     <button class="icon-btn" onclick="closeSheet('jobsSheet')">
@@ -936,8 +948,8 @@ body{
     <div id="listContent">
       <div class="empty-state">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <div class="empty-title">Aucun job trouve</div>
-        <div class="empty-sub">Publiez le premier job dans cette zone</div>
+        <div class="empty-title" data-i18n="emptyTitle">Aucun job trouve</div>
+        <div class="empty-sub" data-i18n="emptySub">Publiez le premier job dans cette zone</div>
       </div>
     </div>
   </div>
@@ -949,20 +961,20 @@ body{
     <button class="back-btn" onclick="closeOverlay('accountPage')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <div class="overlay-title">Mon Compte</div>
+    <div class="overlay-title" data-i18n="myAccount">Mon Compte</div>
   </div>
   <div class="overlay-body">
     <!-- Avatar -->
     <div id="userAvatar" class="avatar">JM</div>
-    <div class="account-name" id="accountName">Utilisateur</div>
-    <div class="account-email" id="accountEmail">Non connecte</div>
-    <div class="account-status" id="profileStatus">Profil incomplet</div>
+    <div class="account-name" id="accountName" data-i18n="userFallback">Utilisateur</div>
+    <div class="account-email" id="accountEmail" data-i18n="notConnected">Non connecte</div>
+    <div class="account-status" id="profileStatus" data-i18n="profileIncomplete">Profil incomplet</div>
 
     <!-- Auth Section (shown when not logged in) -->
     <div id="authSection">
       <div class="auth-tabs">
-        <button class="auth-tab active" onclick="switchAuthTab('signup')">Creer compte</button>
-        <button class="auth-tab" onclick="switchAuthTab('login')">Connexion</button>
+        <button class="auth-tab active" onclick="switchAuthTab('signup')" data-i18n="tabSignup">Creer compte</button>
+        <button class="auth-tab" onclick="switchAuthTab('login')" data-i18n="tabLogin">Connexion</button>
       </div>
       <div id="authForm">
         <div class="form-group">
@@ -970,20 +982,20 @@ body{
           <input class="form-input" id="email" type="email" placeholder="exemple@email.com" required maxlength="100"/>
         </div>
         <div class="form-group">
-          <label class="form-label">Mot de passe</label>
-          <input class="form-input" id="password" type="password" placeholder="Minimum 6 caracteres" required minlength="6" maxlength="100"/>
+          <label class="form-label" data-i18n="fieldPassword">Mot de passe</label>
+          <input class="form-input" id="password" type="password" data-i18n-placeholder="phPassword" placeholder="Minimum 6 caracteres" required minlength="6" maxlength="100"/>
         </div>
         <button class="btn btn-primary" id="authMainBtn" onclick="signupEmail()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Creer mon compte
+          <span data-i18n="createAccountBtn">Creer mon compte</span>
         </button>
         <div id="forgotPasswordLink" class="hidden" style="text-align:center;margin-top:10px;">
-          <a href="#" onclick="forgotPassword(); return false;" style="font-size:13px;color:var(--text-dim,#8888A8);text-decoration:underline;">Mot de passe oublié ?</a>
+          <a href="#" onclick="forgotPassword(); return false;" style="font-size:13px;color:var(--text-dim,#8888A8);text-decoration:underline;" data-i18n="forgotPassword">Mot de passe oublié ?</a>
         </div>
-        <div class="divider"><div class="divider-line"></div><div class="divider-text">ou</div><div class="divider-line"></div></div>
+        <div class="divider"><div class="divider-line"></div><div class="divider-text" data-i18n="orWord">ou</div><div class="divider-line"></div></div>
         <button class="btn btn-google" onclick="loginGoogle()">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-          Continuer avec Google
+          <span data-i18n="continueGoogle">Continuer avec Google</span>
         </button>
       </div>
     </div>
@@ -996,7 +1008,7 @@ body{
       <div class="account-item-icon" style="background:rgba(255,215,0,0.15);">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       </div>
-      <span>Dashboard Admin</span>
+      <span data-i18n="adminDashboard">Dashboard Admin</span>
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
 
@@ -1004,7 +1016,7 @@ body{
       <div class="account-item-icon" style="background:rgba(0,122,255,0.15);">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       </div>
-      <span>Chat sécurisé</span>
+      <span data-i18n="secureChat">Chat sécurisé</span>
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
 
@@ -1012,7 +1024,7 @@ body{
       <div class="account-item-icon" style="background:rgba(37,211,102,0.12);">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
       </div>
-      <span>Mes publications</span>
+      <span data-i18n="myListings">Mes publications</span>
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
 
@@ -1020,7 +1032,7 @@ body{
       <div class="account-item-icon" style="background:rgba(255,255,255,0.12);">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </div>
-      <span>Mon Profil Pro</span>
+      <span data-i18n="myProProfile">Mon Profil Pro</span>
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
 
@@ -1028,7 +1040,7 @@ body{
 
    <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    Déconnexion
+    <span data-i18n="logout">Déconnexion</span>
   </button>
 </div>
   </div>
@@ -1040,32 +1052,32 @@ body{
     <button class="back-btn" onclick="closeOverlay('adminPanel')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <div class="overlay-title">Dashboard Admin</div>
-    <span class="badge badge-gold" style="margin-left:auto;">ADMIN</span>
+    <div class="overlay-title" data-i18n="adminDashboard">Dashboard Admin</div>
+    <span class="badge badge-gold" style="margin-left:auto;" data-i18n="adminBadge">ADMIN</span>
   </div>
   <div class="overlay-body">
     <div class="admin-grid">
       <div class="admin-stat">
         <div class="admin-stat-val" id="adminTotalJobs">0</div>
-        <div class="admin-stat-label">Jobs total</div>
+        <div class="admin-stat-label" data-i18n="adminStatJobsTotal">Jobs total</div>
       </div>
       <div class="admin-stat">
         <div class="admin-stat-val" id="adminTotalUsers">0</div>
-        <div class="admin-stat-label">Utilisateurs</div>
+        <div class="admin-stat-label" data-i18n="adminStatUsers">Utilisateurs</div>
       </div>
       <div class="admin-stat">
         <div class="admin-stat-val" id="adminTodayJobs">0</div>
-        <div class="admin-stat-label">Publies aujourd'hui</div>
+        <div class="admin-stat-label" data-i18n="adminStatToday">Publies aujourd'hui</div>
       </div>
       <div class="admin-stat">
         <div class="admin-stat-val">CM</div>
-        <div class="admin-stat-label">Pays actif</div>
+        <div class="admin-stat-label" data-i18n="adminStatCountry">Pays actif</div>
       </div>
     </div>
-    <div class="section-title">Vérifications en attente</div>
+    <div class="section-title" data-i18n="adminVerificationsTitle">Vérifications en attente</div>
     <div id="adminVerificationsList"></div>
 
-    <div class="section-title">Tous les jobs</div>
+    <div class="section-title" data-i18n="adminAllJobsTitle">Tous les jobs</div>
     <div id="adminJobsList"></div>
   </div>
 </div>
@@ -1076,21 +1088,21 @@ body{
     <button class="back-btn" onclick="closeOverlay('chatPage')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
-    <div class="overlay-title">Assistant sécurisé</div>
-    <span class="badge badge-green">Hors ligne · privé</span>
+    <div class="overlay-title" data-i18n="chatPanelTitle">Assistant sécurisé</div>
+    <span class="badge badge-green" data-i18n="chatOfflineBadge">Hors ligne · privé</span>
   </div>
   <div class="chat-messages" id="chatMessages">
-    <div class="chat-msg theirs">Bonjour ! Je peux vous aider à utiliser JobMarket, publier une demande, trouver un artisan, comprendre les prix et repérer les signaux de fraude. Mes réponses restent sur cet appareil.</div>
+    <div class="chat-msg theirs" data-i18n="chatWelcomeMsg">Bonjour ! Je peux vous aider à utiliser JobMarket, publier une demande, trouver un artisan, comprendre les prix et repérer les signaux de fraude. Mes réponses restent sur cet appareil.</div>
   </div>
   <div class="chat-suggestions" aria-label="Questions fréquentes">
-    <button class="chat-suggestion" type="button" onclick="askChatSuggestion(this)">Comment publier un job ?</button>
-    <button class="chat-suggestion" type="button" onclick="askChatSuggestion(this)">Comment éviter une arnaque ?</button>
-    <button class="chat-suggestion" type="button" onclick="askChatSuggestion(this)">Comment calculer ma marge ?</button>
-    <button class="chat-suggestion" type="button" onclick="askChatSuggestion(this)">Comment gérer mes publications ?</button>
+    <button class="chat-suggestion" type="button" data-query="Comment publier un job ?" data-i18n="chatSuggestion1" onclick="askChatSuggestion(this)">Comment publier un job ?</button>
+    <button class="chat-suggestion" type="button" data-query="Comment éviter une arnaque ?" data-i18n="chatSuggestion2" onclick="askChatSuggestion(this)">Comment éviter une arnaque ?</button>
+    <button class="chat-suggestion" type="button" data-query="Comment calculer ma marge ?" data-i18n="chatSuggestion3" onclick="askChatSuggestion(this)">Comment calculer ma marge ?</button>
+    <button class="chat-suggestion" type="button" data-query="Comment gérer mes publications ?" data-i18n="chatSuggestion4" onclick="askChatSuggestion(this)">Comment gérer mes publications ?</button>
   </div>
-  <div class="chat-safety">Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d’identité dans le chat.</div>
+  <div class="chat-safety" data-i18n="chatSafetyNotice">Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d’identité dans le chat.</div>
   <div class="chat-input-row">
-    <input class="chat-input" id="chatInput" type="text" placeholder="Votre message..." onkeypress="handleChatKey(event)"/>
+    <input class="chat-input" id="chatInput" type="text" data-i18n-placeholder="chatInputPlaceholder" placeholder="Votre message..." onkeypress="handleChatKey(event)"/>
     <button class="chat-send" onclick="sendChatMessage()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
@@ -1232,6 +1244,302 @@ function vibrateDevice(ms) {
     if (navigator.vibrate) navigator.vibrate(ms);
   } catch (e) { /* ignore silencieusement si le navigateur refuse l'appel */ }
 }
+
+// ===== INTERNATIONALISATION (FR / EN / IT / DE / ZH) =====
+const I18N = {
+  fr: {
+    notifTitle: "Nouveaux jobs", publishBtn: "Publier",
+    catAll: "Tous", catBtp: "BTP", catElec: "Electricite", catPlomberie: "Plomberie",
+    catMenage: "Menage", catJardinage: "Jardinage", catMecanique: "Mecanique", catInfo: "Informatique",
+    tipLocate: "Ma position", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Style carte",
+    distanceLabel: "Distance", itinLabel: "Itineraire", calculating: "Calcul en cours...", cancelBtn: "Annuler",
+    publishTitle: "Publier un Job", fieldCategory: "Categorie",
+    optBtp: "BTP / Maconnerie", optElec: "Electricite", optPlomberie: "Plomberie", optMenage: "Menage / Nettoyage",
+    optJardinage: "Jardinage", optMecanique: "Mecanique Auto", optInfo: "Informatique",
+    fieldTitle: "Titre du job", phTitle: "Ex: Pose de carrelage salle de bain",
+    fieldDesc: "Description", phDesc: "Decrivez le travail a effectuer...",
+    fieldPrice: "Prix (XAF)", phPrice: "Ex: 15 000 XAF",
+    fieldPhone: "Telephone", fieldLandmark: "Repere / Quartier", phLandmark: "Ex: Bastos, pres du rond-point...",
+    fieldPhotos: "Photos (jusqu'a 5)", uploadTitle: "Ajouter des photos",
+    uploadSub: "JPG, PNG, WEBP — Max 5 images, 8 Mo chacune", publishNow: "Publier maintenant",
+    jobsNearby: "Jobs proches", emptyTitle: "Aucun job trouve", emptySub: "Publiez le premier job dans cette zone",
+    myAccount: "Mon Compte", userFallback: "Utilisateur", notConnected: "Non connecte", profileIncomplete: "Profil incomplet",
+    tabSignup: "Creer compte", tabLogin: "Connexion", fieldPassword: "Mot de passe", phPassword: "Minimum 6 caracteres",
+    createAccountBtn: "Creer mon compte", loginBtn: "Se connecter", forgotPassword: "Mot de passe oublié ?", orWord: "ou", continueGoogle: "Continuer avec Google",
+    adminDashboard: "Dashboard Admin", secureChat: "Chat sécurisé", myListings: "Mes publications", myProProfile: "Mon Profil Pro",
+    logout: "Déconnexion", artisanProfile: "Profil de l'artisan",
+    descNeed: "Description du besoin :", editListing: "Modifier l'annonce", deleteListing: "Supprimer l'annonce",
+    shareWhatsApp: "Partager sur WhatsApp", seeItinerary: "Voir l'itinéraire",
+    photoWord: "Photo", changePhoto: "Changer photo", fieldNameCompany: "Nom / Société", phName: "Ex: Jean Dupont ou Dupont Entreprise",
+    fieldCompany: "Société", fieldJobTitle: "Ton métier / Spécialité", phJobTitle: "Ex: Électricien, Maçon, Designer...",
+    fieldSkills: "Compétences (séparées par des virgules)", phSkills: "Ex: Installation de compteurs, Dépannage d'urgence, Câblage...",
+    saveChanges: "Enregistrer les modifications",
+    emailVerified: "Email vérifié", emailNotVerified: "Email non vérifié — cliquez le lien reçu par email à l'inscription.",
+    profileVerified: "Profil vérifié", requestSent: "⏳ Demande envoyée, en attente de validation.",
+    profileNotVerified: "Profil non vérifié. Une pièce d'identité ou une preuve de métier peut débloquer le badge ✓.",
+    requestVerificationBtn: "Demander la vérification",
+    referralProgram: "Programme de parrainage",
+    referralExplain: "Invitez des artisans/clients avec votre lien. Tous les 3 filleuls inscrits, vous débloquez une mise en avant gratuite (7 jours) pour une de vos annonces.",
+    copyBtn: "Copier", referralCountText: "{count} filleul(s) inscrit(s) — plus que {next} pour votre prochain crédit.",
+    creditsAvailable: "{credits} crédit(s) de mise en avant disponible(s)", publishToBoost: "Publiez une annonce pour pouvoir la booster.",
+    activeBoost: "Actif", boostBtn: "Booster",
+    chatPanelTitle: "Assistant sécurisé", chatOfflineBadge: "Hors ligne · privé",
+    chatWelcomeMsg: "Bonjour ! Je peux vous aider à utiliser JobMarket, publier une demande, trouver un artisan, comprendre les prix et repérer les signaux de fraude. Mes réponses restent sur cet appareil.",
+    chatSuggestion1: "Comment publier un job ?", chatSuggestion2: "Comment éviter une arnaque ?",
+    chatSuggestion3: "Comment calculer ma marge ?", chatSuggestion4: "Comment gérer mes publications ?",
+    chatSafetyNotice: "Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d'identité dans le chat.",
+    chatInputPlaceholder: "Votre message...",
+    chatFrenchOnlyNotice: "(Réponses détaillées disponibles en français pour le moment)",
+    adminBadge: "ADMIN", adminStatJobsTotal: "Jobs total", adminStatUsers: "Utilisateurs",
+    adminStatToday: "Publiés aujourd'hui", adminStatCountry: "Pays actif",
+    adminVerificationsTitle: "Vérifications en attente", adminAllJobsTitle: "Tous les jobs",
+    adminLoading: "Chargement...", adminNoPending: "Aucune demande en attente.",
+    adminNoName: "Sans nom", adminNoJobTitle: "Métier non renseigné",
+    adminApprove: "Valider ✓", adminReject: "Refuser", adminAnonymous: "Anonyme", adminDeleteBtn: "Suppr."
+  },
+  en: {
+    notifTitle: "New jobs", publishBtn: "Post",
+    catAll: "All", catBtp: "Construction", catElec: "Electrical", catPlomberie: "Plumbing",
+    catMenage: "Cleaning", catJardinage: "Gardening", catMecanique: "Mechanics", catInfo: "IT",
+    tipLocate: "My location", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Map style",
+    distanceLabel: "Distance", itinLabel: "Route", calculating: "Calculating...", cancelBtn: "Cancel",
+    publishTitle: "Post a Job", fieldCategory: "Category",
+    optBtp: "Construction / Masonry", optElec: "Electrical", optPlomberie: "Plumbing", optMenage: "Cleaning",
+    optJardinage: "Gardening", optMecanique: "Auto Mechanics", optInfo: "IT Services",
+    fieldTitle: "Job title", phTitle: "E.g: Bathroom tiling",
+    fieldDesc: "Description", phDesc: "Describe the work needed...",
+    fieldPrice: "Price (XAF)", phPrice: "E.g: 15,000 XAF",
+    fieldPhone: "Phone", fieldLandmark: "Landmark / Neighborhood", phLandmark: "E.g: Bastos, near the roundabout...",
+    fieldPhotos: "Photos (up to 5)", uploadTitle: "Add photos",
+    uploadSub: "JPG, PNG, WEBP — Max 5 images, 8 MB each", publishNow: "Publish now",
+    jobsNearby: "Nearby jobs", emptyTitle: "No jobs found", emptySub: "Post the first job in this area",
+    myAccount: "My Account", userFallback: "User", notConnected: "Not logged in", profileIncomplete: "Incomplete profile",
+    tabSignup: "Sign up", tabLogin: "Log in", fieldPassword: "Password", phPassword: "Minimum 6 characters",
+    createAccountBtn: "Create my account", loginBtn: "Log in", forgotPassword: "Forgot password?", orWord: "or", continueGoogle: "Continue with Google",
+    adminDashboard: "Admin Dashboard", secureChat: "Secure chat", myListings: "My listings", myProProfile: "My Pro Profile",
+    logout: "Log out", artisanProfile: "Provider's profile",
+    descNeed: "Job description:", editListing: "Edit listing", deleteListing: "Delete listing",
+    shareWhatsApp: "Share on WhatsApp", seeItinerary: "See route",
+    photoWord: "Photo", changePhoto: "Change photo", fieldNameCompany: "Name / Company", phName: "E.g: John Doe or Doe Company",
+    fieldCompany: "Company", fieldJobTitle: "Your trade / Specialty", phJobTitle: "E.g: Electrician, Mason, Designer...",
+    fieldSkills: "Skills (comma-separated)", phSkills: "E.g: Meter installation, Emergency repairs, Wiring...",
+    saveChanges: "Save changes",
+    emailVerified: "Email verified", emailNotVerified: "Email not verified — click the link sent to your email at signup.",
+    profileVerified: "Verified profile", requestSent: "⏳ Request sent, pending approval.",
+    profileNotVerified: "Unverified profile. An ID or proof of trade can unlock the ✓ badge.",
+    requestVerificationBtn: "Request verification",
+    referralProgram: "Referral program",
+    referralExplain: "Invite providers/clients with your link. Every 3 signups, you unlock a free 7-day boost for one of your listings.",
+    copyBtn: "Copy", referralCountText: "{count} referral(s) — {next} more to your next credit.",
+    creditsAvailable: "{credits} boost credit(s) available", publishToBoost: "Post a listing to be able to boost it.",
+    activeBoost: "Active", boostBtn: "Boost",
+    chatPanelTitle: "Secure Assistant", chatOfflineBadge: "Offline · private",
+    chatWelcomeMsg: "Hello! I can help you use JobMarket, post a request, find a tradesperson, understand pricing and spot fraud warning signs. My replies stay on this device.",
+    chatSuggestion1: "How do I post a job?", chatSuggestion2: "How do I avoid a scam?",
+    chatSuggestion3: "How do I calculate my margin?", chatSuggestion4: "How do I manage my listings?",
+    chatSafetyNotice: "No AI key, no message sent to an external model. Never share a password, SMS code, bank card or ID document in the chat.",
+    chatInputPlaceholder: "Your message...",
+    chatFrenchOnlyNotice: "(Detailed answers are currently available in French only)",
+    adminBadge: "ADMIN", adminStatJobsTotal: "Total jobs", adminStatUsers: "Users",
+    adminStatToday: "Posted today", adminStatCountry: "Active country",
+    adminVerificationsTitle: "Pending verifications", adminAllJobsTitle: "All jobs",
+    adminLoading: "Loading...", adminNoPending: "No pending requests.",
+    adminNoName: "No name", adminNoJobTitle: "Profession not specified",
+    adminApprove: "Approve ✓", adminReject: "Reject", adminAnonymous: "Anonymous", adminDeleteBtn: "Delete"
+  },
+  it: {
+    notifTitle: "Nuovi lavori", publishBtn: "Pubblica",
+    catAll: "Tutti", catBtp: "Edilizia", catElec: "Elettricità", catPlomberie: "Idraulica",
+    catMenage: "Pulizie", catJardinage: "Giardinaggio", catMecanique: "Meccanica", catInfo: "Informatica",
+    tipLocate: "La mia posizione", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Stile mappa",
+    distanceLabel: "Distanza", itinLabel: "Itinerario", calculating: "Calcolo in corso...", cancelBtn: "Annulla",
+    publishTitle: "Pubblica un lavoro", fieldCategory: "Categoria",
+    optBtp: "Edilizia / Muratura", optElec: "Elettricità", optPlomberie: "Idraulica", optMenage: "Pulizie",
+    optJardinage: "Giardinaggio", optMecanique: "Meccanica auto", optInfo: "Informatica",
+    fieldTitle: "Titolo del lavoro", phTitle: "Es: Posa piastrelle bagno",
+    fieldDesc: "Descrizione", phDesc: "Descrivi il lavoro da svolgere...",
+    fieldPrice: "Prezzo (XAF)", phPrice: "Es: 15.000 XAF",
+    fieldPhone: "Telefono", fieldLandmark: "Punto di riferimento / Quartiere", phLandmark: "Es: Bastos, vicino alla rotonda...",
+    fieldPhotos: "Foto (fino a 5)", uploadTitle: "Aggiungi foto",
+    uploadSub: "JPG, PNG, WEBP — Max 5 immagini, 8 MB ciascuna", publishNow: "Pubblica ora",
+    jobsNearby: "Lavori vicini", emptyTitle: "Nessun lavoro trovato", emptySub: "Pubblica il primo lavoro in questa zona",
+    myAccount: "Il mio account", userFallback: "Utente", notConnected: "Non connesso", profileIncomplete: "Profilo incompleto",
+    tabSignup: "Crea account", tabLogin: "Accedi", fieldPassword: "Password", phPassword: "Minimo 6 caratteri",
+    createAccountBtn: "Crea il mio account", loginBtn: "Accedi", forgotPassword: "Password dimenticata?", orWord: "oppure", continueGoogle: "Continua con Google",
+    adminDashboard: "Pannello Admin", secureChat: "Chat sicura", myListings: "I miei annunci", myProProfile: "Il mio profilo Pro",
+    logout: "Disconnetti", artisanProfile: "Profilo del fornitore",
+    descNeed: "Descrizione del lavoro:", editListing: "Modifica annuncio", deleteListing: "Elimina annuncio",
+    shareWhatsApp: "Condividi su WhatsApp", seeItinerary: "Vedi itinerario",
+    photoWord: "Foto", changePhoto: "Cambia foto", fieldNameCompany: "Nome / Azienda", phName: "Es: Mario Rossi o Rossi Srl",
+    fieldCompany: "Azienda", fieldJobTitle: "Il tuo mestiere / Specialità", phJobTitle: "Es: Elettricista, Muratore, Designer...",
+    fieldSkills: "Competenze (separate da virgole)", phSkills: "Es: Installazione contatori, Riparazioni urgenti, Cablaggio...",
+    saveChanges: "Salva modifiche",
+    emailVerified: "Email verificata", emailNotVerified: "Email non verificata — clicca il link ricevuto via email all'iscrizione.",
+    profileVerified: "Profilo verificato", requestSent: "⏳ Richiesta inviata, in attesa di approvazione.",
+    profileNotVerified: "Profilo non verificato. Un documento d'identità o una prova del mestiere può sbloccare il badge ✓.",
+    requestVerificationBtn: "Richiedi verifica",
+    referralProgram: "Programma di referral",
+    referralExplain: "Invita fornitori/clienti con il tuo link. Ogni 3 iscritti, sblocchi una promozione gratuita (7 giorni) per uno dei tuoi annunci.",
+    copyBtn: "Copia", referralCountText: "{count} invitato/i iscritto/i — ancora {next} per il prossimo credito.",
+    creditsAvailable: "{credits} credito/i di promozione disponibile/i", publishToBoost: "Pubblica un annuncio per poterlo promuovere.",
+    activeBoost: "Attivo", boostBtn: "Promuovi",
+    chatPanelTitle: "Assistente sicuro", chatOfflineBadge: "Offline · privato",
+    chatWelcomeMsg: "Ciao! Posso aiutarti a usare JobMarket, pubblicare una richiesta, trovare un artigiano, capire i prezzi e riconoscere i segnali di truffa. Le mie risposte restano su questo dispositivo.",
+    chatSuggestion1: "Come pubblico un lavoro?", chatSuggestion2: "Come evito una truffa?",
+    chatSuggestion3: "Come calcolo il mio margine?", chatSuggestion4: "Come gestisco i miei annunci?",
+    chatSafetyNotice: "Nessuna chiave IA, nessun messaggio inviato a un modello esterno. Non condividere mai password, codici SMS, carte bancarie o documenti d'identità in chat.",
+    chatInputPlaceholder: "Il tuo messaggio...",
+    chatFrenchOnlyNotice: "(Le risposte dettagliate sono al momento disponibili solo in francese)",
+    adminBadge: "ADMIN", adminStatJobsTotal: "Lavori totali", adminStatUsers: "Utenti",
+    adminStatToday: "Pubblicati oggi", adminStatCountry: "Paese attivo",
+    adminVerificationsTitle: "Verifiche in attesa", adminAllJobsTitle: "Tutti i lavori",
+    adminLoading: "Caricamento...", adminNoPending: "Nessuna richiesta in attesa.",
+    adminNoName: "Senza nome", adminNoJobTitle: "Mestiere non specificato",
+    adminApprove: "Approva ✓", adminReject: "Rifiuta", adminAnonymous: "Anonimo", adminDeleteBtn: "Elimina"
+  },
+  de: {
+    notifTitle: "Neue Jobs", publishBtn: "Veröffentlichen",
+    catAll: "Alle", catBtp: "Bau", catElec: "Elektrik", catPlomberie: "Sanitär",
+    catMenage: "Reinigung", catJardinage: "Gartenarbeit", catMecanique: "Mechanik", catInfo: "IT",
+    tipLocate: "Mein Standort", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Kartenstil",
+    distanceLabel: "Entfernung", itinLabel: "Route", calculating: "Berechnung läuft...", cancelBtn: "Abbrechen",
+    publishTitle: "Job veröffentlichen", fieldCategory: "Kategorie",
+    optBtp: "Bau / Maurerarbeiten", optElec: "Elektrik", optPlomberie: "Sanitär", optMenage: "Reinigung",
+    optJardinage: "Gartenarbeit", optMecanique: "Kfz-Mechanik", optInfo: "IT-Dienste",
+    fieldTitle: "Jobtitel", phTitle: "Z.B: Badezimmerfliesen verlegen",
+    fieldDesc: "Beschreibung", phDesc: "Beschreiben Sie die auszuführende Arbeit...",
+    fieldPrice: "Preis (XAF)", phPrice: "Z.B: 15.000 XAF",
+    fieldPhone: "Telefon", fieldLandmark: "Orientierungspunkt / Viertel", phLandmark: "Z.B: Bastos, nahe dem Kreisverkehr...",
+    fieldPhotos: "Fotos (bis zu 5)", uploadTitle: "Fotos hinzufügen",
+    uploadSub: "JPG, PNG, WEBP — Max. 5 Bilder, je 8 MB", publishNow: "Jetzt veröffentlichen",
+    jobsNearby: "Jobs in der Nähe", emptyTitle: "Keine Jobs gefunden", emptySub: "Veröffentlichen Sie den ersten Job in dieser Gegend",
+    myAccount: "Mein Konto", userFallback: "Benutzer", notConnected: "Nicht angemeldet", profileIncomplete: "Profil unvollständig",
+    tabSignup: "Konto erstellen", tabLogin: "Anmelden", fieldPassword: "Passwort", phPassword: "Mindestens 6 Zeichen",
+    createAccountBtn: "Konto erstellen", loginBtn: "Anmelden", forgotPassword: "Passwort vergessen?", orWord: "oder", continueGoogle: "Mit Google fortfahren",
+    adminDashboard: "Admin-Bereich", secureChat: "Sicherer Chat", myListings: "Meine Anzeigen", myProProfile: "Mein Profi-Profil",
+    logout: "Abmelden", artisanProfile: "Profil des Anbieters",
+    descNeed: "Beschreibung des Auftrags:", editListing: "Anzeige bearbeiten", deleteListing: "Anzeige löschen",
+    shareWhatsApp: "Auf WhatsApp teilen", seeItinerary: "Route anzeigen",
+    photoWord: "Foto", changePhoto: "Foto ändern", fieldNameCompany: "Name / Firma", phName: "Z.B: Max Mustermann oder Mustermann GmbH",
+    fieldCompany: "Firma", fieldJobTitle: "Ihr Beruf / Fachgebiet", phJobTitle: "Z.B: Elektriker, Maurer, Designer...",
+    fieldSkills: "Fähigkeiten (durch Kommas getrennt)", phSkills: "Z.B: Zählerinstallation, Notreparaturen, Verkabelung...",
+    saveChanges: "Änderungen speichern",
+    emailVerified: "E-Mail bestätigt", emailNotVerified: "E-Mail nicht bestätigt — klicken Sie auf den bei der Anmeldung erhaltenen Link.",
+    profileVerified: "Profil verifiziert", requestSent: "⏳ Anfrage gesendet, Prüfung ausstehend.",
+    profileNotVerified: "Profil nicht verifiziert. Ein Ausweis oder Nachweis kann das ✓-Abzeichen freischalten.",
+    requestVerificationBtn: "Verifizierung anfordern",
+    referralProgram: "Empfehlungsprogramm",
+    referralExplain: "Laden Sie Anbieter/Kunden mit Ihrem Link ein. Alle 3 Anmeldungen schalten Sie eine kostenlose 7-tägige Hervorhebung für eine Ihrer Anzeigen frei.",
+    copyBtn: "Kopieren", referralCountText: "{count} Empfehlung(en) — noch {next} bis zum nächsten Guthaben.",
+    creditsAvailable: "{credits} Hervorhebungs-Guthaben verfügbar", publishToBoost: "Veröffentlichen Sie eine Anzeige, um sie hervorheben zu können.",
+    activeBoost: "Aktiv", boostBtn: "Hervorheben",
+    chatPanelTitle: "Sicherer Assistent", chatOfflineBadge: "Offline · privat",
+    chatWelcomeMsg: "Hallo! Ich kann Ihnen helfen, JobMarket zu nutzen, eine Anfrage zu veröffentlichen, einen Handwerker zu finden, Preise zu verstehen und Betrugssignale zu erkennen. Meine Antworten bleiben auf diesem Gerät.",
+    chatSuggestion1: "Wie veröffentliche ich einen Job?", chatSuggestion2: "Wie vermeide ich Betrug?",
+    chatSuggestion3: "Wie berechne ich meine Marge?", chatSuggestion4: "Wie verwalte ich meine Anzeigen?",
+    chatSafetyNotice: "Kein KI-Schlüssel, keine Nachricht wird an ein externes Modell gesendet. Teilen Sie im Chat niemals Passwörter, SMS-Codes, Bankkarten oder Ausweisdokumente.",
+    chatInputPlaceholder: "Ihre Nachricht...",
+    chatFrenchOnlyNotice: "(Detaillierte Antworten sind derzeit nur auf Französisch verfügbar)",
+    adminBadge: "ADMIN", adminStatJobsTotal: "Jobs gesamt", adminStatUsers: "Benutzer",
+    adminStatToday: "Heute veröffentlicht", adminStatCountry: "Aktives Land",
+    adminVerificationsTitle: "Ausstehende Verifizierungen", adminAllJobsTitle: "Alle Jobs",
+    adminLoading: "Wird geladen...", adminNoPending: "Keine ausstehenden Anfragen.",
+    adminNoName: "Ohne Namen", adminNoJobTitle: "Beruf nicht angegeben",
+    adminApprove: "Genehmigen ✓", adminReject: "Ablehnen", adminAnonymous: "Anonym", adminDeleteBtn: "Löschen"
+  },
+  zh: {
+    notifTitle: "新工作", publishBtn: "发布",
+    catAll: "全部", catBtp: "建筑", catElec: "电工", catPlomberie: "水管",
+    catMenage: "清洁", catJardinage: "园艺", catMecanique: "机械", catInfo: "信息技术",
+    tipLocate: "我的位置", tipZoomIn: "放大", tipZoomOut: "缩小", tipMapStyle: "地图样式",
+    distanceLabel: "距离", itinLabel: "路线", calculating: "计算中...", cancelBtn: "取消",
+    publishTitle: "发布工作", fieldCategory: "类别",
+    optBtp: "建筑/泥瓦", optElec: "电工", optPlomberie: "水管工", optMenage: "清洁",
+    optJardinage: "园艺", optMecanique: "汽车机械", optInfo: "信息技术服务",
+    fieldTitle: "工作标题", phTitle: "例：浴室瓷砖铺设",
+    fieldDesc: "描述", phDesc: "描述需要完成的工作...",
+    fieldPrice: "价格 (XAF)", phPrice: "例：15,000 XAF",
+    fieldPhone: "电话", fieldLandmark: "地标/街区", phLandmark: "例：巴斯托斯，环岛附近...",
+    fieldPhotos: "照片（最多5张）", uploadTitle: "添加照片",
+    uploadSub: "JPG, PNG, WEBP — 最多5张图片，每张8MB", publishNow: "立即发布",
+    jobsNearby: "附近的工作", emptyTitle: "未找到工作", emptySub: "在该区域发布第一份工作",
+    myAccount: "我的账户", userFallback: "用户", notConnected: "未登录", profileIncomplete: "个人资料不完整",
+    tabSignup: "创建账户", tabLogin: "登录", fieldPassword: "密码", phPassword: "至少6个字符",
+    createAccountBtn: "创建我的账户", loginBtn: "登录", forgotPassword: "忘记密码？", orWord: "或", continueGoogle: "使用Google继续",
+    adminDashboard: "管理员面板", secureChat: "安全聊天", myListings: "我的发布", myProProfile: "我的专业资料",
+    logout: "退出登录", artisanProfile: "服务商资料",
+    descNeed: "需求描述：", editListing: "编辑发布", deleteListing: "删除发布",
+    shareWhatsApp: "在WhatsApp上分享", seeItinerary: "查看路线",
+    photoWord: "照片", changePhoto: "更换照片", fieldNameCompany: "姓名/公司", phName: "例：张三 或 张三公司",
+    fieldCompany: "公司", fieldJobTitle: "您的职业/专长", phJobTitle: "例：电工，泥瓦匠，设计师...",
+    fieldSkills: "技能（用逗号分隔）", phSkills: "例：电表安装，紧急维修，布线...",
+    saveChanges: "保存更改",
+    emailVerified: "邮箱已验证", emailNotVerified: "邮箱未验证 — 请点击注册时收到的邮件链接。",
+    profileVerified: "资料已验证", requestSent: "⏳ 申请已发送，等待审核。",
+    profileNotVerified: "资料未验证。身份证件或职业证明可解锁 ✓ 徽章。",
+    requestVerificationBtn: "申请验证",
+    referralProgram: "推荐计划",
+    referralExplain: "用您的链接邀请服务商/客户。每3次注册，您将解锁一次为期7天的免费推广，用于您的一条发布。",
+    copyBtn: "复制", referralCountText: "已有{count}位受邀者注册 — 还差{next}位即可获得下一个额度。",
+    creditsAvailable: "可用推广额度：{credits}个", publishToBoost: "发布一条信息后才能进行推广。",
+    activeBoost: "生效中", boostBtn: "推广",
+    chatPanelTitle: "安全助手", chatOfflineBadge: "离线·私密",
+    chatWelcomeMsg: "您好！我可以帮助您使用 JobMarket、发布需求、寻找工匠、了解价格并识别欺诈信号。我的回复只保存在本设备上。",
+    chatSuggestion1: "如何发布工作？", chatSuggestion2: "如何避免诈骗？",
+    chatSuggestion3: "如何计算我的利润？", chatSuggestion4: "如何管理我的发布？",
+    chatSafetyNotice: "没有AI密钥，不会向外部模型发送任何消息。切勿在聊天中分享密码、短信验证码、银行卡或身份证件。",
+    chatInputPlaceholder: "您的消息...",
+    chatFrenchOnlyNotice: "（详细回答目前仅提供法语版本）",
+    adminBadge: "管理员", adminStatJobsTotal: "工作总数", adminStatUsers: "用户",
+    adminStatToday: "今日发布", adminStatCountry: "活跃国家",
+    adminVerificationsTitle: "待处理的验证", adminAllJobsTitle: "所有工作",
+    adminLoading: "加载中...", adminNoPending: "没有待处理的申请。",
+    adminNoName: "无名称", adminNoJobTitle: "职业未填写",
+    adminApprove: "批准 ✓", adminReject: "拒绝", adminAnonymous: "匿名", adminDeleteBtn: "删除"
+  }
+};
+
+let currentLang = localStorage.getItem('appLang') || (navigator.language && navigator.language.startsWith('en') ? 'en' : 'fr');
+
+function t(key) {
+  return (I18N[currentLang] && I18N[currentLang][key]) || (I18N.fr && I18N.fr[key]) || key;
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.getAttribute('data-i18n-title'));
+  });
+}
+
+function toggleLangMenu() {
+  const menu = document.getElementById('langMenu');
+  if (menu) menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('appLang', lang);
+  applyTranslations();
+  const menu = document.getElementById('langMenu');
+  if (menu) menu.style.display = 'none';
+  // Ré-affiche les listes/dynamiques dont le texte dépend de la langue (catégories, etc.)
+  if (typeof allJobs !== 'undefined' && typeof updateJobsList === 'function') updateJobsList(allJobs);
+}
+
+// Ferme le menu de langue si on clique ailleurs sur la page
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('langMenu');
+  const btn = document.getElementById('langBtn');
+  if (menu && menu.style.display === 'block' && !menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
 
 // ===== PARTAGE & LIENS PROFONDS =====
 const APP_BASE_URL = 'https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/';
@@ -1397,11 +1705,11 @@ function switchAuthTab(tab) {
   const btn = document.getElementById('authMainBtn');
   const forgotLink = document.getElementById('forgotPasswordLink');
   if (tab === 'signup') {
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Creer mon compte`;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${t('createAccountBtn')}`;
     btn.onclick = signupEmail;
     if (forgotLink) forgotLink.classList.add('hidden');
   } else {
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Se connecter`;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> ${t('loginBtn')}`;
     btn.onclick = loginEmail;
     if (forgotLink) forgotLink.classList.remove('hidden');
   }
@@ -1698,11 +2006,11 @@ function getCatIcon(cat) {
 }
 
 function getCatLabel(cat) {
-  const labels = {
-    btp: 'BTP / Maconnerie', electricite: 'Electricite', plomberie: 'Plomberie',
-    menage: 'Menage', jardinage: 'Jardinage', mecanique: 'Mecanique', informatique: 'Informatique'
+  const keys = {
+    btp: 'optBtp', electricite: 'optElec', plomberie: 'optPlomberie',
+    menage: 'optMenage', jardinage: 'optJardinage', mecanique: 'optMecanique', informatique: 'optInfo'
   };
-  return labels[cat] || cat;
+  return keys[cat] ? t(keys[cat]) : cat;
 }
 
 function syncJobs() {
@@ -1973,7 +2281,7 @@ function openAdminPanel() {
 async function loadPendingVerifications() {
   const list = document.getElementById('adminVerificationsList');
   if (!list) return;
-  list.innerHTML = '<div style="font-size:13px;color:var(--text-dim);">Chargement...</div>';
+  list.innerHTML = `<div style="font-size:13px;color:var(--text-dim);">${t('adminLoading')}</div>`;
 
   try {
     const snap = await db.ref('profiles').orderByChild('verificationRequested').startAt(1).once('value');
@@ -1984,19 +2292,19 @@ async function loadPendingVerifications() {
     });
 
     if (pending.length === 0) {
-      list.innerHTML = '<div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Aucune demande en attente.</div>';
+      list.innerHTML = `<div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">${t('adminNoPending')}</div>`;
       return;
     }
 
     list.innerHTML = pending.map(p => `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div>
-          <div style="font-weight:700;font-size:14px;">${escapeHtml(p.name || p.company || 'Sans nom')}</div>
-          <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(p.jobTitle || 'Métier non renseigné')}</div>
+          <div style="font-weight:700;font-size:14px;">${escapeHtml(p.name || p.company || t('adminNoName'))}</div>
+          <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(p.jobTitle || t('adminNoJobTitle'))}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button onclick="approveVerification('${p.uid}')" style="background:var(--blue);border:none;color:white;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">Valider ✓</button>
-          <button onclick="rejectVerification('${p.uid}')" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">Refuser</button>
+          <button onclick="approveVerification('${p.uid}')" style="background:var(--blue);border:none;color:white;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">${t('adminApprove')}</button>
+          <button onclick="rejectVerification('${p.uid}')" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">${t('adminReject')}</button>
         </div>
       </div>
     `).join('');
@@ -2035,9 +2343,9 @@ function loadAdminJobs() {
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
       <div>
         <div style="font-weight:700;font-size:14px;">${escapeHtml(job.title)}</div>
-        <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(job.userName) || 'Anonyme'} - ${getCatLabel(job.icon)}</div>
+        <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(job.userName) || t('adminAnonymous')} - ${getCatLabel(job.icon)}</div>
       </div>
-      <button onclick="deleteJob('${job.id}')" style="background:var(--danger);border:none;color:white;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">Suppr.</button>
+      <button onclick="deleteJob('${job.id}')" style="background:var(--danger);border:none;color:white;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">${t('adminDeleteBtn')}</button>
     </div>
   `).join('');
   document.getElementById('adminTotalUsers').textContent = new Set(allJobs.map(j=>j.user)).size;
@@ -2183,16 +2491,26 @@ function localChatAnswer(question) {
   }
 
   const marginAnswer = getMarginAnswer(question);
-  if (marginAnswer) return marginAnswer;
+  // Note : la base de connaissances détaillée (ci-dessous) reste en français pour
+  // le moment. Si l'app est affichée dans une autre langue, on ajoute un petit
+  // avis traduit au-dessus de la réponse française, plutôt que de laisser croire
+  // à un bug ou de rester muet.
+  const frenchOnlyPrefix = (typeof currentLang !== 'undefined' && currentLang !== 'fr' && typeof t === 'function')
+    ? t('chatFrenchOnlyNotice') + '\n\n'
+    : '';
+  if (marginAnswer) return frenchOnlyPrefix + marginAnswer;
 
   const ranked = LOCAL_CHAT_KNOWLEDGE.map(item => ({ item, score: item.terms.reduce((n, term) => n + (text.includes(normaliseChatText(term)) ? 1 : 0), 0) })).sort((a,b) => b.score - a.score)[0];
-  if (ranked && ranked.score > 0) return ranked.item.answer;
-  return `Je n'ai pas de réponse approuvée pour ce sujet précis. Je peux aider avec : ${CHAT_TOPICS_SUMMARY}. Pour une décision financière importante ou une accusation de fraude, demandez une vérification humaine.`;
+  if (ranked && ranked.score > 0) return frenchOnlyPrefix + ranked.item.answer;
+  return frenchOnlyPrefix + `Je n'ai pas de réponse approuvée pour ce sujet précis. Je peux aider avec : ${CHAT_TOPICS_SUMMARY}. Pour une décision financière importante ou une accusation de fraude, demandez une vérification humaine.`;
 }
 
 function askChatSuggestion(button) {
   const input = document.getElementById('chatInput');
-  input.value = button.textContent;
+  // On utilise toujours la question de référence en français (data-query) pour la
+  // recherche de réponse dans la base de connaissances, même si le bouton est
+  // affiché dans une autre langue — sinon la recherche par mots-clés ne trouve rien.
+  input.value = button.dataset.query || button.textContent;
   sendChatMessage();
 }
 
@@ -2660,7 +2978,7 @@ async function viewUserProfile(uid) {
         if (changePhotoBtn) changePhotoBtn.style.display = 'none';
 
         const headerTitle = document.querySelector('.profile-sheet-header h2');
-        if (headerTitle) headerTitle.innerText = "Profil de l'artisan";
+        if (headerTitle) headerTitle.innerText = t("artisanProfile");
 
         if (data.profileImage) {
             document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -2710,7 +3028,7 @@ async function openProfileSheet() {
         if (changePhotoBtn) changePhotoBtn.style.display = 'inline-block';
 
         const headerTitle = document.querySelector('.profile-sheet-header h2');
-        if (headerTitle) headerTitle.innerText = "Mon Profil Pro";
+        if (headerTitle) headerTitle.innerText = t("myProProfile");
 
         if (data.profileImage) {
             document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -2735,14 +3053,14 @@ function renderVerificationStatus(profile, user) {
     if (!box) return;
 
     const emailBadge = profile.emailVerified
-        ? `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">✉️ Email vérifié</div>`
-        : `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">Email non vérifié — cliquez le lien reçu par email à l'inscription.</div>`;
+        ? `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">✉️ ${t('emailVerified')}</div>`
+        : `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">${t('emailNotVerified')}</div>`;
 
     if (profile.verified) {
         box.innerHTML = emailBadge + `
             <div style="display:flex;align-items:center;gap:8px;color:var(--blue);font-weight:700;font-size:14px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-                Profil vérifié
+                ${t('profileVerified')}
             </div>`;
         return;
     }
@@ -2750,9 +3068,9 @@ function renderVerificationStatus(profile, user) {
     const requestSent = profile.verificationRequested;
     box.innerHTML = emailBadge + `
         <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-bottom:${requestSent ? '0' : '10px'};">
-            ${requestSent ? '⏳ Demande envoyée, en attente de validation.' : "Profil non vérifié. Une pièce d'identité ou une preuve de métier peut débloquer le badge ✓."}
+            ${requestSent ? t('requestSent') : t('profileNotVerified')}
         </div>
-        ${requestSent ? '' : `<button type="button" onclick="requestVerification()" style="background:none;border:1px solid var(--blue);color:var(--blue);padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;">Demander la vérification</button>`}
+        ${requestSent ? '' : `<button type="button" onclick="requestVerification()" style="background:none;border:1px solid var(--blue);color:var(--blue);padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;">${t('requestVerificationBtn')}</button>`}
     `;
 }
 
@@ -2768,24 +3086,24 @@ function renderReferralBox(profile, user) {
     const toNext = 3 - (count % 3);
 
     let html = `
-        <div style="font-weight:700;font-size:14px;margin-bottom:8px;">🎁 Programme de parrainage</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:8px;">🎁 ${t('referralProgram')}</div>
         <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:10px;">
-            Invitez des artisans/clients avec votre lien. Tous les 3 filleuls inscrits, vous débloquez une mise en avant gratuite (7 jours) pour une de vos annonces.
+            ${t('referralExplain')}
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
             <input readonly value="${link}" onclick="this.select()" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:8px 10px;border-radius:8px;font-size:12px;">
-            <button type="button" onclick="copyReferralLink('${link}')" style="background:var(--blue);border:none;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Copier</button>
+            <button type="button" onclick="copyReferralLink('${link}')" style="background:var(--blue);border:none;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">${t('copyBtn')}</button>
         </div>
-        <button type="button" onclick="shareReferralLink('${link}')" style="width:100%;background:#25D366;border:none;color:white;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">📞 Partager sur WhatsApp</button>
+        <button type="button" onclick="shareReferralLink('${link}')" style="width:100%;background:#25D366;border:none;color:white;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">📞 ${t('shareWhatsApp')}</button>
         <div style="font-size:12px;color:var(--text-dim,#8888A8);">
-            ${count} filleul(s) inscrit(s) — plus que ${toNext} pour votre prochain crédit.
+            ${t('referralCountText').replace('{count}', count).replace('{next}', toNext)}
         </div>
     `;
 
     if (credits > 0) {
         html += `
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border,#333);">
-            <div style="font-size:13px;font-weight:700;color:var(--gold,#FFD700);margin-bottom:8px;">✨ ${credits} crédit(s) de mise en avant disponible(s)</div>
+            <div style="font-size:13px;font-weight:700;color:var(--gold,#FFD700);margin-bottom:8px;">✨ ${t('creditsAvailable').replace('{credits}', credits)}</div>
             <div id="boostJobPicker">${renderBoostJobPicker(user.uid)}</div>
         </div>`;
     }
@@ -2796,15 +3114,15 @@ function renderReferralBox(profile, user) {
 function renderBoostJobPicker(uid) {
     const myJobs = (typeof allJobs !== 'undefined' ? allJobs : []).filter(j => j.user === uid);
     if (myJobs.length === 0) {
-        return `<div style="font-size:12px;color:var(--text-dim,#8888A8);">Publiez une annonce pour pouvoir la booster.</div>`;
+        return `<div style="font-size:12px;color:var(--text-dim,#8888A8);">${t('publishToBoost')}</div>`;
     }
     return myJobs.map(j => {
         const isBoosted = j.boosted && j.boostedUntil > Date.now();
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;">
             <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(j.title)}</span>
             ${isBoosted
-                ? `<span style="font-size:11px;color:var(--gold,#FFD700);white-space:nowrap;">🚀 Actif</span>`
-                : `<button type="button" onclick="useBoostCredit('${j.id}')" style="background:var(--gold,#FFD700);color:#111;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">Booster</button>`}
+                ? `<span style="font-size:11px;color:var(--gold,#FFD700);white-space:nowrap;">🚀 ${t('activeBoost')}</span>`
+                : `<button type="button" onclick="useBoostCredit('${j.id}')" style="background:var(--gold,#FFD700);color:#111;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">${t('boostBtn')}</button>`}
         </div>`;
     }).join('');
 }
@@ -3225,6 +3543,7 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
 
 // ===== INIT =====
 locateMe();
+applyTranslations();
 syncJobs();
 syncProfilesCache();
 </script>
@@ -3260,7 +3579,7 @@ document.addEventListener('click', (e) => {
         
         <hr class="drawer-divider">
         
-                <h3>Description du besoin :</h3>
+                <h3 data-i18n="descNeed">Description du besoin :</h3>
         <p id="previewDescription">Détails de l'emploi ou du service demandé...</p>
         
         <!-- NOUVEAU : Conteneur pour afficher les personnes intéressées -->
@@ -3271,21 +3590,21 @@ document.addEventListener('click', (e) => {
         <div id="previewOwnerActions" class="hidden">
             <button class="btn btn-primary" onclick="editJobFromPreview()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                Modifier l'annonce
+                <span data-i18n="editListing">Modifier l'annonce</span>
             </button>
             <button class="btn btn-danger" onclick="deleteJobFromPreview()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                Supprimer l'annonce
+                <span data-i18n="deleteListing">Supprimer l'annonce</span>
             </button>
         </div>
         <button class="btn btn-green" id="previewWhatsAppBtn" onclick="contactViaWhatsAppFromPreview()">
             <span style="font-size:18px;">📞</span> WhatsApp
         </button>
         <button class="btn btn-blue" onclick="shareJobViaWhatsApp()">
-            <span style="font-size:16px;">🔗</span> Partager sur WhatsApp
+            <span style="font-size:16px;">🔗</span> <span data-i18n="shareWhatsApp">Partager sur WhatsApp</span>
         </button>
         <button class="btn btn-blue" onclick="drawRouteFromPreview()">
-            Voir l'itinéraire
+            <span data-i18n="seeItinerary">Voir l'itinéraire</span>
         </button>
     </div>
 </div>
@@ -3408,13 +3727,13 @@ document.addEventListener('click', (e) => {
 
 <div id="profileSheet" class="profile-sheet">
     <div class="profile-sheet-header">
-        <h2>Mon Profil Pro</h2>
+        <h2 data-i18n="myProProfile">Mon Profil Pro</h2>
       <div class="profile-form-group" style="text-align: center; margin-bottom: 20px;">
     <div id="profileImagePreview" style="width: 100px; height: 100px; border-radius: 50%; background: #222; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #FFD700;">
-        <span style="color: #666; font-size: 12px;">Photo</span>
+        <span style="color: #666; font-size: 12px;" data-i18n="photoWord">Photo</span>
     </div>
     <input type="file" id="profileImageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
-    <button type="button" onclick="document.getElementById('profileImageInput').click()" style="background:none; border:1px solid #FFD700; color:#FFD700; padding:5px 15px; border-radius:20px; cursor:pointer; font-size: 12px;">
+    <button type="button" onclick="document.getElementById('profileImageInput').click()" style="background:none; border:1px solid #FFD700; color:#FFD700; padding:5px 15px; border-radius:20px; cursor:pointer; font-size: 12px;" data-i18n="changePhoto">
         Changer photo
     </button>
 </div>
@@ -3422,20 +3741,20 @@ document.addEventListener('click', (e) => {
     </div>
     <div class="sheet-content" style="padding: 24px; flex: 1; overflow-y: auto;">
         <div class="profile-form-group">
-            <label>Nom / Société</label>
-            <input type="text" id="profileName" class="profile-input" placeholder="Ex: Jean Dupont ou Dupont Entreprise" required maxlength="100">
+            <label data-i18n="fieldNameCompany">Nom / Société</label>
+            <input type="text" id="profileName" class="profile-input" data-i18n-placeholder="phName" placeholder="Ex: Jean Dupont ou Dupont Entreprise" required maxlength="100">
         </div>
         <div class="profile-form-group">
-            <label>Société</label>
+            <label data-i18n="fieldCompany">Société</label>
             <input type="text" id="profileCompany" class="profile-input" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
         </div>
         <div class="profile-form-group">
-            <label>Ton métier / Spécialité</label>
-            <input type="text" id="jobTitle" class="profile-input" placeholder="Ex: Électricien, Maçon, Designer..." maxlength="100">
+            <label data-i18n="fieldJobTitle">Ton métier / Spécialité</label>
+            <input type="text" id="jobTitle" class="profile-input" data-i18n-placeholder="phJobTitle" placeholder="Ex: Électricien, Maçon, Designer..." maxlength="100">
         </div>
         <div class="profile-form-group">
-            <label>Compétences (séparées par des virgules)</label>
-            <textarea id="skills" class="profile-textarea" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..." maxlength="1000"></textarea>
+            <label data-i18n="fieldSkills">Compétences (séparées par des virgules)</label>
+            <textarea id="skills" class="profile-textarea" data-i18n-placeholder="phSkills" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..." maxlength="1000"></textarea>
         </div>
         <div id="verificationStatusBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
             <!-- Rempli dynamiquement par renderVerificationStatus() -->
@@ -3444,7 +3763,7 @@ document.addEventListener('click', (e) => {
             <!-- Rempli dynamiquement par renderReferralBox() -->
         </div>
         <div style="margin-top: 10px;">
-            <button onclick="saveProfile()" id="saveProfileBtn" class="profile-save-btn">Enregistrer les modifications</button>
+            <button onclick="saveProfile()" id="saveProfileBtn" class="profile-save-btn" data-i18n="saveChanges">Enregistrer les modifications</button>
         </div>
     </div>
 </div>
