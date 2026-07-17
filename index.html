@@ -1233,6 +1233,51 @@ function vibrateDevice(ms) {
   } catch (e) { /* ignore silencieusement si le navigateur refuse l'appel */ }
 }
 
+// ===== PARTAGE & LIENS PROFONDS =====
+const APP_BASE_URL = 'https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/';
+
+function getJobShareLink(jobId) {
+  return `${APP_BASE_URL}#job=${jobId}`;
+}
+
+function getReferralLink(uid) {
+  return `${APP_BASE_URL}#ref=${uid}`;
+}
+
+// Mémorise un éventuel code de parrainage présent dans le lien d'arrivée
+// (#ref=UID), pour l'associer au compte au moment de l'inscription.
+let deepLinkJobId = null;
+(function captureIncomingLinks() {
+  try {
+    const hash = window.location.hash || '';
+    const refMatch = hash.match(/ref=([a-zA-Z0-9_-]+)/);
+    if (refMatch && refMatch[1]) localStorage.setItem('pendingReferralCode', refMatch[1]);
+    const jobMatch = hash.match(/job=([a-zA-Z0-9_-]+)/);
+    if (jobMatch && jobMatch[1]) deepLinkJobId = jobMatch[1];
+  } catch(e) { /* ignore */ }
+})();
+
+// Applique le parrainage mémorisé à un nouveau compte : incrémente le
+// compteur du parrain et débloque un crédit de mise en avant tous les 3
+// filleuls. Ne s'exécute qu'une fois par inscription (isNewUser).
+async function applyPendingReferral(newUser) {
+  try {
+    const refUid = localStorage.getItem('pendingReferralCode');
+    if (!refUid || refUid === newUser.uid) return;
+    localStorage.removeItem('pendingReferralCode');
+
+    await db.ref('profiles/' + newUser.uid).update({ referredBy: refUid });
+
+    const refSnap = await db.ref('profiles/' + refUid + '/referralCount').transaction(cur => (cur || 0) + 1);
+    const newCount = refSnap.snapshot.val();
+    if (newCount > 0 && newCount % 3 === 0) {
+      await db.ref('profiles/' + refUid + '/boostCredits').transaction(cur => (cur || 0) + 1);
+    }
+  } catch(e) {
+    console.warn('applyPendingReferral error', e);
+  }
+}
+
 // ===== FIREBASE AUTH =====
 auth.onAuthStateChanged(user => {
   currentUser = user;
@@ -1273,6 +1318,7 @@ function signupEmail() {
     .then(res => {
       res.user.sendEmailVerification();
       showToast('Compte cree ! Verifiez votre email.', 'success');
+      applyPendingReferral(res.user);
     })
     .catch(err => showToast(err.message, 'error'));
 }
@@ -1289,7 +1335,12 @@ function loginEmail() {
 function loginGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider)
-    .then(res => showToast(`Bienvenue ${res.user.displayName}`, 'success'))
+    .then(res => {
+      showToast(`Bienvenue ${res.user.displayName}`, 'success');
+      if (res.additionalUserInfo && res.additionalUserInfo.isNewUser) {
+        applyPendingReferral(res.user);
+      }
+    })
     .catch(err => showToast(err.message, 'error'));
 }
 
@@ -1713,8 +1764,22 @@ function syncJobs() {
           `, { maxWidth: 280 });
       });
 
-      allJobs.sort((a, b) => a.dist - b.dist);
+      // Les annonces boostées (parrainage) passent devant, puis tri par distance
+      const now = Date.now();
+      allJobs.sort((a, b) => {
+        const aBoost = a.boosted && a.boostedUntil > now ? 1 : 0;
+        const bBoost = b.boosted && b.boostedUntil > now ? 1 : 0;
+        if (aBoost !== bBoost) return bBoost - aBoost;
+        return a.dist - b.dist;
+      });
       updateJobsList(allJobs);
+
+      // Lien profond : quelqu'un a cliqué sur un lien "#job=..." partagé sur WhatsApp
+      if (deepLinkJobId && jobsById[deepLinkJobId]) {
+        const idToOpen = deepLinkJobId;
+        deepLinkJobId = null;
+        setTimeout(() => openJobPreview(idToOpen), 300);
+      }
       document.getElementById('jobCountBadge').textContent = allJobs.length;
       document.getElementById('adminTotalJobs').textContent = allJobs.length;
       document.getElementById('adminTodayJobs').textContent = todayCount;
@@ -1747,12 +1812,12 @@ function updateJobsList(jobs) {
 
   // On génère les cartes et on ajoute openJobPreview('${job.id}') au clic !
   list.innerHTML = jobs.map((job, i) => `
-    <div class="job-card" style="animation-delay:${i*0.04}s" onclick="focusJob(${job.lat},${job.lng}); openJobPreview('${job.id}')">
+    <div class="job-card" style="animation-delay:${i*0.04}s${(job.boosted && job.boostedUntil > Date.now()) ? ';border:1px solid var(--gold,#FFD700);' : ''}" onclick="focusJob(${job.lat},${job.lng}); openJobPreview('${job.id}')">
       <div class="job-card-icon" style="background:${job.color || '#FFD700'}22;">
         <span style="font-size:11px;font-weight:800;color:${job.color || '#FFD700'};">${getCatIcon(job.icon)}</span>
       </div>
       <div class="job-card-body">
-        <div class="job-card-title">${escapeHtml(job.title)}</div>
+        <div class="job-card-title">${(job.boosted && job.boostedUntil > Date.now()) ? '🚀 ' : ''}${escapeHtml(job.title)}</div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${escapeHtml(job.landmark) || getCatLabel(job.icon)}</div>
         <div class="job-card-meta">
           <span class="job-card-price">${job.price}</span>
@@ -2654,6 +2719,7 @@ async function openProfileSheet() {
         }
 
         renderVerificationStatus(data, user);
+        renderReferralBox(data, user);
     } catch (error) {
         console.error("Erreur profil:", error);
     }
@@ -2688,6 +2754,94 @@ function renderVerificationStatus(profile, user) {
         </div>
         ${requestSent ? '' : `<button type="button" onclick="requestVerification()" style="background:none;border:1px solid var(--blue);color:var(--blue);padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;">Demander la vérification</button>`}
     `;
+}
+
+// Affiche le lien de parrainage personnel, le nombre de filleuls, et permet
+// d'utiliser un crédit de mise en avant gagné (1 crédit tous les 3 filleuls).
+function renderReferralBox(profile, user) {
+    const box = document.getElementById('referralBox');
+    if (!box) return;
+
+    const link = getReferralLink(user.uid);
+    const count = profile.referralCount || 0;
+    const credits = profile.boostCredits || 0;
+    const toNext = 3 - (count % 3);
+
+    let html = `
+        <div style="font-weight:700;font-size:14px;margin-bottom:8px;">🎁 Programme de parrainage</div>
+        <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:10px;">
+            Invitez des artisans/clients avec votre lien. Tous les 3 filleuls inscrits, vous débloquez une mise en avant gratuite (7 jours) pour une de vos annonces.
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <input readonly value="${link}" onclick="this.select()" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:8px 10px;border-radius:8px;font-size:12px;">
+            <button type="button" onclick="copyReferralLink('${link}')" style="background:var(--blue);border:none;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Copier</button>
+        </div>
+        <button type="button" onclick="shareReferralLink('${link}')" style="width:100%;background:#25D366;border:none;color:white;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">📞 Partager sur WhatsApp</button>
+        <div style="font-size:12px;color:var(--text-dim,#8888A8);">
+            ${count} filleul(s) inscrit(s) — plus que ${toNext} pour votre prochain crédit.
+        </div>
+    `;
+
+    if (credits > 0) {
+        html += `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border,#333);">
+            <div style="font-size:13px;font-weight:700;color:var(--gold,#FFD700);margin-bottom:8px;">✨ ${credits} crédit(s) de mise en avant disponible(s)</div>
+            <div id="boostJobPicker">${renderBoostJobPicker(user.uid)}</div>
+        </div>`;
+    }
+
+    box.innerHTML = html;
+}
+
+function renderBoostJobPicker(uid) {
+    const myJobs = (typeof allJobs !== 'undefined' ? allJobs : []).filter(j => j.user === uid);
+    if (myJobs.length === 0) {
+        return `<div style="font-size:12px;color:var(--text-dim,#8888A8);">Publiez une annonce pour pouvoir la booster.</div>`;
+    }
+    return myJobs.map(j => {
+        const isBoosted = j.boosted && j.boostedUntil > Date.now();
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;">
+            <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(j.title)}</span>
+            ${isBoosted
+                ? `<span style="font-size:11px;color:var(--gold,#FFD700);white-space:nowrap;">🚀 Actif</span>`
+                : `<button type="button" onclick="useBoostCredit('${j.id}')" style="background:var(--gold,#FFD700);color:#111;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">Booster</button>`}
+        </div>`;
+    }).join('');
+}
+
+function copyReferralLink(link) {
+    navigator.clipboard.writeText(link)
+        .then(() => showToast('Lien copié !', 'success'))
+        .catch(() => showToast('Impossible de copier', 'error'));
+}
+
+function shareReferralLink(link) {
+    const message = `Rejoins-moi sur JobMarket Cameroon pour trouver ou proposer des services près de chez toi : ${link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+}
+
+// Consomme un crédit de mise en avant pour booster une annonce 7 jours.
+async function useBoostCredit(jobId) {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) return;
+    try {
+        const snap = await db.ref('profiles/' + user.uid + '/boostCredits').once('value');
+        const credits = snap.val() || 0;
+        if (credits <= 0) { showToast('Aucun crédit disponible', 'error'); return; }
+
+        await db.ref('jobs/' + jobId).update({
+            boosted: true,
+            boostedUntil: Date.now() + 7 * 24 * 60 * 60 * 1000
+        });
+        await db.ref('profiles/' + user.uid + '/boostCredits').transaction(cur => Math.max(0, (cur || 0) - 1));
+
+        showToast('Annonce mise en avant pour 7 jours !', 'success');
+        const freshSnap = await db.ref('profiles/' + user.uid).once('value');
+        renderReferralBox(freshSnap.val() || {}, user);
+    } catch (e) {
+        console.error('useBoostCredit error', e);
+        showToast('Erreur lors de la mise en avant', 'error');
+    }
 }
 
 async function requestVerification() {
@@ -2861,28 +3015,13 @@ async function contactViaWhatsAppFromPreview() {
     }
 }
 
-async function shareJobViaWhatsApp() {
+function shareJobViaWhatsApp() {
+    // Volontairement ouvert à tout le monde, connecté ou non : c'est le
+    // principal levier de croissance virale de l'app, aucune barrière ici.
     const job = window.currentPreviewJob;
     if (!job) return;
-    
-    const user = auth.currentUser;
-    if (!user || user.isAnonymous) {
-        alert("Vous devez être connecté pour partager ce besoin.");
-        closeJobPreview();
-        if(typeof openOverlay === 'function') openOverlay('accountPage');
-        return;
-    }
-
-    const snapshot = await db.ref(`profiles/${user.uid}`).once('value');
-    const profile = snapshot.val() || {};
-    if (!isProfileComplete(profile)) {
-        alert("Vous devez compléter votre profil (nom/société et métier/spécialité) pour partager ce besoin.");
-        closeJobPreview();
-        openProfileSheet();
-        return;
-    }
-
-    const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}*. Tu peux voir plus de détails et contacter l'auteur ici : https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/`;
+    const link = getJobShareLink(job.id);
+    const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}* (${job.price} XAF). Voir les détails et contacter directement ici : ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
 }
 
@@ -2964,34 +3103,17 @@ window.popupWhatsAppClick = async function(jobId) {
     }
 }
 
-window.popupShareClick = async function(jobId) {
-    console.log('popupShareClick appelé avec jobId:', jobId);
-    console.log('jobsById keys:', Object.keys(jobsById));
-    
+window.popupShareClick = function(jobId) {
+    // Ouvert à tout le monde, connecté ou non — c'est le principal levier
+    // de croissance virale de l'app.
     const job = jobsById[jobId];
     if (!job) {
         console.error('Job non trouvé avec l\'ID:', jobId);
         alert('Job non trouvé');
         return;
     }
-    
-    const user = auth.currentUser;
-    if (!user || user.isAnonymous) {
-        alert("Vous devez être connecté pour partager ce besoin.");
-        if(typeof openOverlay === 'function') openOverlay('accountPage');
-        return;
-    }
-
-    const snapshot = await db.ref(`profiles/${user.uid}`).once('value');
-    const profile = snapshot.val() || {};
-    if (!isProfileComplete(profile)) {
-        alert("Vous devez compléter votre profil (nom/société et métier/spécialité) pour partager ce besoin.");
-        if(typeof openProfileSheet === 'function') openProfileSheet();
-        return;
-    }
-    
-    const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}*. Tu peux voir plus de détails et contacter l'auteur ici : https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/`;
-    console.log('Partage WhatsApp avec message:', message);
+    const link = getJobShareLink(jobId);
+    const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}* (${job.price} XAF). Voir les détails et contacter directement ici : ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
     showToast('Partage sur WhatsApp!', 'success');
 }
@@ -3317,6 +3439,9 @@ document.addEventListener('click', (e) => {
         </div>
         <div id="verificationStatusBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
             <!-- Rempli dynamiquement par renderVerificationStatus() -->
+        </div>
+        <div id="referralBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
+            <!-- Rempli dynamiquement par renderReferralBox() -->
         </div>
         <div style="margin-top: 10px;">
             <button onclick="saveProfile()" id="saveProfileBtn" class="profile-save-btn">Enregistrer les modifications</button>
