@@ -2180,6 +2180,8 @@ function updateJobsList(jobs) {
           let badge = '';
           if (p.verified) {
             badge = `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>`;
+          } else if (p.phoneVerified) {
+            badge = `<span title="Numéro vérifié par SMS" style="font-size:11px;color:var(--green,#25D366);">📱</span>`;
           } else if (p.emailVerified) {
             badge = `<span title="Email vérifié" style="font-size:11px;color:var(--text-dim);">✉️</span>`;
           }
@@ -3045,6 +3047,10 @@ async function openJobPreview(jobId) {
 
     document.getElementById('previewDescription').innerText = job.desc || 'Aucune description fournie.';
 
+    // Avis sur l'auteur de l'annonce : visibles par TOUT LE MONDE (pas seulement
+    // le propriétaire), pour que la personne puisse juger la fiabilité avant de contacter.
+    renderOwnerReviews(job.user);
+
     // AFFICHER LES CONTACTS SI C'EST MON ANNONCE
     const contactsContainer = document.getElementById('previewContactsContainer');
     if (contactsContainer) {
@@ -3290,9 +3296,13 @@ function renderVerificationStatus(profile, user) {
         ? `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">✉️ ${t('emailVerified')}</div>`
         : `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">${t('emailNotVerified')}</div>`;
 
+    // Vérification téléphone par SMS : automatique, gratuite (quota Firebase),
+    // aucune intervention manuelle nécessaire contrairement au badge "ID vérifié".
+    const phoneSection = renderPhoneVerificationSection(profile);
+
     if (profile.verified) {
-        box.innerHTML = emailBadge + `
-            <div style="display:flex;align-items:center;gap:8px;color:var(--blue);font-weight:700;font-size:14px;">
+        box.innerHTML = emailBadge + phoneSection + `
+            <div style="display:flex;align-items:center;gap:8px;color:var(--blue);font-weight:700;font-size:14px;margin-top:10px;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
                 ${t('profileVerified')}
             </div>`;
@@ -3300,12 +3310,98 @@ function renderVerificationStatus(profile, user) {
     }
 
     const requestSent = profile.verificationRequested;
-    box.innerHTML = emailBadge + `
-        <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-bottom:${requestSent ? '0' : '10px'};">
+    box.innerHTML = emailBadge + phoneSection + `
+        <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-top:10px;margin-bottom:${requestSent ? '0' : '10px'};">
             ${requestSent ? t('requestSent') : t('profileNotVerified')}
         </div>
         ${requestSent ? '' : `<button type="button" onclick="requestVerification()" style="background:none;border:1px solid var(--blue);color:var(--blue);padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;">${t('requestVerificationBtn')}</button>`}
     `;
+}
+
+// Section "numéro vérifié par SMS". Trois états : déjà vérifié / formulaire
+// pour saisir le numéro / formulaire pour saisir le code reçu.
+function renderPhoneVerificationSection(profile) {
+    if (profile.phoneVerified) {
+        return `<div style="display:flex;align-items:center;gap:8px;color:var(--green,#25D366);font-weight:700;font-size:13px;margin-bottom:4px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Numéro vérifié ${profile.phone ? '(' + escapeHtml(profile.phone) + ')' : ''}
+        </div>`;
+    }
+    return `<div id="phoneVerifyBox" style="margin-bottom:4px;">
+        <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:6px;">📱 Numéro non vérifié par SMS</div>
+        <div style="display:flex;gap:6px;">
+            <input id="phoneVerifyInput" type="tel" placeholder="Ex: +237650420710" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:8px 10px;border-radius:8px;font-size:13px;">
+            <button type="button" onclick="sendPhoneOTP()" style="background:var(--green,#25D366);border:none;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Envoyer le code</button>
+        </div>
+    </div>`;
+}
+
+// Étape 1 : envoie un code SMS et le lie au compte déjà connecté (email/Google),
+// sans créer de second compte. Nécessite un numéro au format international
+// (ex: +237650420710).
+function sendPhoneOTP() {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) { showToast('Connectez-vous d\'abord', 'error'); return; }
+
+    const input = document.getElementById('phoneVerifyInput');
+    const phone = input ? input.value.trim() : '';
+    if (!/^\+\d{8,15}$/.test(phone)) {
+        showToast('Format attendu : +237XXXXXXXXX', 'error');
+        return;
+    }
+
+    try {
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
+        }
+        showToast('Envoi du code par SMS...', 'info');
+        user.linkWithPhoneNumber(phone, window.recaptchaVerifier).then(confirmationResult => {
+            window.phoneConfirmationResult = confirmationResult;
+            const box = document.getElementById('phoneVerifyBox');
+            if (box) {
+                box.innerHTML = `
+                    <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:6px;">Code envoyé par SMS au ${escapeHtml(phone)}</div>
+                    <div style="display:flex;gap:6px;">
+                        <input id="phoneOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="Code à 6 chiffres" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:8px 10px;border-radius:8px;font-size:13px;">
+                        <button type="button" onclick="confirmPhoneOTP('${phone}')" style="background:var(--gold,#FFD700);border:none;color:#111;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Valider</button>
+                    </div>`;
+            }
+            showToast('Code envoyé !', 'success');
+        }).catch(err => {
+            console.error('sendPhoneOTP error', err);
+            if (err.code === 'auth/credential-already-in-use' || err.code === 'auth/phone-number-already-exists') {
+                showToast('Ce numéro est déjà utilisé par un autre compte', 'error');
+            } else if (err.code === 'auth/invalid-phone-number') {
+                showToast('Numéro invalide', 'error');
+            } else {
+                showToast('Erreur lors de l\'envoi du SMS', 'error');
+            }
+        });
+    } catch (e) {
+        console.error('sendPhoneOTP setup error', e);
+        showToast('Erreur de vérification', 'error');
+    }
+}
+
+// Étape 2 : confirme le code reçu et marque le profil comme vérifié par SMS.
+async function confirmPhoneOTP(phone) {
+    const otpInput = document.getElementById('phoneOtpInput');
+    const code = otpInput ? otpInput.value.trim() : '';
+    if (!code || !window.phoneConfirmationResult) {
+        showToast('Entrez le code reçu par SMS', 'error');
+        return;
+    }
+    try {
+        await window.phoneConfirmationResult.confirm(code);
+        const user = auth.currentUser;
+        await db.ref('profiles/' + user.uid).update({ phoneVerified: true, phone });
+        showToast('Numéro vérifié !', 'success');
+        const snap = await db.ref('profiles/' + user.uid).once('value');
+        renderVerificationStatus(snap.val() || {}, user);
+    } catch (e) {
+        console.error('confirmPhoneOTP error', e);
+        showToast('Code invalide ou expiré', 'error');
+    }
 }
 
 // Affiche le lien de parrainage personnel, le nombre de filleuls, et permet
@@ -3676,6 +3772,74 @@ window.popupShareClick = function(jobId) {
 // temps que la prestation ait vraiment eu lieu).
 const REVIEW_DELAY_MS = 3 * 60 * 60 * 1000; // 3 heures
 
+// Affiche la note moyenne + les derniers avis détaillés (avec commentaire) reçus
+// par l'auteur d'une annonce. Contrairement au badge ★ affiché sur les cartes,
+// ceci montre les commentaires eux-mêmes : c'est ce qui construit la confiance
+// avant que quelqu'un ne décide de contacter la personne.
+async function renderOwnerReviews(ownerUid) {
+    const box = document.getElementById('previewOwnerReviews');
+    if (!box || !ownerUid) { if (box) box.innerHTML = ''; return; }
+
+    const ownerProfile = profilesCache[ownerUid] || {};
+    const avg = ownerProfile.ratingAvg || 0;
+    const count = ownerProfile.ratingCount || 0;
+
+    if (count === 0) {
+        box.innerHTML = `
+            <div style="margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+                <h3 style="margin:0 0 6px 0;font-size:15px;color:var(--text);">Avis</h3>
+                <p style="font-size:13px;color:var(--text-dim);margin:0;">Pas encore d'avis pour ce prestataire.</p>
+            </div>`;
+        return;
+    }
+
+    const fullStars = Math.round(avg);
+    const starsHtml = '★★★★★☆☆☆☆☆'.slice(5 - fullStars, 10 - fullStars);
+
+    box.innerHTML = `
+        <div style="margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
+            <h3 style="margin:0 0 8px 0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;">
+                Avis <span style="color:var(--gold,#FFD700);font-size:14px;letter-spacing:2px;">${starsHtml}</span>
+                <span style="font-size:12px;color:var(--text-dim);font-weight:400;">${avg.toFixed(1)}/5 · ${count} avis</span>
+            </h3>
+            <div id="previewReviewsList" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+                <div style="font-size:12px;color:var(--text-dim);">Chargement des avis...</div>
+            </div>
+        </div>`;
+
+    try {
+        const snap = await db.ref('reviews').orderByChild('jobOwnerUid').equalTo(ownerUid).limitToLast(10).once('value');
+        const listEl = document.getElementById('previewReviewsList');
+        if (!listEl) return;
+        if (!snap.exists()) { listEl.innerHTML = ''; return; }
+
+        const items = [];
+        snap.forEach(child => items.push(child.val()));
+        items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+        listEl.innerHTML = items.map(r => {
+            const reviewer = profilesCache[r.reviewerUid] || {};
+            const name = reviewer.name || reviewer.company || 'Utilisateur';
+            const stars = '★★★★★☆☆☆☆☆'.slice(5 - (r.rating || 0), 10 - (r.rating || 0));
+            const when = (typeof timeAgo === 'function' && r.timestamp) ? timeAgo(r.timestamp) : '';
+            const comment = r.comment ? `<div style="font-size:13px;color:var(--text);margin-top:3px;">${escapeHtml(r.comment)}</div>` : '';
+            return `
+                <div style="border-top:1px solid var(--border);padding-top:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="font-size:13px;font-weight:700;color:var(--text);">${escapeHtml(name)}</span>
+                        <span style="font-size:12px;color:var(--gold,#FFD700);letter-spacing:1px;">${stars}</span>
+                    </div>
+                    ${comment}
+                    ${when ? `<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">${when}</div>` : ''}
+                </div>`;
+        }).join('');
+    } catch (e) {
+        console.warn('renderOwnerReviews error', e);
+        const listEl = document.getElementById('previewReviewsList');
+        if (listEl) listEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">Erreur de chargement des avis.</div>';
+    }
+}
+
 async function checkPendingReviews(uid) {
   try {
     const snap = await db.ref('job_contacts').orderByChild('contactUid').equalTo(uid).once('value');
@@ -3815,7 +3979,11 @@ document.addEventListener('click', (e) => {
         
                 <h3 data-i18n="descNeed">Description du besoin :</h3>
         <p id="previewDescription">Détails de l'emploi ou du service demandé...</p>
-        
+
+        <!-- Avis reçus par l'auteur de l'annonce : visible par tout le monde, pas
+             seulement le propriétaire, pour permettre de décider AVANT de contacter. -->
+        <div id="previewOwnerReviews"></div>
+
         <!-- NOUVEAU : Conteneur pour afficher les personnes intéressées -->
         <div id="previewContactsContainer"></div>
     </div>
@@ -3958,6 +4126,9 @@ document.addEventListener('click', (e) => {
     transform: scale(0.98);
   }
 </style>
+
+<!-- Conteneur reCAPTCHA invisible requis par Firebase Phone Auth (SMS gratuit) -->
+<div id="recaptcha-container"></div>
 
 <div id="profileSheet" class="profile-sheet">
     <div class="profile-sheet-header">
