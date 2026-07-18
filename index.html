@@ -3051,6 +3051,9 @@ async function openJobPreview(jobId) {
     // le propriétaire), pour que la personne puisse juger la fiabilité avant de contacter.
     renderOwnerReviews(job.user);
 
+    // Bouton "Laisser un avis" si j'ai déjà contacté ce prestataire pour CETTE annonce.
+    renderMyReviewAction(job);
+
     // AFFICHER LES CONTACTS SI C'EST MON ANNONCE
     const contactsContainer = document.getElementById('previewContactsContainer');
     if (contactsContainer) {
@@ -3840,6 +3843,49 @@ async function renderOwnerReviews(ownerUid) {
     }
 }
 
+// Affiche un bouton "Laisser un avis" si l'utilisateur connecté a déjà
+// contacté ce prestataire pour CETTE annonce précise. C'est ce qui manquait :
+// avant, un avis ne pouvait être laissé que via une popup automatique
+// apparaissant 3h après le contact — sans bouton, cliquer ne faisait donc rien.
+async function renderMyReviewAction(job) {
+    const box = document.getElementById('previewReviewAction');
+    if (!box) return;
+    box.innerHTML = '';
+
+    const user = auth.currentUser;
+    const isOwner = !!(user && job.user === user.uid);
+    if (!user || user.isAnonymous || isOwner) return; // pas de bouton pour soi-même ou visiteur non connecté
+
+    try {
+        const snap = await db.ref('job_contacts').orderByChild('jobId').equalTo(job.id).once('value');
+        let myContactKey = null;
+        let myContact = null;
+        snap.forEach(child => {
+            const data = child.val();
+            if (data && data.contactUid === user.uid) {
+                myContactKey = child.key;
+                myContact = data;
+            }
+        });
+
+        if (!myContactKey) {
+            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:var(--text-dim);">Contactez ce prestataire par WhatsApp pour pouvoir laisser un avis ensuite.</div>`;
+            return;
+        }
+
+        if (myContact.reviewed) {
+            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:var(--green,#25D366);">✓ Vous avez déjà laissé un avis pour cet échange.</div>`;
+            return;
+        }
+
+        const ownerProfile = profilesCache[job.user] || {};
+        const ownerName = ownerProfile.name || ownerProfile.company || 'ce prestataire';
+        box.innerHTML = `<button type="button" onclick="showReviewPrompt('${myContactKey}', '${job.user}', '${escapeHtml(job.title || '')}', '${escapeHtml(ownerName)}')" style="margin-top:12px;width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;">⭐ Laisser un avis</button>`;
+    } catch (e) {
+        console.warn('renderMyReviewAction error', e);
+    }
+}
+
 async function checkPendingReviews(uid) {
   try {
     const snap = await db.ref('job_contacts').orderByChild('contactUid').equalTo(uid).once('value');
@@ -3914,7 +3960,8 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
         reviewerUid: auth.currentUser.uid,
         rating: selectedRating,
         comment,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        contactKey
       });
 
       // Met à jour la moyenne du profil de façon atomique (transaction),
@@ -3983,6 +4030,9 @@ document.addEventListener('click', (e) => {
         <!-- Avis reçus par l'auteur de l'annonce : visible par tout le monde, pas
              seulement le propriétaire, pour permettre de décider AVANT de contacter. -->
         <div id="previewOwnerReviews"></div>
+
+        <!-- Bouton pour laisser un avis soi-même, si on a déjà contacté ce prestataire -->
+        <div id="previewReviewAction"></div>
 
         <!-- NOUVEAU : Conteneur pour afficher les personnes intéressées -->
         <div id="previewContactsContainer"></div>
