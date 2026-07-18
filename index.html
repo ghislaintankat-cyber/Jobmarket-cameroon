@@ -2520,8 +2520,11 @@ const CHAT_STRINGS = {
     help: `Je peux vous aider sur : {topics}. Posez votre question directement, ou touchez une suggestion ci-dessus.`,
     emptyPrompt: `Écrivez votre question et je vous répondrai sur les fonctions de JobMarket, les prix ou la sécurité.`,
     noAnswer: `Je n'ai pas de réponse approuvée pour ce sujet précis. Je peux aider avec : {topics}. Pour une décision financière importante ou une accusation de fraude, demandez une vérification humaine.`,
-    topicsSummary: `publier une demande (bouton + ou appui long sur la carte), trouver un artisan, contacter par WhatsApp, repérer une arnaque, calculer un prix ou une marge, le compte et le Profil Pro, gérer vos publications, laisser un avis, vérifier votre numéro par SMS, les photos, la carte et l'itinéraire, et les notifications`,
-    marginTemplate: `Avec un coût de {cost} FCFA et un prix de vente de {price} FCFA, la marge brute est de {margin} FCFA par unité ({rate} % du prix de vente). C'est une estimation : retirez aussi transport, matériel, commissions et taxes avant de décider.`
+    topicsSummary: `publier une demande (bouton + ou appui long sur la carte), trouver un artisan, contacter par WhatsApp, repérer une arnaque, calculer un prix, une marge ou un pourcentage, faire un calcul rapide (ex : 2500*8), le compte et le Profil Pro, gérer vos publications, laisser un avis, vérifier votre numéro par SMS, les photos, la carte et l'itinéraire, et les notifications`,
+    marginTemplate: `Avec un coût de {cost} FCFA et un prix de vente de {price} FCFA, la marge brute est de {margin} FCFA par unité ({rate} % du prix de vente). C'est une estimation : retirez aussi transport, matériel, commissions et taxes avant de décider.`,
+    calcTemplate: `Résultat : {expr} = {result}.`,
+    percentTemplate: `{rate} % de {base} FCFA = {result} FCFA.`,
+    percentDiscountTemplate: `Avec une remise de {rate} % sur {base} FCFA, la réduction est de {result} FCFA — nouveau prix : {finalPrice} FCFA.`
   },
   en: {
     greeting: `Hello! Ask me a question about JobMarket, a price, a margin, or a profile's safety.`,
@@ -2530,8 +2533,11 @@ const CHAT_STRINGS = {
     help: `I can help with: {topics}. Ask your question directly, or tap a suggestion above.`,
     emptyPrompt: `Type your question and I'll answer about JobMarket's features, pricing, or safety.`,
     noAnswer: `I don't have an approved answer for that exact topic. I can help with: {topics}. For an important financial decision or a fraud accusation, ask for a human review.`,
-    topicsSummary: `posting a request (+ button or long-press on the map), finding a tradesperson, contacting via WhatsApp, spotting a scam, calculating a price or margin, your account and Pro Profile, managing your listings, leaving a review, verifying your phone by SMS, photos, the map and route, and notifications`,
-    marginTemplate: `With a cost of {cost} FCFA and a selling price of {price} FCFA, the gross margin is {margin} FCFA per unit ({rate}% of the selling price). This is an estimate: also subtract transport, materials, commissions and taxes before deciding.`
+    topicsSummary: `posting a request (+ button or long-press on the map), finding a tradesperson, contacting via WhatsApp, spotting a scam, calculating a price, a margin or a percentage, doing a quick calculation (e.g. 2500*8), your account and Pro Profile, managing your listings, leaving a review, verifying your phone by SMS, photos, the map and route, and notifications`,
+    marginTemplate: `With a cost of {cost} FCFA and a selling price of {price} FCFA, the gross margin is {margin} FCFA per unit ({rate}% of the selling price). This is an estimate: also subtract transport, materials, commissions and taxes before deciding.`,
+    calcTemplate: `Result: {expr} = {result}.`,
+    percentTemplate: `{rate}% of {base} FCFA = {result} FCFA.`,
+    percentDiscountTemplate: `With a {rate}% discount on {base} FCFA, the reduction is {result} FCFA — new price: {finalPrice} FCFA.`
   },
   it: {
     greeting: `Ciao! Fammi una domanda su JobMarket, un prezzo, un margine o la sicurezza di un profilo.`,
@@ -2540,8 +2546,11 @@ const CHAT_STRINGS = {
     help: `Posso aiutarti su: {topics}. Fai la tua domanda direttamente, oppure tocca un suggerimento qui sopra.`,
     emptyPrompt: `Scrivi la tua domanda e ti risponderò sulle funzioni di JobMarket, i prezzi o la sicurezza.`,
     noAnswer: `Non ho una risposta approvata per questo argomento specifico. Posso aiutarti con: {topics}. Per una decisione finanziaria importante o un'accusa di frode, richiedi una verifica umana.`,
-    topicsSummary: `pubblicare una richiesta (pulsante + o pressione prolungata sulla mappa), trovare un artigiano, contattare via WhatsApp, riconoscere una truffa, calcolare un prezzo o un margine, l'account e il Profilo Pro, gestire i tuoi annunci, lasciare una recensione, verificare il tuo numero via SMS, le foto, la mappa e l'itinerario, e le notifiche`,
-    marginTemplate: `Con un costo di {cost} FCFA e un prezzo di vendita di {price} FCFA, il margine lordo è di {margin} FCFA per unità ({rate}% del prezzo di vendita). È una stima: sottrai anche trasporto, materiali, commissioni e tasse prima di decidere.`
+    topicsSummary: `pubblicare una richiesta (pulsante + o pressione prolungata sulla mappa), trovare un artigiano, contattare via WhatsApp, riconoscere una truffa, calcolare un prezzo, un margine o una percentuale, fare un calcolo rapido (es. 2500*8), l'account e il Profilo Pro, gestire i tuoi annunci, lasciare una recensione, verificare il tuo numero via SMS, le foto, la mappa e l'itinerario, e le notifiche`,
+    marginTemplate: `Con un costo di {cost} FCFA e un prezzo di vendita di {price} FCFA, il margine lordo è di {margin} FCFA per unità ({rate}% del prezzo di vendita). È una stima: sottrai anche trasporto, materiali, commissioni e tasse prima di decidere.`,
+    calcTemplate: `Risultato: {expr} = {result}.`,
+    percentTemplate: `{rate}% di {base} FCFA = {result} FCFA.`,
+    percentDiscountTemplate: `Con uno sconto del {rate}% su {base} FCFA, la riduzione è di {result} FCFA — nuovo prezzo: {finalPrice} FCFA.`
   },
   de: {
     greeting: `Hallo! Stellen Sie mir eine Frage zu JobMarket, einem Preis, einer Marge oder der Sicherheit eines Profils.`,
@@ -2550,8 +2559,11 @@ const CHAT_STRINGS = {
     help: `Ich kann Ihnen helfen bei: {topics}. Stellen Sie Ihre Frage direkt oder tippen Sie oben auf einen Vorschlag.`,
     emptyPrompt: `Schreiben Sie Ihre Frage und ich antworte zu den Funktionen von JobMarket, Preisen oder Sicherheit.`,
     noAnswer: `Ich habe keine geprüfte Antwort zu genau diesem Thema. Ich kann helfen bei: {topics}. Bei einer wichtigen finanziellen Entscheidung oder einem Betrugsverdacht bitten Sie um eine menschliche Prüfung.`,
-    topicsSummary: `eine Anfrage veröffentlichen (Schaltfläche + oder langes Drücken auf der Karte), einen Handwerker finden, über WhatsApp Kontakt aufnehmen, Betrug erkennen, einen Preis oder eine Marge berechnen, Ihr Konto und Profi-Profil, Ihre Anzeigen verwalten, eine Bewertung hinterlassen, Ihre Nummer per SMS verifizieren, Fotos, die Karte und Route sowie Benachrichtigungen`,
-    marginTemplate: `Bei Kosten von {cost} FCFA und einem Verkaufspreis von {price} FCFA beträgt die Bruttomarge {margin} FCFA pro Einheit ({rate}% des Verkaufspreises). Dies ist eine Schätzung: Ziehen Sie vor einer Entscheidung auch Transport, Material, Provisionen und Steuern ab.`
+    topicsSummary: `eine Anfrage veröffentlichen (Schaltfläche + oder langes Drücken auf der Karte), einen Handwerker finden, über WhatsApp Kontakt aufnehmen, Betrug erkennen, einen Preis, eine Marge oder einen Prozentsatz berechnen, eine schnelle Rechnung machen (z. B. 2500*8), Ihr Konto und Profi-Profil, Ihre Anzeigen verwalten, eine Bewertung hinterlassen, Ihre Nummer per SMS verifizieren, Fotos, die Karte und Route sowie Benachrichtigungen`,
+    marginTemplate: `Bei Kosten von {cost} FCFA und einem Verkaufspreis von {price} FCFA beträgt die Bruttomarge {margin} FCFA pro Einheit ({rate}% des Verkaufspreises). Dies ist eine Schätzung: Ziehen Sie vor einer Entscheidung auch Transport, Material, Provisionen und Steuern ab.`,
+    calcTemplate: `Ergebnis: {expr} = {result}.`,
+    percentTemplate: `{rate}% von {base} FCFA = {result} FCFA.`,
+    percentDiscountTemplate: `Bei einem Rabatt von {rate}% auf {base} FCFA beträgt die Ermäßigung {result} FCFA — neuer Preis: {finalPrice} FCFA.`
   },
   zh: {
     greeting: `您好！请向我提问关于JobMarket、价格、利润或资料安全性的问题。`,
@@ -2560,8 +2572,11 @@ const CHAT_STRINGS = {
     help: `我可以帮助您了解：{topics}。您可以直接输入问题，或点击上方的建议。`,
     emptyPrompt: `请输入您的问题，我会为您解答关于JobMarket功能、价格或安全方面的内容。`,
     noAnswer: `我没有针对这个具体话题的标准答案。我可以帮助您了解：{topics}。对于重要的财务决定或欺诈指控，请申请人工审核。`,
-    topicsSummary: `发布需求（点击+按钮或在地图上长按）、寻找工匠、通过WhatsApp联系、识别诈骗、计算价格或利润、账户与专业资料、管理您的发布信息、留下评价、通过短信验证您的号码、照片、地图与路线，以及通知`,
-    marginTemplate: `成本为{cost} FCFA，销售价格为{price} FCFA时，每单位毛利为{margin} FCFA（占销售价格的{rate}%）。这只是估算：做决定前还需扣除运输、材料、佣金和税费。`
+    topicsSummary: `发布需求（点击+按钮或在地图上长按）、寻找工匠、通过WhatsApp联系、识别诈骗、计算价格、利润或百分比、快速运算（例如 2500*8）、账户与专业资料、管理您的发布信息、留下评价、通过短信验证您的号码、照片、地图与路线，以及通知`,
+    marginTemplate: `成本为{cost} FCFA，销售价格为{price} FCFA时，每单位毛利为{margin} FCFA（占销售价格的{rate}%）。这只是估算：做决定前还需扣除运输、材料、佣金和税费。`,
+    calcTemplate: `结果：{expr} = {result}。`,
+    percentTemplate: `{base} FCFA 的 {rate}% = {result} FCFA。`,
+    percentDiscountTemplate: `在 {base} FCFA 上享受 {rate}% 折扣，减免金额为 {result} FCFA — 新价格：{finalPrice} FCFA。`
   }
 };
 
@@ -2648,6 +2663,16 @@ const LOCAL_CHAT_KNOWLEDGE = [
     }
   },
   {
+    terms:['whatsapp ne fonctionne pas','whatsapp ne marche pas','page telecharger whatsapp','ouvrir application whatsapp','whatsapp indisponible','lien whatsapp casse','probleme whatsapp','whatsapp not working','whatsapp wont open','whatsapp download page','open app or download','whatsapp unavailable','broken whatsapp link','whatsapp problem','whatsapp non funziona','whatsapp non si apre','pagina scarica whatsapp','apri app o scarica','whatsapp non disponibile','link whatsapp rotto','problema whatsapp','whatsapp funktioniert nicht','whatsapp offnet sich nicht','whatsapp download seite','app offnen oder herunterladen','whatsapp nicht verfugbar','defekter whatsapp link','whatsapp problem','whatsapp打不开','whatsapp无法打开','下载whatsapp页面','打开应用或下载','whatsapp不可用','whatsapp链接损坏','whatsapp问题'],
+    answers: {
+      fr: `Le bouton WhatsApp doit ouvrir directement la conversation, sans passer par une page intermédiaire. Si une page « Ouvrir l'app / Télécharger » s'affiche quand même, c'est en général que WhatsApp n'est pas installé sur cet appareil, ou que le navigateur bloque les fenêtres pop-up : autorisez les pop-up pour ce site, ou installez WhatsApp puis réessayez. Sur ordinateur sans l'application, WhatsApp Web s'ouvre normalement à la place.`,
+      en: `The WhatsApp button should open the conversation directly, without going through an intermediate page. If an "Open app / Download" page appears anyway, it's usually because WhatsApp isn't installed on this device, or the browser is blocking pop-ups: allow pop-ups for this site, or install WhatsApp and try again. On a computer without the app, WhatsApp Web opens instead.`,
+      it: `Il pulsante WhatsApp deve aprire direttamente la conversazione, senza passare da una pagina intermedia. Se compare comunque una pagina «Apri app / Scarica», di solito è perché WhatsApp non è installato su questo dispositivo, oppure il browser blocca i pop-up: consenti i pop-up per questo sito, oppure installa WhatsApp e riprova. Su computer senza l'app, si apre invece WhatsApp Web.`,
+      de: `Die WhatsApp-Schaltfläche sollte das Gespräch direkt öffnen, ohne eine Zwischenseite. Wenn trotzdem eine Seite „App öffnen / Herunterladen" erscheint, liegt das meist daran, dass WhatsApp auf diesem Gerät nicht installiert ist oder der Browser Pop-ups blockiert: Erlauben Sie Pop-ups für diese Website oder installieren Sie WhatsApp und versuchen Sie es erneut. Am Computer ohne die App öffnet sich stattdessen WhatsApp Web.`,
+      zh: `WhatsApp按钮应该直接打开对话，而不经过中间页面。如果仍然出现"打开应用/下载"页面，通常是因为此设备未安装WhatsApp，或浏览器阻止了弹出窗口：请为此网站允许弹出窗口，或安装WhatsApp后重试。在没有安装应用的电脑上，会改为打开WhatsApp网页版。`
+    }
+  },
+  {
     terms:['contacter','whatsapp','appeler un artisan','envoyer un message','joindre quelqu un','contact via whatsapp','call a tradesperson','send a message','reach someone','contattare','chiamare un artigiano','inviare un messaggio','kontaktieren','anrufen','nachricht senden','联系工匠','拨打电话','发送消息'],
     answers: {
       fr: `Ouvrez l'annonce puis utilisez WhatsApp seulement si vous êtes connecté et votre profil est complet. Gardez une trace écrite de ce qui est convenu : prestation, prix, délai et conditions. Ne communiquez jamais de code de connexion ou de carte bancaire.`,
@@ -2670,11 +2695,11 @@ const LOCAL_CHAT_KNOWLEDGE = [
   {
     terms:['prix','tarif','cout','marge','benefice','budget','devis','rentable','price','pricing','cost','margin','profit','quote','profitable','prezzo','tariffa','costo','margine','profitto','preventivo','preis','tarif','kosten','gewinn','angebot','价格','费用','成本','利润','报价'],
     answers: {
-      fr: `Pour évaluer un prix : marge brute = prix de vente − coût direct. Pour une activité, ajoutez aussi transport, matériel, commission, temps et taxes. Demandez plusieurs devis comparables et évitez les promesses de prix ou de bénéfice garanti. Astuce : donnez-moi un coût et un prix de vente (deux nombres) et je calcule la marge pour vous.`,
-      en: `To evaluate a price: gross margin = selling price − direct cost. For a full activity, also add transport, materials, commission, time and taxes. Ask for several comparable quotes and be wary of promises of guaranteed prices or profit. Tip: give me a cost and a selling price (two numbers) and I'll calculate the margin for you.`,
-      it: `Per valutare un prezzo: margine lordo = prezzo di vendita − costo diretto. Per un'attività, aggiungi anche trasporto, materiali, commissione, tempo e tasse. Chiedi più preventivi comparabili ed evita le promesse di prezzo o profitto garantito. Consiglio: dammi un costo e un prezzo di vendita (due numeri) e calcolerò il margine per te.`,
-      de: `Um einen Preis zu bewerten: Bruttomarge = Verkaufspreis − direkte Kosten. Für eine Tätigkeit auch Transport, Material, Provision, Zeit und Steuern hinzufügen. Holen Sie mehrere vergleichbare Angebote ein und seien Sie vorsichtig bei Versprechen von garantierten Preisen oder Gewinnen. Tipp: Nennen Sie mir einen Kostenpreis und einen Verkaufspreis (zwei Zahlen), und ich berechne die Marge für Sie.`,
-      zh: `评估价格的方法：毛利 = 销售价格 − 直接成本。对于一项活动，还需加上运输、材料、佣金、时间和税费。请索取多个可比报价，警惕承诺"保证价格"或"保证利润"的说法。小贴士：告诉我成本和销售价格（两个数字），我可以帮您计算利润。`
+      fr: `Pour évaluer un prix : marge brute = prix de vente − coût direct. Pour une activité, ajoutez aussi transport, matériel, commission, temps et taxes. Demandez plusieurs devis comparables et évitez les promesses de prix ou de bénéfice garanti. Astuce : donnez-moi un coût et un prix de vente (deux nombres) et je calcule la marge ; tapez un pourcentage (ex : 15% de 20000) pour une remise ou une commission ; ou tapez directement un calcul (ex : 2500*8) pour un résultat rapide.`,
+      en: `To evaluate a price: gross margin = selling price − direct cost. For a full activity, also add transport, materials, commission, time and taxes. Ask for several comparable quotes and be wary of promises of guaranteed prices or profit. Tip: give me a cost and a selling price (two numbers) and I'll calculate the margin; type a percentage (e.g. 15% of 20000) for a discount or commission; or type a calculation directly (e.g. 2500*8) for a quick result.`,
+      it: `Per valutare un prezzo: margine lordo = prezzo di vendita − costo diretto. Per un'attività, aggiungi anche trasporto, materiali, commissione, tempo e tasse. Chiedi più preventivi comparabili ed evita le promesse di prezzo o profitto garantito. Consiglio: dammi un costo e un prezzo di vendita (due numeri) e calcolerò il margine; scrivi una percentuale (es. 15% di 20000) per uno sconto o una commissione; oppure scrivi direttamente un calcolo (es. 2500*8) per un risultato rapido.`,
+      de: `Um einen Preis zu bewerten: Bruttomarge = Verkaufspreis − direkte Kosten. Für eine Tätigkeit auch Transport, Material, Provision, Zeit und Steuern hinzufügen. Holen Sie mehrere vergleichbare Angebote ein und seien Sie vorsichtig bei Versprechen von garantierten Preisen oder Gewinnen. Tipp: Nennen Sie mir einen Kostenpreis und einen Verkaufspreis (zwei Zahlen), und ich berechne die Marge; geben Sie einen Prozentsatz ein (z. B. 15% von 20000) für einen Rabatt oder eine Provision; oder geben Sie direkt eine Rechnung ein (z. B. 2500*8) für ein schnelles Ergebnis.`,
+      zh: `评估价格的方法：毛利 = 销售价格 − 直接成本。对于一项活动，还需加上运输、材料、佣金、时间和税费。请索取多个可比报价，警惕承诺"保证价格"或"保证利润"的说法。小贴士：告诉我成本和销售价格（两个数字），我可以帮您计算利润；输入百分比（例如15%的20000）可计算折扣或佣金；或直接输入运算（例如2500*8）快速得到结果。`
     }
   },
   {
@@ -2728,6 +2753,16 @@ const LOCAL_CHAT_KNOWLEDGE = [
     }
   },
   {
+    terms:['erreur sms','code sms invalide','je ne recois pas le code','trop de tentatives sms','erreur recaptcha','recaptcha','erreur de verification','numero deja utilise sms','sms error','invalid sms code','not receiving the code','too many sms attempts','recaptcha error','verification error','number already in use sms','errore sms','codice sms non valido','non ricevo il codice','troppi tentativi sms','errore recaptcha','errore di verifica','numero gia utilizzato sms','sms fehler','ungultiger sms code','ich erhalte den code nicht','zu viele sms versuche','recaptcha fehler','verifizierungsfehler','nummer bereits verwendet sms','短信错误','验证码无效','没有收到验证码','短信尝试次数过多','recaptcha错误','验证错误','号码已被使用短信'],
+    answers: {
+      fr: `Si l'envoi du code échoue, le message indique maintenant la cause précise : numéro déjà utilisé sur un autre compte, trop de SMS envoyés aujourd'hui, trop de tentatives, ou site non autorisé pour la vérification. Vous pouvez réessayer directement après une erreur : le composant de sécurité (reCAPTCHA invisible) se réinitialise désormais automatiquement, donc corriger la cause (attendre un peu, vérifier le numéro) suffit pour qu'une nouvelle tentative fonctionne.`,
+      en: `If sending the code fails, the message now shows the exact cause: the number is already used on another account, too many SMS sent today, too many attempts, or the site isn't authorized for verification. You can retry right after an error: the security component (invisible reCAPTCHA) now resets automatically, so fixing the cause (waiting a bit, checking the number) is enough for a new attempt to work.`,
+      it: `Se l'invio del codice fallisce, il messaggio ora indica la causa precisa: numero già usato su un altro account, troppi SMS inviati oggi, troppi tentativi, oppure sito non autorizzato per la verifica. Puoi riprovare subito dopo un errore: il componente di sicurezza (reCAPTCHA invisibile) ora si reimposta automaticamente, quindi basta correggere la causa (aspettare un po', verificare il numero) perché un nuovo tentativo funzioni.`,
+      de: `Wenn das Senden des Codes fehlschlägt, zeigt die Meldung jetzt die genaue Ursache: die Nummer wird bereits für ein anderes Konto verwendet, es wurden heute zu viele SMS versendet, zu viele Versuche, oder die Website ist für die Verifizierung nicht autorisiert. Sie können es direkt nach einem Fehler erneut versuchen: die Sicherheitskomponente (unsichtbares reCAPTCHA) wird jetzt automatisch zurückgesetzt, sodass es genügt, die Ursache zu beheben (etwas warten, die Nummer prüfen), damit ein neuer Versuch funktioniert.`,
+      zh: `如果发送验证码失败，现在的提示会说明具体原因：该号码已被其他账户使用、今日发送短信次数过多、尝试次数过多，或该网站未获验证授权。出错后您可以直接重试：安全组件（隐形reCAPTCHA）现在会自动重置，因此只需解决问题原因（稍等片刻、核实号码）即可让新的尝试成功。`
+    }
+  },
+  {
     terms:['verifier mon numero','verification par sms','numero verifie','code sms','verifier mon telephone','badge telephone','verify my number','sms verification','verified phone','otp code','verify my phone','phone badge','verificare il mio numero','verifica sms','telefono verificato','codice sms','meine nummer verifizieren','sms verifizierung','verifiziertes telefon','sms code','验证我的号码','短信验证','已验证电话','验证码'],
     answers: {
       fr: `Dans Compte → « Mon Profil Pro », entrez votre numéro au format international (ex : +237650420710) puis appuyez sur « Envoyer le code ». Vous recevez un SMS avec un code à saisir pour valider. Une fois vérifié, un badge 📱 apparaît sur vos annonces : c'est un signal de confiance gratuit et automatique, différent du badge ✓ qui demande une vérification manuelle par pièce d'identité.`,
@@ -2765,6 +2800,138 @@ function getMarginAnswer(text) {
     .replace('{rate}', marginRate.toFixed(1));
 }
 
+// --- Calculatrice arithmétique locale, sans eval() (sécurité : ce fichier est un site
+// statique, eval()/Function() sur du texte utilisateur serait une porte ouverte à des
+// injections). Supporte + - * / et les parenthèses. Les nombres peuvent utiliser un
+// espace ou un point comme séparateur de milliers et une virgule comme décimale (même
+// convention que la marge ci-dessus), pour coller aux habitudes locales de saisie des
+// prix (ex : "20 000" ou "20.000").
+function safeEvalArithmetic(expr) {
+  const tokens = expr.match(/\d+(?:\.\d+)?|[()+\-*/]/g);
+  if (!tokens || !tokens.length) return null;
+  let pos = 0;
+  const peek = () => tokens[pos];
+  const consume = () => tokens[pos++];
+  function parseFactor() {
+    const tok = peek();
+    if (tok === undefined) throw new Error('fin inattendue');
+    if (tok === '(') {
+      consume();
+      const v = parseExpr();
+      if (peek() === ')') consume(); else throw new Error('parenthese manquante');
+      return v;
+    }
+    if (tok === '-') { consume(); return -parseFactor(); }
+    if (tok === '+') { consume(); return parseFactor(); }
+    consume();
+    const n = Number(tok);
+    if (!Number.isFinite(n)) throw new Error('nombre invalide');
+    return n;
+  }
+  function parseTerm() {
+    let v = parseFactor();
+    while (peek() === '*' || peek() === '/') {
+      const op = consume();
+      const rhs = parseFactor();
+      v = op === '*' ? v * rhs : v / rhs;
+    }
+    return v;
+  }
+  function parseExpr() {
+    let v = parseTerm();
+    while (peek() === '+' || peek() === '-') {
+      const op = consume();
+      const rhs = parseTerm();
+      v = op === '+' ? v + rhs : v - rhs;
+    }
+    return v;
+  }
+  try {
+    const result = parseExpr();
+    if (pos !== tokens.length) return null; // texte restant non consommé : pas une expression propre
+    return Number.isFinite(result) ? result : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Repère une expression arithmétique explicite dans un texte libre (ex : "2500*8",
+// "20000 + 15000 - 3000", "(2000+3000)*4") et la nettoie pour safeEvalArithmetic.
+// Renvoie null s'il n'y a pas d'opérateur binaire clair, pour ne pas confondre un
+// numéro de téléphone (+237...) ou une date (18-07-2026) avec un calcul.
+function extractCalcExpression(rawText) {
+  let t = String(rawText || '');
+  t = t.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+  // "x" comme signe de multiplication seulement entre deux chiffres (ex: "5 x 1200"),
+  // jamais à l'intérieur d'un mot.
+  t = t.replace(/(\d)\s*x\s*(\d)/gi, '$1*$2');
+  // Nombres "à la française" : espace/point = milliers, virgule = décimale.
+  t = t.replace(/\d+(?:[\s.]\d{3})*(?:,\d+)?/g, m => m.replace(/[\s.]/g, '').replace(',', '.'));
+  const kept = t.replace(/[^0-9+\-*/(). ]/g, ' ');
+  const tokens = kept.match(/\d+(?:\.\d+)?|[()+\-*/]/g);
+  if (!tokens || tokens.length < 3) return null;
+  let binaryOps = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    if (['+', '-', '*', '/'].includes(tokens[i])) {
+      const isUnary = (i === 0) || tokens[i - 1] === '(';
+      if (!isUnary) binaryOps++;
+    }
+  }
+  if (binaryOps < 1) return null;
+  // Évite de traiter une date (ex: 18-07-2026 ou 18/07/2026) comme une soustraction/division.
+  if (tokens.length === 5 && tokens[1] === tokens[3] && (tokens[1] === '-' || tokens[1] === '/') &&
+      /^\d{1,2}$/.test(tokens[0]) && /^\d{1,2}$/.test(tokens[2]) && /^\d{4}$/.test(tokens[4])) {
+    return null;
+  }
+  if (tokens.filter(tok => tok === '(').length !== tokens.filter(tok => tok === ')').length) return null;
+  return tokens.join('');
+}
+
+function getCalcAnswer(text) {
+  const expr = extractCalcExpression(text);
+  if (!expr) return null;
+  const result = safeEvalArithmetic(expr);
+  if (result === null) return null;
+  const lang = (typeof currentLang !== 'undefined' && CHAT_NUM_LOCALE[currentLang]) ? currentLang : 'fr';
+  const locale = CHAT_NUM_LOCALE[lang];
+  // Ré-affiche l'expression avec les signes usuels plutôt que les symboles internes.
+  const displayExpr = expr.replace(/\*/g, '×').replace(/\//g, '÷');
+  return csText('calcTemplate')
+    .replace('{expr}', displayExpr)
+    .replace('{result}', result.toLocaleString(locale, { maximumFractionDigits: 2 }));
+}
+
+// Calcule "N % de M" (remise, commission, taxe...) quand le texte contient un seul
+// pourcentage et un seul autre nombre — sans dépendre du mot de liaison ("de", "of",
+// "di", "von", "的"), pour fonctionner dans les 5 langues. Si des mots de remise/rabais
+// sont présents, affiche en plus le prix final après réduction.
+function getPercentAnswer(text) {
+  const percentMatches = text.match(/\d+(?:[.,]\d+)?\s*%/g);
+  if (!percentMatches || percentMatches.length !== 1) return null;
+  const percentValue = Number(percentMatches[0].replace('%', '').replace(',', '.').trim());
+  if (!Number.isFinite(percentValue)) return null;
+  const allNumbers = text.match(/\d+(?:[\s.]\d{3})*(?:,\d+)?/g) || [];
+  const withoutPercentToken = allNumbers.filter(n => !percentMatches[0].startsWith(n));
+  if (withoutPercentToken.length !== 1) return null;
+  const base = Number(withoutPercentToken[0].replace(/[\s.]/g, '').replace(',', '.'));
+  if (!Number.isFinite(base) || base === 0) return null;
+  const amount = base * (percentValue / 100);
+  const lang = (typeof currentLang !== 'undefined' && CHAT_NUM_LOCALE[currentLang]) ? currentLang : 'fr';
+  const locale = CHAT_NUM_LOCALE[lang];
+  const isDiscount = /remise|rabais|reduction|discount|sconto|riduzione|rabatt|折扣|优惠|减免/.test(normaliseChatText(text));
+  if (isDiscount) {
+    return csText('percentDiscountTemplate')
+      .replace('{rate}', percentValue.toLocaleString(locale))
+      .replace('{base}', base.toLocaleString(locale))
+      .replace('{result}', amount.toLocaleString(locale, { maximumFractionDigits: 2 }))
+      .replace('{finalPrice}', (base - amount).toLocaleString(locale, { maximumFractionDigits: 2 }));
+  }
+  return csText('percentTemplate')
+    .replace('{rate}', percentValue.toLocaleString(locale))
+    .replace('{base}', base.toLocaleString(locale))
+    .replace('{result}', amount.toLocaleString(locale, { maximumFractionDigits: 2 }));
+}
+
 function localChatAnswer(question) {
   const text = normaliseChatText(question);
   if (!text) return csText('emptyPrompt');
@@ -2787,6 +2954,12 @@ function localChatAnswer(question) {
 
   const marginAnswer = getMarginAnswer(question);
   if (marginAnswer) return marginAnswer;
+
+  const percentAnswer = getPercentAnswer(question);
+  if (percentAnswer) return percentAnswer;
+
+  const calcAnswer = getCalcAnswer(question);
+  if (calcAnswer) return calcAnswer;
 
   const lang = (typeof currentLang !== 'undefined' && CHAT_STRINGS[currentLang]) ? currentLang : 'fr';
   const ranked = LOCAL_CHAT_KNOWLEDGE.map(item => ({ item, score: item.terms.reduce((n, term) => n + (text.includes(normaliseChatText(term)) ? 1 : 0), 0) })).sort((a,b) => b.score - a.score)[0];
