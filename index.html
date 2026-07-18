@@ -758,6 +758,27 @@ body{
   <div class="splash-bar"><div class="splash-progress"></div></div>
 </div>
 
+<!-- ===== LANGUAGE PICKER (shown once, after the splash, until the user picks a language) ===== -->
+<style>
+.lang-pick-option{transition:background .15s,border-color .15s,transform .12s;}
+.lang-pick-option:hover{background:var(--gold,#FFD700) !important;color:#0A0A0F !important;border-color:var(--gold,#FFD700) !important;}
+.lang-pick-option:active{transform:scale(0.97);}
+</style>
+<div id="langPicker" style="display:none;position:fixed;inset:0;z-index:10500;background:rgba(10,10,15,0.88);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
+  <div style="position:relative;width:100%;max-width:340px;background:#13131A;border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <button onclick="closeLangPicker()" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:#8888A8;cursor:pointer;font-size:14px;">✕</button>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;margin-bottom:4px;padding-right:24px;">Choisissez votre langue</div>
+    <div style="color:#8888A8;font-size:13px;margin-bottom:16px;">Choose your language</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="lang-pick-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇫🇷 Français</button>
+      <button class="lang-pick-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇬🇧 English</button>
+      <button class="lang-pick-option" onclick="setLanguage('it')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇮🇹 Italiano</button>
+      <button class="lang-pick-option" onclick="setLanguage('de')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇩🇪 Deutsch</button>
+      <button class="lang-pick-option" onclick="setLanguage('zh')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇨🇳 中文</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== TOAST ===== -->
 <div id="toast"></div>
 
@@ -1219,9 +1240,28 @@ const jobsLayer = L.featureGroup().addTo(map);
 window.addEventListener('load', () => {
   setTimeout(() => {
     document.getElementById('splash').classList.add('hide');
-    setTimeout(() => { document.getElementById('splash').style.display='none'; }, 600);
+    setTimeout(() => {
+      document.getElementById('splash').style.display='none';
+      maybeShowLangPicker();
+    }, 600);
   }, 2200);
 });
+
+// Affiche le sélecteur de langue une seule fois (au tout premier lancement, ou tant
+// qu'aucune langue n'a été choisie explicitement). Une fois qu'une langue est choisie
+// (ici ou via le menu langue en haut de l'écran), 'appLangChosen' est mémorisé et ce
+// panneau ne réapparaît plus.
+function maybeShowLangPicker() {
+  if (localStorage.getItem('appLangChosen')) return;
+  const picker = document.getElementById('langPicker');
+  if (picker) picker.style.display = 'flex';
+}
+
+function closeLangPicker() {
+  localStorage.setItem('appLangChosen', '1');
+  const picker = document.getElementById('langPicker');
+  if (picker) picker.style.display = 'none';
+}
 
 // ===== TOAST =====
 let toastTimer;
@@ -1289,7 +1329,6 @@ const I18N = {
     chatSuggestion3: "Comment calculer ma marge ?", chatSuggestion4: "Comment gérer mes publications ?",
     chatSafetyNotice: "Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d'identité dans le chat.",
     chatInputPlaceholder: "Votre message...",
-    chatFrenchOnlyNotice: "(Réponses détaillées disponibles en français pour le moment)",
     adminBadge: "ADMIN", adminStatJobsTotal: "Jobs total", adminStatUsers: "Utilisateurs",
     adminStatToday: "Publiés aujourd'hui", adminStatCountry: "Pays actif",
     adminVerificationsTitle: "Vérifications en attente", adminAllJobsTitle: "Tous les jobs",
@@ -1339,7 +1378,6 @@ const I18N = {
     chatSuggestion3: "How do I calculate my margin?", chatSuggestion4: "How do I manage my listings?",
     chatSafetyNotice: "No AI key, no message sent to an external model. Never share a password, SMS code, bank card or ID document in the chat.",
     chatInputPlaceholder: "Your message...",
-    chatFrenchOnlyNotice: "(Detailed answers are currently available in French only)",
     adminBadge: "ADMIN", adminStatJobsTotal: "Total jobs", adminStatUsers: "Users",
     adminStatToday: "Posted today", adminStatCountry: "Active country",
     adminVerificationsTitle: "Pending verifications", adminAllJobsTitle: "All jobs",
@@ -1389,7 +1427,6 @@ const I18N = {
     chatSuggestion3: "Come calcolo il mio margine?", chatSuggestion4: "Come gestisco i miei annunci?",
     chatSafetyNotice: "Nessuna chiave IA, nessun messaggio inviato a un modello esterno. Non condividere mai password, codici SMS, carte bancarie o documenti d'identità in chat.",
     chatInputPlaceholder: "Il tuo messaggio...",
-    chatFrenchOnlyNotice: "(Le risposte dettagliate sono al momento disponibili solo in francese)",
     adminBadge: "ADMIN", adminStatJobsTotal: "Lavori totali", adminStatUsers: "Utenti",
     adminStatToday: "Pubblicati oggi", adminStatCountry: "Paese attivo",
     adminVerificationsTitle: "Verifiche in attesa", adminAllJobsTitle: "Tutti i lavori",
@@ -1439,7 +1476,6 @@ const I18N = {
     chatSuggestion3: "Wie berechne ich meine Marge?", chatSuggestion4: "Wie verwalte ich meine Anzeigen?",
     chatSafetyNotice: "Kein KI-Schlüssel, keine Nachricht wird an ein externes Modell gesendet. Teilen Sie im Chat niemals Passwörter, SMS-Codes, Bankkarten oder Ausweisdokumente.",
     chatInputPlaceholder: "Ihre Nachricht...",
-    chatFrenchOnlyNotice: "(Detaillierte Antworten sind derzeit nur auf Französisch verfügbar)",
     adminBadge: "ADMIN", adminStatJobsTotal: "Jobs gesamt", adminStatUsers: "Benutzer",
     adminStatToday: "Heute veröffentlicht", adminStatCountry: "Aktives Land",
     adminVerificationsTitle: "Ausstehende Verifizierungen", adminAllJobsTitle: "Alle Jobs",
@@ -1489,7 +1525,6 @@ const I18N = {
     chatSuggestion3: "如何计算我的利润？", chatSuggestion4: "如何管理我的发布？",
     chatSafetyNotice: "没有AI密钥，不会向外部模型发送任何消息。切勿在聊天中分享密码、短信验证码、银行卡或身份证件。",
     chatInputPlaceholder: "您的消息...",
-    chatFrenchOnlyNotice: "（详细回答目前仅提供法语版本）",
     adminBadge: "管理员", adminStatJobsTotal: "工作总数", adminStatUsers: "用户",
     adminStatToday: "今日发布", adminStatCountry: "活跃国家",
     adminVerificationsTitle: "待处理的验证", adminAllJobsTitle: "所有工作",
@@ -1525,9 +1560,12 @@ function toggleLangMenu() {
 function setLanguage(lang) {
   currentLang = lang;
   localStorage.setItem('appLang', lang);
+  localStorage.setItem('appLangChosen', '1');
   applyTranslations();
   const menu = document.getElementById('langMenu');
   if (menu) menu.style.display = 'none';
+  const picker = document.getElementById('langPicker');
+  if (picker) picker.style.display = 'none';
   // Ré-affiche les listes/dynamiques dont le texte dépend de la langue (catégories, etc.)
   if (typeof allJobs !== 'undefined' && typeof updateJobsList === 'function') updateJobsList(allJobs);
 }
@@ -2425,28 +2463,225 @@ function hideChatTyping() {
   if (el) el.remove();
 }
 
-// Clé API Gemini gratuite (aistudio.google.com).
 // No external model or API key is used by this chat.
 // NOTE : le chat reste volontairement 100% local (voir callChatAI plus bas) plutôt que
 // d'appeler une IA distante. Sur un site statique comme celui-ci, une clé d'API IA
 // placée dans le code serait visible par n'importe qui et pourrait être volée/abusée —
-// ce qui contredirait la promesse « Hors ligne · privé » affichée dans le chat. On
-// élargit donc ici la base de connaissances locale pour couvrir plus de sujets.
+// ce qui contredirait la promesse « Hors ligne · privé » affichée dans le chat.
+// Tout le texte ci-dessous est traduit dans les 5 langues de l'app (fr/en/it/de/zh) et
+// la réponse renvoyée dépend toujours de currentLang, pour que l'assistant réponde dans
+// la langue actuellement choisie plutôt que toujours en français.
+
+const CHAT_NUM_LOCALE = { fr: 'fr-FR', en: 'en-US', it: 'it-IT', de: 'de-DE', zh: 'zh-CN' };
+
+// Petites phrases (salutations, aide, absence de réponse...) traduites dans les 5
+// langues. {topics} est remplacé par la liste des sujets (topicsSummary) au moment de
+// l'affichage.
+const CHAT_STRINGS = {
+  fr: {
+    greeting: `Bonjour ! Posez-moi une question sur JobMarket, un prix, une marge ou la sécurité d'un profil.`,
+    thanks: `Avec plaisir ! N'hésitez pas si vous avez une autre question.`,
+    goodbye: `À bientôt sur JobMarket !`,
+    help: `Je peux vous aider sur : {topics}. Posez votre question directement, ou touchez une suggestion ci-dessus.`,
+    emptyPrompt: `Écrivez votre question et je vous répondrai sur les fonctions de JobMarket, les prix ou la sécurité.`,
+    noAnswer: `Je n'ai pas de réponse approuvée pour ce sujet précis. Je peux aider avec : {topics}. Pour une décision financière importante ou une accusation de fraude, demandez une vérification humaine.`,
+    topicsSummary: `publier une demande (bouton + ou appui long sur la carte), trouver un artisan, contacter par WhatsApp, repérer une arnaque, calculer un prix ou une marge, le compte et le Profil Pro, gérer vos publications, les photos, la carte et l'itinéraire, et les notifications`,
+    marginTemplate: `Avec un coût de {cost} FCFA et un prix de vente de {price} FCFA, la marge brute est de {margin} FCFA par unité ({rate} % du prix de vente). C'est une estimation : retirez aussi transport, matériel, commissions et taxes avant de décider.`
+  },
+  en: {
+    greeting: `Hello! Ask me a question about JobMarket, a price, a margin, or a profile's safety.`,
+    thanks: `You're welcome! Feel free to ask if you have another question.`,
+    goodbye: `See you soon on JobMarket!`,
+    help: `I can help with: {topics}. Ask your question directly, or tap a suggestion above.`,
+    emptyPrompt: `Type your question and I'll answer about JobMarket's features, pricing, or safety.`,
+    noAnswer: `I don't have an approved answer for that exact topic. I can help with: {topics}. For an important financial decision or a fraud accusation, ask for a human review.`,
+    topicsSummary: `posting a request (+ button or long-press on the map), finding a tradesperson, contacting via WhatsApp, spotting a scam, calculating a price or margin, your account and Pro Profile, managing your listings, photos, the map and route, and notifications`,
+    marginTemplate: `With a cost of {cost} FCFA and a selling price of {price} FCFA, the gross margin is {margin} FCFA per unit ({rate}% of the selling price). This is an estimate: also subtract transport, materials, commissions and taxes before deciding.`
+  },
+  it: {
+    greeting: `Ciao! Fammi una domanda su JobMarket, un prezzo, un margine o la sicurezza di un profilo.`,
+    thanks: `Con piacere! Non esitare se hai un'altra domanda.`,
+    goodbye: `A presto su JobMarket!`,
+    help: `Posso aiutarti su: {topics}. Fai la tua domanda direttamente, oppure tocca un suggerimento qui sopra.`,
+    emptyPrompt: `Scrivi la tua domanda e ti risponderò sulle funzioni di JobMarket, i prezzi o la sicurezza.`,
+    noAnswer: `Non ho una risposta approvata per questo argomento specifico. Posso aiutarti con: {topics}. Per una decisione finanziaria importante o un'accusa di frode, richiedi una verifica umana.`,
+    topicsSummary: `pubblicare una richiesta (pulsante + o pressione prolungata sulla mappa), trovare un artigiano, contattare via WhatsApp, riconoscere una truffa, calcolare un prezzo o un margine, l'account e il Profilo Pro, gestire i tuoi annunci, le foto, la mappa e l'itinerario, e le notifiche`,
+    marginTemplate: `Con un costo di {cost} FCFA e un prezzo di vendita di {price} FCFA, il margine lordo è di {margin} FCFA per unità ({rate}% del prezzo di vendita). È una stima: sottrai anche trasporto, materiali, commissioni e tasse prima di decidere.`
+  },
+  de: {
+    greeting: `Hallo! Stellen Sie mir eine Frage zu JobMarket, einem Preis, einer Marge oder der Sicherheit eines Profils.`,
+    thanks: `Gern geschehen! Fragen Sie ruhig, wenn Sie noch etwas wissen möchten.`,
+    goodbye: `Bis bald auf JobMarket!`,
+    help: `Ich kann Ihnen helfen bei: {topics}. Stellen Sie Ihre Frage direkt oder tippen Sie oben auf einen Vorschlag.`,
+    emptyPrompt: `Schreiben Sie Ihre Frage und ich antworte zu den Funktionen von JobMarket, Preisen oder Sicherheit.`,
+    noAnswer: `Ich habe keine geprüfte Antwort zu genau diesem Thema. Ich kann helfen bei: {topics}. Bei einer wichtigen finanziellen Entscheidung oder einem Betrugsverdacht bitten Sie um eine menschliche Prüfung.`,
+    topicsSummary: `eine Anfrage veröffentlichen (Schaltfläche + oder langes Drücken auf der Karte), einen Handwerker finden, über WhatsApp Kontakt aufnehmen, Betrug erkennen, einen Preis oder eine Marge berechnen, Ihr Konto und Profi-Profil, Ihre Anzeigen verwalten, Fotos, die Karte und Route sowie Benachrichtigungen`,
+    marginTemplate: `Bei Kosten von {cost} FCFA und einem Verkaufspreis von {price} FCFA beträgt die Bruttomarge {margin} FCFA pro Einheit ({rate}% des Verkaufspreises). Dies ist eine Schätzung: Ziehen Sie vor einer Entscheidung auch Transport, Material, Provisionen und Steuern ab.`
+  },
+  zh: {
+    greeting: `您好！请向我提问关于JobMarket、价格、利润或资料安全性的问题。`,
+    thanks: `不客气！如果还有其他问题，请随时问我。`,
+    goodbye: `JobMarket再见！`,
+    help: `我可以帮助您了解：{topics}。您可以直接输入问题，或点击上方的建议。`,
+    emptyPrompt: `请输入您的问题，我会为您解答关于JobMarket功能、价格或安全方面的内容。`,
+    noAnswer: `我没有针对这个具体话题的标准答案。我可以帮助您了解：{topics}。对于重要的财务决定或欺诈指控，请申请人工审核。`,
+    topicsSummary: `发布需求（点击+按钮或在地图上长按）、寻找工匠、通过WhatsApp联系、识别诈骗、计算价格或利润、账户与专业资料、管理您的发布信息、照片、地图与路线，以及通知`,
+    marginTemplate: `成本为{cost} FCFA，销售价格为{price} FCFA时，每单位毛利为{margin} FCFA（占销售价格的{rate}%）。这只是估算：做决定前还需扣除运输、材料、佣金和税费。`
+  }
+};
+
+// Retourne une phrase courte (CHAT_STRINGS) dans la langue actuelle, avec repli sur le
+// français si la langue n'existe pas ou si la clé est absente.
+function csText(key) {
+  const lang = (typeof currentLang !== 'undefined' && CHAT_STRINGS[currentLang]) ? currentLang : 'fr';
+  return (CHAT_STRINGS[lang] && CHAT_STRINGS[lang][key]) || CHAT_STRINGS.fr[key] || '';
+}
+
+// Base de connaissances locale : chaque sujet a des mots-clés dans les 5 langues (pour
+// reconnaître la question quelle que soit la langue tapée par l'utilisateur) et une
+// réponse traduite dans les 5 langues (pour répondre dans la langue actuellement
+// sélectionnée au lieu de toujours répondre en français).
 const LOCAL_CHAT_KNOWLEDGE = [
-  { terms:['mes publications','ma publication','supprimer une annonce','supprimer mon job','modifier une annonce','modifier mon job'], answer:"Ouvrez Compte → « Mes publications » (connexion requise) pour voir toutes vos annonces, avec un bouton pour supprimer celles que vous avez publiées. Il n'y a pas encore de modification directe : supprimez l'ancienne annonce puis republiez-en une nouvelle à jour." },
-  { terms:['profil pro','mon profil','completer mon profil','photo de profil','competences','specialite','metier'], answer:"Dans Compte → « Mon Profil Pro », renseignez votre nom (ou société), votre métier/spécialité, vos compétences et une photo si vous le souhaitez. Un profil complet (nom ou société, et métier/spécialité) est nécessaire pour contacter un artisan par WhatsApp ou partager une annonce." },
-  { terms:['photo','photos','image','images'], answer:"Vous pouvez ajouter jusqu'à 5 photos (JPG ou PNG) à une annonce depuis la zone « Ajouter des photos » du formulaire de publication. Elles sont compressées automatiquement pour rester rapides à charger, même avec une connexion lente." },
-  { terms:['zoom','satellite','style carte','style de carte','vue plan','ma position','localiser','distance'], answer:"Les boutons sur le côté droit de la carte permettent de centrer sur votre position, zoomer/dézoomer, et basculer entre vue satellite et plan. Le badge « Distance » indique la distance jusqu'au job le plus éloigné actuellement affiché." },
-  { terms:['itineraire','trajet','chemin','route vers'], answer:"Ouvrez une annonce puis appuyez sur « Voir l'itinéraire » : la carte trace le chemin depuis votre position et affiche la distance et le temps estimé. Utilisez « Annuler » dans le panneau itinéraire pour l'effacer." },
-  { terms:['notification','notifications','cloche','alerte'], answer:"La cloche en haut de l'écran affiche les nouveaux jobs publiés autour de vous. Un point s'allume quand il y a du nouveau ; appuyez dessus pour voir la liste." },
-  { terms:['gps requis','gps bloque','position refusee','autoriser ma position'], answer:"Si « GPS requis pour publier » s'affiche, votre téléphone ou navigateur a refusé l'accès à la position. Autorisez la localisation dans les réglages du navigateur pour ce site, puis réessayez. Si vous avez choisi l'emplacement par appui long sur la carte, cette autorisation n'est pas nécessaire : la position choisie est utilisée directement." },
-  { terms:['contact','whatsapp','appeler','message','joindre'], answer:"Ouvrez l'annonce puis utilisez WhatsApp seulement si vous êtes connecté et votre profil est complet. Gardez une trace écrite de ce qui est convenu : prestation, prix, délai et conditions. Ne communiquez jamais de code de connexion ou de carte bancaire." },
-  { terms:['arnaque','fraude','faux','fake','escroquerie','suspect','securite','verification'], answer:"Un signal n'est pas une preuve de fraude. Soyez prudent si un profil est très récent, refuse un devis écrit, demande un paiement immédiat ou vous pousse à quitter la plateforme. Vérifiez les informations, gardez les échanges, et demandez une revue humaine avant d'accuser ou de bloquer quelqu'un." },
-  { terms:['prix','tarif','cout','marge','benefice','budget','devis','rentable'], answer:"Pour évaluer un prix : marge brute = prix de vente − coût direct. Pour une activité, ajoutez aussi transport, matériel, commission, temps et taxes. Demandez plusieurs devis comparables et évitez les promesses de prix ou de bénéfice garanti. Astuce : donnez-moi un coût et un prix de vente (deux nombres) et je calcule la marge pour vous." },
-  { terms:['compte','connexion','connecter','creer un compte','inscription','mot de passe','password'], answer:"Ouvrez Compte, puis « Créer compte » (email + mot de passe, ou Google) ou « Connexion » si vous en avez déjà un. Il faut être connecté pour publier une demande ou contacter quelqu'un par WhatsApp. Ne partagez jamais votre mot de passe ou un code reçu par SMS, même à quelqu'un qui prétend être du support." },
-  { terms:['trouver','rechercher','artisan','prestataire','proche','filtre','categorie'], answer:"Utilisez la carte ou la liste, puis filtrez par catégorie (BTP, Électricité, Plomberie, Ménage, Jardinage, Mécanique, Informatique). Ouvrez une annonce pour comparer la description, le prix et les informations visibles. Avant de choisir un artisan, demandez un devis écrit, vérifiez son profil et convenez du travail avant tout paiement." },
-  { terms:['publier','poster','ajouter','creer','demande','appui long'], answer:"Deux façons de publier : appuyez sur le bouton + (en haut ou en bas de l'écran), ou faites un appui long (clic droit sur ordinateur) directement à l'endroit voulu sur la carte puis « Publier un job ici ». Choisissez une catégorie, ajoutez un titre clair, le budget, votre téléphone et une description précise. Ne publiez pas de mot de passe, code SMS ou document d'identité." },
-  { terms:['supprimer','effacer','donnees','confidentialite','privacy'], answer:"L'assistant local ne stocke pas vos questions sur un serveur. Pour les données de votre compte JobMarket, utilisez le support officiel afin de demander la procédure adaptée; ne partagez pas de documents sensibles dans le chat." }
+  {
+    terms:['mes publications','ma publication','supprimer une annonce','supprimer mon job','modifier une annonce','modifier mon job','my listings','my listing','delete a listing','delete my job','edit a listing','edit my job','i miei annunci','eliminare un annuncio','modificare un annuncio','meine anzeigen','anzeige loschen','anzeige bearbeiten','我的发布','删除发布','修改发布'],
+    answers: {
+      fr: `Ouvrez Compte → « Mes publications » (connexion requise) pour voir toutes vos annonces, avec un bouton pour supprimer celles que vous avez publiées. Il n'y a pas encore de modification directe : supprimez l'ancienne annonce puis republiez-en une nouvelle à jour.`,
+      en: `Open Account → "My listings" (login required) to see all your listings, with a button to delete the ones you posted. There is no direct editing yet: delete the old listing and post a new, up-to-date one instead.`,
+      it: `Apri Account → «I miei annunci» (accesso richiesto) per vedere tutti i tuoi annunci, con un pulsante per eliminare quelli che hai pubblicato. Non è ancora possibile modificarli direttamente: elimina il vecchio annuncio e pubblicane uno nuovo aggiornato.`,
+      de: `Öffnen Sie Konto → „Meine Anzeigen" (Anmeldung erforderlich), um alle Ihre Anzeigen zu sehen, mit einer Schaltfläche zum Löschen der von Ihnen veröffentlichten. Eine direkte Bearbeitung ist noch nicht möglich: Löschen Sie die alte Anzeige und veröffentlichen Sie stattdessen eine neue, aktuelle.`,
+      zh: `打开"我的账户"→"我的发布"（需要登录）查看您所有的发布信息，并可删除您发布过的信息。目前还不支持直接修改：请删除旧的发布，然后重新发布一条最新的信息。`
+    }
+  },
+  {
+    terms:['profil pro','mon profil','completer mon profil','photo de profil','competences','specialite','metier','pro profile','my profile','complete my profile','profile photo','my skills','my specialty','my trade','profilo pro','il mio profilo','le mie competenze','la mia specialita','il mio mestiere','profi-profil','mein profil','meine fahigkeiten','mein fachgebiet','mein beruf','专业资料','我的资料','我的技能','我的专长','我的职业'],
+    answers: {
+      fr: `Dans Compte → « Mon Profil Pro », renseignez votre nom (ou société), votre métier/spécialité, vos compétences et une photo si vous le souhaitez. Un profil complet (nom ou société, et métier/spécialité) est nécessaire pour contacter un artisan par WhatsApp ou partager une annonce.`,
+      en: `In Account → "My Pro Profile", fill in your name (or company), your trade/specialty, your skills and a photo if you'd like. A complete profile (name or company, plus trade/specialty) is required to contact a tradesperson on WhatsApp or share a listing.`,
+      it: `In Account → «Il mio profilo Pro», inserisci il tuo nome (o azienda), il tuo mestiere/specialità, le tue competenze e una foto se lo desideri. Un profilo completo (nome o azienda, e mestiere/specialità) è necessario per contattare un artigiano su WhatsApp o condividere un annuncio.`,
+      de: `Geben Sie unter Konto → „Mein Profi-Profil" Ihren Namen (oder Ihre Firma), Ihren Beruf/Ihre Spezialität, Ihre Fähigkeiten und optional ein Foto an. Ein vollständiges Profil (Name oder Firma sowie Beruf/Spezialität) ist erforderlich, um einen Handwerker über WhatsApp zu kontaktieren oder eine Anzeige zu teilen.`,
+      zh: `在"我的账户"→"我的专业资料"中，填写您的姓名（或公司名）、职业/专长、技能，如果需要还可以上传照片。完整的资料（姓名或公司名，以及职业/专长）是通过WhatsApp联系工匠或分享发布信息的必要条件。`
+    }
+  },
+  {
+    terms:['photo','photos','image','images','picture','pictures','foto','immagine','immagini','bild','bilder','照片','图片'],
+    answers: {
+      fr: `Vous pouvez ajouter jusqu'à 5 photos (JPG ou PNG) à une annonce depuis la zone « Ajouter des photos » du formulaire de publication. Elles sont compressées automatiquement pour rester rapides à charger, même avec une connexion lente.`,
+      en: `You can add up to 5 photos (JPG or PNG) to a listing from the "Add photos" area of the posting form. They are automatically compressed to stay fast to load, even on a slow connection.`,
+      it: `Puoi aggiungere fino a 5 foto (JPG o PNG) a un annuncio dall'area «Aggiungi foto» del modulo di pubblicazione. Vengono compresse automaticamente per rimanere veloci da caricare, anche con una connessione lenta.`,
+      de: `Sie können bis zu 5 Fotos (JPG oder PNG) über den Bereich „Fotos hinzufügen" im Veröffentlichungsformular zu einer Anzeige hinzufügen. Sie werden automatisch komprimiert, damit sie auch bei langsamer Verbindung schnell laden.`,
+      zh: `您可以在发布表单的"添加照片"区域为发布信息添加最多5张照片（JPG或PNG格式）。照片会自动压缩，即使网络较慢也能快速加载。`
+    }
+  },
+  {
+    terms:['zoom','satellite','style carte','style de carte','vue plan','ma position','localiser','distance','map style','plan view','my location','locate me','stile mappa','la mia posizione','kartenstil','mein standort','meine entfernung','缩放','卫星地图','地图样式','我的位置','距离徽章'],
+    answers: {
+      fr: `Les boutons sur le côté droit de la carte permettent de centrer sur votre position, zoomer/dézoomer, et basculer entre vue satellite et plan. Le badge « Distance » indique la distance jusqu'au job le plus éloigné actuellement affiché.`,
+      en: `The buttons on the right side of the map let you center on your location, zoom in/out, and switch between satellite and map view. The "Distance" badge shows the distance to the farthest job currently displayed.`,
+      it: `I pulsanti sul lato destro della mappa permettono di centrare sulla tua posizione, zoomare avanti/indietro e passare dalla vista satellitare a quella cartina. Il badge «Distanza» indica la distanza dal lavoro più lontano attualmente visualizzato.`,
+      de: `Mit den Schaltflächen auf der rechten Seite der Karte können Sie auf Ihren Standort zentrieren, vergrößern/verkleinern und zwischen Satelliten- und Kartenansicht wechseln. Das Abzeichen „Entfernung" zeigt die Entfernung zum derzeit am weitesten entfernten angezeigten Job.`,
+      zh: `地图右侧的按钮可以让您定位到自己的位置、放大/缩小，以及在卫星视图和平面地图之间切换。"距离"徽章显示到当前显示的最远工作的距离。`
+    }
+  },
+  {
+    terms:['itineraire','trajet','chemin','route vers','see route','get directions','way to get','path to','itinerario','percorso','tragitto','route anzeigen','wegbeschreibung','查看路线','行程路线'],
+    answers: {
+      fr: `Ouvrez une annonce puis appuyez sur « Voir l'itinéraire » : la carte trace le chemin depuis votre position et affiche la distance et le temps estimé. Utilisez « Annuler » dans le panneau itinéraire pour l'effacer.`,
+      en: `Open a listing then tap "See route": the map draws the path from your location and shows the distance and estimated time. Use "Cancel" in the route panel to clear it.`,
+      it: `Apri un annuncio poi tocca «Vedi itinerario»: la mappa traccia il percorso dalla tua posizione e mostra la distanza e il tempo stimato. Usa «Annulla» nel pannello itinerario per cancellarlo.`,
+      de: `Öffnen Sie eine Anzeige und tippen Sie auf „Route anzeigen": Die Karte zeichnet den Weg von Ihrem Standort aus und zeigt Entfernung und geschätzte Zeit an. Verwenden Sie „Abbrechen" im Routenfenster, um sie zu löschen.`,
+      zh: `打开一条发布信息，然后点击"查看路线"：地图会从您的位置绘制路径，并显示距离和预计时间。在路线面板中点击"取消"即可清除路线。`
+    }
+  },
+  {
+    terms:['notification','notifications','cloche','alerte','new jobs bell','notification bell','notifica','notifiche','campanella','benachrichtigung','glocke','新工作通知','铃铛提醒'],
+    answers: {
+      fr: `La cloche en haut de l'écran affiche les nouveaux jobs publiés autour de vous. Un point s'allume quand il y a du nouveau ; appuyez dessus pour voir la liste.`,
+      en: `The bell at the top of the screen shows new jobs posted near you. A dot lights up when there's something new; tap it to see the list.`,
+      it: `La campanella in alto sullo schermo mostra i nuovi lavori pubblicati vicino a te. Un puntino si accende quando c'è qualcosa di nuovo; toccalo per vedere l'elenco.`,
+      de: `Die Glocke oben im Bildschirm zeigt neue Jobs in Ihrer Nähe an. Ein Punkt leuchtet auf, wenn es etwas Neues gibt; tippen Sie darauf, um die Liste zu sehen.`,
+      zh: `屏幕顶部的铃铛图标会显示您附近发布的新工作。有新内容时会出现一个红点；点击它即可查看列表。`
+    }
+  },
+  {
+    terms:['gps requis','gps bloque','position refusee','autoriser ma position','gps required','gps blocked','location denied','allow my location','gps richiesto','posizione rifiutata','gps erforderlich','standort verweigert','需要gps','位置被拒绝'],
+    answers: {
+      fr: `Si « GPS requis pour publier » s'affiche, votre téléphone ou navigateur a refusé l'accès à la position. Autorisez la localisation dans les réglages du navigateur pour ce site, puis réessayez. Si vous avez choisi l'emplacement par appui long sur la carte, cette autorisation n'est pas nécessaire : la position choisie est utilisée directement.`,
+      en: `If "GPS required to post" appears, your phone or browser has denied location access. Allow location for this site in your browser settings, then try again. If you chose the location with a long press on the map, this permission isn't needed: the chosen spot is used directly.`,
+      it: `Se compare «GPS richiesto per pubblicare», il telefono o il browser ha rifiutato l'accesso alla posizione. Consenti la geolocalizzazione per questo sito nelle impostazioni del browser, poi riprova. Se hai scelto il punto con una pressione prolungata sulla mappa, questa autorizzazione non è necessaria: la posizione scelta viene usata direttamente.`,
+      de: `Wenn „GPS zum Veröffentlichen erforderlich" angezeigt wird, hat Ihr Telefon oder Browser den Standortzugriff verweigert. Erlauben Sie die Standortfreigabe für diese Website in den Browsereinstellungen und versuchen Sie es erneut. Wenn Sie den Ort durch langes Drücken auf der Karte gewählt haben, ist diese Berechtigung nicht nötig: Der gewählte Standort wird direkt verwendet.`,
+      zh: `如果出现"发布需要GPS"提示，说明您的手机或浏览器拒绝了位置访问权限。请在浏览器设置中允许该网站获取位置信息，然后重试。如果您是通过长按地图选择位置的，则不需要此权限：所选位置会被直接使用。`
+    }
+  },
+  {
+    terms:['contacter','whatsapp','appeler un artisan','envoyer un message','joindre quelqu un','contact via whatsapp','call a tradesperson','send a message','reach someone','contattare','chiamare un artigiano','inviare un messaggio','kontaktieren','anrufen','nachricht senden','联系工匠','拨打电话','发送消息'],
+    answers: {
+      fr: `Ouvrez l'annonce puis utilisez WhatsApp seulement si vous êtes connecté et votre profil est complet. Gardez une trace écrite de ce qui est convenu : prestation, prix, délai et conditions. Ne communiquez jamais de code de connexion ou de carte bancaire.`,
+      en: `Open the listing and use WhatsApp only once you're logged in and your profile is complete. Keep a written record of what's agreed: the service, price, timeline and conditions. Never share a login code or bank card details.`,
+      it: `Apri l'annuncio e usa WhatsApp solo se sei connesso e il tuo profilo è completo. Tieni traccia scritta di quanto concordato: prestazione, prezzo, tempi e condizioni. Non comunicare mai codici di accesso o dati della carta bancaria.`,
+      de: `Öffnen Sie die Anzeige und nutzen Sie WhatsApp nur, wenn Sie angemeldet sind und Ihr Profil vollständig ist. Halten Sie schriftlich fest, was vereinbart wurde: Leistung, Preis, Frist und Bedingungen. Geben Sie niemals einen Anmeldecode oder Bankkartendaten weiter.`,
+      zh: `打开发布信息，只有在您已登录且资料完整的情况下才能使用WhatsApp联系。请保留书面记录已约定的内容：服务内容、价格、期限和条件。切勿透露登录验证码或银行卡信息。`
+    }
+  },
+  {
+    terms:['arnaque','fraude','faux profil','fake profile','escroquerie','profil suspect','securite du profil','verification du profil','scam','fraud','suspicious profile','profile safety','profile verification','truffa','frode','profilo falso','profilo sospetto','sicurezza del profilo','betrug','gefalschtes profil','verdachtiges profil','诈骗','欺诈','假资料','可疑资料','资料验证'],
+    answers: {
+      fr: `Un signal n'est pas une preuve de fraude. Soyez prudent si un profil est très récent, refuse un devis écrit, demande un paiement immédiat ou vous pousse à quitter la plateforme. Vérifiez les informations, gardez les échanges, et demandez une revue humaine avant d'accuser ou de bloquer quelqu'un.`,
+      en: `A warning sign isn't proof of fraud. Be careful if a profile is very new, refuses a written quote, asks for immediate payment, or pushes you to leave the platform. Check the details, keep your conversations, and ask for a human review before accusing or blocking anyone.`,
+      it: `Un segnale non è una prova di frode. Fai attenzione se un profilo è molto recente, rifiuta un preventivo scritto, chiede un pagamento immediato o ti spinge a lasciare la piattaforma. Verifica le informazioni, conserva gli scambi e chiedi una revisione umana prima di accusare o bloccare qualcuno.`,
+      de: `Ein Warnsignal ist kein Beweis für Betrug. Seien Sie vorsichtig, wenn ein Profil sehr neu ist, ein schriftliches Angebot ablehnt, sofortige Zahlung verlangt oder Sie drängt, die Plattform zu verlassen. Überprüfen Sie die Angaben, bewahren Sie den Schriftverkehr auf und bitten Sie um eine menschliche Prüfung, bevor Sie jemanden beschuldigen oder blockieren.`,
+      zh: `出现可疑信号并不代表一定是欺诈。如果某个资料非常新、拒绝提供书面报价、要求立即付款，或催促您离开平台，请务必谨慎。核实相关信息，保留聊天记录，在指控或屏蔽他人之前，请申请人工审核。`
+    }
+  },
+  {
+    terms:['prix','tarif','cout','marge','benefice','budget','devis','rentable','price','pricing','cost','margin','profit','quote','profitable','prezzo','tariffa','costo','margine','profitto','preventivo','preis','tarif','kosten','gewinn','angebot','价格','费用','成本','利润','报价'],
+    answers: {
+      fr: `Pour évaluer un prix : marge brute = prix de vente − coût direct. Pour une activité, ajoutez aussi transport, matériel, commission, temps et taxes. Demandez plusieurs devis comparables et évitez les promesses de prix ou de bénéfice garanti. Astuce : donnez-moi un coût et un prix de vente (deux nombres) et je calcule la marge pour vous.`,
+      en: `To evaluate a price: gross margin = selling price − direct cost. For a full activity, also add transport, materials, commission, time and taxes. Ask for several comparable quotes and be wary of promises of guaranteed prices or profit. Tip: give me a cost and a selling price (two numbers) and I'll calculate the margin for you.`,
+      it: `Per valutare un prezzo: margine lordo = prezzo di vendita − costo diretto. Per un'attività, aggiungi anche trasporto, materiali, commissione, tempo e tasse. Chiedi più preventivi comparabili ed evita le promesse di prezzo o profitto garantito. Consiglio: dammi un costo e un prezzo di vendita (due numeri) e calcolerò il margine per te.`,
+      de: `Um einen Preis zu bewerten: Bruttomarge = Verkaufspreis − direkte Kosten. Für eine Tätigkeit auch Transport, Material, Provision, Zeit und Steuern hinzufügen. Holen Sie mehrere vergleichbare Angebote ein und seien Sie vorsichtig bei Versprechen von garantierten Preisen oder Gewinnen. Tipp: Nennen Sie mir einen Kostenpreis und einen Verkaufspreis (zwei Zahlen), und ich berechne die Marge für Sie.`,
+      zh: `评估价格的方法：毛利 = 销售价格 − 直接成本。对于一项活动，还需加上运输、材料、佣金、时间和税费。请索取多个可比报价，警惕承诺"保证价格"或"保证利润"的说法。小贴士：告诉我成本和销售价格（两个数字），我可以帮您计算利润。`
+    }
+  },
+  {
+    terms:['compte','connexion','se connecter','creer un compte','inscription','mot de passe','log in','create an account','sign up','password','accesso','accedere','creare un account','registrazione','konto','anmelden','konto erstellen','registrierung','passwort','账户','登录','注册账户','密码'],
+    answers: {
+      fr: `Ouvrez Compte, puis « Créer compte » (email + mot de passe, ou Google) ou « Connexion » si vous en avez déjà un. Il faut être connecté pour publier une demande ou contacter quelqu'un par WhatsApp. Ne partagez jamais votre mot de passe ou un code reçu par SMS, même à quelqu'un qui prétend être du support.`,
+      en: `Open Account, then "Create account" (email + password, or Google) or "Log in" if you already have one. You need to be logged in to post a request or contact someone on WhatsApp. Never share your password or an SMS code, even with someone claiming to be support.`,
+      it: `Apri Account, poi «Crea account» (email + password, o Google) oppure «Accedi» se ne hai già uno. Devi essere connesso per pubblicare una richiesta o contattare qualcuno su WhatsApp. Non condividere mai la tua password o un codice ricevuto via SMS, nemmeno con qualcuno che dice di essere del supporto.`,
+      de: `Öffnen Sie Konto und dann „Konto erstellen" (E-Mail + Passwort oder Google) oder „Anmelden", falls Sie bereits eines haben. Sie müssen angemeldet sein, um eine Anfrage zu veröffentlichen oder jemanden über WhatsApp zu kontaktieren. Geben Sie niemals Ihr Passwort oder einen per SMS erhaltenen Code weiter, auch nicht an jemanden, der behauptet, vom Support zu sein.`,
+      zh: `打开"账户"，然后选择"创建账户"（邮箱+密码，或使用Google）或"登录"（如果您已有账户）。发布需求或通过WhatsApp联系他人都需要先登录。切勿泄露您的密码或通过短信收到的验证码，即使对方自称是客服人员。`
+    }
+  },
+  {
+    terms:['trouver un artisan','rechercher un prestataire','artisan proche','filtre categorie','find a tradesperson','search for a provider','nearby tradesperson','filter by category','trovare un artigiano','cercare un fornitore','artigiano vicino','filtro categoria','handwerker finden','anbieter suchen','handwerker in der nahe','kategorie filter','寻找工匠','搜索服务商','附近的工匠','按类别筛选'],
+    answers: {
+      fr: `Utilisez la carte ou la liste, puis filtrez par catégorie (BTP, Électricité, Plomberie, Ménage, Jardinage, Mécanique, Informatique). Ouvrez une annonce pour comparer la description, le prix et les informations visibles. Avant de choisir un artisan, demandez un devis écrit, vérifiez son profil et convenez du travail avant tout paiement.`,
+      en: `Use the map or the list, then filter by category (Construction, Electrical, Plumbing, Cleaning, Gardening, Mechanics, IT). Open a listing to compare the description, price and visible information. Before choosing a tradesperson, ask for a written quote, check their profile and agree on the work before making any payment.`,
+      it: `Usa la mappa o l'elenco, poi filtra per categoria (Edilizia, Elettricità, Idraulica, Pulizie, Giardinaggio, Meccanica, Informatica). Apri un annuncio per confrontare descrizione, prezzo e informazioni visibili. Prima di scegliere un artigiano, chiedi un preventivo scritto, verifica il suo profilo e concorda il lavoro prima di qualsiasi pagamento.`,
+      de: `Nutzen Sie die Karte oder die Liste und filtern Sie dann nach Kategorie (Bau, Elektrik, Sanitär, Reinigung, Gartenarbeit, Mechanik, IT). Öffnen Sie eine Anzeige, um Beschreibung, Preis und sichtbare Informationen zu vergleichen. Bevor Sie sich für einen Handwerker entscheiden, fordern Sie ein schriftliches Angebot an, prüfen Sie sein Profil und vereinbaren Sie die Arbeit, bevor Sie bezahlen.`,
+      zh: `使用地图或列表功能，按类别筛选（建筑、电工、水管、清洁、园艺、机械、信息技术）。打开一条发布信息以比较描述、价格及可见信息。在选择工匠之前，请索取书面报价、核实其资料，并在付款前就工作内容达成一致。`
+    }
+  },
+  {
+    terms:['publier','poster une annonce','ajouter un job','creer une demande','appui long','publish a job','post a listing','add a job','create a request','long press on map','pubblicare un lavoro','postare un annuncio','creare una richiesta','pressione prolungata','job veroffentlichen','anzeige posten','anfrage erstellen','langes drucken','发布工作','添加工作','创建需求','长按地图'],
+    answers: {
+      fr: `Deux façons de publier : appuyez sur le bouton + (en haut ou en bas de l'écran), ou faites un appui long (clic droit sur ordinateur) directement à l'endroit voulu sur la carte puis « Publier un job ici ». Choisissez une catégorie, ajoutez un titre clair, le budget, votre téléphone et une description précise. Ne publiez pas de mot de passe, code SMS ou document d'identité.`,
+      en: `Two ways to post: tap the + button (at the top or bottom of the screen), or long-press (right-click on a computer) directly on the desired spot on the map, then "Post a job here". Choose a category, add a clear title, the budget, your phone number and a precise description. Don't post a password, SMS code or ID document.`,
+      it: `Due modi per pubblicare: tocca il pulsante + (in alto o in basso sullo schermo), oppure fai una pressione prolungata (clic destro su computer) direttamente nel punto desiderato sulla mappa e poi «Pubblica un lavoro qui». Scegli una categoria, aggiungi un titolo chiaro, il budget, il tuo telefono e una descrizione precisa. Non pubblicare password, codici SMS o documenti d'identità.`,
+      de: `Zwei Möglichkeiten zu veröffentlichen: Tippen Sie auf die Schaltfläche + (oben oder unten im Bildschirm), oder drücken Sie lange (Rechtsklick am Computer) direkt an der gewünschten Stelle auf der Karte und dann „Job hier veröffentlichen". Wählen Sie eine Kategorie, fügen Sie einen klaren Titel, das Budget, Ihre Telefonnummer und eine genaue Beschreibung hinzu. Veröffentlichen Sie kein Passwort, keinen SMS-Code und kein Ausweisdokument.`,
+      zh: `有两种发布方式：点击屏幕上方或下方的"+"按钮，或者直接在地图上想要的位置长按（电脑上为右键点击），然后选择"在此发布工作"。选择类别，填写清晰的标题、预算、电话号码和详细描述。请勿发布密码、短信验证码或身份证件。`
+    }
+  },
+  {
+    terms:['supprimer mes donnees','effacer mes donnees','confidentialite','vie privee','delete my data','erase my data','my data','privacy policy','eliminare i miei dati','riservatezza','privacy','meine daten loschen','datenschutz','删除我的数据','隐私政策'],
+    answers: {
+      fr: `L'assistant local ne stocke pas vos questions sur un serveur. Pour les données de votre compte JobMarket, utilisez le support officiel afin de demander la procédure adaptée ; ne partagez pas de documents sensibles dans le chat.`,
+      en: `The local assistant doesn't store your questions on a server. For your JobMarket account data, use official support to request the right procedure; don't share sensitive documents in the chat.`,
+      it: `L'assistente locale non memorizza le tue domande su un server. Per i dati del tuo account JobMarket, contatta il supporto ufficiale per richiedere la procedura adatta; non condividere documenti sensibili in chat.`,
+      de: `Der lokale Assistent speichert Ihre Fragen nicht auf einem Server. Wenden Sie sich für Ihre JobMarket-Kontodaten an den offiziellen Support, um das passende Verfahren zu erfragen; teilen Sie keine sensiblen Dokumente im Chat.`,
+      zh: `本地助手不会将您的问题存储在服务器上。关于您的JobMarket账户数据，请联系官方客服以获取相应的处理流程；请勿在聊天中分享敏感文件。`
+    }
+  }
 ];
 
 // Remarque sur l'ordre ci-dessus : en cas d'égalité de score entre deux sujets, le
@@ -2455,54 +2690,53 @@ const LOCAL_CHAT_KNOWLEDGE = [
 // qu'un mot très fréquent (ex: "annonce", "job") ne détourne systématiquement vers le
 // mauvais sujet. Ordre et mots-clés vérifiés par une batterie de tests avant mise en ligne.
 
-const CHAT_TOPICS_SUMMARY = "publier une demande (bouton + ou appui long sur la carte), trouver un artisan, contacter par WhatsApp, repérer une arnaque, calculer un prix ou une marge, le compte et le Profil Pro, gérer vos publications, les photos, la carte et l'itinéraire, et les notifications";
-
 function normaliseChatText(value) {
   return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 function getMarginAnswer(text) {
   const lower = normaliseChatText(text);
-  if (!/(marge|prix|cout|budget|benefice)/.test(lower)) return null;
+  if (!/(marge|prix|cout|budget|benefice|margin|price|cost|profit|margine|prezzo|costo|profitto|preis|kosten|gewinn|利润|价格|成本|预算)/.test(lower)) return null;
   const values = (text.match(/\b\d+(?:[\s,.]\d{3})*(?:[,.]\d+)?\b/g) || []).map(v => Number(v.replace(/[\s.]/g, '').replace(',', '.'))).filter(Number.isFinite);
   if (values.length < 2) return null;
   const cost = values[0], price = values[1], margin = price - cost;
   const marginRate = price > 0 ? (margin / price) * 100 : 0;
-  return `Avec un coût de ${cost.toLocaleString('fr-FR')} FCFA et un prix de vente de ${price.toLocaleString('fr-FR')} FCFA, la marge brute est de ${margin.toLocaleString('fr-FR')} FCFA par unité (${marginRate.toFixed(1)} % du prix de vente). C'est une estimation : retirez aussi transport, matériel, commissions et taxes avant de décider.`;
+  const lang = (typeof currentLang !== 'undefined' && CHAT_NUM_LOCALE[currentLang]) ? currentLang : 'fr';
+  const locale = CHAT_NUM_LOCALE[lang];
+  return csText('marginTemplate')
+    .replace('{cost}', cost.toLocaleString(locale))
+    .replace('{price}', price.toLocaleString(locale))
+    .replace('{margin}', margin.toLocaleString(locale))
+    .replace('{rate}', marginRate.toFixed(1));
 }
 
 function localChatAnswer(question) {
   const text = normaliseChatText(question);
-  if (!text) return "Écrivez votre question et je vous répondrai sur les fonctions de JobMarket, les prix ou la sécurité.";
+  if (!text) return csText('emptyPrompt');
 
-  // Petites formules de politesse reconnues seulement quand c'est tout le message
-  // (une vraie question qui contient juste un de ces mots ailleurs n'est pas affectée).
-  if (/^(bonjour|salut|bonsoir|hello|coucou|bjr|slt)[ !?.]*$/.test(text)) {
-    return "Bonjour ! Posez-moi une question sur JobMarket, un prix, une marge ou la sécurité d'un profil.";
+  // Petites formules de politesse reconnues dans les 5 langues, seulement quand c'est
+  // tout le message (une vraie question qui contient juste un de ces mots ailleurs
+  // n'est pas affectée).
+  if (/^(bonjour|salut|bonsoir|coucou|bjr|slt|hello|hi|hey|ciao|buongiorno|buonasera|hallo|guten tag|你好|您好)[ !?.]*$/.test(text)) {
+    return csText('greeting');
   }
-  if (/^(merci|merci beaucoup|ok merci|top merci)[ !?.]*$/.test(text)) {
-    return "Avec plaisir ! N'hésitez pas si vous avez une autre question.";
+  if (/^(merci|merci beaucoup|ok merci|top merci|thanks|thank you|thanks a lot|grazie|grazie mille|danke|danke schon|谢谢|谢谢你)[ !?.]*$/.test(text)) {
+    return csText('thanks');
   }
-  if (/^(au revoir|a bientot|bye|bonne journee|bonne soiree)[ !?.]*$/.test(text)) {
-    return "À bientôt sur JobMarket !";
+  if (/^(au revoir|a bientot|bonne journee|bonne soiree|bye|goodbye|see you|see you soon|arrivederci|a presto|auf wiedersehen|tschuss|再见)[ !?.]*$/.test(text)) {
+    return csText('goodbye');
   }
-  if (/^(aide|help|menu|que peux tu faire|qu est ce que tu sais faire)[ !?.]*$/.test(text)) {
-    return `Je peux vous aider sur : ${CHAT_TOPICS_SUMMARY}. Posez votre question directement, ou touchez une suggestion ci-dessus.`;
+  if (/^(aide|help|menu|que peux tu faire|qu est ce que tu sais faire|what can you do|cosa puoi fare|was kannst du tun|帮助|你能做什么)[ !?.]*$/.test(text)) {
+    return csText('help').replace('{topics}', csText('topicsSummary'));
   }
 
   const marginAnswer = getMarginAnswer(question);
-  // Note : la base de connaissances détaillée (ci-dessous) reste en français pour
-  // le moment. Si l'app est affichée dans une autre langue, on ajoute un petit
-  // avis traduit au-dessus de la réponse française, plutôt que de laisser croire
-  // à un bug ou de rester muet.
-  const frenchOnlyPrefix = (typeof currentLang !== 'undefined' && currentLang !== 'fr' && typeof t === 'function')
-    ? t('chatFrenchOnlyNotice') + '\n\n'
-    : '';
-  if (marginAnswer) return frenchOnlyPrefix + marginAnswer;
+  if (marginAnswer) return marginAnswer;
 
+  const lang = (typeof currentLang !== 'undefined' && CHAT_STRINGS[currentLang]) ? currentLang : 'fr';
   const ranked = LOCAL_CHAT_KNOWLEDGE.map(item => ({ item, score: item.terms.reduce((n, term) => n + (text.includes(normaliseChatText(term)) ? 1 : 0), 0) })).sort((a,b) => b.score - a.score)[0];
-  if (ranked && ranked.score > 0) return frenchOnlyPrefix + ranked.item.answer;
-  return frenchOnlyPrefix + `Je n'ai pas de réponse approuvée pour ce sujet précis. Je peux aider avec : ${CHAT_TOPICS_SUMMARY}. Pour une décision financière importante ou une accusation de fraude, demandez une vérification humaine.`;
+  if (ranked && ranked.score > 0) return ranked.item.answers[lang] || ranked.item.answers.fr;
+  return csText('noAnswer').replace('{topics}', csText('topicsSummary'));
 }
 
 function askChatSuggestion(button) {
