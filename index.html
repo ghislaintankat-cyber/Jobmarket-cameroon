@@ -1862,7 +1862,8 @@ async function addJob() {
           continue;
         }
         const formData = new FormData();
-        formData.append('file', file);
+        const compressedFile = await compressImageFile(file);
+        formData.append('file', compressedFile, file.name);
         formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
         try {
           const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
@@ -1957,6 +1958,30 @@ function resetJobForm() {
 // type quelconque) via le formulaire, ce qui abuse le compte Cloudinary de l'app.
 const MAX_IMAGE_SIZE_MB = 8;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+// Compresse une image côté client AVANT l'envoi à Cloudinary, avec CompressorJS
+// (déjà chargé dans le <head> mais jamais utilisé jusqu'ici — les photos
+// partaient donc à taille originale, jusqu'à 8 Mo chacune). Ça réduit fortement
+// la data consommée à la publication ET au chargement pour tout le monde
+// ensuite, ce qui compte beaucoup sur les connexions 3G/4G au Cameroun.
+// Repli : si la compression échoue pour une raison quelconque, on renvoie le
+// fichier original plutôt que de bloquer la publication.
+function compressImageFile(file) {
+    return new Promise((resolve) => {
+        if (typeof Compressor === 'undefined' || !ALLOWED_IMAGE_TYPES.includes(file.type) || file.type === 'image/gif') {
+            resolve(file); // GIF non compressé (perte d'animation), et repli si la lib n'a pas chargé
+            return;
+        }
+        new Compressor(file, {
+            quality: 0.6,
+            maxWidth: 1280,
+            maxHeight: 1280,
+            convertSize: Infinity, // ne convertit jamais en JPEG un PNG à transparence
+            success(result) { resolve(result); },
+            error(err) { console.warn('Compression image échouée, envoi du fichier original', err); resolve(file); }
+        });
+    });
+}
 
 function validateImageFiles(fileList) {
   const files = Array.from(fileList).slice(0, 5);
@@ -2830,8 +2855,11 @@ function handleChatKey(e) {
 }
 
 // ===== PWA =====
+// Un seul service worker (sw.js) gère à la fois le cache offline ET les
+// notifications push — deux SW séparés au même scope se marchent dessus.
+let swRegistrationPromise = null;
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  swRegistrationPromise = navigator.serviceWorker.register('sw.js').catch(() => null);
 }
 
 // ===== PUSH NOTIFICATIONS =====
@@ -2842,9 +2870,11 @@ const FCM_VAPID_KEY = 'BDjptctrpoeyowsCJT_qcpnUzy15FJm6lCcmq6rtNlCh9BpqS1MpQMSuQ
 function registerPushToken() {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
   if (!FCM_VAPID_KEY || FCM_VAPID_KEY === 'COLLE_TA_CLE_VAPID_ICI') return;
+  if (!swRegistrationPromise) return;
 
-  navigator.serviceWorker.register('firebase-messaging-sw.js')
+  swRegistrationPromise
     .then(registration => {
+      if (!registration) throw new Error('Service worker non enregistré');
       const messaging = firebase.messaging();
       Notification.requestPermission().then(permission => {
         if (permission !== 'granted') return;
@@ -2856,7 +2886,7 @@ function registerPushToken() {
       });
 
       // Gère les notifications reçues pendant que l'onglet est ouvert et actif
-      // (le fichier firebase-messaging-sw.js ne gère, lui, que l'arrière-plan)
+      // (sw.js ne gère, lui, que les notifications reçues en arrière-plan)
       messaging.onMessage(payload => {
         const title = (payload.notification && payload.notification.title) || 'JobMarket Cameroon';
         const body = (payload.notification && payload.notification.body) || '';
@@ -3567,8 +3597,9 @@ async function saveProfile() {
         }
         btn.innerText = "Téléchargement...";
         try {
+            const compressedProfileFile = await compressImageFile(profileFile);
             const formData = new FormData();
-            formData.append('file', profileFile);
+            formData.append('file', compressedProfileFile, profileFile.name);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
                 method: 'POST', body: formData
@@ -3631,6 +3662,46 @@ async function saveProfile() {
   // ==========================================
 // NOUVEAUX BOUTONS DU PANNEAU
 // ==========================================
+
+// Formate un numéro camerounais en format international sans '+' ni espaces
+// (237XXXXXXXXX), pour les liens wa.me. Gère les formats locaux courants :
+// avec ou sans 0 initial, avec ou sans indicatif 237 déjà présent (l'ancienne
+// version ne gérait que les numéros commençant déjà par 6 ou 2).
+function formatCameroonPhoneForWhatsApp(phoneRaw) {
+    let clean = String(phoneRaw || '').replace(/\D/g, '');
+    if (clean.startsWith('00237')) clean = clean.slice(2); // 00237... -> 237...
+    if (clean.startsWith('0') && !clean.startsWith('237')) clean = clean.slice(1); // format local avec 0 initial
+    if (!clean.startsWith('237')) clean = '237' + clean;
+    return clean;
+}
+
+// Ouvre WhatsApp de façon fiable même après des appels réseau (Firebase) : les
+// navigateurs mobiles bloquent window.open() s'il n'est pas appelé en réaction
+// DIRECTE au clic. Astuce : on ouvre un onglet vide tout de suite au clic (voir
+// appelants), puis on le redirige vers l'URL WhatsApp une fois qu'elle est prête.
+function openWhatsAppReliably(placeholderWindow, phoneRaw, message) {
+    const cleanPhone = formatCameroonPhoneForWhatsApp(phoneRaw);
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    if (placeholderWindow && !placeholderWindow.closed) {
+        placeholderWindow.location.href = url;
+    } else {
+        window.open(url, '_blank'); // repli si l'onglet placeholder n'a pas pu être ouvert
+    }
+}
+
+// Ouvre un onglet vide immédiatement au clic (avant tout appel réseau), avec un
+// message d'attente, pour que la redirection ultérieure vers WhatsApp ne soit
+// jamais bloquée par le navigateur.
+function openWhatsAppPlaceholderTab() {
+    const w = window.open('', '_blank');
+    if (w) {
+        try {
+            w.document.write('<title>Ouverture de WhatsApp…</title><body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#666;background:#111;">Ouverture de WhatsApp…</body>');
+        } catch (e) { /* pas grave si l'écriture échoue, la redirection marchera quand même */ }
+    }
+    return w;
+}
+
 async function contactViaWhatsAppFromPreview() {
     const job = window.currentPreviewJob;
     if (!job) return;
@@ -3643,10 +3714,15 @@ async function contactViaWhatsAppFromPreview() {
         return;
     }
 
+    // Ouvert tout de suite, dans le même clic, pour ne pas être bloqué par le
+    // navigateur après les appels Firebase ci-dessous (voir openWhatsAppPlaceholderTab).
+    const waWindow = openWhatsAppPlaceholderTab();
+
     try {
         const snapshot = await db.ref(`profiles/${user.uid}`).once('value');
         const profile = snapshot.val() || {};
         if (!isProfileComplete(profile)) {
+            if (waWindow) waWindow.close();
             alert("Vous devez compléter votre profil (nom/société et métier/spécialité) pour contacter cette personne.");
             closeJobPreview();
             openProfileSheet();
@@ -3655,6 +3731,7 @@ async function contactViaWhatsAppFromPreview() {
 
         const phone = job.phone;
         if (!phone) {
+            if (waWindow) waWindow.close();
             alert("Numéro de téléphone indisponible.");
             return;
         }
@@ -3668,21 +3745,18 @@ async function contactViaWhatsAppFromPreview() {
         };
         await db.ref('job_contacts').push(contactData);
 
-        let cleanPhone = phone.replace(/\D/g, '');
-        if (!cleanPhone.startsWith('237')) {
-             if (cleanPhone.startsWith('6') || cleanPhone.startsWith('2')) cleanPhone = '237' + cleanPhone;
-        }
-        
         const proTitle = profile.jobTitle || 'Non spécifié';
         const proSkills = profile.skills || 'Non spécifiés';
         const profileName = profile.name || profile.company || 'Prestataire';
-        
+
         const message = `Bonjour, je vous contacte depuis JobMarket pour : "${job.title}".\n\n--- Profil du prestataire ---\nNom / Société : ${profileName}\nMétier : ${proTitle}\nCompétences : ${proSkills}\n\nEst-ce toujours disponible ?`;
-        
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+
+        openWhatsAppReliably(waWindow, phone, message);
 
     } catch (e) {
         console.error("Erreur", e);
+        if (waWindow) waWindow.close();
+        showToast("Erreur lors de l'ouverture de WhatsApp. Réessayez.", 'error');
     }
 }
 
@@ -3729,10 +3803,15 @@ window.popupWhatsAppClick = async function(jobId) {
         return;
     }
 
+    // Ouvert tout de suite, dans le même clic (voir openWhatsAppPlaceholderTab
+    // et contactViaWhatsAppFromPreview pour l'explication du blocage mobile).
+    const waWindow = openWhatsAppPlaceholderTab();
+
     try {
         const snapshot = await db.ref(`profiles/${user.uid}`).once('value');
         const profile = snapshot.val() || {};
         if (!isProfileComplete(profile)) {
+            if (waWindow) waWindow.close();
             alert("Vous devez compléter votre profil (nom/société et métier/spécialité) pour contacter cette personne.");
             if(typeof openProfileSheet === 'function') openProfileSheet();
             return;
@@ -3740,6 +3819,7 @@ window.popupWhatsAppClick = async function(jobId) {
 
         const phone = job.phone;
         if (!phone) {
+            if (waWindow) waWindow.close();
             alert("Numéro de téléphone indisponible.");
             return;
         }
@@ -3753,23 +3833,18 @@ window.popupWhatsAppClick = async function(jobId) {
         };
         await db.ref('job_contacts').push(contactData);
 
-        let cleanPhone = phone.replace(/\D/g, '');
-        if (!cleanPhone.startsWith('237')) {
-             if (cleanPhone.startsWith('6') || cleanPhone.startsWith('2')) cleanPhone = '237' + cleanPhone;
-        }
-        
         const proTitle = profile.jobTitle || 'Non spécifié';
         const proSkills = profile.skills || 'Non spécifiées';
         const profileName = profile.name || profile.company || 'Prestataire';
         
         const message = `Bonjour, je vous contacte depuis JobMarket pour : "${job.title}".\n\n--- Profil du prestataire ---\nNom / Société : ${profileName}\nMétier : ${proTitle}\nCompétences : ${proSkills}\n\nEst-ce toujours disponible ?`;
         
-        console.log('Ouverture WhatsApp avec:', cleanPhone);
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+        openWhatsAppReliably(waWindow, phone, message);
         showToast('WhatsApp ouvert!', 'success');
 
     } catch (e) {
         console.error("Erreur:", e);
+        if (waWindow) waWindow.close();
         alert('Erreur: ' + e.message);
     }
 }
