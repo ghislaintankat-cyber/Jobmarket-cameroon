@@ -1208,7 +1208,7 @@ function genererLienPartage(nomArtisan, metierArtisan, idArtisan) {
     const message =
     `Regarde ce profil sur JobMarket Cameroon : *${nomArtisan}* (${metierArtisan}). Tu peux le localiser et le contacter ici : ${lienApp}`;
 
-    return `https://wa.me/?text=${encodeURIComponent(message)}`;
+    return `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
   }
 
 // ===== MAP INIT =====
@@ -3066,7 +3066,7 @@ function genererLienWhatsApp(phone, titreJob, metier = "", competences = "") {
     
     texte += `\nEst-ce toujours disponible ?`;
     
-    return `https://wa.me/${numPropre}?text=${encodeURIComponent(texte)}`;
+    return `https://api.whatsapp.com/send?phone=${numPropre}&text=${encodeURIComponent(texte)}`;
 }
   
 // ==========================================
@@ -3526,8 +3526,21 @@ function sendPhoneOTP() {
                 showToast('Ce numéro est déjà utilisé par un autre compte', 'error');
             } else if (err.code === 'auth/invalid-phone-number') {
                 showToast('Numéro invalide', 'error');
+            } else if (err.code === 'auth/quota-exceeded') {
+                showToast('Trop de SMS envoyés aujourd\'hui, réessaie plus tard', 'error');
+            } else if (err.code === 'auth/too-many-requests') {
+                showToast('Trop de tentatives, réessaie dans quelques minutes', 'error');
+            } else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/unauthorized-domain') {
+                showToast('Ce site n\'est pas autorisé pour la vérification SMS (contacter l\'admin)', 'error');
             } else {
-                showToast('Erreur lors de l\'envoi du SMS', 'error');
+                showToast(`Erreur lors de l'envoi du SMS (${err.code || 'inconnue'})`, 'error');
+            }
+            // Sans ce reset, le widget reCAPTCHA invisible reste "consommé" et
+            // TOUTE tentative suivante échoue silencieusement, même après avoir
+            // corrigé le problème d'origine.
+            if (window.recaptchaVerifier) {
+                window.recaptchaVerifier.clear();
+                window.recaptchaVerifier = null;
             }
         });
     } catch (e) {
@@ -3618,7 +3631,7 @@ function copyReferralLink(link) {
 
 function shareReferralLink(link) {
     const message = `Rejoins-moi sur JobMarket Cameroon pour trouver ou proposer des services près de chez toi : ${link}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
 }
 
 // Consomme un crédit de mise en avant pour booster une annonce 7 jours.
@@ -3680,7 +3693,7 @@ async function requestVerification() {
         });
 
         const message = `Bonjour, je souhaite faire vérifier mon profil JobMarket.\nNom : ${name}\nMétier : ${jobTitle}\nMes documents ont été envoyés directement dans l'app (visibles dans le panel admin).`;
-        window.open(`https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+        window.open(`https://api.whatsapp.com/send?phone=${ADMIN_WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`, '_blank');
 
         renderVerificationStatus({ ...profile, verificationRequested: true }, user);
         showToast('Demande envoyée !', 'success');
@@ -3804,7 +3817,7 @@ function formatCameroonPhoneForWhatsApp(phoneRaw) {
 // appelants), puis on le redirige vers l'URL WhatsApp une fois qu'elle est prête.
 function openWhatsAppReliably(placeholderWindow, phoneRaw, message) {
     const cleanPhone = formatCameroonPhoneForWhatsApp(phoneRaw);
-    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
     if (placeholderWindow && !placeholderWindow.closed) {
         placeholderWindow.location.href = url;
     } else {
@@ -3890,7 +3903,7 @@ function shareJobViaWhatsApp() {
     if (!job) return;
     const link = getJobShareLink(job.id);
     const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}* (${job.price} XAF). Voir les détails et contacter directement ici : ${link}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
 }
 
 function drawRouteFromPreview() {
@@ -3983,7 +3996,7 @@ window.popupShareClick = function(jobId) {
     }
     const link = getJobShareLink(jobId);
     const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}* (${job.price} XAF). Voir les détails et contacter directement ici : ${link}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
     showToast('Partage sur WhatsApp!', 'success');
 }
  
