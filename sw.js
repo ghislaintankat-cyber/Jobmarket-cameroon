@@ -1,106 +1,147 @@
-// Service Worker for offline support and caching
+// ===== Service Worker JobMarket Cameroon =====
+// Fusionne DEUX rôles dans un seul fichier (nécessaire : un navigateur ne peut
+// avoir qu'UN SEUL service worker actif par scope, donc sw.js et
+// firebase-messaging-sw.js ne peuvent pas cohabiter proprement à la racine) :
+//
+// 1. Offline / cache (comme avant) :
+//    - App shell : network-first, repli sur cache si hors-ligne
+//    - Tuiles de carte (OSM + satellite Google) : cache-first avec limite d'entrées
+//    - Firebase RTDB/Auth/Firestore + Cloudinary : jamais mis en cache (données fraîches)
+//
+// 2. Notifications push Firebase Cloud Messaging (ex firebase-messaging-sw.js)
+//
+// IMPORTANT : incrémentez CACHE_VERSION à chaque mise à jour de l'app.
 
-const CACHE_NAME = 'jobmarket-v1';
-const NETWORK_TIMEOUT = 5000; // 5 second timeout
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
-// URLs to cache on install
-const urlsToCache = [
+firebase.initializeApp({
+  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+  authDomain: "jobmarketfuture.firebaseapp.com",
+  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+  projectId: "jobmarketfuture",
+  storageBucket: "jobmarketfuture.firebasestorage.app",
+  messagingSenderId: "351669024349",
+  appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+});
+
+const messaging = firebase.messaging();
+
+// Notifications reçues quand l'app est fermée ou en arrière-plan
+messaging.onBackgroundMessage((payload) => {
+  const title = (payload.notification && payload.notification.title) || 'JobMarket Cameroon';
+  const options = {
+    body: (payload.notification && payload.notification.body) || '',
+    icon: 'icon-192.png' // doit correspondre exactement à un fichier présent + référencé dans manifest.json
+  };
+  self.registration.showNotification(title, options).catch(() => {});
+});
+
+// ---------- Cache / offline ----------
+
+const CACHE_VERSION = 'v1';
+const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
+const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
+const MAX_TILE_ENTRIES = 400;
+
+const SHELL_ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css',
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js'
 ];
 
-// Install event - cache essential files
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache).catch(() => {
-          // Continue even if some resources fail to cache
-          console.warn('Some resources failed to cache during install');
-        });
-      })
-      .then(() => self.skipWaiting())
+    caches.open(SHELL_CACHE).then((cache) =>
+      Promise.all(
+        SHELL_ASSETS.map((url) =>
+          cache.add(url).catch((err) => console.warn('SW: échec mise en cache', url, err))
+        )
+      )
+    ).then(() => self.skipWaiting())
   );
 });
 
-// Activate event - cleanup old caches
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== SHELL_CACHE && key !== TILE_CACHE)
+          .map((key) => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
   );
 });
 
-// Fetch event - Network first with proper error handling
-self.addEventListener('fetch', event => {
-  // Skip non-GET requests (POST, PUT, DELETE, etc.)
-  if (event.request.method !== 'GET') {
-    return;
-  }
+function isMapTile(url) {
+  return url.hostname.endsWith('tile.openstreetmap.org') || url.hostname.endsWith('.google.com');
+}
 
-  // Skip blob and data URLs
-  if (event.request.url.startsWith('blob:') || event.request.url.startsWith('data:')) {
-    return;
-  }
-
-  event.respondWith(
-    // Try network first
-    fetch(event.request, { timeout: NETWORK_TIMEOUT })
-      .then(response => {
-        // Only cache successful responses
-        if (!response || response.status !== 200) {
-          return response;
-        }
-
-        // Clone and cache the response
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME)
-          .then(cache => {
-            cache.put(event.request, responseToCache).catch(() => {});
-          })
-          .catch(() => {});
-
-        return response;
-      })
-      .catch(() => {
-        // Network failed - try cache
-        return caches.match(event.request)
-          .then(cachedResponse => {
-            // Return cached response if found
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-
-            // Return a proper Response object instead of undefined
-            // This prevents "undefined is not a Response" errors
-            return new Response(
-              'Offline - Resource not available',
-              { 
-                status: 503, 
-                statusText: 'Service Unavailable',
-                headers: new Headers({ 'Content-Type': 'text/plain' })
-              }
-            );
-          })
-          .catch(() => {
-            // Last resort fallback
-            return new Response(
-              'Offline - Service Worker Error',
-              { 
-                status: 500,
-                statusText: 'Internal Server Error',
-                headers: new Headers({ 'Content-Type': 'text/plain' })
-              }
-            );
-          });
-      })
+function isFirebaseOrUploadCall(url) {
+  return (
+    url.hostname.includes('firebaseio.com') ||
+    url.hostname.includes('firebaseapp.com') ||
+    (url.hostname.includes('googleapis.com') && url.pathname.includes('identitytoolkit')) ||
+    url.hostname.includes('firestore.googleapis.com') ||
+    url.hostname.includes('cloudinary.com')
   );
+}
+
+async function trimTileCache() {
+  const cache = await caches.open(TILE_CACHE);
+  const keys = await cache.keys();
+  if (keys.length > MAX_TILE_ENTRIES) {
+    await cache.delete(keys[0]);
+  }
+}
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  if (req.url.startsWith('blob:') || req.url.startsWith('data:')) return;
+
+  const url = new URL(req.url);
+
+  if (isFirebaseOrUploadCall(url)) return;
+
+  if (isMapTile(url)) {
+    event.respondWith(
+      caches.open(TILE_CACHE).then(async (cache) => {
+        const cached = await cache.match(req);
+        const network = fetch(req).then((res) => {
+          if (res && res.ok) { cache.put(req, res.clone()); trimTileCache(); }
+          return res;
+        }).catch(() => cached);
+        return cached || network;
+      })
+    );
+    return;
+  }
+
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req).then((res) => {
+        caches.open(SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
+        return res;
+      }).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  if (SHELL_ASSETS.includes(req.url) || url.origin !== self.location.origin) {
+    event.respondWith(
+      caches.match(req).then((cached) => cached || fetch(req).then((res) => {
+        if (res && res.ok) caches.open(SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
+        return res;
+      }))
+    );
+    return;
+  }
 });
