@@ -2361,18 +2361,26 @@ async function loadPendingVerifications() {
       return;
     }
 
-    list.innerHTML = pending.map(p => `
+    list.innerHTML = pending.map(p => {
+      const docs = p.verificationDocs || {};
+      const photos = (docs.idPhotoUrl || docs.selfiePhotoUrl) ? `
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          ${docs.idPhotoUrl ? `<a href="${docs.idPhotoUrl}" target="_blank" rel="noopener"><img src="${docs.idPhotoUrl}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
+          ${docs.selfiePhotoUrl ? `<a href="${docs.selfiePhotoUrl}" target="_blank" rel="noopener"><img src="${docs.selfiePhotoUrl}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
+        </div>` : `<div style="font-size:11px;color:var(--danger,#e74c3c);margin-top:6px;">⚠️ Aucun document envoyé dans l'app — vérifier via WhatsApp</div>`;
+      return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div>
           <div style="font-weight:700;font-size:14px;">${escapeHtml(p.name || p.company || t('adminNoName'))}</div>
           <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(p.jobTitle || t('adminNoJobTitle'))}</div>
+          ${photos}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
           <button onclick="approveVerification('${p.uid}')" style="background:var(--blue);border:none;color:white;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">${t('adminApprove')}</button>
           <button onclick="rejectVerification('${p.uid}')" style="background:none;border:1px solid var(--border);color:var(--text-dim);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">${t('adminReject')}</button>
         </div>
       </div>
-    `).join('');
+    `;}).join('');
   } catch (e) {
     console.error('loadPendingVerifications error', e);
     list.innerHTML = '<div style="font-size:13px;color:var(--danger);">Erreur de chargement.</div>';
@@ -2381,7 +2389,7 @@ async function loadPendingVerifications() {
 
 async function approveVerification(uid) {
   try {
-    await db.ref('profiles/' + uid).update({ verified: true, verificationRequested: null });
+    await db.ref('profiles/' + uid).update({ verified: true, verificationRequested: null, verificationDocs: null });
     showToast('Profil vérifié !', 'success');
     loadPendingVerifications();
   } catch (e) {
@@ -2393,7 +2401,7 @@ async function approveVerification(uid) {
 async function rejectVerification(uid) {
   if (!confirm('Refuser cette demande ? La personne pourra en refaire une plus tard.')) return;
   try {
-    await db.ref('profiles/' + uid).update({ verificationRequested: null });
+    await db.ref('profiles/' + uid).update({ verificationRequested: null, verificationDocs: null });
     showToast('Demande refusée', 'info');
     loadPendingVerifications();
   } catch (e) {
@@ -3242,6 +3250,31 @@ function closeJobPreview() {
 // ==========================================
 
 // 1. Voir le profil de quelqu'un d'autre (Lecture seule)
+// Affiche le badge "vérifié" + résumé de note (★ moyenne / nb d'avis) en
+// tête de la fiche profil — que ce soit la sienne ou celle d'un autre.
+function renderProfileBadgeAndRating(profile) {
+    const el = document.getElementById('profileBadgeRating');
+    if (!el) return;
+
+    const verifiedHtml = profile.verified ? `
+        <div style="display:flex;align-items:center;gap:6px;color:var(--blue);font-weight:700;font-size:13px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+            Profil vérifié
+        </div>` : '';
+
+    const count = profile.ratingCount || 0;
+    const avg = profile.ratingAvg || 0;
+    const ratingHtml = count > 0 ? `
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;">
+            <span style="color:var(--gold,#FFD700);letter-spacing:1px;">${'★★★★★☆☆☆☆☆'.slice(5 - Math.round(avg), 10 - Math.round(avg))}</span>
+            <span style="color:var(--text-dim,#8888A8);">${avg.toFixed(1)}/5 · ${count} avis</span>
+        </div>` : '';
+
+    if (!verifiedHtml && !ratingHtml) { el.innerHTML = ''; return; }
+    el.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:4px 0 16px 0;';
+    el.innerHTML = verifiedHtml + ratingHtml;
+}
+
 async function viewUserProfile(uid) {
     if (typeof closeJobPreview === 'function') closeJobPreview();
     
@@ -3279,6 +3312,16 @@ async function viewUserProfile(uid) {
             const name = data.name || 'Utilisateur';
             document.getElementById('profileImagePreview').innerHTML = `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=25D366&color=fff" style="width:100%; height:100%; object-fit:cover;">`;
         }
+
+        // Le profil d'un AUTRE utilisateur n'affiche jamais ses blocs privés
+        // (statut de vérification, parrainage) — uniquement badge/note/avis.
+        const verifBox = document.getElementById('verificationStatusBox');
+        if (verifBox) verifBox.style.display = 'none';
+        const refBox = document.getElementById('referralBox');
+        if (refBox) refBox.style.display = 'none';
+
+        renderProfileBadgeAndRating(data);
+        renderOwnerReviews(uid, 'profileReviewsBox');
     } catch (error) {
         console.error("Erreur profil:", error);
     }
@@ -3331,6 +3374,14 @@ async function openProfileSheet() {
 
         renderVerificationStatus(data, user);
         renderReferralBox(data, user);
+
+        const verifBox = document.getElementById('verificationStatusBox');
+        if (verifBox) verifBox.style.display = 'block';
+        const refBox = document.getElementById('referralBox');
+        if (refBox) refBox.style.display = 'block';
+
+        renderProfileBadgeAndRating(data);
+        renderOwnerReviews(user.uid, 'profileReviewsBox');
     } catch (error) {
         console.error("Erreur profil:", error);
     }
@@ -3363,12 +3414,61 @@ function renderVerificationStatus(profile, user) {
     }
 
     const requestSent = profile.verificationRequested;
+    if (requestSent) {
+        box.innerHTML = emailBadge + phoneSection + `
+            <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-top:10px;">
+                ${t('requestSent')}
+            </div>`;
+        return;
+    }
+
     box.innerHTML = emailBadge + phoneSection + `
-        <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-top:10px;margin-bottom:${requestSent ? '0' : '10px'};">
-            ${requestSent ? t('requestSent') : t('profileNotVerified')}
+        <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-top:10px;margin-bottom:10px;">
+            ${t('profileNotVerified')}
         </div>
-        ${requestSent ? '' : `<button type="button" onclick="requestVerification()" style="background:none;border:1px solid var(--blue);color:var(--blue);padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;">${t('requestVerificationBtn')}</button>`}
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+            <div>
+                <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:4px;">📄 Photo de ta pièce d'identité (CNI, passeport...)</div>
+                <input type="file" id="verifyIdPhotoInput" accept="image/*" style="display:none;" onchange="previewVerificationPhoto(this,'verifyIdPhotoPreview')">
+                <div id="verifyIdPhotoPreview" onclick="document.getElementById('verifyIdPhotoInput').click()" style="cursor:pointer;height:70px;border:1px dashed var(--border,#333);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim,#8888A8);overflow:hidden;">Toucher pour choisir une photo</div>
+            </div>
+            <div>
+                <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:4px;">🤳 Selfie de toi tenant la même pièce à côté de ton visage</div>
+                <input type="file" id="verifySelfiePhotoInput" accept="image/*" style="display:none;" onchange="previewVerificationPhoto(this,'verifySelfiePhotoPreview')">
+                <div id="verifySelfiePhotoPreview" onclick="document.getElementById('verifySelfiePhotoInput').click()" style="cursor:pointer;height:70px;border:1px dashed var(--border,#333);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim,#8888A8);overflow:hidden;">Toucher pour choisir une photo</div>
+            </div>
+        </div>
+        <button type="button" id="requestVerificationBtn" onclick="requestVerification()" style="background:none;border:1px solid var(--blue);color:var(--blue);padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;width:100%;">${t('requestVerificationBtn')}</button>
     `;
+}
+
+// Prévisualise la photo choisie (CNI ou selfie) directement dans son cadre.
+function previewVerificationPhoto(input, previewId) {
+    const preview = document.getElementById(previewId);
+    if (!preview || !input.files || !input.files[0]) return;
+    const file = input.files[0];
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+        showToast(`Photo invalide : JPG/PNG/WEBP, max ${MAX_IMAGE_SIZE_MB} Mo.`, 'error');
+        input.value = '';
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => { preview.innerHTML = `<img src="${reader.result}" style="width:100%;height:100%;object-fit:cover;">`; };
+    reader.readAsDataURL(file);
+}
+
+// Upload une photo de vérification compressée vers Cloudinary, renvoie son URL.
+async function uploadVerificationPhoto(file) {
+    const compressed = await compressImageFile(file);
+    const formData = new FormData();
+    formData.append('file', compressed, file.name);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: 'POST', body: formData
+    });
+    const data = await res.json();
+    if (!data.secure_url) throw new Error('upload failed');
+    return data.secure_url;
 }
 
 // Section "numéro vérifié par SMS". Trois états : déjà vérifié / formulaire
@@ -3549,22 +3649,45 @@ async function requestVerification() {
     const user = auth.currentUser;
     if (!user || user.isAnonymous) return;
 
+    const idInput = document.getElementById('verifyIdPhotoInput');
+    const selfieInput = document.getElementById('verifySelfiePhotoInput');
+    const idFile = idInput && idInput.files && idInput.files[0];
+    const selfieFile = selfieInput && selfieInput.files && selfieInput.files[0];
+
+    if (!idFile || !selfieFile) {
+        showToast('Ajoute une photo de ta pièce d\'identité ET un selfie avant d\'envoyer.', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('requestVerificationBtn');
+    const originalBtnText = btn ? btn.innerText : '';
+    if (btn) { btn.disabled = true; btn.innerText = 'Envoi des photos...'; }
+
     try {
         const snap = await db.ref('profiles/' + user.uid).once('value');
         const profile = snap.val() || {};
         const name = profile.name || profile.company || user.displayName || 'Utilisateur';
         const jobTitle = profile.jobTitle || 'Non spécifié';
 
-        await db.ref('profiles/' + user.uid).update({ verificationRequested: Date.now() });
+        const [idPhotoUrl, selfiePhotoUrl] = await Promise.all([
+            uploadVerificationPhoto(idFile),
+            uploadVerificationPhoto(selfieFile)
+        ]);
 
-        const message = `Bonjour, je souhaite faire vérifier mon profil JobMarket.\nNom : ${name}\nMétier : ${jobTitle}\nMerci de me dire quelle pièce/preuve envoyer.`;
+        await db.ref('profiles/' + user.uid).update({
+            verificationRequested: Date.now(),
+            verificationDocs: { idPhotoUrl, selfiePhotoUrl }
+        });
+
+        const message = `Bonjour, je souhaite faire vérifier mon profil JobMarket.\nNom : ${name}\nMétier : ${jobTitle}\nMes documents ont été envoyés directement dans l'app (visibles dans le panel admin).`;
         window.open(`https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
 
         renderVerificationStatus({ ...profile, verificationRequested: true }, user);
         showToast('Demande envoyée !', 'success');
     } catch (e) {
         console.error('requestVerification error', e);
-        showToast('Erreur lors de la demande', 'error');
+        showToast('Erreur lors de l\'envoi des photos', 'error');
+        if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
     }
 }
    
@@ -3874,8 +3997,9 @@ const REVIEW_DELAY_MS = 3 * 60 * 60 * 1000; // 3 heures
 // par l'auteur d'une annonce. Contrairement au badge ★ affiché sur les cartes,
 // ceci montre les commentaires eux-mêmes : c'est ce qui construit la confiance
 // avant que quelqu'un ne décide de contacter la personne.
-async function renderOwnerReviews(ownerUid) {
-    const box = document.getElementById('previewOwnerReviews');
+async function renderOwnerReviews(ownerUid, containerId) {
+    containerId = containerId || 'previewOwnerReviews';
+    const box = document.getElementById(containerId);
     if (!box || !ownerUid) { if (box) box.innerHTML = ''; return; }
 
     const ownerProfile = profilesCache[ownerUid] || {};
@@ -3894,20 +4018,21 @@ async function renderOwnerReviews(ownerUid) {
     const fullStars = Math.round(avg);
     const starsHtml = '★★★★★☆☆☆☆☆'.slice(5 - fullStars, 10 - fullStars);
 
+    const listId = containerId + 'ReviewsList';
     box.innerHTML = `
         <div style="margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
             <h3 style="margin:0 0 8px 0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;">
                 Avis <span style="color:var(--gold,#FFD700);font-size:14px;letter-spacing:2px;">${starsHtml}</span>
                 <span style="font-size:12px;color:var(--text-dim);font-weight:400;">${avg.toFixed(1)}/5 · ${count} avis</span>
             </h3>
-            <div id="previewReviewsList" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+            <div id="${listId}" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
                 <div style="font-size:12px;color:var(--text-dim);">Chargement des avis...</div>
             </div>
         </div>`;
 
     try {
         const snap = await db.ref('reviews').orderByChild('jobOwnerUid').equalTo(ownerUid).limitToLast(10).once('value');
-        const listEl = document.getElementById('previewReviewsList');
+        const listEl = document.getElementById(listId);
         if (!listEl) return;
         if (!snap.exists()) { listEl.innerHTML = ''; return; }
 
@@ -3933,7 +4058,7 @@ async function renderOwnerReviews(ownerUid) {
         }).join('');
     } catch (e) {
         console.warn('renderOwnerReviews error', e);
-        const listEl = document.getElementById('previewReviewsList');
+        const listEl = document.getElementById(listId);
         if (listEl) listEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">Erreur de chargement des avis.</div>';
     }
 }
@@ -4306,9 +4431,11 @@ document.addEventListener('click', (e) => {
             <label data-i18n="fieldSkills">Compétences (séparées par des virgules)</label>
             <textarea id="skills" class="profile-textarea" data-i18n-placeholder="phSkills" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..." maxlength="1000"></textarea>
         </div>
+        <div id="profileBadgeRating" style="margin: 4px 0 16px 0;"></div>
         <div id="verificationStatusBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
             <!-- Rempli dynamiquement par renderVerificationStatus() -->
         </div>
+        <div id="profileReviewsBox"></div>
         <div id="referralBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
             <!-- Rempli dynamiquement par renderReferralBox() -->
         </div>
