@@ -81,7 +81,10 @@ self.addEventListener('activate', (event) => {
 });
 
 function isMapTile(url) {
-  return url.hostname.endsWith('tile.openstreetmap.org') || url.hostname.endsWith('.google.com');
+  return (
+    url.hostname.endsWith('tile.openstreetmap.org') ||
+    /^mt[0-3]\.google\.com$/.test(url.hostname)
+  );
 }
 
 function isFirebaseOrUploadCall(url) {
@@ -115,11 +118,24 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(TILE_CACHE).then(async (cache) => {
         const cached = await cache.match(req);
-        const network = fetch(req).then((res) => {
+        if (cached) {
+          // On a déjà cette tuile : on la sert immédiatement, et on tente une
+          // mise à jour silencieuse en arrière-plan (sans bloquer la réponse).
+          fetch(req).then((res) => {
+            if (res && res.ok) { cache.put(req, res.clone()); trimTileCache(); }
+          }).catch(() => {});
+          return cached;
+        }
+        // Pas encore en cache : il faut attendre le réseau. Si le réseau
+        // échoue (bloqué, hors-ligne...), on renvoie une réponse vide plutôt
+        // que undefined, sinon le navigateur lève une erreur "unexpected error".
+        try {
+          const res = await fetch(req);
           if (res && res.ok) { cache.put(req, res.clone()); trimTileCache(); }
           return res;
-        }).catch(() => cached);
-        return cached || network;
+        } catch (err) {
+          return new Response('', { status: 504, statusText: 'Tuile indisponible hors-ligne' });
+        }
       })
     );
     return;
