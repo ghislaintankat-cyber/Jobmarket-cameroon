@@ -496,7 +496,7 @@ body{
 /* ===== TOAST ===== */
 #toast{
   position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);
-  z-index:9998;
+  z-index:999999;
   background:var(--surface2);border:1px solid var(--border);
   border-radius:var(--radius-md);
   padding:12px 20px;
@@ -3804,7 +3804,7 @@ function copyReferralLink(link) {
 
 function shareReferralLink(link) {
     const message = `Rejoins-moi sur JobMarket Cameroon pour trouver ou proposer des services près de chez toi : ${link}`;
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+    openWhatsAppReliably(null, null, message);
 }
 
 // Consomme un crédit de mise en avant pour booster une annonce 7 jours.
@@ -3849,6 +3849,12 @@ async function requestVerification() {
     const originalBtnText = btn ? btn.innerText : '';
     if (btn) { btn.disabled = true; btn.innerText = 'Envoi des photos...'; }
 
+    // Ouvert tout de suite, dans le même clic : l'envoi des photos peut prendre
+    // plusieurs secondes, et le navigateur bloquerait sinon l'ouverture de WhatsApp
+    // une fois l'upload terminé (elle ne serait plus liée directement au clic
+    // d'origine — même problème que pour le contact d'un prestataire, voir plus bas).
+    const waWindow = openWhatsAppPlaceholderTab();
+
     try {
         const snap = await db.ref('profiles/' + user.uid).once('value');
         const profile = snap.val() || {};
@@ -3866,12 +3872,13 @@ async function requestVerification() {
         });
 
         const message = `Bonjour, je souhaite faire vérifier mon profil JobMarket.\nNom : ${name}\nMétier : ${jobTitle}\nMes documents ont été envoyés directement dans l'app (visibles dans le panel admin).`;
-        window.open(`https://api.whatsapp.com/send?phone=${ADMIN_WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`, '_blank');
+        openWhatsAppReliably(waWindow, ADMIN_WHATSAPP_NUMBER, message);
 
         renderVerificationStatus({ ...profile, verificationRequested: true }, user);
         showToast('Demande envoyée !', 'success');
     } catch (e) {
         console.error('requestVerification error', e);
+        if (waWindow) waWindow.close();
         showToast('Erreur lors de l\'envoi des photos', 'error');
         if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
     }
@@ -3984,18 +3991,36 @@ function formatCameroonPhoneForWhatsApp(phoneRaw) {
     return clean;
 }
 
-// Ouvre WhatsApp de façon fiable même après des appels réseau (Firebase) : les
-// navigateurs mobiles bloquent window.open() s'il n'est pas appelé en réaction
-// DIRECTE au clic. Astuce : on ouvre un onglet vide tout de suite au clic (voir
-// appelants), puis on le redirige vers l'URL WhatsApp une fois qu'elle est prête.
+// Ouvre WhatsApp de la façon la plus directe possible, et de manière fiable même après
+// des appels réseau (Firebase) : les navigateurs mobiles bloquent window.open() s'il
+// n'est pas appelé en réaction DIRECTE au clic (voir openWhatsAppPlaceholderTab).
+//
+// Le lien web (https://api.whatsapp.com/send...) passe par la page de redirection de
+// WhatsApp, qui affiche parfois « Ouvrir l'app / Télécharger » même quand l'app EST
+// installée — en particulier dans un navigateur intégré ou une PWA installée en mode
+// standalone, qui ne bénéficient pas toujours du même lien « universel » qu'un onglet
+// Chrome/Safari classique. Le schéma natif whatsapp://send ouvre l'app directement,
+// sans passer par AUCUNE page web, quand elle est installée. On tente donc d'abord ce
+// schéma natif ; si on est toujours sur la page ~1,2s plus tard (l'app n'a pas pris la
+// main, donc probablement pas installée), on bascule automatiquement sur le lien web.
 function openWhatsAppReliably(placeholderWindow, phoneRaw, message) {
-    const cleanPhone = formatCameroonPhoneForWhatsApp(phoneRaw);
-    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
-    if (placeholderWindow && !placeholderWindow.closed) {
-        placeholderWindow.location.href = url;
-    } else {
-        window.open(url, '_blank'); // repli si l'onglet placeholder n'a pas pu être ouvert
+    const text = encodeURIComponent(message || '');
+    const phoneParam = phoneRaw ? `phone=${formatCameroonPhoneForWhatsApp(phoneRaw)}&` : '';
+    const appUrl = `whatsapp://send?${phoneParam}text=${text}`;
+    const webUrl = `https://api.whatsapp.com/send?${phoneParam}text=${text}`;
+    const target = (placeholderWindow && !placeholderWindow.closed) ? placeholderWindow : window.open('', '_blank');
+
+    if (!target) {
+        // Fenêtre bloquée par le navigateur : dernier recours dans l'onglet actuel.
+        window.location.href = webUrl;
+        return;
     }
+    target.location.href = appUrl;
+    setTimeout(() => {
+        try {
+            if (!target.closed) target.location.href = webUrl;
+        } catch (e) { /* onglet déjà fermé ou redirigé ailleurs : rien à faire */ }
+    }, 1200);
 }
 
 // Ouvre un onglet vide immédiatement au clic (avant tout appel réseau), avec un
@@ -4076,7 +4101,7 @@ function shareJobViaWhatsApp() {
     if (!job) return;
     const link = getJobShareLink(job.id);
     const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}* (${job.price} XAF). Voir les détails et contacter directement ici : ${link}`;
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+    openWhatsAppReliably(null, null, message);
 }
 
 function drawRouteFromPreview() {
@@ -4169,7 +4194,7 @@ window.popupShareClick = function(jobId) {
     }
     const link = getJobShareLink(jobId);
     const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}* (${job.price} XAF). Voir les détails et contacter directement ici : ${link}`;
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+    openWhatsAppReliably(null, null, message);
     showToast('Partage sur WhatsApp!', 'success');
 }
  
@@ -4331,22 +4356,30 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
     <div style="background:var(--surface,#1a1a1a);border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center;">
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:6px;">Comment ça s'est passé ?</div>
       <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-bottom:16px;">Avec ${escapeHtml(ownerName)} pour "${escapeHtml(jobTitle)}"</div>
-      <div id="reviewStars" style="font-size:32px;letter-spacing:6px;margin-bottom:16px;cursor:pointer;">☆☆☆☆☆</div>
+      <div id="reviewStars" style="font-size:32px;margin-bottom:16px;">
+        <span class="review-star" data-value="1" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="2" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="3" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="4" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="5" style="cursor:pointer;padding:4px;display:inline-block;">☆</span>
+      </div>
       <textarea id="reviewComment" placeholder="Commentaire (optionnel)" maxlength="500" style="width:100%;min-height:70px;border-radius:10px;padding:10px;background:#111;color:#fff;border:1px solid var(--border,#333);margin-bottom:14px;box-sizing:border-box;"></textarea>
       <div style="display:flex;gap:10px;">
-        <button id="reviewSkipBtn" style="flex:1;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#8888A8);padding:12px;border-radius:12px;cursor:pointer;font-weight:600;">Plus tard</button>
-        <button id="reviewSubmitBtn" style="flex:1;background:#FFD700;color:#111;padding:12px;border:none;border-radius:12px;cursor:pointer;font-weight:800;">Envoyer</button>
+        <button id="reviewSkipBtn" type="button" style="flex:1;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#8888A8);padding:12px;border-radius:12px;cursor:pointer;font-weight:600;">Plus tard</button>
+        <button id="reviewSubmitBtn" type="button" style="flex:1;background:#FFD700;color:#111;padding:12px;border:none;border-radius:12px;cursor:pointer;font-weight:800;">Envoyer</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
 
-  const starsEl = overlay.querySelector('#reviewStars');
-  starsEl.addEventListener('click', (e) => {
-    const rect = starsEl.getBoundingClientRect();
-    const relX = e.clientX - rect.left;
-    selectedRating = Math.min(5, Math.max(1, Math.ceil((relX / rect.width) * 5)));
-    starsEl.textContent = '★★★★★☆☆☆☆☆'.slice(5 - selectedRating, 10 - selectedRating);
+  // Étoiles : 5 zones cliquables distinctes plutôt qu'un calcul de position sur une
+  // seule chaîne de texte — plus fiable au doigt sur mobile (zone de clic imprécise
+  // avec letter-spacing) et impossible à "manquer" en cliquant entre deux étoiles.
+  const starEls = Array.from(overlay.querySelectorAll('.review-star'));
+  function renderStars(rating) {
+    starEls.forEach((el, i) => { el.textContent = (i < rating) ? '★' : '☆'; });
+  }
+  starEls.forEach(el => {
+    el.addEventListener('click', () => {
+      selectedRating = Number(el.dataset.value);
+      renderStars(selectedRating);
+    });
   });
 
   overlay.querySelector('#reviewSkipBtn').onclick = async () => {
@@ -4354,11 +4387,17 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
     overlay.remove();
   };
 
-  overlay.querySelector('#reviewSubmitBtn').onclick = async () => {
+  const submitBtn = overlay.querySelector('#reviewSubmitBtn');
+  submitBtn.onclick = async () => {
     if (selectedRating === 0) {
       showToast("Choisissez une note avant d'envoyer", 'error');
       return;
     }
+    // Feedback visuel immédiat + anti double-clic : sans ça, sur un réseau lent,
+    // cliquer donne l'impression que "rien ne se passe" pendant l'attente du
+    // serveur, et un second clic peut envoyer l'avis deux fois.
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Envoi...';
     const comment = overlay.querySelector('#reviewComment').value.trim();
     try {
       await db.ref('reviews').push({
@@ -4370,16 +4409,23 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
         contactKey
       });
 
-      // Met à jour la moyenne du profil de façon atomique (transaction),
-      // pour éviter les erreurs si deux avis arrivent en même temps.
-      await db.ref('profiles/' + jobOwnerUid).transaction(profile => {
-        profile = profile || {};
-        const oldCount = profile.ratingCount || 0;
-        const oldAvg = profile.ratingAvg || 0;
-        const newCount = oldCount + 1;
-        profile.ratingCount = newCount;
-        profile.ratingAvg = (oldAvg * oldCount + selectedRating) / newCount;
-        return profile;
+      // Met à jour le compteur puis la moyenne, CHAMP PAR CHAMP : les règles de
+      // sécurité Firebase n'autorisent quelqu'un d'autre que le propriétaire du
+      // profil à écrire QUE sur ces deux champs précis (ratingAvg, ratingCount).
+      // Faire une transaction sur le nœud du profil entier (comme avant) est
+      // refusé par les règles pour toute personne autre que le propriétaire,
+      // même si les champs pris séparément sont eux autorisés — exactement le
+      // même principe que le système de parrainage plus haut dans ce fichier,
+      // qui écrit déjà correctement champ par champ pour cette raison.
+      let newRatingCount;
+      await db.ref('profiles/' + jobOwnerUid + '/ratingCount').transaction(cur => {
+        newRatingCount = (cur || 0) + 1;
+        return newRatingCount;
+      });
+      await db.ref('profiles/' + jobOwnerUid + '/ratingAvg').transaction(cur => {
+        const oldAvg = cur || 0;
+        const oldCount = newRatingCount - 1;
+        return (oldAvg * oldCount + selectedRating) / newRatingCount;
       });
 
       await db.ref('job_contacts/' + contactKey + '/reviewed').set(true);
@@ -4388,6 +4434,8 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
     } catch (e) {
       console.error('submitReview error', e);
       showToast("Erreur lors de l'envoi de l'avis", 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Envoyer';
     }
   };
 }
