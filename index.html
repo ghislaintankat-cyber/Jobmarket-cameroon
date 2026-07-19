@@ -3678,6 +3678,14 @@ function sendPhoneOTP() {
 
     try {
         if (!window.recaptchaVerifier) {
+            // On vide le conteneur avant de créer un nouveau reCAPTCHA : clear() seul
+            // ne suffit pas toujours à retirer la référence interne que Google
+            // reCAPTCHA garde sur ce <div>, ce qui fait échouer le rendu suivant avec
+            // "This recaptcha instance has been already rendered" — une erreur du
+            // widget reCAPTCHA lui-même, sans code Firebase, donc affichée comme
+            // "erreur inconnue" ci-dessous alors que la vraie cause est ce résidu.
+            const recaptchaContainer = document.getElementById('recaptcha-container');
+            if (recaptchaContainer) recaptchaContainer.innerHTML = '';
             window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
         }
         showToast('Envoi du code par SMS...', 'info');
@@ -3705,6 +3713,8 @@ function sendPhoneOTP() {
                 showToast('Trop de tentatives, réessaie dans quelques minutes', 'error');
             } else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/unauthorized-domain') {
                 showToast('Ce site n\'est pas autorisé pour la vérification SMS (contacter l\'admin)', 'error');
+            } else if (err.code === 'auth/operation-not-allowed') {
+                showToast('Vérification par SMS désactivée sur ce projet Firebase (contacter l\'admin)', 'error');
             } else {
                 showToast(`Erreur lors de l'envoi du SMS (${err.code || 'inconnue'})`, 'error');
             }
@@ -3715,6 +3725,8 @@ function sendPhoneOTP() {
                 window.recaptchaVerifier.clear();
                 window.recaptchaVerifier = null;
             }
+            const recaptchaContainer = document.getElementById('recaptcha-container');
+            if (recaptchaContainer) recaptchaContainer.innerHTML = '';
         });
     } catch (e) {
         console.error('sendPhoneOTP setup error', e);
@@ -3995,24 +4007,40 @@ function formatCameroonPhoneForWhatsApp(phoneRaw) {
 // des appels réseau (Firebase) : les navigateurs mobiles bloquent window.open() s'il
 // n'est pas appelé en réaction DIRECTE au clic (voir openWhatsAppPlaceholderTab).
 //
-// Le lien web (https://api.whatsapp.com/send...) passe par la page de redirection de
-// WhatsApp, qui affiche parfois « Ouvrir l'app / Télécharger » même quand l'app EST
-// installée — en particulier dans un navigateur intégré ou une PWA installée en mode
-// standalone, qui ne bénéficient pas toujours du même lien « universel » qu'un onglet
-// Chrome/Safari classique. Le schéma natif whatsapp://send ouvre l'app directement,
-// sans passer par AUCUNE page web, quand elle est installée. On tente donc d'abord ce
-// schéma natif ; si on est toujours sur la page ~1,2s plus tard (l'app n'a pas pris la
-// main, donc probablement pas installée), on bascule automatiquement sur le lien web.
+// Sur ORDINATEUR, api.whatsapp.com (et wa.me — c'est le même service) affiche presque
+// toujours une page « Continuer vers le chat / Ouvrir WhatsApp Desktop », même quand
+// WhatsApp Desktop est installé, car ce lien ne sait pas qu'une session WhatsApp Web
+// est déjà active dans le navigateur. web.whatsapp.com/send, lui, ouvre directement la
+// conversation dans l'interface Web si une session y est déjà connectée, sans passer
+// par cette page. On l'utilise donc directement sur ordinateur.
+//
+// Sur MOBILE, le schéma natif whatsapp://send ouvre l'app directement, sans AUCUNE
+// page web, quand elle est installée. On tente donc d'abord ce schéma natif ; si on
+// est toujours sur la page ~1,2s plus tard (l'app n'a pas pris la main, donc
+// probablement pas installée), on bascule automatiquement sur le lien web classique.
+function isLikelyMobileDevice() {
+    return /Android|iPhone|iPad|iPod|Mobile|webOS/i.test(navigator.userAgent || '');
+}
+
 function openWhatsAppReliably(placeholderWindow, phoneRaw, message) {
     const text = encodeURIComponent(message || '');
     const phoneParam = phoneRaw ? `phone=${formatCameroonPhoneForWhatsApp(phoneRaw)}&` : '';
     const appUrl = `whatsapp://send?${phoneParam}text=${text}`;
-    const webUrl = `https://api.whatsapp.com/send?${phoneParam}text=${text}`;
+    const isMobile = isLikelyMobileDevice();
+    const webUrl = isMobile
+        ? `https://api.whatsapp.com/send?${phoneParam}text=${text}`
+        : `https://web.whatsapp.com/send?${phoneParam}text=${text}`;
     const target = (placeholderWindow && !placeholderWindow.closed) ? placeholderWindow : window.open('', '_blank');
 
     if (!target) {
         // Fenêtre bloquée par le navigateur : dernier recours dans l'onglet actuel.
         window.location.href = webUrl;
+        return;
+    }
+    if (!isMobile) {
+        // Sur ordinateur, pas d'app native à tenter en premier : on va tout de
+        // suite sur WhatsApp Web, qui est le chemin le plus direct dans ce cas.
+        target.location.href = webUrl;
         return;
     }
     target.location.href = appUrl;
