@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta name="google-site-verification" content="0_-xcrADFwsu6oefUuQE1JTLLzyfl-ptmIqpmvDb7fo" />
@@ -807,6 +807,9 @@ body{
         <button class="lang-option" onclick="setLanguage('zh')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">ðŸ‡¨ðŸ‡³ ä¸­æ–‡</button>
       </div>
     </div>
+    <button class="icon-btn" id="searchBtn" onclick="toggleSearchPanel()" title="Rechercher">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
     <button class="icon-btn" id="notifBtn" style="position:relative;" onclick="toggleNotifPanel()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <div class="notif-dot" id="notifDot" style="display:none;"></div>
@@ -857,6 +860,19 @@ body{
     <span data-i18n="catInfo">Informatique</span>
   </button>
 </nav>
+
+<!-- ===== SEARCH PANEL (recherche par nom + filtre par rayon) ===== -->
+<div class="search-panel" id="searchPanel">
+  <input type="text" class="search-input" id="jobSearchInput" placeholder="Rechercher un job (ex: plombier, menage...)">
+  <div class="filter-chips" id="radiusFilters">
+    <button type="button" class="filter-chip active" data-radius="0">Tout</button>
+    <button type="button" class="filter-chip" data-radius="0.5">500 m</button>
+    <button type="button" class="filter-chip" data-radius="2">2 km</button>
+    <button type="button" class="filter-chip" data-radius="5">5 km</button>
+    <button type="button" class="filter-chip" data-radius="10">10 km</button>
+  </div>
+  <div class="search-results-count" id="searchResultsCount"></div>
+</div>
 
 <!-- ===== SIDE CONTROLS ===== -->
 <div class="side-controls">
@@ -1186,6 +1202,9 @@ let currentUser = null;
 let userCoords = null;
 let allJobs = [];
 let jobsById = {}; // Map pour retrouver les jobs par ID
+let currentCategory = 'all';   // catÃ©gorie active (boutons du haut)
+let currentSearchText = '';    // texte tapÃ© dans la recherche
+let currentRadiusKm = null;    // rayon actif (500m/2km/5km/10km) ou null = tout
 let profilesCache = {}; // uid -> {verified, ratingAvg, ratingCount, ...} tenu Ã  jour en temps rÃ©el
 
 // On Ã©coute les profils en continu pour toujours avoir le vrai statut de
@@ -2108,7 +2127,7 @@ function syncJobs() {
           className: ''
         });
 
-        L.marker([job.lat, job.lng], { icon })
+        const marker = L.marker([job.lat, job.lng], { icon })
           .addTo(jobsLayer)
           .bindPopup(`
             <div style="min-width:240px;font-family:'DM Sans',sans-serif;">
@@ -2133,6 +2152,7 @@ function syncJobs() {
               </button>
             </div>
           `, { maxWidth: 280 });
+        jobWithId.marker = marker; // rÃ©fÃ©rence gardÃ©e pour pouvoir filtrer la carte (recherche/catÃ©gorie/rayon)
       });
 
       // Les annonces boostÃ©es (parrainage) passent devant, puis tri par distance
@@ -2143,7 +2163,7 @@ function syncJobs() {
         if (aBoost !== bBoost) return bBoost - aBoost;
         return a.dist - b.dist;
       });
-      updateJobsList(allJobs);
+      applyFilters(); // rÃ©applique recherche/catÃ©gorie/rayon actifs sur les nouvelles donnÃ©es
 
       // Lien profond : quelqu'un a cliquÃ© sur un lien "#job=..." partagÃ© sur WhatsApp
       if (deepLinkJobId && jobsById[deepLinkJobId]) {
@@ -2256,8 +2276,39 @@ function clearRoute() {
 function filterJobs(cat, el) {
   document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
-  const filtered = cat === 'all' ? allJobs : allJobs.filter(j => j.icon === cat);
+  currentCategory = cat;
+  applyFilters();
+}
+
+// ===== FILTRE UNIFIÃ‰ : catÃ©gorie + recherche texte + rayon =====
+// Filtre Ã  la fois la liste (sheet) ET les marqueurs affichÃ©s sur la carte,
+// pour que "sÃ©lectionner un type de job" affecte vraiment la carte.
+function applyFilters() {
+  const searchLower = currentSearchText.trim().toLowerCase();
+
+  const filtered = allJobs.filter(job => {
+    const matchesCategory = currentCategory === 'all' || job.icon === currentCategory;
+    const matchesSearch = !searchLower ||
+      (job.title && job.title.toLowerCase().includes(searchLower)) ||
+      (job.desc && job.desc.toLowerCase().includes(searchLower));
+    const matchesRadius = currentRadiusKm == null || (userCoords && job.dist <= currentRadiusKm);
+    return matchesCategory && matchesSearch && matchesRadius;
+  });
+
   updateJobsList(filtered);
+
+  // Montre/cache les marqueurs sur la carte pour correspondre au filtre actif
+  const visibleIds = new Set(filtered.map(j => j.id));
+  allJobs.forEach(job => {
+    if (!job.marker) return;
+    const shouldShow = visibleIds.has(job.id);
+    const isOnMap = jobsLayer.hasLayer(job.marker);
+    if (shouldShow && !isOnMap) jobsLayer.addLayer(job.marker);
+    if (!shouldShow && isOnMap) jobsLayer.removeLayer(job.marker);
+  });
+
+  const countEl = document.getElementById('searchResultsCount');
+  if (countEl) countEl.textContent = filtered.length + (filtered.length > 1 ? ' resultats' : ' resultat');
 }
 
 // ===== CALC DISTANCE =====
@@ -2447,7 +2498,10 @@ function loadAdminJobs() {
       <button onclick="deleteJob('${job.id}')" style="background:var(--danger);border:none;color:white;padding:8px 12px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">${t('adminDeleteBtn')}</button>
     </div>
   `).join('');
-  document.getElementById('adminTotalUsers').textContent = new Set(allJobs.map(j=>j.user)).size;
+  // Avant : ne comptait que les gens ayant publiÃ© un job (sous-estimait le total).
+  // Maintenant : compte tous les profils enregistrÃ©s (profilesCache est dÃ©jÃ  tenu
+  // Ã  jour en temps rÃ©el par syncProfilesCache()).
+  document.getElementById('adminTotalUsers').textContent = Object.keys(profilesCache).length;
 }
 
 async function deleteJob(id) {
@@ -5004,344 +5058,45 @@ function previewImage(event) {
     reader.readAsDataURL(event.target.files[0]);
 }
 </script>
-  
+
+<script>
+// ===== Recherche par nom de job + filtre par rayon (vraiment cÃ¢blÃ©s cette fois) =====
+function toggleSearchPanel() {
+  const panel = document.getElementById('searchPanel');
+  if (!panel) return;
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    const input = document.getElementById('jobSearchInput');
+    if (input) input.focus();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('jobSearchInput');
+  if (input) {
+    input.addEventListener('input', (e) => {
+      currentSearchText = e.target.value;
+      applyFilters();
+    });
+  }
+
+  document.querySelectorAll('#radiusFilters .filter-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#radiusFilters .filter-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const r = parseFloat(btn.dataset.radius);
+      currentRadiusKm = (!r || r === 0) ? null : r;
+      if (currentRadiusKm && !userCoords) {
+        showToast('Active ta position pour filtrer par distance', 'error');
+      }
+      applyFilters();
+    });
+  });
+});
+</script>
+
 </body>
 
-<!-- ===== ENHANCED FEATURES - JAVASCRIPT ===== -->
-<script>
-// ===== FEATURE 1: WhatsApp Optimal Integration =====
-function handleWhatsAppOptimal(phone, message, isMobile = null) {
-  'use strict';
-  
-  // Auto-detect mobile if not specified
-  if (isMobile === null) {
-    const ua = navigator.userAgent || navigator.vendor || window.opera;
-    isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua.toLowerCase());
-  }
-  
-  // Normalize phone number
-  phone = phone.replace(/[^\d+]/g, '').replace(/^0+/, '+237');
-  if (!phone.startsWith('+')) phone = '+237' + phone;
-  
-  // Encode message
-  const encodedMsg = encodeURIComponent(message || 'Bonjour, comment pouvez-vous m\'aider?');
-  
-  let url = '';
-  try {
-    if (isMobile) {
-      // Mobile: Use native WhatsApp scheme first, fallback to wa.me
-      url = \whatsapp://send?phone=\&text=\\;
-      const link = document.createElement('a');
-      link.href = url;
-      link.click();
-      
-      // Fallback timeout for web.whatsapp.com
-      setTimeout(() => {
-        window.location.href = \https://wa.me/\?text=\\;
-      }, 1500);
-    } else {
-      // Desktop: Use web.whatsapp.com or wa.me
-      url = \https://web.whatsapp.com/send?phone=\&text=\\;
-      window.open(url, '_blank', 'width=800,height=600');
-    }
-  } catch (e) {
-    console.error('WhatsApp error:', e);
-    // Fallback to wa.me
-    window.open(\https://wa.me/\?text=\\, '_blank');
-  }
-}
-
-// ===== FEATURE 2: Advanced Job Search & Filtering =====
-const JobSearchManager = {
-  allJobs: [],
-  filteredJobs: [],
-  selectedCategories: new Set(),
-  searchText: '',
-  selectedRadius: null,
-  userLocation: null,
-  
-  init() {
-    this.setupSearchPanel();
-    this.loadUserLocation();
-  },
-  
-  setupSearchPanel() {
-    const searchPanel = document.getElementById('searchPanel');
-    if (!searchPanel) {
-      const panel = document.createElement('div');
-      panel.id = 'searchPanel';
-      panel.className = 'search-panel';
-      panel.innerHTML = \
-        <input type="text" class="search-input" placeholder="Rechercher des jobs..." id="jobSearchInput">
-        <div class="filter-chips" id="categoryFilters"></div>
-        <div class="search-results-count" id="resultsCount"></div>
-      \;
-      document.body.appendChild(panel);
-    }
-  },
-  
-  loadUserLocation() {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          this.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        },
-        err => console.log('Location access denied')
-      );
-    }
-  },
-  
-  filter() {
-    const searchLower = this.searchText.toLowerCase();
-    this.filteredJobs = this.allJobs.filter(job => {
-      const matchesSearch = !this.searchText || 
-        (job.title && job.title.toLowerCase().includes(searchLower)) ||
-        (job.description && job.description.toLowerCase().includes(searchLower));
-      
-      const matchesCategory = this.selectedCategories.size === 0 || 
-        this.selectedCategories.has(job.category);
-      
-      let matchesRadius = true;
-      if (this.selectedRadius && this.userLocation) {
-        const dist = this.calculateDistance(
-          this.userLocation.lat, this.userLocation.lng,
-          job.latitude, job.longitude
-        );
-        matchesRadius = dist <= this.selectedRadius;
-      }
-      
-      return matchesSearch && matchesCategory && matchesRadius;
-    });
-    
-    return this.filteredJobs;
-  },
-  
-  calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Earth radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }
-};
-
-// ===== FEATURE 3: Admin Dashboard User Count Fix =====
-function fixAdminDashboard() {
-  'use strict';
-  
-  const db = firebase.database();
-  
-  // Query to count ALL users from profiles/ node
-  db.ref('profiles').once('value', snapshot => {
-    const users = snapshot.val() || {};
-    const totalUsers = Object.keys(users).length;
-    
-    // Update admin stats
-    const adminElement = document.getElementById('adminTotalUsers');
-    if (adminElement) {
-      adminElement.textContent = totalUsers;
-    }
-    
-    // Populate verified count
-    let verifiedCount = 0;
-    let verificationStatuses = {};
-    
-    Object.entries(users).forEach(([uid, profile]) => {
-      if (profile.verification_status === 'verified') {
-        verifiedCount++;
-      }
-      verificationStatuses[uid] = profile.verification_status || 'pending';
-    });
-    
-    // Update verified count display
-    const verifiedElement = document.getElementById('adminVerifiedUsers');
-    if (verifiedElement) {
-      verifiedElement.textContent = verifiedCount;
-    }
-    
-    // Render users list with pagination
-    renderAdminUsersList(users, verificationStatuses);
-  });
-}
-
-function renderAdminUsersList(users, verificationStatuses, pageSize = 10) {
-  'use strict';
-  
-  const container = document.getElementById('adminUsersList');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  const userEntries = Object.entries(users);
-  
-  userEntries.slice(0, pageSize).forEach(([uid, profile]) => {
-    const status = verificationStatuses[uid] || 'pending';
-    const statusBadge = status === 'verified' ? '✓' : '⏳';
-    const statusClass = status === 'verified' ? 'verified' : 'pending';
-    
-    const userItem = document.createElement('div');
-    userItem.className = 'admin-user-item';
-    userItem.innerHTML = \
-      <div class="admin-user-avatar">\</div>
-      <div class="admin-user-info">
-        <div class="admin-user-name">\</div>
-        <div class="admin-user-meta">
-          <span>\</span>
-          <span>\ jobs</span>
-        </div>
-      </div>
-      <div class="admin-user-status \" title="\">\</div>
-    \;
-    container.appendChild(userItem);
-  });
-  
-  if (userEntries.length > pageSize) {
-    const showMore = document.createElement('button');
-    showMore.className = 'btn btn-ghost';
-    showMore.textContent = \Voir plus (\)\;
-    showMore.onclick = () => renderAdminUsersList(users, verificationStatuses, pageSize + 10);
-    container.appendChild(showMore);
-  }
-}
-
-// ===== FEATURE 4: Enhanced Job Card Display with Rich Fields =====
-function renderEnhancedJobCard(job) {
-  'use strict';
-  
-  const card = document.createElement('div');
-  card.className = 'job-card animated-card';
-  
-  let richFieldsHtml = '';
-  
-  // Salary display
-  if (job.salary_min || job.salary_max) {
-    const salaryText = \\-\ FCFA\;
-    richFieldsHtml += \<span class="job-card-salary">💰 \</span>\;
-  }
-  
-  // Experience level
-  if (job.experience_level) {
-    richFieldsHtml += \<span class="job-card-experience">👤 \</span>\;
-  }
-  
-  // Urgency badge
-  if (job.urgency === 'urgent' || job.urgency === 'très urgent') {
-    richFieldsHtml += \<span class="job-card-urgency-urgent">⚡ URGENT</span>\;
-  }
-  
-  // Distance if available
-  let distanceHtml = '';
-  if (job.distance) {
-    const distanceText = job.distance < 1 ? \\m\ : \\km\;
-    distanceHtml = \<span class="job-card-distance-km">📍 \</span>\;
-  }
-  
-  card.innerHTML = \
-    <div class="job-card-icon">\</div>
-    <div class="job-card-body">
-      <div class="job-card-title">\</div>
-      <div style="margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap;">
-        \
-      </div>
-      <div class="job-card-meta" style="margin-top: 6px;">
-        \
-      </div>
-    </div>
-    <div class="job-card-right">
-      <div class="job-card-price">\</div>
-    </div>
-  \;
-  
-  return card;
-}
-
-// ===== FEATURE 5: Geolocation Radius Filtering =====
-function setupRadiusFilters() {
-  'use strict';
-  
-  const radiusContainer = document.getElementById('radiusFilters');
-  if (!radiusContainer) {
-    const container = document.createElement('div');
-    container.id = 'radiusFilters';
-    container.className = 'radius-filters';
-    container.innerHTML = \
-      <button class="radius-btn active" data-radius="0">Tout</button>
-      <button class="radius-btn" data-radius="0.5">500m</button>
-      <button class="radius-btn" data-radius="2">2km</button>
-      <button class="radius-btn" data-radius="5">5km</button>
-      <button class="radius-btn" data-radius="10">10km</button>
-    \;
-    
-    // Insert after category bar
-    const categoryBar = document.querySelector('.category-bar');
-    if (categoryBar) {
-      categoryBar.parentNode.insertBefore(container, categoryBar.nextSibling);
-    }
-    
-    // Add event listeners
-    container.querySelectorAll('.radius-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        container.querySelectorAll('.radius-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        JobSearchManager.selectedRadius = this.dataset.radius === '0' ? null : parseFloat(this.dataset.radius);
-        JobSearchManager.filter();
-      });
-    });
-  }
-}
-
-// ===== FEATURE 6: Loading Skeleton Screen =====
-function showSkeletonLoading(count = 5) {
-  'use strict';
-  
-  const container = document.querySelector('.jobs-sheet .sheet-body');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  for (let i = 0; i < count; i++) {
-    const skeleton = document.createElement('div');
-    skeleton.className = 'skeleton skeleton-card';
-    container.appendChild(skeleton);
-  }
-}
-
-// ===== FEATURE 7: Initialize All Enhancements =====
-function initializeEnhancements() {
-  'use strict';
-  
-  // Wait for Firebase to be ready
-  if (typeof firebase === 'undefined') {
-    setTimeout(initializeEnhancements, 100);
-    return;
-  }
-  
-  // Initialize search manager
-  JobSearchManager.init();
-  
-  // Setup radius filters
-  setupRadiusFilters();
-  
-  // Fix admin dashboard when admin page opens
-  const observer = new MutationObserver(() => {
-    if (document.querySelector('.overlay-page.open')) {
-      const title = document.querySelector('.overlay-title');
-      if (title && title.textContent.includes('Administrateur')) {
-        fixAdminDashboard();
-      }
-    }
-  });
-  
-  observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
-}
-
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeEnhancements);
-} else {
-  initializeEnhancements();
-}
-</script></html>
+</html>
 
 
