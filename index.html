@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -3610,19 +3609,15 @@ function renderVerificationStatus(profile, user) {
         ? `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">✉️ ${t('emailVerified')}</div>`
         : `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">${t('emailNotVerified')}</div>`;
 
-    // Vérification téléphone par SMS : automatique, gratuite (quota Firebase),
-    // aucune intervention manuelle nécessaire contrairement au badge "ID vérifié".
-    const phoneSection = renderPhoneVerificationSection(profile);
-
     if (profile.verified) {
-        box.innerHTML = emailBadge + phoneSection;
+        box.innerHTML = emailBadge;
         return;
     }
 
     // NOUVEAU : la demande a été acceptée par l'admin, un code à 7 chiffres a été
     // généré et envoyé sur WhatsApp — il ne reste qu'à le saisir ici pour finaliser.
     if (profile.verificationCode) {
-        box.innerHTML = emailBadge + phoneSection + `
+        box.innerHTML = emailBadge + `
             <div style="font-size:13px;color:var(--green,#25D366);font-weight:700;margin-top:10px;margin-bottom:8px;">
                 ✅ Demande acceptée ! Entre le code à 7 chiffres reçu sur WhatsApp pour finaliser ta vérification.
             </div>
@@ -3635,14 +3630,14 @@ function renderVerificationStatus(profile, user) {
 
     const requestSent = profile.verificationRequested;
     if (requestSent) {
-        box.innerHTML = emailBadge + phoneSection + `
+        box.innerHTML = emailBadge + `
             <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-top:10px;">
                 ${t('requestSent')}
             </div>`;
         return;
     }
 
-    box.innerHTML = emailBadge + phoneSection + `
+    box.innerHTML = emailBadge + `
         <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-top:10px;margin-bottom:10px;">
             ${t('profileNotVerified')}
         </div>
@@ -3699,105 +3694,6 @@ async function uploadVerificationPhoto(file) {
     const data = await res.json();
     if (!data.secure_url) throw new Error('upload failed');
     return data.secure_url;
-}
-
-// Section "numéro vérifié par SMS". Trois états : déjà vérifié / formulaire
-// pour saisir le numéro / formulaire pour saisir le code reçu.
-function renderPhoneVerificationSection(profile) {
-    if (profile.phoneVerified) {
-        return `<div style="display:flex;align-items:center;gap:8px;color:var(--green,#25D366);font-weight:700;font-size:13px;margin-bottom:4px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            Numéro vérifié ${profile.phone ? '(' + escapeHtml(profile.phone) + ')' : ''}
-        </div>`;
-    }
-    return `<div id="phoneVerifyBox" style="margin-bottom:4px;">
-        <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:6px;">📱 Numéro non vérifié par SMS</div>
-        <div style="display:flex;gap:6px;">
-            <input id="phoneVerifyInput" type="tel" placeholder="Ex: +237650420710" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:8px 10px;border-radius:8px;font-size:13px;">
-            <button type="button" onclick="sendPhoneOTP()" style="background:var(--green,#25D366);border:none;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Envoyer le code</button>
-        </div>
-    </div>`;
-}
-
-// Étape 1 : envoie un code SMS et le lie au compte déjà connecté (email/Google),
-// sans créer de second compte. Nécessite un numéro au format international
-// (ex: +237650420710).
-function sendPhoneOTP() {
-    const user = auth.currentUser;
-    if (!user || user.isAnonymous) { showToast('Connectez-vous d\'abord', 'error'); return; }
-
-    const input = document.getElementById('phoneVerifyInput');
-    const phone = input ? input.value.trim() : '';
-    if (!/^\+\d{8,15}$/.test(phone)) {
-        showToast('Format attendu : +237XXXXXXXXX', 'error');
-        return;
-    }
-
-    try {
-        if (!window.recaptchaVerifier) {
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { size: 'invisible' });
-        }
-        showToast('Envoi du code par SMS...', 'info');
-        user.linkWithPhoneNumber(phone, window.recaptchaVerifier).then(confirmationResult => {
-            window.phoneConfirmationResult = confirmationResult;
-            const box = document.getElementById('phoneVerifyBox');
-            if (box) {
-                box.innerHTML = `
-                    <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:6px;">Code envoyé par SMS au ${escapeHtml(phone)}</div>
-                    <div style="display:flex;gap:6px;">
-                        <input id="phoneOtpInput" type="text" inputmode="numeric" maxlength="6" placeholder="Code à 6 chiffres" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:8px 10px;border-radius:8px;font-size:13px;">
-                        <button type="button" onclick="confirmPhoneOTP('${phone}')" style="background:var(--gold,#FFD700);border:none;color:#111;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Valider</button>
-                    </div>`;
-            }
-            showToast('Code envoyé !', 'success');
-        }).catch(err => {
-            console.error('sendPhoneOTP error', err);
-            if (err.code === 'auth/credential-already-in-use' || err.code === 'auth/phone-number-already-exists') {
-                showToast('Ce numéro est déjà utilisé par un autre compte', 'error');
-            } else if (err.code === 'auth/invalid-phone-number') {
-                showToast('Numéro invalide', 'error');
-            } else if (err.code === 'auth/quota-exceeded') {
-                showToast('Trop de SMS envoyés aujourd\'hui, réessaie plus tard', 'error');
-            } else if (err.code === 'auth/too-many-requests') {
-                showToast('Trop de tentatives, réessaie dans quelques minutes', 'error');
-            } else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/unauthorized-domain') {
-                showToast('Ce site n\'est pas autorisé pour la vérification SMS (contacter l\'admin)', 'error');
-            } else {
-                showToast(`Erreur lors de l'envoi du SMS (${err.code || 'inconnue'})`, 'error');
-            }
-            // Sans ce reset, le widget reCAPTCHA invisible reste "consommé" et
-            // TOUTE tentative suivante échoue silencieusement, même après avoir
-            // corrigé le problème d'origine.
-            if (window.recaptchaVerifier) {
-                window.recaptchaVerifier.clear();
-                window.recaptchaVerifier = null;
-            }
-        });
-    } catch (e) {
-        console.error('sendPhoneOTP setup error', e);
-        showToast('Erreur de vérification', 'error');
-    }
-}
-
-// Étape 2 : confirme le code reçu et marque le profil comme vérifié par SMS.
-async function confirmPhoneOTP(phone) {
-    const otpInput = document.getElementById('phoneOtpInput');
-    const code = otpInput ? otpInput.value.trim() : '';
-    if (!code || !window.phoneConfirmationResult) {
-        showToast('Entrez le code reçu par SMS', 'error');
-        return;
-    }
-    try {
-        await window.phoneConfirmationResult.confirm(code);
-        const user = auth.currentUser;
-        await db.ref('profiles/' + user.uid).update({ phoneVerified: true, phone });
-        showToast('Numéro vérifié !', 'success');
-        const snap = await db.ref('profiles/' + user.uid).once('value');
-        renderVerificationStatus(snap.val() || {}, user);
-    } catch (e) {
-        console.error('confirmPhoneOTP error', e);
-        showToast('Code invalide ou expiré', 'error');
-    }
 }
 
 // Affiche le lien de parrainage personnel, le nombre de filleuls, et permet
@@ -4767,9 +4663,6 @@ document.addEventListener('click', (e) => {
     transform: scale(0.98);
   }
 </style>
-
-<!-- Conteneur reCAPTCHA invisible requis par Firebase Phone Auth (SMS gratuit) -->
-<div id="recaptcha-container"></div>
 
 <div id="profileSheet" class="profile-sheet">
     <div class="profile-sheet-header">
