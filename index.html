@@ -4007,53 +4007,33 @@ function formatCameroonPhoneForWhatsApp(phoneRaw) {
     return clean;
 }
 
-// Ouvre WhatsApp de la façon la plus directe possible, et de manière fiable même après
-// des appels réseau (Firebase) : les navigateurs mobiles bloquent window.open() s'il
-// n'est pas appelé en réaction DIRECTE au clic (voir openWhatsAppPlaceholderTab).
+// Ouvre WhatsApp via le lien officiel "Click to Chat" (wa.me), reconnu par
+// Android (App Links) et iOS (Universal Links) pour ouvrir l'app installée
+// DIRECTEMENT, sans page intermédiaire — sur ordinateur, la même URL bascule
+// automatiquement vers WhatsApp Web.
 //
-// Le lien web (https://api.whatsapp.com/send...) passe par la page de redirection de
-// WhatsApp, qui affiche parfois « Ouvrir l'app / Télécharger » même quand l'app EST
-// installée — en particulier dans un navigateur intégré ou une PWA installée en mode
-// standalone, qui ne bénéficient pas toujours du même lien « universel » qu'un onglet
-// Chrome/Safari classique. Le schéma natif whatsapp://send ouvre l'app directement,
-// sans passer par AUCUNE page web, quand elle est installée. On tente donc d'abord ce
-// schéma natif ; si on est toujours sur la page ~1,2s plus tard (l'app n'a pas pris la
-// main, donc probablement pas installée), on bascule automatiquement sur le lien web.
-// Détecte si on est sur téléphone (Android/iOS) plutôt que sur ordinateur, pour
-// adapter la façon dont WhatsApp s'ouvre : sur téléphone l'app est presque
-// toujours installée, donc on y va directement ; sur ordinateur, l'app de bureau
-// est rarement enregistrée comme gestionnaire de lien, donc on évite de la
-// tenter et on va droit à la version web.
-function isMobileDevice() {
-    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-}
-
+// On a abandonné le schéma natif whatsapp://send + minuteur de repli : ce
+// schéma n'est ouvert par le téléphone que s'il est appelé quasi immédiatement
+// après le clic. Or ici, l'ouverture arrive après un ou plusieurs appels
+// réseau (Firebase, upload de photos) qui peuvent prendre plusieurs secondes
+// sur une connexion mobile — le temps que la redirection parte, le navigateur
+// ne considère souvent plus le geste comme "récent" et bloque silencieusement
+// whatsapp://, puis le minuteur de repli ouvrait alors la page web à la place
+// de l'app. wa.me est une simple URL https, non soumise à cette limite : elle
+// s'ouvre de façon fiable même après ce délai, et laisse le téléphone décider
+// d'ouvrir l'app.
 function openWhatsAppReliably(placeholderWindow, phoneRaw, message) {
     const text = encodeURIComponent(message || '');
-    const phoneParam = phoneRaw ? `phone=${formatCameroonPhoneForWhatsApp(phoneRaw)}&` : '';
-    const appUrl = `whatsapp://send?${phoneParam}text=${text}`;
-    const webUrl = `https://api.whatsapp.com/send?${phoneParam}text=${text}`;
+    const phonePart = phoneRaw ? formatCameroonPhoneForWhatsApp(phoneRaw) : '';
+    const url = `https://wa.me/${phonePart}?text=${text}`;
     const target = (placeholderWindow && !placeholderWindow.closed) ? placeholderWindow : window.open('', '_blank');
-    const onPhone = isMobileDevice();
 
     if (!target) {
         // Fenêtre bloquée par le navigateur : dernier recours dans l'onglet actuel.
-        window.location.href = onPhone ? appUrl : webUrl;
+        window.location.href = url;
         return;
     }
-
-    if (onPhone) {
-        // Téléphone : ouverture directe de l'app WhatsApp.
-        target.location.href = appUrl;
-        setTimeout(() => {
-            try {
-                if (!target.closed) target.location.href = webUrl;
-            } catch (e) { /* onglet déjà fermé ou redirigé ailleurs : rien à faire */ }
-        }, 1200);
-    } else {
-        // Ordinateur : direction la version web, sans passer par le schéma natif.
-        target.location.href = webUrl;
-    }
+    target.location.href = url;
 }
 
 // Ouvre un onglet vide immédiatement au clic (avant tout appel réseau), avec un
