@@ -143,6 +143,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  
+
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req).then((res) => {
