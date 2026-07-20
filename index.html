@@ -2373,6 +2373,7 @@ async function loadPendingVerifications() {
         <div>
           <div style="font-weight:700;font-size:14px;">${escapeHtml(p.name || p.company || t('adminNoName'))}</div>
           <div style="font-size:12px;color:var(--text-dim);">${escapeHtml(p.jobTitle || t('adminNoJobTitle'))}</div>
+          <div style="font-size:12px;color:var(--green,#25D366);margin-top:2px;">📱 ${p.whatsappNumber ? escapeHtml(p.whatsappNumber) : 'Non renseigné'}</div>
           ${photos}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;">
@@ -2387,13 +2388,38 @@ async function loadPendingVerifications() {
   }
 }
 
+// Approuver ne rend plus le profil "verified" instantanément : ça génère un code
+// à 7 chiffres, l'enregistre sur le profil, et ouvre WhatsApp pré-rempli vers le
+// numéro fourni par le demandeur pour le lui transmettre. Le profil ne passera à
+// verified: true que lorsque la personne aura saisi ce code dans l'app (voir
+// confirmVerificationCode). Les documents restent visibles tant que le code n'a
+// pas été confirmé, au cas où il faille les revérifier.
 async function approveVerification(uid) {
+  // Ouvert tout de suite, dans le même clic, avant les appels Firebase ci-dessous
+  // (voir openWhatsAppPlaceholderTab) pour ne jamais être bloqué par le navigateur.
+  const waWindow = openWhatsAppPlaceholderTab();
   try {
-    await db.ref('profiles/' + uid).update({ verified: true, verificationRequested: null, verificationDocs: null });
-    showToast('Profil vérifié !', 'success');
+    const snap = await db.ref('profiles/' + uid).once('value');
+    const profile = snap.val() || {};
+    const code = generateVerificationCode();
+
+    await db.ref('profiles/' + uid).update({ verificationCode: code, verificationRequested: null });
+
+    const name = profile.name || profile.company || 'Utilisateur';
+    const whatsappNumber = profile.whatsappNumber;
+
+    if (whatsappNumber) {
+      const message = `Bonjour ${name}, ta demande de vérification JobMarket a été acceptée ✅.\nVoici ton code de vérification à saisir dans l'app : ${code}`;
+      openWhatsAppReliably(waWindow, whatsappNumber, message);
+      showToast('Code généré et WhatsApp ouvert pour l\'envoyer !', 'success');
+    } else {
+      if (waWindow) waWindow.close();
+      showToast(`Aucun numéro WhatsApp enregistré pour ce profil. Code à transmettre manuellement : ${code}`, 'info');
+    }
     loadPendingVerifications();
   } catch (e) {
     console.error('approveVerification error', e);
+    if (waWindow) waWindow.close();
     showToast('Erreur lors de la validation', 'error');
   }
 }
@@ -2770,6 +2796,16 @@ const LOCAL_CHAT_KNOWLEDGE = [
       it: `In Account → «Il mio Profilo Pro», inserisci il tuo numero in formato internazionale (es. +237650420710) e tocca «Invia codice». Riceverai un SMS con un codice da confermare. Una volta verificato, apparirà un badge 📱 sui tuoi annunci: un segnale di fiducia gratuito e automatico, diverso dal badge ✓ che richiede una verifica manuale tramite documento.`,
       de: `Gehen Sie zu Konto → „Mein Profi-Profil", geben Sie Ihre Nummer im internationalen Format ein (z. B. +237650420710) und tippen Sie auf „Code senden". Sie erhalten eine SMS mit einem Bestätigungscode. Nach der Verifizierung erscheint ein 📱-Abzeichen auf Ihren Anzeigen — ein kostenloses, automatisches Vertrauenssignal, anders als das ✓-Abzeichen, das eine manuelle Ausweisprüfung erfordert.`,
       zh: `在"账户"→"我的专业资料"中，输入国际格式的号码（例如 +237650420710），然后点击"发送验证码"。您会收到一条含验证码的短信，输入以确认。验证成功后，您的发布信息上会出现📱标志——这是一个免费、自动的信任标志，不同于需要人工核实身份证件的✓标志。`
+    }
+  },
+  {
+    terms:['badge verifie','vérification cni','piece identite','carte identite','pièce d\'identité','obtenir le badge','comment verifier mon profil','code de verification','code a 7 chiffres','verify my identity','id verification','identity badge','how to verify my profile','verification code','7 digit code','verifica identita','carta d\'identita','ottenere il badge','codice di verifica','codice a 7 cifre','come verificare il profilo','identitatsprufung','ausweis verifizierung','verifizierungscode','7-stelliger code','abzeichen erhalten','身份验证','验证徽章','身份证验证','验证码','七位数验证码','如何验证资料'],
+    answers: {
+      fr: `Pour obtenir le badge ✓ (vérification manuelle), ouvrez Compte → « Mon Profil Pro », section vérification : ajoutez une photo de votre pièce d'identité (CNI, passeport...), un selfie où vous tenez cette même pièce à côté de votre visage, et votre numéro WhatsApp. Après l'envoi, un administrateur examine la demande ; une fois acceptée, vous recevez un code à 7 chiffres sur WhatsApp à saisir dans l'app pour finaliser la vérification et débloquer le badge ✓.`,
+      en: `To get the ✓ badge (manual verification), open Account → "My Pro Profile", verification section: add a photo of your ID (national ID card, passport...), a selfie of you holding that same document next to your face, and your WhatsApp number. After sending, an admin reviews the request; once accepted, you'll receive a 7-digit code on WhatsApp to enter in the app to finish the verification and unlock the ✓ badge.`,
+      it: `Per ottenere il badge ✓ (verifica manuale), apri Account → «Il mio profilo Pro», sezione verifica: aggiungi una foto del tuo documento d'identità (carta d'identità, passaporto...), un selfie in cui tieni lo stesso documento accanto al viso, e il tuo numero WhatsApp. Dopo l'invio, un amministratore esamina la richiesta; una volta accettata, riceverai su WhatsApp un codice a 7 cifre da inserire nell'app per completare la verifica e sbloccare il badge ✓.`,
+      de: `Um das ✓-Abzeichen zu erhalten (manuelle Verifizierung), öffnen Sie Konto → „Mein Profi-Profil", Bereich Verifizierung: fügen Sie ein Foto Ihres Ausweises (Personalausweis, Reisepass...), ein Selfie mit diesem Dokument neben Ihrem Gesicht, und Ihre WhatsApp-Nummer hinzu. Nach dem Senden prüft ein Administrator die Anfrage; nach der Annahme erhalten Sie per WhatsApp einen 7-stelligen Code, den Sie in der App eingeben, um die Verifizierung abzuschließen und das ✓-Abzeichen freizuschalten.`,
+      zh: `要获得✓认证徽章（人工审核），请打开"账户"→"我的专业资料"的验证部分：上传您的身份证件照片（身份证、护照等）、一张您手持同一证件靠近脸部的自拍照，以及您的WhatsApp号码。提交后，管理员会审核申请；通过后，您将通过WhatsApp收到一个7位数验证码，在应用中输入即可完成验证并解锁✓徽章。`
     }
   }
 ];
@@ -3582,6 +3618,20 @@ function renderVerificationStatus(profile, user) {
         return;
     }
 
+    // NOUVEAU : la demande a été acceptée par l'admin, un code à 7 chiffres a été
+    // généré et envoyé sur WhatsApp — il ne reste qu'à le saisir ici pour finaliser.
+    if (profile.verificationCode) {
+        box.innerHTML = emailBadge + phoneSection + `
+            <div style="font-size:13px;color:var(--green,#25D366);font-weight:700;margin-top:10px;margin-bottom:8px;">
+                ✅ Demande acceptée ! Entre le code à 7 chiffres reçu sur WhatsApp pour finaliser ta vérification.
+            </div>
+            <div style="display:flex;gap:6px;">
+                <input id="verifyCodeInput" type="text" inputmode="numeric" maxlength="7" placeholder="Code à 7 chiffres" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:10px 12px;border-radius:8px;font-size:14px;letter-spacing:2px;">
+                <button type="button" id="confirmVerificationCodeBtn" onclick="confirmVerificationCode()" style="background:var(--gold,#FFD700);border:none;color:#111;padding:10px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Valider le code</button>
+            </div>`;
+        return;
+    }
+
     const requestSent = profile.verificationRequested;
     if (requestSent) {
         box.innerHTML = emailBadge + phoneSection + `
@@ -3595,16 +3645,26 @@ function renderVerificationStatus(profile, user) {
         <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-top:10px;margin-bottom:10px;">
             ${t('profileNotVerified')}
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
+            <div>
+                <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:4px;">📱 Ton numéro WhatsApp (pour recevoir ton code de vérification)</div>
+                <input id="verifyWhatsAppInput" type="tel" placeholder="Ex: +237650420710" value="${escapeHtml(profile.whatsappNumber || '')}" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:10px 12px;border-radius:8px;font-size:13px;">
+            </div>
             <div>
                 <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:4px;">📄 Photo de ta pièce d'identité (CNI, passeport...)</div>
                 <input type="file" id="verifyIdPhotoInput" accept="image/*" style="display:none;" onchange="previewVerificationPhoto(this,'verifyIdPhotoPreview')">
-                <div id="verifyIdPhotoPreview" onclick="document.getElementById('verifyIdPhotoInput').click()" style="cursor:pointer;height:70px;border:1px dashed var(--border,#333);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim,#8888A8);overflow:hidden;">Toucher pour choisir une photo</div>
+                <div id="verifyIdPhotoPreview" onclick="document.getElementById('verifyIdPhotoInput').click()" style="cursor:pointer;height:90px;border:2px dashed var(--gold,#FFD700);background:rgba(255,215,0,0.06);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--gold,#FFD700);overflow:hidden;text-align:center;">
+                    <span style="font-size:24px;">📄</span>
+                    <span>Toucher pour ajouter la photo</span>
+                </div>
             </div>
             <div>
                 <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:4px;">🤳 Selfie de toi tenant la même pièce à côté de ton visage</div>
                 <input type="file" id="verifySelfiePhotoInput" accept="image/*" style="display:none;" onchange="previewVerificationPhoto(this,'verifySelfiePhotoPreview')">
-                <div id="verifySelfiePhotoPreview" onclick="document.getElementById('verifySelfiePhotoInput').click()" style="cursor:pointer;height:70px;border:1px dashed var(--border,#333);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim,#8888A8);overflow:hidden;">Toucher pour choisir une photo</div>
+                <div id="verifySelfiePhotoPreview" onclick="document.getElementById('verifySelfiePhotoInput').click()" style="cursor:pointer;height:90px;border:2px dashed var(--gold,#FFD700);background:rgba(255,215,0,0.06);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--gold,#FFD700);overflow:hidden;text-align:center;">
+                    <span style="font-size:24px;">🤳</span>
+                    <span>Toucher pour ajouter le selfie</span>
+                </div>
             </div>
         </div>
         <button type="button" id="requestVerificationBtn" onclick="requestVerification()" style="background:none;border:1px solid var(--blue);color:var(--blue);padding:8px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:700;width:100%;">${t('requestVerificationBtn')}</button>
@@ -3833,11 +3893,17 @@ async function requestVerification() {
 
     const idInput = document.getElementById('verifyIdPhotoInput');
     const selfieInput = document.getElementById('verifySelfiePhotoInput');
+    const waInput = document.getElementById('verifyWhatsAppInput');
     const idFile = idInput && idInput.files && idInput.files[0];
     const selfieFile = selfieInput && selfieInput.files && selfieInput.files[0];
+    const whatsappNumber = waInput ? waInput.value.trim() : '';
 
     if (!idFile || !selfieFile) {
         showToast('Ajoute une photo de ta pièce d\'identité ET un selfie avant d\'envoyer.', 'error');
+        return;
+    }
+    if (!/^\+?\d{8,15}$/.test(whatsappNumber.replace(/[\s.-]/g, ''))) {
+        showToast('Entre un numéro WhatsApp valide (ex: +237650420710) pour recevoir ton code.', 'error');
         return;
     }
 
@@ -3864,13 +3930,14 @@ async function requestVerification() {
 
         await db.ref('profiles/' + user.uid).update({
             verificationRequested: Date.now(),
-            verificationDocs: { idPhotoUrl, selfiePhotoUrl }
+            verificationDocs: { idPhotoUrl, selfiePhotoUrl },
+            whatsappNumber: whatsappNumber
         });
 
-        const message = `Bonjour, je souhaite faire vérifier mon profil JobMarket.\nNom : ${name}\nMétier : ${jobTitle}\nMes documents ont été envoyés directement dans l'app (visibles dans le panel admin).`;
+        const message = `Bonjour, je souhaite faire vérifier mon profil JobMarket.\nNom : ${name}\nMétier : ${jobTitle}\nNuméro WhatsApp : ${whatsappNumber}\nMes documents ont été envoyés directement dans l'app (visibles dans le panel admin).`;
         openWhatsAppReliably(waWindow, ADMIN_WHATSAPP_NUMBER, message);
 
-        renderVerificationStatus({ ...profile, verificationRequested: true }, user);
+        renderVerificationStatus({ ...profile, verificationRequested: true, whatsappNumber }, user);
         showToast('Demande envoyée !', 'success');
     } catch (e) {
         console.error('requestVerification error', e);
@@ -3878,6 +3945,62 @@ async function requestVerification() {
         showToast('Erreur lors de l\'envoi des photos', 'error');
         if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
     }
+}
+
+// Vérifie le code à 7 chiffres saisi par l'utilisateur contre celui généré par
+// l'admin lors de l'acceptation (voir approveVerification). Si ça correspond,
+// le profil passe enfin à verified: true.
+async function confirmVerificationCode() {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) return;
+
+    const input = document.getElementById('verifyCodeInput');
+    const code = input ? input.value.trim() : '';
+    if (!/^\d{7}$/.test(code)) {
+        showToast('Le code doit contenir exactement 7 chiffres.', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('confirmVerificationCodeBtn');
+    const originalBtnText = btn ? btn.innerText : '';
+    if (btn) { btn.disabled = true; btn.innerText = 'Vérification...'; }
+
+    try {
+        const snap = await db.ref('profiles/' + user.uid).once('value');
+        const profile = snap.val() || {};
+
+        if (!profile.verificationCode) {
+            showToast('Aucun code en attente pour ce profil.', 'error');
+            if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
+            return;
+        }
+
+        if (code !== String(profile.verificationCode)) {
+            showToast('Code incorrect, réessaie.', 'error');
+            if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
+            return;
+        }
+
+        await db.ref('profiles/' + user.uid).update({
+            verified: true,
+            verificationCode: null,
+            verificationRequested: null,
+            verificationDocs: null
+        });
+
+        showToast('Profil vérifié !', 'success');
+        const freshSnap = await db.ref('profiles/' + user.uid).once('value');
+        renderVerificationStatus(freshSnap.val() || {}, user);
+    } catch (e) {
+        console.error('confirmVerificationCode error', e);
+        showToast('Erreur lors de la vérification du code', 'error');
+        if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
+    }
+}
+
+// Génère un code de vérification à 7 chiffres (1000000-9999999, toujours 7 chiffres).
+function generateVerificationCode() {
+    return String(Math.floor(1000000 + Math.random() * 9000000));
 }
    
 // 1. Sauvegarde du profil
@@ -3999,24 +4122,41 @@ function formatCameroonPhoneForWhatsApp(phoneRaw) {
 // sans passer par AUCUNE page web, quand elle est installée. On tente donc d'abord ce
 // schéma natif ; si on est toujours sur la page ~1,2s plus tard (l'app n'a pas pris la
 // main, donc probablement pas installée), on bascule automatiquement sur le lien web.
+// Détecte si on est sur téléphone (Android/iOS) plutôt que sur ordinateur, pour
+// adapter la façon dont WhatsApp s'ouvre : sur téléphone l'app est presque
+// toujours installée, donc on y va directement ; sur ordinateur, l'app de bureau
+// est rarement enregistrée comme gestionnaire de lien, donc on évite de la
+// tenter et on va droit à la version web.
+function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
 function openWhatsAppReliably(placeholderWindow, phoneRaw, message) {
     const text = encodeURIComponent(message || '');
     const phoneParam = phoneRaw ? `phone=${formatCameroonPhoneForWhatsApp(phoneRaw)}&` : '';
     const appUrl = `whatsapp://send?${phoneParam}text=${text}`;
     const webUrl = `https://api.whatsapp.com/send?${phoneParam}text=${text}`;
     const target = (placeholderWindow && !placeholderWindow.closed) ? placeholderWindow : window.open('', '_blank');
+    const onPhone = isMobileDevice();
 
     if (!target) {
         // Fenêtre bloquée par le navigateur : dernier recours dans l'onglet actuel.
-        window.location.href = webUrl;
+        window.location.href = onPhone ? appUrl : webUrl;
         return;
     }
-    target.location.href = appUrl;
-    setTimeout(() => {
-        try {
-            if (!target.closed) target.location.href = webUrl;
-        } catch (e) { /* onglet déjà fermé ou redirigé ailleurs : rien à faire */ }
-    }, 1200);
+
+    if (onPhone) {
+        // Téléphone : ouverture directe de l'app WhatsApp.
+        target.location.href = appUrl;
+        setTimeout(() => {
+            try {
+                if (!target.closed) target.location.href = webUrl;
+            } catch (e) { /* onglet déjà fermé ou redirigé ailleurs : rien à faire */ }
+        }, 1200);
+    } else {
+        // Ordinateur : direction la version web, sans passer par le schéma natif.
+        target.location.href = webUrl;
+    }
 }
 
 // Ouvre un onglet vide immédiatement au clic (avant tout appel réseau), avec un
