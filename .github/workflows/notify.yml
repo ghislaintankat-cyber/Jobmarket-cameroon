@@ -16,12 +16,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
+          cache: "npm"
 
       - name: Install dependencies
-        # npm ci exige un package-lock.json committé ; tant qu'il n'existe pas,
-        # on utilise npm install. Dès que vous committez package-lock.json,
-        # remplacez cette ligne par : run: npm ci
-        run: npm install
+        run: npm ci
 
       - name: Run notification script
         run: node scripts/sendNotifications.js
