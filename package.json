@@ -1,0 +1,12 @@
+{
+  "name": "jobmarket-notifier",
+  "version": "1.0.0",
+  "main": "scripts/sendNotifications.js",
+  "scripts": {
+    "notify": "node scripts/sendNotifications.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "node-fetch": "^3.3.2"
+  }
+}
