@@ -1,7 +1,6 @@
 const admin = require("firebase-admin");
-const fetch = require("node-fetch");
 
-// Initialisation Firebase avec le secret
+// Initialisation Firebase avec le service account JSON
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
@@ -22,25 +21,16 @@ async function sendNotifications() {
     if (!job.notified) {
       // Construire le message
       const message = {
-        to: "/topics/allUsers", // ou un token spécifique
+        topic: "allUsers", // ou un token spécifique
         notification: {
           title: "Nouveau poste disponible",
           body: `${job.title} chez ${job.company}`
         },
-        data: {
-          jobId
-        }
+        data: { jobId }
       };
 
-      // Envoyer via FCM
-      await fetch("https://fcm.googleapis.com/fcm/send", {
-        method: "POST",
-        headers: {
-          "Authorization": `key=${process.env.FCM_SERVER_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(message)
-      });
+      // Envoyer via Admin SDK (API v1)
+      await admin.messaging().send(message);
 
       // Marquer comme notifié
       await jobsRef.child(jobId).update({ notified: true });
