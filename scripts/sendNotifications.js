@@ -4,10 +4,78 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://<YOUR_FIREBASE_PROJECT>.firebaseio.com"
+  // Doit correspondre à databaseURL dans index.html / sw.js
+  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com"
 });
 
 const db = admin.database();
+const messaging = admin.messaging();
+
+// FCM accepte au maximum 500 tokens par appel multicast
+const BATCH_SIZE = 500;
+
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+async function getAllTokens() {
+  const snap = await db.ref("notificationTokens").once("value");
+  const data = snap.val() || {};
+  // { uid: token }  ->  [{ uid, token }, ...]
+  return Object.entries(data)
+    .filter(([, token]) => typeof token === "string" && token.length > 0)
+    .map(([uid, token]) => ({ uid, token }));
+}
+
+async function removeInvalidTokens(uids) {
+  const updates = {};
+  uids.forEach((uid) => {
+    updates[`notificationTokens/${uid}`] = null;
+  });
+  if (Object.keys(updates).length) {
+    await db.ref().update(updates);
+  }
+}
+
+async function sendToAllTokens(entries, notification, data) {
+  const invalidUids = [];
+  let successCount = 0;
+
+  for (const batch of chunk(entries, BATCH_SIZE)) {
+    const tokens = batch.map((e) => e.token);
+
+    const response = await messaging.sendEachForMulticast({
+      tokens,
+      notification,
+      data
+    });
+
+    successCount += response.successCount;
+
+    response.responses.forEach((res, idx) => {
+      if (!res.success) {
+        const code = res.error && res.error.code;
+        if (
+          code === "messaging/invalid-registration-token" ||
+          code === "messaging/registration-token-not-registered"
+        ) {
+          invalidUids.push(batch[idx].uid);
+        } else {
+          console.error(`❌ Erreur d'envoi (${code || "inconnue"}):`, res.error && res.error.message);
+        }
+      }
+    });
+  }
+
+  if (invalidUids.length) {
+    await removeInvalidTokens(invalidUids);
+    console.log(`🧹 ${invalidUids.length} token(s) invalide(s) supprimé(s).`);
+  }
+
+  return successCount;
+}
 
 async function sendNotifications() {
   try {
@@ -20,34 +88,38 @@ async function sendNotifications() {
       return;
     }
 
+    const entries = await getAllTokens();
+    if (!entries.length) {
+      console.log("Aucun token de notification enregistré, rien à envoyer.");
+      return;
+    }
+
     for (const [jobId, job] of Object.entries(jobs)) {
-      if (!job.notified) {
-        // Construire un topic basé sur catégorie + ville
-        const topic = `${job.category || "General"}_${job.location || "Global"}`;
+      if (job.notified) continue;
 
-        const message = {
-          topic,
-          notification: {
-            title: "Nouveau poste disponible",
-            body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`
-          },
-          data: {
-            jobId,
-            salaire: job.salaire || "N/A"
-          }
-        };
+      const notification = {
+        title: "Nouveau poste disponible",
+        body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`
+      };
 
-        try {
-          await admin.messaging().send(message);
-          await jobsRef.child(jobId).update({ notified: true });
-          console.log(`✅ Notification envoyée pour ${job.title} (topic: ${topic})`);
-        } catch (err) {
-          console.error(`❌ Erreur envoi notification pour ${job.title}:`, err);
-        }
+      const data = {
+        jobId: String(jobId),
+        category: String(job.category || "General"),
+        location: String(job.location || "Global"),
+        salaire: String(job.salaire || "N/A")
+      };
+
+      try {
+        const successCount = await sendToAllTokens(entries, notification, data);
+        await jobsRef.child(jobId).update({ notified: true });
+        console.log(`✅ Notification envoyée pour "${job.title}" (${successCount}/${entries.length} appareil(s))`);
+      } catch (err) {
+        console.error(`❌ Erreur envoi notification pour ${job.title}:`, err);
       }
     }
   } catch (err) {
     console.error("❌ Erreur globale:", err);
+    process.exitCode = 1;
   }
 }
 
