@@ -123,4 +123,11 @@ async function sendNotifications() {
   }
 }
 
-sendNotifications();
+// admin.database() garde une connexion websocket ouverte en permanence :
+// sans arrêt explicite, le processus Node ne se termine jamais tout seul
+// (d'où les runs GitHub Actions bloqués "In progress" pendant des heures).
+sendNotifications().finally(() => {
+  admin.app().delete().finally(() => {
+    process.exit(process.exitCode || 0);
+  });
+});
