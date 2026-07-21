@@ -1,6 +1,7 @@
 {
   "name": "jobmarket-notifier",
   "version": "1.0.0",
+  "private": true,
   "main": "scripts/sendNotifications.js",
   "scripts": {
     "notify": "node scripts/sendNotifications.js"
