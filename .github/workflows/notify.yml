@@ -24,4 +24,3 @@ jobs:
         run: node scripts/sendNotifications.js
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          FCM_SERVER_KEY: ${{ secrets.FCM_SERVER_KEY }}
