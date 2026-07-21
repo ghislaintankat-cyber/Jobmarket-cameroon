@@ -37,6 +37,27 @@ messaging.onBackgroundMessage((payload) => {
   self.registration.showNotification(title, options).catch(() => {});
 });
 
+// Au clic sur la notification : si un onglet de l'app est déjà ouvert, on le
+// ramène au premier plan ; sinon on en ouvre un nouveau.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const targetUrl = self.registration.scope; // ex: https://.../JobMarket Cameroon/
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.startsWith(targetUrl) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
 // ---------- Cache / offline ----------
 
 const CACHE_VERSION = 'v2';
