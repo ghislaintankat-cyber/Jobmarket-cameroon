@@ -5,6 +5,10 @@ on:
     - cron: "*/10 * * * *" # toutes les 10 minutes
   workflow_dispatch: # déclenchement manuel possible
 
+concurrency:
+  group: notify-jobs
+  cancel-in-progress: false # on met en file d'attente plutôt que d'annuler un envoi en cours
+
 jobs:
   notify:
     runs-on: ubuntu-latest
