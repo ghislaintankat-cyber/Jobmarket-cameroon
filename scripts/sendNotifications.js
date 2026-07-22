@@ -136,11 +136,19 @@ async function sendNotifications() {
   }
 }
 
-// admin.database() garde une connexion websocket ouverte en permanence :
-// sans arrêt explicite, le processus Node ne se termine jamais tout seul
-// (d'où les runs GitHub Actions bloqués "In progress" pendant des heures).
+// admin.database() garde une connexion websocket ouverte en permanence : sans
+// fermeture explicite, le processus Node ne se termine jamais tout seul (d'où
+// les runs GitHub Actions bloqués "In progress" pendant des heures). En
+// revanche, on ne force PLUS process.exit() immédiatement après : sur un flux
+// stdout redirigé (comme dans GitHub Actions), console.log() écrit de façon
+// asynchrone, et exit() appelé trop tôt peut couper la toute dernière ligne de
+// log avant qu'elle finisse de s'écrire (probable cause du "✅" jamais visible
+// dans nos tests). On laisse donc le processus se terminer naturellement une
+// fois la connexion Firebase fermée, avec un filet de sécurité différé au cas
+// où quelque chose d'autre le retiendrait ouvert.
 sendNotifications().finally(() => {
-  admin.app().delete().finally(() => {
-    process.exit(process.exitCode || 0);
-  });
+  return admin.app().delete().catch(() => {});
+}).finally(() => {
+  const safetyTimer = setTimeout(() => process.exit(process.exitCode || 0), 3000);
+  if (safetyTimer.unref) safetyTimer.unref();
 });
