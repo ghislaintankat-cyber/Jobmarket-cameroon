@@ -89,6 +89,7 @@ async function sendNotifications() {
     }
 
     const entries = await getAllTokens();
+    console.log(`📱 ${entries.length} token(s) de notification enregistré(s) : [${entries.map(e => e.uid).join(', ')}]`);
     if (!entries.length) {
       console.log("Aucun token de notification enregistré, rien à envoyer.");
       return;
