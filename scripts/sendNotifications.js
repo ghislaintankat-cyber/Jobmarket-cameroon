@@ -89,7 +89,6 @@ async function sendNotifications() {
     }
 
     const entries = await getAllTokens();
-    console.log(`📱 ${entries.length} token(s) de notification enregistré(s) : [${entries.map(e => e.uid).join(', ')}]`);
     if (!entries.length) {
       console.log("Aucun token de notification enregistré, rien à envoyer.");
       return;
@@ -97,19 +96,6 @@ async function sendNotifications() {
 
     for (const [jobId, job] of Object.entries(jobs)) {
       if (job.notified) continue;
-
-      // Réservation atomique : si une autre exécution (par ex. deux runs qui se
-      // chevauchent) a déjà marqué ce job "notified" entre-temps, la transaction
-      // échoue et on passe au job suivant sans envoyer une seconde fois.
-      const claim = await jobsRef.child(jobId).transaction((current) => {
-        if (!current || current.notified) return; // undefined = on annule, rien à faire
-        return { ...current, notified: true };
-      });
-
-      if (!claim.committed) {
-        console.log(`⏭️ Job "${job.title}" déjà pris en charge par une autre exécution, ignoré.`);
-        continue;
-      }
 
       const notification = {
         title: "Nouveau poste disponible",
@@ -125,6 +111,7 @@ async function sendNotifications() {
 
       try {
         const successCount = await sendToAllTokens(entries, notification, data);
+        await jobsRef.child(jobId).update({ notified: true });
         console.log(`✅ Notification envoyée pour "${job.title}" (${successCount}/${entries.length} appareil(s))`);
       } catch (err) {
         console.error(`❌ Erreur envoi notification pour ${job.title}:`, err);
@@ -136,19 +123,11 @@ async function sendNotifications() {
   }
 }
 
-// admin.database() garde une connexion websocket ouverte en permanence : sans
-// fermeture explicite, le processus Node ne se termine jamais tout seul (d'où
-// les runs GitHub Actions bloqués "In progress" pendant des heures). En
-// revanche, on ne force PLUS process.exit() immédiatement après : sur un flux
-// stdout redirigé (comme dans GitHub Actions), console.log() écrit de façon
-// asynchrone, et exit() appelé trop tôt peut couper la toute dernière ligne de
-// log avant qu'elle finisse de s'écrire (probable cause du "✅" jamais visible
-// dans nos tests). On laisse donc le processus se terminer naturellement une
-// fois la connexion Firebase fermée, avec un filet de sécurité différé au cas
-// où quelque chose d'autre le retiendrait ouvert.
+// admin.database() garde une connexion websocket ouverte en permanence :
+// sans arrêt explicite, le processus Node ne se termine jamais tout seul
+// (d'où les runs GitHub Actions bloqués "In progress" pendant des heures).
 sendNotifications().finally(() => {
-  return admin.app().delete().catch(() => {});
-}).finally(() => {
-  const safetyTimer = setTimeout(() => process.exit(process.exitCode || 0), 3000);
-  if (safetyTimer.unref) safetyTimer.unref();
+  admin.app().delete().finally(() => {
+    process.exit(process.exitCode || 0);
+  });
 });
