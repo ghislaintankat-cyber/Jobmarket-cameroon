@@ -1150,11 +1150,11 @@ body{
 <nav class="bottom-nav">
   <button class="nav-item active" id="navMap" onclick="activateNav('map')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-    Carte
+    <span data-i18n="navMap">Carte</span>
   </button>
   <button class="nav-item" id="navList" onclick="activateNav('list')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-    Liste
+    <span data-i18n="navList">Liste</span>
   </button>
   <div class="nav-center-wrap">
     <button class="nav-center" onclick="toggleJobForm()">
@@ -1163,11 +1163,11 @@ body{
   </div>
   <button class="nav-item" id="navSearch" onclick="activateNav('search')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    Chercher
+    <span data-i18n="navSearch">Chercher</span>
   </button>
   <button class="nav-item" id="navAccount" onclick="activateNav('account')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Compte
+    <span data-i18n="navAccount">Compte</span>
   </button>
 </nav>
 
@@ -1221,6 +1221,7 @@ let routeControl = null;
 let currentMapStyle = 'satellite';
 let currentAuthTab = 'signup';
 let editingJobId = null; // ID du job en cours de modification (null = mode "nouvelle publication")
+let profileLiveRef = null; // Référence Firebase du listener temps réel du profil ouvert (voir openProfileSheet/closeProfileSheetListener)
 function genererLienPartage(nomArtisan, metierArtisan, idArtisan) {
     const lienApp = `https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/?id=${idArtisan}`;
 
@@ -1309,6 +1310,10 @@ const I18N = {
   fr: {
     notifTitle: "Nouveaux jobs", publishBtn: "Publier",
     catAll: "Tous", catBtp: "BTP", catElec: "Electricite", catPlomberie: "Plomberie",
+    navMap: "Carte", navList: "Liste", navSearch: "Chercher", navAccount: "Compte",
+    waMsgReferral: "Rejoins-moi sur JobMarket Cameroon pour trouver ou proposer des services près de chez toi : {link}",
+    waMsgShareJob: "Regarde ce besoin sur JobMarket Cameroon : *{title}* ({price} XAF). Voir les détails et contacter directement ici : {link}",
+    waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?",
     catMenage: "Menage", catJardinage: "Jardinage", catMecanique: "Mecanique", catInfo: "Informatique",
     tipLocate: "Ma position", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Style carte",
     distanceLabel: "Distance", itinLabel: "Itineraire", calculating: "Calcul en cours...", cancelBtn: "Annuler",
@@ -1358,6 +1363,10 @@ const I18N = {
   en: {
     notifTitle: "New jobs", publishBtn: "Post",
     catAll: "All", catBtp: "Construction", catElec: "Electrical", catPlomberie: "Plumbing",
+    navMap: "Map", navList: "List", navSearch: "Search", navAccount: "Account",
+    waMsgReferral: "Join me on JobMarket Cameroon to find or offer services near you: {link}",
+    waMsgShareJob: "Check out this job on JobMarket Cameroon: *{title}* ({price} XAF). See details and contact directly here: {link}",
+    waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?",
     catMenage: "Cleaning", catJardinage: "Gardening", catMecanique: "Mechanics", catInfo: "IT",
     tipLocate: "My location", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Map style",
     distanceLabel: "Distance", itinLabel: "Route", calculating: "Calculating...", cancelBtn: "Cancel",
@@ -1407,6 +1416,10 @@ const I18N = {
   it: {
     notifTitle: "Nuovi lavori", publishBtn: "Pubblica",
     catAll: "Tutti", catBtp: "Edilizia", catElec: "Elettricità", catPlomberie: "Idraulica",
+    navMap: "Mappa", navList: "Lista", navSearch: "Cerca", navAccount: "Account",
+    waMsgReferral: "Unisciti a me su JobMarket Cameroon per trovare o offrire servizi vicino a te: {link}",
+    waMsgShareJob: "Guarda questa richiesta su JobMarket Cameroon: *{title}* ({price} XAF). Vedi i dettagli e contatta direttamente qui: {link}",
+    waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?",
     catMenage: "Pulizie", catJardinage: "Giardinaggio", catMecanique: "Meccanica", catInfo: "Informatica",
     tipLocate: "La mia posizione", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Stile mappa",
     distanceLabel: "Distanza", itinLabel: "Itinerario", calculating: "Calcolo in corso...", cancelBtn: "Annulla",
@@ -1456,6 +1469,10 @@ const I18N = {
   de: {
     notifTitle: "Neue Jobs", publishBtn: "Veröffentlichen",
     catAll: "Alle", catBtp: "Bau", catElec: "Elektrik", catPlomberie: "Sanitär",
+    navMap: "Karte", navList: "Liste", navSearch: "Suchen", navAccount: "Konto",
+    waMsgReferral: "Begleite mich auf JobMarket Cameroon, um Dienstleistungen in deiner Nähe zu finden oder anzubieten: {link}",
+    waMsgShareJob: "Sieh dir diesen Auftrag auf JobMarket Cameroon an: *{title}* ({price} XAF). Details ansehen und direkt hier kontaktieren: {link}",
+    waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?",
     catMenage: "Reinigung", catJardinage: "Gartenarbeit", catMecanique: "Mechanik", catInfo: "IT",
     tipLocate: "Mein Standort", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Kartenstil",
     distanceLabel: "Entfernung", itinLabel: "Route", calculating: "Berechnung läuft...", cancelBtn: "Abbrechen",
@@ -1505,6 +1522,10 @@ const I18N = {
   zh: {
     notifTitle: "新工作", publishBtn: "发布",
     catAll: "全部", catBtp: "建筑", catElec: "电工", catPlomberie: "水管",
+    navMap: "地图", navList: "列表", navSearch: "搜索", navAccount: "账户",
+    waMsgReferral: "加入我在JobMarket Cameroon,寻找或提供您附近的服务:{link}",
+    waMsgShareJob: "看看JobMarket Cameroon上的这个需求:*{title}*({price} XAF)。点击这里查看详情并直接联系:{link}",
+    waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?",
     catMenage: "清洁", catJardinage: "园艺", catMecanique: "机械", catInfo: "信息技术",
     tipLocate: "我的位置", tipZoomIn: "放大", tipZoomOut: "缩小", tipMapStyle: "地图样式",
     distanceLabel: "距离", itinLabel: "路线", calculating: "计算中...", cancelBtn: "取消",
@@ -2375,7 +2396,13 @@ function toggleJobForm() {
 }
 
 function openSheet(id) { document.getElementById(id).classList.add('open'); }
-function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+function closeSheet(id) {
+    document.getElementById(id).classList.remove('open');
+    if (id === 'profileSheet' && profileLiveRef) {
+        profileLiveRef.off();
+        profileLiveRef = null;
+    }
+}
 function openOverlay(id) { document.getElementById(id).classList.add('open'); }
 function closeOverlay(id) {
   document.getElementById(id).classList.remove('open');
@@ -3645,6 +3672,19 @@ async function openProfileSheet() {
 
         renderProfileBadgeAndRating(data);
         renderOwnerReviews(user.uid, 'profileReviewsBox');
+
+        // Écoute en temps réel : si l'admin accepte la vérification (ou toute
+        // autre mise à jour du profil) PENDANT que la fiche est déjà ouverte,
+        // l'espace pour le code à 7 chiffres apparaît directement, sans avoir
+        // à fermer/rouvrir la fiche.
+        if (profileLiveRef) { profileLiveRef.off(); }
+        profileLiveRef = db.ref(`profiles/${user.uid}`);
+        profileLiveRef.on('value', (snap) => {
+            const freshData = snap.val() || {};
+            renderVerificationStatus(freshData, user);
+            renderReferralBox(freshData, user);
+            renderProfileBadgeAndRating(freshData);
+        });
     } catch (error) {
         console.error("Erreur profil:", error);
     }
@@ -3810,7 +3850,7 @@ function copyReferralLink(link) {
 }
 
 function shareReferralLink(link) {
-    const message = `Rejoins-moi sur JobMarket Cameroon pour trouver ou proposer des services près de chez toi : ${link}`;
+    const message = t('waMsgReferral').replace('{link}', link);
     openWhatsAppReliably(null, null, message);
 }
 
@@ -4061,32 +4101,51 @@ function formatCameroonPhoneForWhatsApp(phoneRaw) {
     return clean;
 }
 
-// Ouvre WhatsApp via le lien officiel "Click to Chat" (wa.me), reconnu par
-// Android (App Links) et iOS (Universal Links) pour ouvrir l'app installée
-// DIRECTEMENT, sans page intermédiaire — sur ordinateur, la même URL bascule
-// automatiquement vers WhatsApp Web.
-//
-// IMPORTANT : on navigue l'onglet ACTUEL (window.location.href), pas un onglet
-// secondaire ouvert à l'avance. Rediriger un onglet ouvert via window.open()
-// APRÈS un délai (attente Firebase) n'est plus reconnu comme un geste utilisateur
-// direct par beaucoup de navigateurs mobiles : le lien App Links ne se déclenche
-// plus et on atterrit sur la page web "Télécharger WhatsApp" au lieu d'ouvrir
-// l'appli. Naviguer l'onglet courant directement, même après un délai, reste
-// fiable car ce n'est pas une popup bloquable.
-function openWhatsAppReliably(placeholderWindow, phoneRaw, message) {
-    if (placeholderWindow && !placeholderWindow.closed) {
-        try { placeholderWindow.close(); } catch (e) { /* pas grave */ }
+// Détecte un appareil mobile (Android/iOS) pour choisir la bonne stratégie
+// d'ouverture de WhatsApp ci-dessous.
+function isMobileDevice() {
+    return /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Sur ordinateur, on pré-ouvre un onglet vide DANS LE MÊME CLIC (avant les
+// appels Firebase potentiellement lents), pour ne pas être bloqué par le
+// bloqueur de popups une fois la préparation du message terminée. On ne le
+// fait PAS sur mobile : rediriger un onglet ouvert via window.open() casse
+// l'ouverture directe de l'app WhatsApp par lien App Links (voir plus bas).
+function openWhatsAppPlaceholderTab() {
+    if (isMobileDevice()) return null;
+    try {
+        return window.open('', '_blank');
+    } catch (e) {
+        return null;
     }
+}
+
+// Ouvre WhatsApp. Sur mobile : navigue l'onglet ACTUEL vers le lien officiel
+// "Click to Chat" (wa.me), reconnu par Android (App Links) et iOS (Universal
+// Links) pour ouvrir l'app installée DIRECTEMENT, sans page intermédiaire —
+// c'est la seule méthode fiable même après un délai (attente Firebase), une
+// popup ouverte via window.open() n'étant plus reconnue comme un geste
+// utilisateur direct par beaucoup de navigateurs mobiles.
+// Sur ordinateur : redirige l'onglet pré-ouvert (ou en ouvre un nouveau) vers
+// WhatsApp Web, en gardant JobMarket Cameroon ouvert dans l'onglet d'origine.
+function openWhatsAppReliably(placeholderWindow, phoneRaw, message) {
     const text = encodeURIComponent(message || '');
     const phonePart = phoneRaw ? formatCameroonPhoneForWhatsApp(phoneRaw) : '';
     const url = `https://wa.me/${phonePart}?text=${text}`;
-    window.location.href = url;
-}
 
-// Conservée pour compatibilité mais plus utilisée : on ne pré-ouvre plus
-// d'onglet, car c'est justement ce qui cassait l'ouverture directe de l'app.
-function openWhatsAppPlaceholderTab() {
-    return null;
+    if (placeholderWindow && !placeholderWindow.closed) {
+        placeholderWindow.location.href = url;
+        return;
+    }
+
+    if (!isMobileDevice()) {
+        const win = window.open(url, '_blank');
+        if (win) return;
+        // Popup bloquée malgré tout : on retombe sur la navigation directe ci-dessous.
+    }
+
+    window.location.href = url;
 }
 
 async function contactViaWhatsAppFromPreview() {
@@ -4136,7 +4195,11 @@ async function contactViaWhatsAppFromPreview() {
         const proSkills = profile.skills || 'Non spécifiés';
         const profileName = profile.name || profile.company || 'Prestataire';
 
-        const message = `Bonjour, je vous contacte depuis JobMarket pour : "${job.title}".\n\n--- Profil du prestataire ---\nNom / Société : ${profileName}\nMétier : ${proTitle}\nCompétences : ${proSkills}\n\nEst-ce toujours disponible ?`;
+        const message = t('waMsgContactProvider')
+            .replace('{jobTitle}', job.title)
+            .replace('{profileName}', profileName)
+            .replace('{proTitle}', proTitle)
+            .replace('{proSkills}', proSkills);
 
         openWhatsAppReliably(waWindow, phone, message);
 
@@ -4153,7 +4216,7 @@ function shareJobViaWhatsApp() {
     const job = window.currentPreviewJob;
     if (!job) return;
     const link = getJobShareLink(job.id);
-    const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}* (${job.price} XAF). Voir les détails et contacter directement ici : ${link}`;
+    const message = t('waMsgShareJob').replace('{title}', job.title).replace('{price}', job.price).replace('{link}', link);
     openWhatsAppReliably(null, null, message);
 }
 
@@ -4224,7 +4287,11 @@ window.popupWhatsAppClick = async function(jobId) {
         const proSkills = profile.skills || 'Non spécifiées';
         const profileName = profile.name || profile.company || 'Prestataire';
         
-        const message = `Bonjour, je vous contacte depuis JobMarket pour : "${job.title}".\n\n--- Profil du prestataire ---\nNom / Société : ${profileName}\nMétier : ${proTitle}\nCompétences : ${proSkills}\n\nEst-ce toujours disponible ?`;
+        const message = t('waMsgContactProvider')
+            .replace('{jobTitle}', job.title)
+            .replace('{profileName}', profileName)
+            .replace('{proTitle}', proTitle)
+            .replace('{proSkills}', proSkills);
         
         openWhatsAppReliably(waWindow, phone, message);
         showToast('WhatsApp ouvert!', 'success');
@@ -4246,7 +4313,7 @@ window.popupShareClick = function(jobId) {
         return;
     }
     const link = getJobShareLink(jobId);
-    const message = `Regarde ce besoin sur JobMarket Cameroon : *${job.title}* (${job.price} XAF). Voir les détails et contacter directement ici : ${link}`;
+    const message = t('waMsgShareJob').replace('{title}', job.title).replace('{price}', job.price).replace('{link}', link);
     openWhatsAppReliably(null, null, message);
     showToast('Partage sur WhatsApp!', 'success');
 }
@@ -5084,5 +5151,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </body>
 
 </html>
-
-
