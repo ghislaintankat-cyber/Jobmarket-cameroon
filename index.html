@@ -3737,8 +3737,11 @@ function renderVerificationStatus(profile, user) {
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
             <div>
-                <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:4px;">📱 Ton numéro WhatsApp (pour recevoir ton code de vérification)</div>
-                <input id="verifyWhatsAppInput" type="tel" placeholder="Ex: +237650420710" value="${escapeHtml(profile.whatsappNumber || '')}" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:10px 12px;border-radius:8px;font-size:13px;">
+                <div style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--green,#25D366);margin-bottom:6px;">
+                    <span style="font-size:20px;">📱</span> Ton numéro WhatsApp <span style="font-size:11px;font-weight:600;color:#111;background:var(--green,#25D366);padding:2px 8px;border-radius:10px;">OBLIGATOIRE</span>
+                </div>
+                <input id="verifyWhatsAppInput" type="tel" placeholder="Ex: +237650420710" value="${escapeHtml(profile.whatsappNumber || '')}" style="width:100%;box-sizing:border-box;background:rgba(37,211,102,0.08);border:2px solid var(--green,#25D366);color:var(--text,#fff);padding:14px 12px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.5px;">
+                <div style="font-size:11px;color:var(--text-dim,#8888A8);margin-top:4px;">C'est sur ce numéro que tu recevras ton code de vérification à 7 chiffres.</div>
             </div>
             <div>
                 <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:4px;">📄 Photo de ta pièce d'identité (CNI, passeport...)</div>
