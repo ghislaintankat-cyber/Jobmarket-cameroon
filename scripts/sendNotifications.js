@@ -97,6 +97,19 @@ async function sendNotifications() {
     for (const [jobId, job] of Object.entries(jobs)) {
       if (job.notified) continue;
 
+      // Réservation atomique : si une autre exécution (par ex. deux runs qui se
+      // chevauchent) a déjà marqué ce job "notified" entre-temps, la transaction
+      // échoue et on passe au job suivant sans envoyer une seconde fois.
+      const claim = await jobsRef.child(jobId).transaction((current) => {
+        if (!current || current.notified) return; // undefined = on annule, rien à faire
+        return { ...current, notified: true };
+      });
+
+      if (!claim.committed) {
+        console.log(`⏭️ Job "${job.title}" déjà pris en charge par une autre exécution, ignoré.`);
+        continue;
+      }
+
       const notification = {
         title: "Nouveau poste disponible",
         body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`
@@ -111,7 +124,6 @@ async function sendNotifications() {
 
       try {
         const successCount = await sendToAllTokens(entries, notification, data);
-        await jobsRef.child(jobId).update({ notified: true });
         console.log(`✅ Notification envoyée pour "${job.title}" (${successCount}/${entries.length} appareil(s))`);
       } catch (err) {
         console.error(`❌ Erreur envoi notification pour ${job.title}:`, err);
