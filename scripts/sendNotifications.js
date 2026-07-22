@@ -13,6 +13,9 @@ const messaging = admin.messaging();
 
 // FCM accepte au maximum 500 tokens par appel multicast
 const BATCH_SIZE = 500;
+// Au-delà de ce nombre de tentatives ratées pour UN job, on arrête de le
+// retenter automatiquement (évite de boucler indéfiniment sur un job cassé).
+const MAX_ATTEMPTS = 5;
 
 function chunk(arr, size) {
   const out = [];
@@ -77,6 +80,29 @@ async function sendToAllTokens(entries, notification, data) {
   return successCount;
 }
 
+// Réservation atomique AVANT l'envoi : si une autre exécution (deux runs qui
+// se chevauchent) a déjà réclamé ce job entre-temps, la transaction échoue et
+// on ne le prend pas. On distingue le "notified" (envoi confirmé) du simple
+// compteur de tentatives, pour pouvoir annuler proprement en cas d'échec réel.
+async function claimJob(jobsRef, jobId) {
+  return jobsRef.child(jobId).transaction((current) => {
+    if (!current || current.notified) return; // déjà traité / supprimé -> annule
+    const attempts = current.notifyAttempts || 0;
+    if (attempts >= MAX_ATTEMPTS) return; // trop d'échecs -> on arrête de réessayer
+    return { ...current, notified: true, notifyAttempts: attempts + 1 };
+  });
+}
+
+// Si l'envoi échoue APRÈS la réservation, on repasse "notified" à false pour
+// que le job soit retenté au prochain run (le compteur notifyAttempts, lui,
+// reste incrémenté, ce qui finira par déclencher MAX_ATTEMPTS si ça persiste).
+async function releaseJobAfterFailure(jobsRef, jobId) {
+  await jobsRef.child(jobId).transaction((current) => {
+    if (!current) return;
+    return { ...current, notified: false };
+  });
+}
+
 async function sendNotifications() {
   try {
     const jobsRef = db.ref("jobs");
@@ -89,6 +115,7 @@ async function sendNotifications() {
     }
 
     const entries = await getAllTokens();
+    console.log(`📱 ${entries.length} token(s) de notification enregistré(s) : [${entries.map(e => e.uid).join(', ')}]`);
     if (!entries.length) {
       console.log("Aucun token de notification enregistré, rien à envoyer.");
       return;
@@ -96,6 +123,18 @@ async function sendNotifications() {
 
     for (const [jobId, job] of Object.entries(jobs)) {
       if (job.notified) continue;
+
+      const claim = await claimJob(jobsRef, jobId);
+
+      if (!claim.committed) {
+        const current = claim.snapshot.val();
+        if (current && !current.notified && (current.notifyAttempts || 0) >= MAX_ATTEMPTS) {
+          console.log(`🛑 Job "${job.title}" a dépassé ${MAX_ATTEMPTS} tentatives, abandonné (vérifier manuellement).`);
+        } else {
+          console.log(`⏭️ Job "${job.title}" déjà pris en charge par une autre exécution, ignoré.`);
+        }
+        continue;
+      }
 
       const notification = {
         title: "Nouveau poste disponible",
@@ -111,10 +150,15 @@ async function sendNotifications() {
 
       try {
         const successCount = await sendToAllTokens(entries, notification, data);
-        await jobsRef.child(jobId).update({ notified: true });
         console.log(`✅ Notification envoyée pour "${job.title}" (${successCount}/${entries.length} appareil(s))`);
       } catch (err) {
-        console.error(`❌ Erreur envoi notification pour ${job.title}:`, err);
+        // L'envoi a échoué APRÈS la réservation : on annule le "notified"
+        // pour ne PAS perdre ce job définitivement. Il sera retenté au
+        // prochain run, jusqu'à MAX_ATTEMPTS.
+        console.error(`❌ Erreur envoi notification pour ${job.title}, nouvelle tentative au prochain run:`, err);
+        await releaseJobAfterFailure(jobsRef, jobId).catch((releaseErr) => {
+          console.error(`⚠️ Impossible de libérer le job "${job.title}" après échec:`, releaseErr);
+        });
       }
     }
   } catch (err) {
@@ -123,11 +167,17 @@ async function sendNotifications() {
   }
 }
 
-// admin.database() garde une connexion websocket ouverte en permanence :
-// sans arrêt explicite, le processus Node ne se termine jamais tout seul
-// (d'où les runs GitHub Actions bloqués "In progress" pendant des heures).
+// admin.database() garde une connexion websocket ouverte en permanence : sans
+// fermeture explicite, le processus Node ne se termine jamais tout seul (d'où
+// les runs GitHub Actions bloqués "In progress" pendant des heures). On ne
+// force PAS process.exit() immédiatement après : sur un flux stdout redirigé
+// (comme dans GitHub Actions), console.log() écrit de façon asynchrone, et un
+// exit() trop rapide peut couper la toute dernière ligne de log avant qu'elle
+// finisse de s'écrire. On laisse donc le processus se terminer naturellement
+// une fois la connexion Firebase fermée, avec un filet de sécurité différé.
 sendNotifications().finally(() => {
-  admin.app().delete().finally(() => {
-    process.exit(process.exitCode || 0);
-  });
+  return admin.app().delete().catch(() => {});
+}).finally(() => {
+  const safetyTimer = setTimeout(() => process.exit(process.exitCode || 0), 3000);
+  if (safetyTimer.unref) safetyTimer.unref();
 });
