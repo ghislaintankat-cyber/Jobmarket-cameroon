@@ -3219,6 +3219,19 @@ function handleChatKey(e) {
 let swRegistrationPromise = null;
 if ('serviceWorker' in navigator) {
   swRegistrationPromise = navigator.serviceWorker.register('sw.js').catch(() => null);
+
+  // Clic sur une notification push pendant que l'app est déjà ouverte :
+  // sw.js nous poste le jobId concerné (voir notificationclick dans sw.js)
+  // plutôt que de recharger toute la page pour ça.
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    const jobId = event.data && event.data.type === 'open-job' && event.data.jobId;
+    if (!jobId) return;
+    if (typeof jobsById !== 'undefined' && jobsById[jobId]) {
+      openJobPreview(jobId);
+    } else {
+      deepLinkJobId = jobId; // les jobs ne sont pas encore chargés, le mécanisme existant (ligne ~2251) prendra le relais
+    }
+  });
 }
 
 // ===== PUSH NOTIFICATIONS =====
