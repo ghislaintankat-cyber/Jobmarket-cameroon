@@ -1072,6 +1072,14 @@ body{
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
 
+    <a class="account-item" href="#" onclick="openNotifPrefs()">
+      <div class="account-item-icon" style="background:rgba(255,149,0,0.15);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#FF9500" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <span data-i18n="notifPrefsTitle">Notifications</span>
+      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </a>
+
   </div>
 
    <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
@@ -1079,6 +1087,22 @@ body{
     <span data-i18n="logout">Déconnexion</span>
   </button>
 </div>
+  </div>
+</div>
+
+<!-- ===== NOTIFICATION PREFS ===== -->
+<div class="overlay-page" id="notifPrefsPage">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('notifPrefsPage')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title" data-i18n="notifPrefsTitle">Notifications</div>
+  </div>
+  <div class="overlay-body">
+    <p style="color:var(--text-dim,#8888A8);font-size:14px;line-height:1.5;margin:0 0 18px;" data-i18n="notifPrefsIntro">
+      Choisissez les catégories pour lesquelles vous voulez être notifié(e) des nouvelles offres. Décochez celles qui ne vous concernent pas.
+    </p>
+    <div id="notifPrefsList"></div>
   </div>
 </div>
     
@@ -1358,6 +1382,7 @@ const I18N = {
     tabSignup: "Creer compte", tabLogin: "Connexion", fieldPassword: "Mot de passe", phPassword: "Minimum 6 caracteres",
     createAccountBtn: "Creer mon compte", loginBtn: "Se connecter", forgotPassword: "Mot de passe oublié ?", orWord: "ou", continueGoogle: "Continuer avec Google",
     adminDashboard: "Dashboard Admin", secureChat: "Chat sécurisé", myListings: "Mes publications", myProProfile: "Mon Profil Pro",
+    notifPrefsTitle: "Notifications", notifPrefsIntro: "Choisissez les catégories pour lesquelles vous voulez être notifié(e) des nouvelles offres. Décochez celles qui ne vous concernent pas.",
     logout: "Déconnexion", artisanProfile: "Profil de l'artisan",
     descNeed: "Description du besoin :", editListing: "Modifier l'annonce", deleteListing: "Supprimer l'annonce",
     shareWhatsApp: "Partager sur WhatsApp", seeItinerary: "Voir l'itinéraire",
@@ -1411,6 +1436,7 @@ const I18N = {
     tabSignup: "Sign up", tabLogin: "Log in", fieldPassword: "Password", phPassword: "Minimum 6 characters",
     createAccountBtn: "Create my account", loginBtn: "Log in", forgotPassword: "Forgot password?", orWord: "or", continueGoogle: "Continue with Google",
     adminDashboard: "Admin Dashboard", secureChat: "Secure chat", myListings: "My listings", myProProfile: "My Pro Profile",
+    notifPrefsTitle: "Notifications", notifPrefsIntro: "Choose which categories you want to be notified about for new listings. Uncheck the ones that don't concern you.",
     logout: "Log out", artisanProfile: "Provider's profile",
     descNeed: "Job description:", editListing: "Edit listing", deleteListing: "Delete listing",
     shareWhatsApp: "Share on WhatsApp", seeItinerary: "See route",
@@ -1464,6 +1490,7 @@ const I18N = {
     tabSignup: "Crea account", tabLogin: "Accedi", fieldPassword: "Password", phPassword: "Minimo 6 caratteri",
     createAccountBtn: "Crea il mio account", loginBtn: "Accedi", forgotPassword: "Password dimenticata?", orWord: "oppure", continueGoogle: "Continua con Google",
     adminDashboard: "Pannello Admin", secureChat: "Chat sicura", myListings: "I miei annunci", myProProfile: "Il mio profilo Pro",
+    notifPrefsTitle: "Notifiche", notifPrefsIntro: "Scegli le categorie per cui vuoi ricevere notifiche di nuovi annunci. Deseleziona quelle che non ti interessano.",
     logout: "Disconnetti", artisanProfile: "Profilo del fornitore",
     descNeed: "Descrizione del lavoro:", editListing: "Modifica annuncio", deleteListing: "Elimina annuncio",
     shareWhatsApp: "Condividi su WhatsApp", seeItinerary: "Vedi itinerario",
@@ -1517,6 +1544,7 @@ const I18N = {
     tabSignup: "Konto erstellen", tabLogin: "Anmelden", fieldPassword: "Passwort", phPassword: "Mindestens 6 Zeichen",
     createAccountBtn: "Konto erstellen", loginBtn: "Anmelden", forgotPassword: "Passwort vergessen?", orWord: "oder", continueGoogle: "Mit Google fortfahren",
     adminDashboard: "Admin-Bereich", secureChat: "Sicherer Chat", myListings: "Meine Anzeigen", myProProfile: "Mein Profi-Profil",
+    notifPrefsTitle: "Benachrichtigungen", notifPrefsIntro: "Wählen Sie die Kategorien, für die Sie über neue Angebote benachrichtigt werden möchten. Deaktivieren Sie die, die Sie nicht betreffen.",
     logout: "Abmelden", artisanProfile: "Profil des Anbieters",
     descNeed: "Beschreibung des Auftrags:", editListing: "Anzeige bearbeiten", deleteListing: "Anzeige löschen",
     shareWhatsApp: "Auf WhatsApp teilen", seeItinerary: "Route anzeigen",
@@ -1570,6 +1598,7 @@ const I18N = {
     tabSignup: "创建账户", tabLogin: "登录", fieldPassword: "密码", phPassword: "至少6个字符",
     createAccountBtn: "创建我的账户", loginBtn: "登录", forgotPassword: "忘记密码?", orWord: "或", continueGoogle: "使用Google继续",
     adminDashboard: "管理员面板", secureChat: "安全聊天", myListings: "我的发布", myProProfile: "我的专业资料",
+    notifPrefsTitle: "通知", notifPrefsIntro: "选择您希望收到新发布通知的类别。取消勾选与您无关的类别。",
     logout: "退出登录", artisanProfile: "服务商资料",
     descNeed: "需求描述:", editListing: "编辑发布", deleteListing: "删除发布",
     shareWhatsApp: "在WhatsApp上分享", seeItinerary: "查看路线",
@@ -2609,6 +2638,60 @@ function openMyJobs() {
   closeOverlay('accountPage');
   openSheet('jobsSheet');
   updateJobsList(myJobs);
+}
+
+// ===== PRÉFÉRENCES DE NOTIFICATION PAR CATÉGORIE =====
+// Même modèle "sparse" que la présence/les tokens : on ne stocke QUE les
+// catégories explicitement décochées (false) sous notifyPrefs/{uid}/.
+// Absence de préférence = catégorie activée par défaut. Ça évite toute
+// migration pour les comptes existants, et scripts/sendNotifications.js
+// applique exactement la même règle côté serveur pour filtrer les push.
+const NOTIF_CATEGORIES = [
+  { key: 'btp', i18n: 'optBtp', color: '#FF9500' },
+  { key: 'electricite', i18n: 'optElec', color: '#FFD700' },
+  { key: 'plomberie', i18n: 'optPlomberie', color: '#007AFF' },
+  { key: 'menage', i18n: 'optMenage', color: '#25D366' },
+  { key: 'jardinage', i18n: 'optJardinage', color: '#34C759' },
+  { key: 'mecanique', i18n: 'optMecanique', color: '#FF3B30' },
+  { key: 'informatique', i18n: 'optInfo', color: '#AF52DE' }
+];
+
+async function openNotifPrefs() {
+  if (!currentUser || currentUser.isAnonymous) { showToast('Connectez-vous', 'error'); return; }
+  closeOverlay('accountPage');
+  openOverlay('notifPrefsPage');
+
+  const list = document.getElementById('notifPrefsList');
+  list.innerHTML = '';
+
+  let prefs = {};
+  try {
+    const snap = await db.ref('notifyPrefs/' + currentUser.uid).once('value');
+    prefs = snap.val() || {};
+  } catch (e) {
+    console.warn('Chargement préférences notif échoué', e);
+  }
+
+  list.innerHTML = NOTIF_CATEGORIES.map(cat => {
+    const checked = prefs[cat.key] !== false; // pas de préférence enregistrée = activé
+    return `<label style="display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--border,#222);cursor:pointer;">
+      <span style="width:10px;height:10px;border-radius:50%;background:${cat.color};flex-shrink:0;"></span>
+      <span style="flex:1;">${t(cat.i18n)}</span>
+      <input type="checkbox" ${checked ? 'checked' : ''} onchange="setNotifCategoryPref('${cat.key}', this.checked)" style="width:20px;height:20px;accent-color:var(--gold,#FFD700);"/>
+    </label>`;
+  }).join('');
+}
+
+async function setNotifCategoryPref(categoryKey, enabled) {
+  if (!currentUser) return;
+  try {
+    // Réactiver = simplement retirer la clé (repli sur le comportement par
+    // défaut), pas besoin d'écrire explicitement "true".
+    await db.ref(`notifyPrefs/${currentUser.uid}/${categoryKey}`).set(enabled ? null : false);
+  } catch (e) {
+    console.warn('Écriture préférence notif échouée', e);
+    showToast("Préférence non enregistrée (réseau instable ?), réessayez.", 'error');
+  }
 }
 
 // ===== CHAT (AI-powered "Chat sécurisé" via Gemini, gratuit) =====
