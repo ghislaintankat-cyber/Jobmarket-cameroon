@@ -3186,15 +3186,17 @@ function registerPushToken() {
           .catch(err => console.warn('Jeton notification indisponible:', err.message));
       });
 
-      // Gère les notifications reçues pendant que l'onglet est ouvert et actif
-      // (sw.js ne gère, lui, que les notifications reçues en arrière-plan)
-      messaging.onMessage(payload => {
-        const title = (payload.notification && payload.notification.title) || 'JobMarket Cameroon';
-        const body = (payload.notification && payload.notification.body) || '';
-        if (Notification.permission === 'granted') {
-          registration.showNotification(title, { body, icon: 'icon-192.png' });
-        }
-      });
+      // Un message reçu pendant que l'onglet est ouvert et au premier plan
+      // NE DOIT PAS déclencher une notification système : la personne voit
+      // déjà le job apparaître en direct via la bulle/panneau (section
+      // "NOTIFICATIONS DES JOBS EN TEMPS RÉEL" plus bas), et le serveur ne
+      // devrait de toute façon plus lui envoyer de push tant qu'elle est
+      // active (voir setupPresence). On garde ce listener pour absorber le
+      // message sans rien afficher, plutôt que de laisser passer le
+      // comportement par défaut du SDK — c'est justement ce qui causait des
+      // notifications en double avec sw.js quand les deux gestionnaires se
+      // déclenchaient pour le même message.
+      messaging.onMessage(() => {});
     })
     .catch(err => console.warn('Service worker de notifications indisponible:', err.message));
 }
