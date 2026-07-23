@@ -1672,6 +1672,9 @@ auth.onAuthStateChanged(user => {
     registerPushToken();
     checkPendingReviews(user.uid);
     syncEmailVerifiedBadge(user);
+    setupPresence(user.uid);
+  } else {
+    teardownPresence();
   }
 });
 
@@ -3194,6 +3197,56 @@ function registerPushToken() {
       });
     })
     .catch(err => console.warn('Service worker de notifications indisponible:', err.message));
+}
+
+// ===== PRÉSENCE (actif dans l'app / hors app) =====
+// But : que le script d'envoi de notifications (scripts/sendNotifications.js)
+// sache qui est "en train d'utiliser l'app" en ce moment, comme WhatsApp.
+// Ces personnes ne reçoivent PAS de notification push : elles voient déjà
+// le nouveau job apparaître en direct (bulle + panneau, section suivante).
+// Tout le monde d'autre (app fermée, en arrière-plan, ou pas connecté)
+// reçoit la notification push normalement.
+let presenceUid = null;
+
+function setupPresence(uid) {
+  presenceUid = uid;
+
+  // À chaque (re)connexion au serveur Firebase, on programme une
+  // bascule automatique sur "inactive" si la connexion tombe (app tuée,
+  // réseau coupé, onglet fermé...) — ça marche même sans code côté client
+  // au moment de la coupure.
+  db.ref('.info/connected').on('value', snap => {
+    if (snap.val() !== true) return;
+    db.ref('presence/' + uid).onDisconnect().set({
+      state: 'inactive',
+      lastChanged: firebase.database.ServerValue.TIMESTAMP
+    }).then(writePresenceState);
+  });
+
+  // Bascule active/inactive selon que l'onglet/l'app est au premier plan
+  // ou non (Page Visibility API) — c'est ce qui distingue "j'ai l'app
+  // ouverte devant moi" de "l'app tourne juste en arrière-plan".
+  document.addEventListener('visibilitychange', writePresenceState);
+  window.addEventListener('pagehide', writePresenceState);
+  writePresenceState();
+}
+
+function writePresenceState() {
+  if (!presenceUid) return;
+  db.ref('presence/' + presenceUid).set({
+    state: (document.visibilityState === 'visible') ? 'active' : 'inactive',
+    lastChanged: firebase.database.ServerValue.TIMESTAMP
+  });
+}
+
+function teardownPresence() {
+  if (presenceUid) {
+    db.ref('presence/' + presenceUid).set({
+      state: 'inactive',
+      lastChanged: firebase.database.ServerValue.TIMESTAMP
+    });
+  }
+  presenceUid = null;
 }
 
   // ===== NOTIFICATIONS DES JOBS EN TEMPS RÉEL =====
