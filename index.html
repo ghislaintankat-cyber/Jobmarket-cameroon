@@ -27,7 +27,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
   
 <style>
@@ -1191,6 +1190,34 @@ try {
 const db = firebase.database();
 const auth = firebase.auth();
 
+// ===== SUIVI D'ERREURS =====
+// Sans ça, une erreur chez un utilisateur ne remonte que s'il te la
+// signale lui-même. On journalise les erreurs JS non interceptées et les
+// promesses rejetées non gérées dans errorLogs/ (lisible uniquement par
+// l'admin — voir rules.json). Best-effort : si l'écriture elle-même échoue
+// (hors-ligne...), on ne fait rien de plus, pas question de créer une
+// boucle d'erreurs à cause du logger lui-même.
+function logClientError(message, extra) {
+  try {
+    db.ref('errorLogs').push({
+      message: String(message || '').slice(0, 1000),
+      extra: extra ? String(extra).slice(0, 1000) : null,
+      uid: (auth.currentUser && auth.currentUser.uid) || null,
+      url: location.href,
+      userAgent: navigator.userAgent,
+      timestamp: Date.now()
+    }).catch(() => {});
+  } catch (e) { /* silencieux, volontairement */ }
+}
+
+window.addEventListener('error', (event) => {
+  logClientError(event.message, event.filename + ':' + event.lineno);
+});
+window.addEventListener('unhandledrejection', (event) => {
+  const reason = event.reason;
+  logClientError('Unhandled rejection: ' + ((reason && reason.message) || reason));
+});
+
 const CLOUDINARY_CLOUD_NAME = "dvoab3mzb";
 // ⚠️ Remplacez par VOTRE numéro WhatsApp (format international, sans + ni espaces,
 // ex: "2376XXXXXXXX") : c'est là que les demandes de vérification seront envoyées.
@@ -1896,6 +1923,7 @@ async function addJob() {
       const files = document.getElementById('jobImages').files;
       const maxFiles = Math.min(files.length, 5);
 
+      let failedUploads = 0;
       for (let i = 0; i < maxFiles; i++) {
         const file = files[i];
         // Filet de sécurité : revalidation avant l'envoi, même si le fichier
@@ -1904,17 +1932,16 @@ async function addJob() {
           console.warn('Fichier rejeté avant envoi (type/taille invalide):', file.name);
           continue;
         }
-        const formData = new FormData();
-        const compressedFile = await compressImageFile(file);
-        formData.append('file', compressedFile, file.name);
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
         try {
-          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-            method: 'POST', body: formData
-          });
-          const data = await res.json();
-          if (data.secure_url) uploadedImages.push(data.secure_url);
-        } catch(imgErr) { console.warn('Image upload failed:', imgErr); }
+          const url = await uploadToCloudinary(file);
+          uploadedImages.push(url);
+        } catch (imgErr) {
+          console.warn('Image upload failed:', imgErr);
+          failedUploads++;
+        }
+      }
+      if (failedUploads > 0) {
+        showToast(`${failedUploads} photo(s) n'ont pas pu être envoyée(s) (réseau instable ?), le reste de l'annonce est publié quand même.`, 'error');
       }
 
       // En modification, si aucune nouvelle photo n'est choisie, on garde les anciennes
@@ -2024,6 +2051,37 @@ function compressImageFile(file) {
             error(err) { console.warn('Compression image échouée, envoi du fichier original', err); resolve(file); }
         });
     });
+}
+
+// Upload compressé vers Cloudinary avec retry automatique (réseau mobile
+// instable = très fréquent). Avant, chaque endroit qui uploadait une photo
+// (job, vérification, profil) réimplémentait son propre fetch() et
+// abandonnait silencieusement au 1er échec — l'utilisateur ne savait même
+// pas que sa photo n'était pas passée. Ici : jusqu'à 2 tentatives
+// supplémentaires avec un court délai, puis on lève une erreur claire si
+// tout échoue, à charge de l'appelant de prévenir l'utilisateur.
+async function uploadToCloudinary(file, { retries = 2 } = {}) {
+    const compressed = await compressImageFile(file);
+    const formData = new FormData();
+    formData.append('file', compressed, file.name);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    let lastErr;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                method: 'POST', body: formData
+            });
+            const data = await res.json();
+            if (data.secure_url) return data.secure_url;
+            lastErr = new Error(data.error?.message || 'upload sans secure_url');
+        } catch (err) {
+            lastErr = err;
+        }
+        if (attempt < retries) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+    console.warn('Upload Cloudinary échoué après ' + (retries + 1) + ' tentative(s):', lastErr);
+    throw lastErr || new Error('upload failed');
 }
 
 function validateImageFiles(fileList) {
@@ -3836,16 +3894,7 @@ function previewVerificationPhoto(input, previewId) {
 
 // Upload une photo de vérification compressée vers Cloudinary, renvoie son URL.
 async function uploadVerificationPhoto(file) {
-    const compressed = await compressImageFile(file);
-    const formData = new FormData();
-    formData.append('file', compressed, file.name);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-        method: 'POST', body: formData
-    });
-    const data = await res.json();
-    if (!data.secure_url) throw new Error('upload failed');
-    return data.secure_url;
+    return uploadToCloudinary(file);
 }
 
 // Affiche le lien de parrainage personnel, le nombre de filleuls, et permet
@@ -4081,18 +4130,10 @@ async function saveProfile() {
         }
         btn.innerText = "Téléchargement...";
         try {
-            const compressedProfileFile = await compressImageFile(profileFile);
-            const formData = new FormData();
-            formData.append('file', compressedProfileFile, profileFile.name);
-            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-                method: 'POST', body: formData
-            });
-            const data = await res.json();
-            if (data.secure_url) profileImageUrl = data.secure_url;
+            profileImageUrl = await uploadToCloudinary(profileFile);
         } catch(e) {
             console.warn("Erreur upload photo", e);
-            alert("Erreur lors de l'envoi de la photo.");
+            showToast("Erreur lors de l'envoi de la photo (réseau instable ?), réessayez.", 'error');
             btn.innerText = originalText;
             btn.disabled = false;
             return;
@@ -4561,7 +4602,11 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
   });
 
   overlay.querySelector('#reviewSkipBtn').onclick = async () => {
-    await db.ref('job_contacts/' + contactKey + '/reviewed').set(true);
+    try {
+      await db.ref('job_contacts/' + contactKey + '/reviewed').set(true);
+    } catch (e) {
+      console.warn('Skip avis: écriture échouée (sera reproposé plus tard)', e);
+    }
     overlay.remove();
   };
 
