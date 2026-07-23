@@ -13,9 +13,28 @@ const messaging = admin.messaging();
 
 // FCM accepte au maximum 500 tokens par appel multicast
 const BATCH_SIZE = 500;
-// Au-delà de ce nombre de tentatives ratées pour UN job, on arrête de le
-// retenter automatiquement (évite de boucler indéfiniment sur un job cassé).
-const MAX_ATTEMPTS = 5;
+
+// On ne traite que les jobs publiés dans cette fenêtre. Au-delà, on arrête
+// de "chercher" ce job pour de nouveaux destinataires (ex: quelqu'un qui
+// vient d'activer les notifications) — un job d'il y a une semaine n'a
+// plus d'intérêt à être poussé. Ça borne aussi le travail fait à chaque
+// run : on ne rescanne pas tout l'historique des jobs indéfiniment.
+const JOB_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
+
+// Un utilisateur est considéré "actif dans l'app" si sa dernière présence
+// connue (écrite par index.html) dit "active" ET date de moins de ce
+// délai. Passé ce délai, on considère l'info potentiellement périmée
+// (onglet gelé, app tuée sans que onDisconnect ait eu le temps de se
+// déclencher, etc.) et on envoie quand même la notification par
+// prudence : mieux vaut une notification en trop qu'un job jamais vu.
+const PRESENCE_STALE_MS = 3 * 60 * 1000; // 3 min
+
+// Verrou par job (et non plus par job+tentative) : évite que deux
+// exécutions qui se chevauchent (cron + déclenchement manuel, par ex.)
+// traitent le même job en même temps. Il expire tout seul si une
+// exécution plante avant de le libérer, pour ne jamais bloquer un job
+// indéfiniment.
+const LOCK_TTL_MS = 4 * 60 * 1000; // 4 min (le workflow a un timeout de 5 min)
 
 function chunk(arr, size) {
   const out = [];
@@ -32,6 +51,19 @@ async function getAllTokens() {
     .map(([uid, token]) => ({ uid, token }));
 }
 
+async function getPresenceMap() {
+  const snap = await db.ref("presence").once("value");
+  return snap.val() || {};
+}
+
+// true seulement si la personne est là, MAINTENANT, dans l'app.
+function isCurrentlyActive(uid, presenceMap) {
+  const p = presenceMap[uid];
+  if (!p || p.state !== "active") return false;
+  const lastChanged = typeof p.lastChanged === "number" ? p.lastChanged : 0;
+  return (Date.now() - lastChanged) < PRESENCE_STALE_MS;
+}
+
 async function removeInvalidTokens(uids) {
   const updates = {};
   uids.forEach((uid) => {
@@ -42,7 +74,11 @@ async function removeInvalidTokens(uids) {
   }
 }
 
+// Envoie le push aux entrées données, nettoie les tokens invalides au
+// passage, renvoie le nombre d'envois réussis.
 async function sendToAllTokens(entries, notification, data) {
+  if (!entries.length) return 0;
+
   const invalidUids = [];
   let successCount = 0;
 
@@ -80,27 +116,20 @@ async function sendToAllTokens(entries, notification, data) {
   return successCount;
 }
 
-// Réservation atomique AVANT l'envoi : si une autre exécution (deux runs qui
-// se chevauchent) a déjà réclamé ce job entre-temps, la transaction échoue et
-// on ne le prend pas. On distingue le "notified" (envoi confirmé) du simple
-// compteur de tentatives, pour pouvoir annuler proprement en cas d'échec réel.
-async function claimJob(jobsRef, jobId) {
-  return jobsRef.child(jobId).transaction((current) => {
-    if (!current || current.notified) return; // déjà traité / supprimé -> annule
-    const attempts = current.notifyAttempts || 0;
-    if (attempts >= MAX_ATTEMPTS) return; // trop d'échecs -> on arrête de réessayer
-    return { ...current, notified: true, notifyAttempts: attempts + 1 };
+// Réservation atomique du job AVANT traitement : si une autre exécution
+// (deux runs qui se chevauchent) l'a déjà réclamé récemment, la
+// transaction échoue et on ne le prend pas.
+async function acquireLock(jobsRef, jobId) {
+  const lockRef = jobsRef.child(jobId).child("_lock");
+  const now = Date.now();
+  return lockRef.transaction((current) => {
+    if (typeof current === "number" && (now - current) < LOCK_TTL_MS) return; // verrouillé récemment -> annule
+    return now;
   });
 }
 
-// Si l'envoi échoue APRÈS la réservation, on repasse "notified" à false pour
-// que le job soit retenté au prochain run (le compteur notifyAttempts, lui,
-// reste incrémenté, ce qui finira par déclencher MAX_ATTEMPTS si ça persiste).
-async function releaseJobAfterFailure(jobsRef, jobId) {
-  await jobsRef.child(jobId).transaction((current) => {
-    if (!current) return;
-    return { ...current, notified: false };
-  });
+async function releaseLock(jobsRef, jobId) {
+  await jobsRef.child(jobId).child("_lock").remove().catch(() => {});
 }
 
 async function sendNotifications() {
@@ -115,50 +144,81 @@ async function sendNotifications() {
     }
 
     const entries = await getAllTokens();
-    console.log(`📱 ${entries.length} token(s) de notification enregistré(s) : [${entries.map(e => e.uid).join(', ')}]`);
+    console.log(`📱 ${entries.length} token(s) de notification enregistré(s).`);
     if (!entries.length) {
       console.log("Aucun token de notification enregistré, rien à envoyer.");
       return;
     }
 
+    const presenceMap = await getPresenceMap();
+    const now = Date.now();
+
     for (const [jobId, job] of Object.entries(jobs)) {
-      if (job.notified) continue;
+      const jobTimestamp = job.timestamp || 0;
+      if (now - jobTimestamp > JOB_WINDOW_MS) continue; // job trop ancien, on n'en parle plus
 
-      const claim = await claimJob(jobsRef, jobId);
+      // notifiedTo suit, PAR UTILISATEUR, qui a déjà reçu ce job (push ou
+      // vu en direct dans l'app). Un utilisateur qui vient d'activer les
+      // notifications recevra donc les jobs récents qu'il n'a pas encore
+      // vus, même si d'autres les ont déjà reçus.
+      const notifiedTo = job.notifiedTo || {};
+      const pendingEntries = entries.filter((e) => !notifiedTo[e.uid]);
+      if (!pendingEntries.length) continue; // tout le monde a déjà été notifié ou l'a déjà vu en direct
 
+      const claim = await acquireLock(jobsRef, jobId);
       if (!claim.committed) {
-        const current = claim.snapshot.val();
-        if (current && !current.notified && (current.notifyAttempts || 0) >= MAX_ATTEMPTS) {
-          console.log(`🛑 Job "${job.title}" a dépassé ${MAX_ATTEMPTS} tentatives, abandonné (vérifier manuellement).`);
-        } else {
-          console.log(`⏭️ Job "${job.title}" déjà pris en charge par une autre exécution, ignoré.`);
-        }
+        console.log(`⏭️ Job "${job.title}" déjà pris en charge par une autre exécution, ignoré pour ce run.`);
         continue;
       }
 
-      const notification = {
-        title: "Nouveau poste disponible",
-        body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`
-      };
-
-      const data = {
-        jobId: String(jobId),
-        category: String(job.category || "General"),
-        location: String(job.location || "Global"),
-        salaire: String(job.salaire || "N/A")
-      };
-
       try {
-        const successCount = await sendToAllTokens(entries, notification, data);
-        console.log(`✅ Notification envoyée pour "${job.title}" (${successCount}/${entries.length} appareil(s))`);
-      } catch (err) {
-        // L'envoi a échoué APRÈS la réservation : on annule le "notified"
-        // pour ne PAS perdre ce job définitivement. Il sera retenté au
-        // prochain run, jusqu'à MAX_ATTEMPTS.
-        console.error(`❌ Erreur envoi notification pour ${job.title}, nouvelle tentative au prochain run:`, err);
-        await releaseJobAfterFailure(jobsRef, jobId).catch((releaseErr) => {
-          console.error(`⚠️ Impossible de libérer le job "${job.title}" après échec:`, releaseErr);
+        // On sépare : ceux actuellement dans l'app (pas de push, ils
+        // voient le job en direct) et les autres (push classique).
+        const toPush = [];
+        const toMarkSeen = [];
+        pendingEntries.forEach((entry) => {
+          if (isCurrentlyActive(entry.uid, presenceMap)) {
+            toMarkSeen.push(entry);
+          } else {
+            toPush.push(entry);
+          }
         });
+
+        const notification = {
+          title: "Nouveau poste disponible",
+          body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`
+        };
+        const data = {
+          jobId: String(jobId),
+          category: String(job.category || "General"),
+          location: String(job.location || "Global"),
+          salaire: String(job.salaire || "N/A")
+        };
+
+        let successCount = 0;
+        try {
+          successCount = await sendToAllTokens(toPush, notification, data);
+        } catch (err) {
+          // Échec d'envoi : on ne marque PERSONNE comme notifié pour ce
+          // job. Tout le monde (push + "vus en direct") sera réévalué au
+          // prochain run — un utilisateur actif entre-temps ne recevra
+          // simplement pas de push, ce qui reste correct.
+          console.error(`❌ Erreur envoi notification pour "${job.title}", nouvelle tentative au prochain run:`, err);
+          continue; // le "finally" ci-dessous libère quand même le verrou
+        }
+
+        const updates = {};
+        [...toPush, ...toMarkSeen].forEach((e) => {
+          updates[`jobs/${jobId}/notifiedTo/${e.uid}`] = true;
+        });
+        if (Object.keys(updates).length) await db.ref().update(updates);
+
+        console.log(
+          `✅ Job "${job.title}" : ${successCount}/${toPush.length} notification(s) push envoyée(s), ` +
+          `${toMarkSeen.length} utilisateur(s) déjà actif(s) dans l'app (pas de push).`
+        );
+      } finally {
+        await releaseLock(jobsRef, jobId);
       }
     }
   } catch (err) {
