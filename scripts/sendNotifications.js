@@ -11,9 +11,6 @@ admin.initializeApp({
 const db = admin.database();
 const messaging = admin.messaging();
 
-// FCM accepte au maximum 500 tokens par appel multicast
-const BATCH_SIZE = 500;
-
 // On ne traite que les jobs publiés dans cette fenêtre. Au-delà, on arrête
 // de "chercher" ce job pour de nouveaux destinataires (ex: quelqu'un qui
 // vient d'activer les notifications) — un job d'il y a une semaine n'a
@@ -29,18 +26,10 @@ const JOB_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
 // prudence : mieux vaut une notification en trop qu'un job jamais vu.
 const PRESENCE_STALE_MS = 3 * 60 * 1000; // 3 min
 
-// Verrou par job (et non plus par job+tentative) : évite que deux
-// exécutions qui se chevauchent (cron + déclenchement manuel, par ex.)
-// traitent le même job en même temps. Il expire tout seul si une
-// exécution plante avant de le libérer, pour ne jamais bloquer un job
-// indéfiniment.
+// Verrou par job : évite que deux exécutions qui se chevauchent (cron +
+// déclenchement manuel, par ex.) traitent le même job en même temps. Il
+// expire tout seul si une exécution plante avant de le libérer.
 const LOCK_TTL_MS = 4 * 60 * 1000; // 4 min (le workflow a un timeout de 5 min)
-
-function chunk(arr, size) {
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
 
 async function getAllTokens() {
   const snap = await db.ref("notificationTokens").once("value");
@@ -74,54 +63,6 @@ async function removeInvalidTokens(uids) {
   }
 }
 
-// Envoie le push aux entrées données, nettoie les tokens invalides au
-// passage, renvoie le nombre d'envois réussis.
-//
-// IMPORTANT : on envoie uniquement un payload "data" (pas de champ
-// "notification"). Un message avec un champ "notification" peut être
-// affiché automatiquement par le navigateur en plus du showNotification()
-// manuel fait côté client (sw.js / index.html) — ça produit des
-// notifications en double. En data-only, c'est TOUJOURS le code client qui
-// décide, une seule fois, s'il affiche quelque chose.
-async function sendToAllTokens(entries, data) {
-  if (!entries.length) return 0;
-
-  const invalidUids = [];
-  let successCount = 0;
-
-  for (const batch of chunk(entries, BATCH_SIZE)) {
-    const tokens = batch.map((e) => e.token);
-
-    const response = await messaging.sendEachForMulticast({
-      tokens,
-      data
-    });
-
-    successCount += response.successCount;
-
-    response.responses.forEach((res, idx) => {
-      if (!res.success) {
-        const code = res.error && res.error.code;
-        if (
-          code === "messaging/invalid-registration-token" ||
-          code === "messaging/registration-token-not-registered"
-        ) {
-          invalidUids.push(batch[idx].uid);
-        } else {
-          console.error(`❌ Erreur d'envoi (${code || "inconnue"}):`, res.error && res.error.message);
-        }
-      }
-    });
-  }
-
-  if (invalidUids.length) {
-    await removeInvalidTokens(invalidUids);
-    console.log(`🧹 ${invalidUids.length} token(s) invalide(s) supprimé(s).`);
-  }
-
-  return successCount;
-}
-
 // Réservation atomique du job AVANT traitement : si une autre exécution
 // (deux runs qui se chevauchent) l'a déjà réclamé récemment, la
 // transaction échoue et on ne le prend pas.
@@ -138,6 +79,35 @@ async function releaseLock(jobsRef, jobId) {
   await jobsRef.child(jobId).child("_lock").remove().catch(() => {});
 }
 
+// Construit le contenu de la notification pour un utilisateur donné, en
+// fonction du nombre de jobs qu'il a en attente. Si le cron a raté
+// plusieurs jobs récents d'un coup (ou en a accumulé pendant un run
+// bloqué), on regroupe en UNE SEULE notification plutôt que d'en envoyer
+// une par job — sinon quelqu'un qui rouvre son téléphone après quelques
+// heures se prend une rafale de notifications d'un coup, ce qui pousse à
+// désactiver les notifications complètement.
+function buildNotificationData(jobsForUid) {
+  if (jobsForUid.length === 1) {
+    const { jobId, job } = jobsForUid[0];
+    return {
+      title: "Nouveau poste disponible",
+      body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`,
+      jobId: String(jobId),
+      category: String(job.category || "General"),
+      location: String(job.location || "Global"),
+      salaire: String(job.salaire || "N/A")
+    };
+  }
+  const titles = jobsForUid.slice(0, 3).map(({ job }) => job.title).filter(Boolean);
+  const extra = jobsForUid.length - titles.length;
+  return {
+    title: `${jobsForUid.length} nouveaux postes disponibles`,
+    body: titles.join(" • ") + (extra > 0 ? ` et ${extra} autre(s)` : ""),
+    jobId: String(jobsForUid[0].jobId), // pour le clic : ouvre au moins la 1ère annonce
+    multiCount: String(jobsForUid.length)
+  };
+}
+
 async function sendNotifications() {
   try {
     const jobsRef = db.ref("jobs");
@@ -150,6 +120,7 @@ async function sendNotifications() {
     }
 
     const entries = await getAllTokens();
+    const tokenByUid = new Map(entries.map((e) => [e.uid, e.token]));
     console.log(`📱 ${entries.length} token(s) de notification enregistré(s).`);
     if (!entries.length) {
       console.log("Aucun token de notification enregistré, rien à envoyer.");
@@ -159,12 +130,19 @@ async function sendNotifications() {
     const presenceMap = await getPresenceMap();
     const now = Date.now();
 
+    // ---- Phase 1 : réserver les jobs à traiter, répartir chaque
+    // destinataire en "push" (pas actif) ou "vu en direct" (actif dans
+    // l'app), regroupé PAR UTILISATEUR.
+    const claimedJobIds = [];
+    const pushByUid = new Map(); // uid -> [{ jobId, job }, ...]
+    const seenNowUpdates = {};
+
     for (const [jobId, job] of Object.entries(jobs)) {
       const jobTimestamp = job.timestamp || 0;
       if (now - jobTimestamp > JOB_WINDOW_MS) continue; // job trop ancien, on n'en parle plus
 
       // notifiedTo suit, PAR UTILISATEUR, qui a déjà reçu ce job (push ou
-      // vu en direct dans l'app). Un utilisateur qui vient d'activer les
+      // vu en direct). Un utilisateur qui vient d'activer les
       // notifications recevra donc les jobs récents qu'il n'a pas encore
       // vus, même si d'autres les ont déjà reçus.
       const notifiedTo = job.notifiedTo || {};
@@ -176,55 +154,76 @@ async function sendNotifications() {
         console.log(`⏭️ Job "${job.title}" déjà pris en charge par une autre exécution, ignoré pour ce run.`);
         continue;
       }
+      claimedJobIds.push(jobId);
+
+      pendingEntries.forEach((entry) => {
+        if (isCurrentlyActive(entry.uid, presenceMap)) {
+          seenNowUpdates[`jobs/${jobId}/notifiedTo/${entry.uid}`] = true;
+        } else {
+          if (!pushByUid.has(entry.uid)) pushByUid.set(entry.uid, []);
+          pushByUid.get(entry.uid).push({ jobId, job });
+        }
+      });
+    }
+
+    if (Object.keys(seenNowUpdates).length) await db.ref().update(seenNowUpdates);
+
+    if (!claimedJobIds.length) {
+      console.log("Rien de nouveau à notifier pour ce run.");
+      return;
+    }
+
+    // ---- Phase 2 : un seul envoi push par utilisateur, même s'il a
+    // plusieurs jobs en attente (voir buildNotificationData ci-dessus).
+    const invalidUids = [];
+    const notifiedUpdates = {};
+    let pushCount = 0;
+
+    for (const [uid, jobsForUid] of pushByUid) {
+      const token = tokenByUid.get(uid);
+      if (!token) continue; // token supprimé entre-temps
+
+      const data = buildNotificationData(jobsForUid);
 
       try {
-        // On sépare : ceux actuellement dans l'app (pas de push, ils
-        // voient le job en direct) et les autres (push classique).
-        const toPush = [];
-        const toMarkSeen = [];
-        pendingEntries.forEach((entry) => {
-          if (isCurrentlyActive(entry.uid, presenceMap)) {
-            toMarkSeen.push(entry);
+        const response = await messaging.sendEachForMulticast({ tokens: [token], data });
+        const res = response.responses[0];
+        if (res.success) {
+          pushCount++;
+          jobsForUid.forEach(({ jobId }) => { notifiedUpdates[`jobs/${jobId}/notifiedTo/${uid}`] = true; });
+        } else {
+          const code = res.error && res.error.code;
+          if (
+            code === "messaging/invalid-registration-token" ||
+            code === "messaging/registration-token-not-registered"
+          ) {
+            invalidUids.push(uid);
+            // Token mort : inutile de réessayer indéfiniment, on marque ces
+            // jobs comme "notifiés" pour ce uid pour ne pas les rescanner
+            // à chaque run tant que personne n'a réenregistré de token.
+            jobsForUid.forEach(({ jobId }) => { notifiedUpdates[`jobs/${jobId}/notifiedTo/${uid}`] = true; });
           } else {
-            toPush.push(entry);
+            console.error(`❌ Erreur d'envoi (${code || "inconnue"}):`, res.error && res.error.message);
+            // Pas invalide, juste raté : ce uid sera retenté au run suivant.
           }
-        });
-
-        const data = {
-          title: "Nouveau poste disponible",
-          body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`,
-          jobId: String(jobId),
-          category: String(job.category || "General"),
-          location: String(job.location || "Global"),
-          salaire: String(job.salaire || "N/A")
-        };
-
-        let successCount = 0;
-        try {
-          successCount = await sendToAllTokens(toPush, data);
-        } catch (err) {
-          // Échec d'envoi : on ne marque PERSONNE comme notifié pour ce
-          // job. Tout le monde (push + "vus en direct") sera réévalué au
-          // prochain run — un utilisateur actif entre-temps ne recevra
-          // simplement pas de push, ce qui reste correct.
-          console.error(`❌ Erreur envoi notification pour "${job.title}", nouvelle tentative au prochain run:`, err);
-          continue; // le "finally" ci-dessous libère quand même le verrou
         }
-
-        const updates = {};
-        [...toPush, ...toMarkSeen].forEach((e) => {
-          updates[`jobs/${jobId}/notifiedTo/${e.uid}`] = true;
-        });
-        if (Object.keys(updates).length) await db.ref().update(updates);
-
-        console.log(
-          `✅ Job "${job.title}" : ${successCount}/${toPush.length} notification(s) push envoyée(s), ` +
-          `${toMarkSeen.length} utilisateur(s) déjà actif(s) dans l'app (pas de push).`
-        );
-      } finally {
-        await releaseLock(jobsRef, jobId);
+      } catch (err) {
+        console.error(`❌ Erreur envoi pour ${jobsForUid.length} job(s), nouvelle tentative au prochain run:`, err);
       }
     }
+
+    if (invalidUids.length) {
+      await removeInvalidTokens(invalidUids);
+      console.log(`🧹 ${invalidUids.length} token(s) invalide(s) supprimé(s).`);
+    }
+    if (Object.keys(notifiedUpdates).length) await db.ref().update(notifiedUpdates);
+
+    console.log(
+      `✅ ${pushCount} notification(s) push envoyée(s) (${pushByUid.size} destinataire(s) ciblé(s)), ` +
+      `${Object.keys(seenNowUpdates).length} vu(s) en direct dans l'app, ${claimedJobIds.length} job(s) traité(s).`
+    );
+
+    for (const jobId of claimedJobIds) await releaseLock(jobsRef, jobId);
   } catch (err) {
     console.error("❌ Erreur globale:", err);
     process.exitCode = 1;
