@@ -76,7 +76,14 @@ async function removeInvalidTokens(uids) {
 
 // Envoie le push aux entrées données, nettoie les tokens invalides au
 // passage, renvoie le nombre d'envois réussis.
-async function sendToAllTokens(entries, notification, data) {
+//
+// IMPORTANT : on envoie uniquement un payload "data" (pas de champ
+// "notification"). Un message avec un champ "notification" peut être
+// affiché automatiquement par le navigateur en plus du showNotification()
+// manuel fait côté client (sw.js / index.html) — ça produit des
+// notifications en double. En data-only, c'est TOUJOURS le code client qui
+// décide, une seule fois, s'il affiche quelque chose.
+async function sendToAllTokens(entries, data) {
   if (!entries.length) return 0;
 
   const invalidUids = [];
@@ -87,7 +94,6 @@ async function sendToAllTokens(entries, notification, data) {
 
     const response = await messaging.sendEachForMulticast({
       tokens,
-      notification,
       data
     });
 
@@ -184,11 +190,9 @@ async function sendNotifications() {
           }
         });
 
-        const notification = {
-          title: "Nouveau poste disponible",
-          body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`
-        };
         const data = {
+          title: "Nouveau poste disponible",
+          body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`,
           jobId: String(jobId),
           category: String(job.category || "General"),
           location: String(job.location || "Global"),
@@ -197,7 +201,7 @@ async function sendNotifications() {
 
         let successCount = 0;
         try {
-          successCount = await sendToAllTokens(toPush, notification, data);
+          successCount = await sendToAllTokens(toPush, data);
         } catch (err) {
           // Échec d'envoi : on ne marque PERSONNE comme notifié pour ce
           // job. Tout le monde (push + "vus en direct") sera réévalué au
