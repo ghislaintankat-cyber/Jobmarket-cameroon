@@ -230,18 +230,23 @@ async function sendNotifications() {
       }
     }
 
-    if (invalidUids.length) {
-      await removeInvalidTokens(invalidUids);
-      console.log(`🧹 ${invalidUids.length} token(s) invalide(s) supprimé(s).`);
+    try {
+      if (invalidUids.length) {
+        await removeInvalidTokens(invalidUids);
+        console.log(`🧹 ${invalidUids.length} token(s) invalide(s) supprimé(s).`);
+      }
+      if (Object.keys(notifiedUpdates).length) await db.ref().update(notifiedUpdates);
+
+      console.log(
+        `✅ ${pushCount} notification(s) push envoyée(s) (${pushByUid.size} destinataire(s) ciblé(s)), ` +
+        `${Object.keys(seenNowUpdates).length} vu(s) en direct dans l'app, ${claimedJobIds.length} job(s) traité(s).`
+      );
+    } finally {
+      // Toujours libérer les verrous, même si l'écriture ci-dessus a échoué :
+      // sinon un job reste bloqué inutilement jusqu'à expiration du TTL (4
+      // min) au lieu d'être retenté dès le prochain run.
+      for (const jobId of claimedJobIds) await releaseLock(jobsRef, jobId);
     }
-    if (Object.keys(notifiedUpdates).length) await db.ref().update(notifiedUpdates);
-
-    console.log(
-      `✅ ${pushCount} notification(s) push envoyée(s) (${pushByUid.size} destinataire(s) ciblé(s)), ` +
-      `${Object.keys(seenNowUpdates).length} vu(s) en direct dans l'app, ${claimedJobIds.length} job(s) traité(s).`
-    );
-
-    for (const jobId of claimedJobIds) await releaseLock(jobsRef, jobId);
   } catch (err) {
     console.error("❌ Erreur globale:", err);
     process.exitCode = 1;
