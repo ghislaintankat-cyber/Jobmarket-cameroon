@@ -27,11 +27,16 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Notifications reçues quand l'app est fermée ou en arrière-plan
+// Notifications reçues quand l'app est fermée ou en arrière-plan.
+// Le serveur (scripts/sendNotifications.js) envoie désormais un message
+// "data-only" (sans champ "notification") : c'est volontaire, car un
+// message contenant un champ "notification" peut être affiché
+// automatiquement par le navigateur EN PLUS de cet appel manuel à
+// showNotification, ce qui produisait des notifications en double.
 messaging.onBackgroundMessage((payload) => {
-  const title = (payload.notification && payload.notification.title) || 'JobMarket Cameroon';
+  const title = (payload.data && payload.data.title) || 'JobMarket Cameroon';
   const options = {
-    body: (payload.notification && payload.notification.body) || '',
+    body: (payload.data && payload.data.body) || '',
     icon: 'icon-192.png' // doit correspondre exactement à un fichier présent + référencé dans manifest.json
   };
   self.registration.showNotification(title, options).catch(() => {});
