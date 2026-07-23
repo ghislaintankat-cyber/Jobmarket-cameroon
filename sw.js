@@ -37,22 +37,30 @@ messaging.onBackgroundMessage((payload) => {
   const title = (payload.data && payload.data.title) || 'JobMarket Cameroon';
   const options = {
     body: (payload.data && payload.data.body) || '',
-    icon: 'icon-192.png' // doit correspondre exactement à un fichier présent + référencé dans manifest.json
+    icon: 'icon-192.png', // doit correspondre exactement à un fichier présent + référencé dans manifest.json
+    data: payload.data || {} // conservé pour le deep-link au clic (voir notificationclick ci-dessous)
   };
   self.registration.showNotification(title, options).catch(() => {});
 });
 
-// Au clic sur la notification : si un onglet de l'app est déjà ouvert, on le
-// ramène au premier plan ; sinon on en ouvre un nouveau.
+// Au clic sur la notification : direction l'annonce concernée. Si un onglet
+// de l'app est déjà ouvert, on le ramène au premier plan et on lui indique
+// par message quel job ouvrir (évite de recharger toute la page) ; sinon on
+// ouvre un nouvel onglet directement sur #job=<id>, que index.html sait déjà
+// interpréter au chargement.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const targetUrl = self.registration.scope; // ex: https://.../JobMarket Cameroon/
+  const jobId = event.notification.data && event.notification.data.jobId;
+  const targetUrl = self.registration.scope + (jobId ? '#job=' + jobId : ''); // ex: https://.../JobMarket Cameroon/#job=xyz
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.startsWith(targetUrl) && 'focus' in client) {
+        if (client.url.startsWith(self.registration.scope) && 'focus' in client) {
+          if (jobId && 'postMessage' in client) {
+            client.postMessage({ type: 'open-job', jobId });
+          }
           return client.focus();
         }
       }
