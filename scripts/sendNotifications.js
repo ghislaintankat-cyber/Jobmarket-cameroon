@@ -45,6 +45,20 @@ async function getPresenceMap() {
   return snap.val() || {};
 }
 
+async function getNotifyPrefs() {
+  const snap = await db.ref("notifyPrefs").once("value");
+  return snap.val() || {};
+}
+
+// true si rien n'indique explicitement que cette catégorie est désactivée
+// pour cet utilisateur (voir setNotifCategoryPref côté client : seules les
+// exclusions sont stockées, absence de préférence = activé par défaut).
+function wantsCategory(uid, category, notifyPrefsMap) {
+  const prefs = notifyPrefsMap[uid];
+  if (!prefs) return true;
+  return prefs[category] !== false;
+}
+
 // true seulement si la personne est là, MAINTENANT, dans l'app.
 function isCurrentlyActive(uid, presenceMap) {
   const p = presenceMap[uid];
@@ -128,6 +142,7 @@ async function sendNotifications() {
     }
 
     const presenceMap = await getPresenceMap();
+    const notifyPrefsMap = await getNotifyPrefs();
     const now = Date.now();
 
     // ---- Phase 1 : réserver les jobs à traiter, répartir chaque
@@ -146,8 +161,11 @@ async function sendNotifications() {
       // notifications recevra donc les jobs récents qu'il n'a pas encore
       // vus, même si d'autres les ont déjà reçus.
       const notifiedTo = job.notifiedTo || {};
-      const pendingEntries = entries.filter((e) => !notifiedTo[e.uid]);
-      if (!pendingEntries.length) continue; // tout le monde a déjà été notifié ou l'a déjà vu en direct
+      const category = (job.category || "").toLowerCase();
+      const pendingEntries = entries.filter(
+        (e) => !notifiedTo[e.uid] && wantsCategory(e.uid, category, notifyPrefsMap)
+      );
+      if (!pendingEntries.length) continue; // tout le monde a déjà été notifié, l'a vu en direct, ou n'est pas intéressé par cette catégorie
 
       const claim = await acquireLock(jobsRef, jobId);
       if (!claim.committed) {
