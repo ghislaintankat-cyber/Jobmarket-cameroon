@@ -100,26 +100,41 @@ async function releaseLock(jobsRef, jobId) {
 // une par job — sinon quelqu'un qui rouvre son téléphone après quelques
 // heures se prend une rafale de notifications d'un coup, ce qui pousse à
 // désactiver les notifications complètement.
+// Récupère une URL de photo utilisable pour la vignette de la notif, en
+// tenant compte des deux formats existants dans les jobs (images[] le
+// format actuel, image la clé historique pour les anciens jobs).
+function firstJobImage(job) {
+  if (Array.isArray(job.images) && job.images[0]) return job.images[0];
+  if (job.image) return job.image;
+  return null;
+}
+
 function buildNotificationData(jobsForUid) {
   if (jobsForUid.length === 1) {
     const { jobId, job } = jobsForUid[0];
-    return {
+    const image = firstJobImage(job);
+    const data = {
       title: "Nouveau poste disponible",
       body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`,
       jobId: String(jobId),
-      category: String(job.category || "General"),
+      category: String(job.icon || "General"), // "icon" = vraie clé de catégorie côté client, voir correctif ci-dessus
       location: String(job.location || "Global"),
       salaire: String(job.salaire || "N/A")
     };
+    if (image) data.image = String(image); // sw.js l'utilise pour la vignette de la notif
+    return data;
   }
   const titles = jobsForUid.slice(0, 3).map(({ job }) => job.title).filter(Boolean);
   const extra = jobsForUid.length - titles.length;
-  return {
+  const groupImage = firstJobImage(jobsForUid[0].job); // photo du job le plus récent du lot, à défaut d'un visuel "collage"
+  const data = {
     title: `${jobsForUid.length} nouveaux postes disponibles`,
     body: titles.join(" • ") + (extra > 0 ? ` et ${extra} autre(s)` : ""),
     jobId: String(jobsForUid[0].jobId), // pour le clic : ouvre au moins la 1ère annonce
     multiCount: String(jobsForUid.length)
   };
+  if (groupImage) data.image = String(groupImage);
+  return data;
 }
 
 async function sendNotifications() {
@@ -161,7 +176,14 @@ async function sendNotifications() {
       // notifications recevra donc les jobs récents qu'il n'a pas encore
       // vus, même si d'autres les ont déjà reçus.
       const notifiedTo = job.notifiedTo || {};
-      const category = (job.category || "").toLowerCase();
+      // BUG CORRIGÉ : côté client (index.html), la catégorie du job est
+      // enregistrée dans le champ "icon" (ex: "btp", "electricite"), pas
+      // "category" — ce dernier n'existe pas dans les données. Avant ce
+      // correctif, "category" valait toujours "" ici, donc wantsCategory()
+      // ne trouvait jamais de préférence désactivée correspondante et
+      // laissait tout passer : tout le monde recevait tous les jobs, quels
+      // que soient ses choix dans les préférences de notification.
+      const category = (job.icon || "").toLowerCase();
       const pendingEntries = entries.filter(
         (e) => !notifiedTo[e.uid] && wantsCategory(e.uid, category, notifyPrefsMap)
       );
@@ -204,7 +226,15 @@ async function sendNotifications() {
       const data = buildNotificationData(jobsForUid);
 
       try {
-        const response = await messaging.sendEachForMulticast({ tokens: [token], data });
+        const response = await messaging.sendEachForMulticast({
+          tokens: [token],
+          data,
+          // Urgency: high indique au service de push du navigateur de ne
+          // pas retarder la livraison (ex: économie de batterie sur
+          // Android/Chrome) — sans ça, une notif "temps réel" peut en
+          // pratique arriver plusieurs minutes en retard app fermée.
+          webpush: { headers: { Urgency: "high" } }
+        });
         const res = response.responses[0];
         if (res.success) {
           pushCount++;
