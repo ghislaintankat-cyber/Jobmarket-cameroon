@@ -1715,6 +1715,24 @@ document.addEventListener('click', function(e) {
 // ===== PARTAGE & LIENS PROFONDS =====
 const APP_BASE_URL = 'https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/';
 
+// Relais "notif instantanée" (voir worker/index.js) : appelé juste après la
+// publication d'un nouveau job pour déclencher le workflow GitHub Actions
+// immédiatement, sans attendre le cron de secours (15 min). Best-effort
+// uniquement — si le relais est indisponible, le cron prend simplement le
+// relais un peu plus tard, aucune notification n'est perdue.
+// ⚠️ À REMPLACER après avoir déployé le worker (voir worker/wrangler.toml) :
+const NOTIFY_TRIGGER_URL = 'https://jobmarket-notify-trigger.ghislaintankat.workers.dev';
+const NOTIFY_TRIGGER_SECRET = 'a8f3k29dQmZp71xR9kLm'; // doit être IDENTIQUE au secret TRIGGER_SECRET du worker
+
+function triggerInstantNotify() {
+  try {
+    fetch(NOTIFY_TRIGGER_URL, {
+      method: 'POST',
+      headers: { 'X-Trigger-Secret': NOTIFY_TRIGGER_SECRET }
+    }).catch(() => {}); // silencieux : le cron de secours couvre déjà ce cas
+  } catch (e) { /* idem */ }
+}
+
 function getJobShareLink(jobId) {
   return `${APP_BASE_URL}#job=${jobId}`;
 }
@@ -2058,6 +2076,7 @@ async function addJob() {
       } else {
         await db.ref('jobs').push(jobData);
         showToast('Job publie avec succes !', 'success');
+        triggerInstantNotify();
       }
       editingJobId = null;
       resetJobForm();
