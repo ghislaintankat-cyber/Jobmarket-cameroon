@@ -1405,6 +1405,7 @@ const I18N = {
     notifPrimerTitle: "Ne ratez plus aucun job", notifPrimerBody: "Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.",
     notifPrimerLater: "Plus tard", notifPrimerEnable: "Activer les alertes",
     notifBlockedTip: "Notifications bloquées. Activez-les dans les réglages de votre navigateur pour ne plus rater de job.",
+    notifDistanceLabel: "Distance maximale", notifDistanceHint: "Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).",
     logout: "Déconnexion", artisanProfile: "Profil de l'artisan",
     descNeed: "Description du besoin :", editListing: "Modifier l'annonce", deleteListing: "Supprimer l'annonce",
     shareWhatsApp: "Partager sur WhatsApp", seeItinerary: "Voir l'itinéraire",
@@ -1462,6 +1463,7 @@ const I18N = {
     notifPrimerTitle: "Never miss a job again", notifPrimerBody: "Get alerted the moment a new job in your categories is posted near you.",
     notifPrimerLater: "Later", notifPrimerEnable: "Enable alerts",
     notifBlockedTip: "Notifications are blocked. Enable them in your browser settings to stop missing new jobs.",
+    notifDistanceLabel: "Maximum distance", notifDistanceHint: "You'll only be notified about jobs within this radius of your location (requires location enabled).",
     logout: "Log out", artisanProfile: "Provider's profile",
     descNeed: "Job description:", editListing: "Edit listing", deleteListing: "Delete listing",
     shareWhatsApp: "Share on WhatsApp", seeItinerary: "See route",
@@ -1519,6 +1521,7 @@ const I18N = {
     notifPrimerTitle: "Non perdere più nessun lavoro", notifPrimerBody: "Ricevi un avviso non appena viene pubblicato un nuovo lavoro nelle tue categorie vicino a te.",
     notifPrimerLater: "Più tardi", notifPrimerEnable: "Attiva gli avvisi",
     notifBlockedTip: "Notifiche bloccate. Attivale nelle impostazioni del browser per non perdere nuovi lavori.",
+    notifDistanceLabel: "Distanza massima", notifDistanceHint: "Riceverai notifiche solo per i lavori entro questo raggio dalla tua posizione (richiede la geolocalizzazione attiva).",
     logout: "Disconnetti", artisanProfile: "Profilo del fornitore",
     descNeed: "Descrizione del lavoro:", editListing: "Modifica annuncio", deleteListing: "Elimina annuncio",
     shareWhatsApp: "Condividi su WhatsApp", seeItinerary: "Vedi itinerario",
@@ -1576,6 +1579,7 @@ const I18N = {
     notifPrimerTitle: "Verpassen Sie keinen Job mehr", notifPrimerBody: "Werden Sie sofort benachrichtigt, wenn ein neuer Job in Ihren Kategorien in Ihrer Nähe veröffentlicht wird.",
     notifPrimerLater: "Später", notifPrimerEnable: "Benachrichtigungen aktivieren",
     notifBlockedTip: "Benachrichtigungen sind blockiert. Aktivieren Sie sie in den Browsereinstellungen, um keine neuen Jobs mehr zu verpassen.",
+    notifDistanceLabel: "Maximale Entfernung", notifDistanceHint: "Sie werden nur über Jobs in diesem Umkreis um Ihren Standort benachrichtigt (Standortfreigabe erforderlich).",
     logout: "Abmelden", artisanProfile: "Profil des Anbieters",
     descNeed: "Beschreibung des Auftrags:", editListing: "Anzeige bearbeiten", deleteListing: "Anzeige löschen",
     shareWhatsApp: "Auf WhatsApp teilen", seeItinerary: "Route anzeigen",
@@ -1633,6 +1637,7 @@ const I18N = {
     notifPrimerTitle: "不再错过任何工作机会", notifPrimerBody: "您所在分类附近一有新工作发布，立即通知您。",
     notifPrimerLater: "以后再说", notifPrimerEnable: "开启提醒",
     notifBlockedTip: "通知已被屏蔽。请在浏览器设置中开启通知，以免错过新工作。",
+    notifDistanceLabel: "最大距离", notifDistanceHint: "只有在此范围内的工作机会才会通知您（需要开启定位）。",
     logout: "退出登录", artisanProfile: "服务商资料",
     descNeed: "需求描述:", editListing: "编辑发布", deleteListing: "删除发布",
     shareWhatsApp: "在WhatsApp上分享", seeItinerary: "查看路线",
@@ -1981,7 +1986,26 @@ function updateUserLocation(position) {
 
   const dist = allJobs.length > 0 ? Math.max(...allJobs.map(j=>j.dist)).toFixed(1) : '--';
   document.getElementById('maxDistDisplay').textContent = dist === '--' ? '--' : dist;
+
+  maybeSyncLocationToProfile(userCoords.lat, userCoords.lng);
   }
+
+// Enregistre la position dans le profil pour que sendNotifications.js puisse
+// filtrer les jobs par proximité. Limité pour ne pas spammer la DB à chaque
+// mise à jour GPS (qui peut arriver plusieurs fois par minute) : seulement
+// si on a bougé de plus de 300m, ou si 2 minutes se sont écoulées.
+let lastLocationSyncAt = 0;
+let lastSyncedCoords = null;
+function maybeSyncLocationToProfile(lat, lng) {
+  if (!currentUser || currentUser.isAnonymous) return;
+  const now = Date.now();
+  const movedEnough = !lastSyncedCoords || calcDist(lastSyncedCoords.lat, lastSyncedCoords.lng, lat, lng) > 0.3;
+  const longEnough = (now - lastLocationSyncAt) > 2 * 60 * 1000;
+  if (!movedEnough && !longEnough) return;
+  lastLocationSyncAt = now;
+  lastSyncedCoords = { lat, lng };
+  db.ref('profiles/' + currentUser.uid).update({ lat, lng }).catch(() => {});
+}
 
 // ===== JOB PUBLISH (création ou modification) =====
 async function addJob() {
@@ -2744,6 +2768,8 @@ async function openNotifPrefs() {
     console.warn('Chargement préférences notif échoué', e);
   }
 
+  const currentMaxDist = typeof prefs.maxDistanceKm === 'number' ? prefs.maxDistanceKm : 25;
+
   list.innerHTML = NOTIF_CATEGORIES.map(cat => {
     const checked = prefs[cat.key] !== false; // pas de préférence enregistrée = activé
     return `<label style="display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--border,#222);cursor:pointer;">
@@ -2751,7 +2777,28 @@ async function openNotifPrefs() {
       <span style="flex:1;">${t(cat.i18n)}</span>
       <input type="checkbox" ${checked ? 'checked' : ''} onchange="setNotifCategoryPref('${cat.key}', this.checked)" style="width:20px;height:20px;accent-color:var(--gold,#FFD700);"/>
     </label>`;
-  }).join('');
+  }).join('') + `
+    <div style="padding:18px 4px 4px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span data-i18n="notifDistanceLabel">Distance maximale</span>
+        <span id="notifDistanceValue" style="color:var(--gold,#FFD700);font-weight:700;">${currentMaxDist} km</span>
+      </div>
+      <input type="range" min="5" max="100" step="5" value="${currentMaxDist}"
+        oninput="document.getElementById('notifDistanceValue').textContent = this.value + ' km'"
+        onchange="setNotifDistancePref(parseInt(this.value, 10))"
+        style="width:100%;accent-color:var(--gold,#FFD700);">
+      <div style="color:#8888A8;font-size:12px;margin-top:6px;" data-i18n="notifDistanceHint">Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).</div>
+    </div>`;
+}
+
+async function setNotifDistancePref(km) {
+  if (!currentUser) return;
+  try {
+    await db.ref(`notifyPrefs/${currentUser.uid}/maxDistanceKm`).set(km);
+  } catch (e) {
+    console.warn('Écriture préférence distance échouée', e);
+    showToast("Préférence non enregistrée (réseau instable ?), réessayez.", 'error');
+  }
 }
 
 async function setNotifCategoryPref(categoryKey, enabled) {
