@@ -100,6 +100,47 @@ async function releaseLock(jobsRef, jobId) {
 // une par job — sinon quelqu'un qui rouvre son téléphone après quelques
 // heures se prend une rafale de notifications d'un coup, ce qui pousse à
 // désactiver les notifications complètement.
+// Traductions des textes de notification. Miroir volontairement minimal des
+// langues gérées côté client (I18N dans index.html : fr/en/it/de/zh) — on ne
+// traduit ici que ce qui part réellement dans une notif push, pas toute
+// l'appli.
+const NOTIF_I18N = {
+  fr: {
+    singleTitle: "Nouveau poste disponible",
+    singleBody: (title, typeContrat, location) => `${title} (${typeContrat || "Contrat"}) à ${location || "Non spécifié"}`,
+    multiTitle: (n) => `${n} nouveaux postes disponibles`,
+    andMore: (n) => ` et ${n} autre(s)`
+  },
+  en: {
+    singleTitle: "New job available",
+    singleBody: (title, typeContrat, location) => `${title} (${typeContrat || "Contract"}) in ${location || "Unspecified"}`,
+    multiTitle: (n) => `${n} new jobs available`,
+    andMore: (n) => ` and ${n} more`
+  },
+  it: {
+    singleTitle: "Nuovo lavoro disponibile",
+    singleBody: (title, typeContrat, location) => `${title} (${typeContrat || "Contratto"}) a ${location || "Non specificato"}`,
+    multiTitle: (n) => `${n} nuovi lavori disponibili`,
+    andMore: (n) => ` e altri ${n}`
+  },
+  de: {
+    singleTitle: "Neuer Job verfügbar",
+    singleBody: (title, typeContrat, location) => `${title} (${typeContrat || "Vertrag"}) in ${location || "Nicht angegeben"}`,
+    multiTitle: (n) => `${n} neue Jobs verfügbar`,
+    andMore: (n) => ` und ${n} weitere`
+  },
+  zh: {
+    singleTitle: "有新工作机会",
+    singleBody: (title, typeContrat, location) => `${title}（${typeContrat || "合同"}）- ${location || "地点未指定"}`,
+    multiTitle: (n) => `${n} 个新工作机会`,
+    andMore: (n) => ` 及其他 ${n} 个`
+  }
+};
+
+function notifStrings(lang) {
+  return NOTIF_I18N[lang] || NOTIF_I18N.fr;
+}
+
 // Récupère une URL de photo utilisable pour la vignette de la notif, en
 // tenant compte des deux formats existants dans les jobs (images[] le
 // format actuel, image la clé historique pour les anciens jobs).
@@ -109,13 +150,14 @@ function firstJobImage(job) {
   return null;
 }
 
-function buildNotificationData(jobsForUid) {
+function buildNotificationData(jobsForUid, lang) {
+  const s = notifStrings(lang);
   if (jobsForUid.length === 1) {
     const { jobId, job } = jobsForUid[0];
     const image = firstJobImage(job);
     const data = {
-      title: "Nouveau poste disponible",
-      body: `${job.title} (${job.typeContrat || "Contrat"}) à ${job.location || "Non spécifié"}`,
+      title: s.singleTitle,
+      body: s.singleBody(job.title, job.typeContrat, job.location),
       jobId: String(jobId),
       category: String(job.icon || "General"), // "icon" = vraie clé de catégorie côté client, voir correctif ci-dessus
       location: String(job.location || "Global"),
@@ -128,13 +170,26 @@ function buildNotificationData(jobsForUid) {
   const extra = jobsForUid.length - titles.length;
   const groupImage = firstJobImage(jobsForUid[0].job); // photo du job le plus récent du lot, à défaut d'un visuel "collage"
   const data = {
-    title: `${jobsForUid.length} nouveaux postes disponibles`,
-    body: titles.join(" • ") + (extra > 0 ? ` et ${extra} autre(s)` : ""),
+    title: s.multiTitle(jobsForUid.length),
+    body: titles.join(" • ") + (extra > 0 ? s.andMore(extra) : ""),
     jobId: String(jobsForUid[0].jobId), // pour le clic : ouvre au moins la 1ère annonce
     multiCount: String(jobsForUid.length)
   };
   if (groupImage) data.image = String(groupImage);
   return data;
+}
+
+async function getLangMap(uids) {
+  const map = new Map();
+  await Promise.all(uids.map(async (uid) => {
+    try {
+      const snap = await db.ref('profiles/' + uid + '/lang').once('value');
+      map.set(uid, snap.val() || 'fr');
+    } catch (e) {
+      map.set(uid, 'fr'); // en cas d'échec de lecture, on retombe sur le français plutôt que de bloquer l'envoi
+    }
+  }));
+  return map;
 }
 
 async function sendNotifications() {
@@ -218,12 +273,13 @@ async function sendNotifications() {
     const invalidUids = [];
     const notifiedUpdates = {};
     let pushCount = 0;
+    const langMap = await getLangMap([...pushByUid.keys()]); // langue de chaque destinataire, pour une notif dans SA langue
 
     for (const [uid, jobsForUid] of pushByUid) {
       const token = tokenByUid.get(uid);
       if (!token) continue; // token supprimé entre-temps
 
-      const data = buildNotificationData(jobsForUid);
+      const data = buildNotificationData(jobsForUid, langMap.get(uid));
 
       try {
         const response = await messaging.sendEachForMulticast({
