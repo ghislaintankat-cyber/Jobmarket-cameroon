@@ -34,13 +34,41 @@ const messaging = firebase.messaging();
 // automatiquement par le navigateur EN PLUS de cet appel manuel à
 // showNotification, ce qui produisait des notifications en double.
 messaging.onBackgroundMessage((payload) => {
-  const title = (payload.data && payload.data.title) || 'JobMarket Cameroon';
+  const data = payload.data || {};
+  const title = data.title || 'JobMarket Cameroon';
+
   const options = {
-    body: (payload.data && payload.data.body) || '',
+    body: data.body || '',
     icon: 'icon-192.png', // doit correspondre exactement à un fichier présent + référencé dans manifest.json
-    data: payload.data || {} // conservé pour le deep-link au clic (voir notificationclick ci-dessous)
+    badge: 'icon-192.png', // petite icône monochrome affichée dans la barre de notif Android
+    // Photo du job en aperçu si le serveur en fournit une (scripts/sendNotifications.js
+    // doit inclure data.image pour l'activer) — une notif avec image se remarque
+    // beaucoup plus dans le tiroir de notifications qu'un simple texte.
+    image: data.image || undefined,
+    // tag = jobId : si deux messages arrivent pour le même job (retry serveur),
+    // le second remplace le premier au lieu d'empiler un doublon. Des jobs
+    // différents gardent des tags différents et s'empilent normalement.
+    tag: data.jobId ? 'job-' + data.jobId : undefined,
+    vibrate: [200, 100, 200],
+    data,
+    // Boutons d'action directement dans la notification : gagne un clic et
+    // accélère la mise en contact, ce qui donne un service qui a l'air "au
+    // point" comparé à une simple notif texte.
+    actions: [
+      { action: 'view', title: '👀 Voir le job' },
+      { action: 'dismiss', title: 'Fermer' }
+    ]
   };
+
   self.registration.showNotification(title, options).catch(() => {});
+
+  // Met à jour le badge sur l'icône de l'app (Chrome/Edge desktop, Android) :
+  // valeur approximative puisque le SW ne connaît pas le nombre exact de
+  // notifs non vues côté client, mais ça donne un signal visuel utile même
+  // app fermée.
+  if ('setAppBadge' in self.navigator) {
+    self.navigator.setAppBadge().catch(() => {});
+  }
 });
 
 // Au clic sur la notification : direction l'annonce concernée. Si un onglet
@@ -50,6 +78,9 @@ messaging.onBackgroundMessage((payload) => {
 // interpréter au chargement.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+
+  // Clic sur le bouton "Fermer" : rien de plus à faire, pas besoin d'ouvrir l'app.
+  if (event.action === 'dismiss') return;
 
   const jobId = event.notification.data && event.notification.data.jobId;
   const targetUrl = self.registration.scope + (jobId ? '#job=' + jobId : ''); // ex: https://.../JobMarket Cameroon/#job=xyz
@@ -73,7 +104,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
