@@ -781,6 +781,25 @@ body{
 <!-- ===== TOAST ===== -->
 <div id="toast"></div>
 
+<!-- ===== ACCROCHE NOTIFICATIONS (pré-prompt avant le popup natif du navigateur) =====
+     But : ne JAMAIS déclencher Notification.requestPermission() à froid.
+     Un refus au popup natif du navigateur est quasi définitif (aucun moyen de
+     redemander depuis le site), donc on explique d'abord la valeur, et seul un
+     clic volontaire sur "Activer" déclenche le vrai popup natif. -->
+<div id="notifPrimer" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;max-width:420px;margin:0 auto;background:#13131A;border:1px solid rgba(255,215,0,0.25);border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:9000;">
+  <div style="display:flex;gap:12px;align-items:flex-start;">
+    <div style="width:42px;height:42px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);display:flex;align-items:center;justify-content:center;font-size:20px;">🔔</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff;margin-bottom:4px;" data-i18n="notifPrimerTitle">Ne ratez plus aucun job</div>
+      <div style="color:#8888A8;font-size:13px;line-height:1.4;" data-i18n="notifPrimerBody">Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button onclick="respondToNotifPrimer(false)" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:#8888A8;font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
+    <button onclick="respondToNotifPrimer(true)" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="notifPrimerEnable">Activer les alertes</button>
+  </div>
+</div>
+
 <!-- ===== MAP ===== -->
 <div id="map"></div>
 
@@ -1383,6 +1402,9 @@ const I18N = {
     createAccountBtn: "Creer mon compte", loginBtn: "Se connecter", forgotPassword: "Mot de passe oublié ?", orWord: "ou", continueGoogle: "Continuer avec Google",
     adminDashboard: "Dashboard Admin", secureChat: "Chat sécurisé", myListings: "Mes publications", myProProfile: "Mon Profil Pro",
     notifPrefsTitle: "Notifications", notifPrefsIntro: "Choisissez les catégories pour lesquelles vous voulez être notifié(e) des nouvelles offres. Décochez celles qui ne vous concernent pas.",
+    notifPrimerTitle: "Ne ratez plus aucun job", notifPrimerBody: "Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.",
+    notifPrimerLater: "Plus tard", notifPrimerEnable: "Activer les alertes",
+    notifBlockedTip: "Notifications bloquées. Activez-les dans les réglages de votre navigateur pour ne plus rater de job.",
     logout: "Déconnexion", artisanProfile: "Profil de l'artisan",
     descNeed: "Description du besoin :", editListing: "Modifier l'annonce", deleteListing: "Supprimer l'annonce",
     shareWhatsApp: "Partager sur WhatsApp", seeItinerary: "Voir l'itinéraire",
@@ -1437,6 +1459,9 @@ const I18N = {
     createAccountBtn: "Create my account", loginBtn: "Log in", forgotPassword: "Forgot password?", orWord: "or", continueGoogle: "Continue with Google",
     adminDashboard: "Admin Dashboard", secureChat: "Secure chat", myListings: "My listings", myProProfile: "My Pro Profile",
     notifPrefsTitle: "Notifications", notifPrefsIntro: "Choose which categories you want to be notified about for new listings. Uncheck the ones that don't concern you.",
+    notifPrimerTitle: "Never miss a job again", notifPrimerBody: "Get alerted the moment a new job in your categories is posted near you.",
+    notifPrimerLater: "Later", notifPrimerEnable: "Enable alerts",
+    notifBlockedTip: "Notifications are blocked. Enable them in your browser settings to stop missing new jobs.",
     logout: "Log out", artisanProfile: "Provider's profile",
     descNeed: "Job description:", editListing: "Edit listing", deleteListing: "Delete listing",
     shareWhatsApp: "Share on WhatsApp", seeItinerary: "See route",
@@ -1491,6 +1516,9 @@ const I18N = {
     createAccountBtn: "Crea il mio account", loginBtn: "Accedi", forgotPassword: "Password dimenticata?", orWord: "oppure", continueGoogle: "Continua con Google",
     adminDashboard: "Pannello Admin", secureChat: "Chat sicura", myListings: "I miei annunci", myProProfile: "Il mio profilo Pro",
     notifPrefsTitle: "Notifiche", notifPrefsIntro: "Scegli le categorie per cui vuoi ricevere notifiche di nuovi annunci. Deseleziona quelle che non ti interessano.",
+    notifPrimerTitle: "Non perdere più nessun lavoro", notifPrimerBody: "Ricevi un avviso non appena viene pubblicato un nuovo lavoro nelle tue categorie vicino a te.",
+    notifPrimerLater: "Più tardi", notifPrimerEnable: "Attiva gli avvisi",
+    notifBlockedTip: "Notifiche bloccate. Attivale nelle impostazioni del browser per non perdere nuovi lavori.",
     logout: "Disconnetti", artisanProfile: "Profilo del fornitore",
     descNeed: "Descrizione del lavoro:", editListing: "Modifica annuncio", deleteListing: "Elimina annuncio",
     shareWhatsApp: "Condividi su WhatsApp", seeItinerary: "Vedi itinerario",
@@ -1545,6 +1573,9 @@ const I18N = {
     createAccountBtn: "Konto erstellen", loginBtn: "Anmelden", forgotPassword: "Passwort vergessen?", orWord: "oder", continueGoogle: "Mit Google fortfahren",
     adminDashboard: "Admin-Bereich", secureChat: "Sicherer Chat", myListings: "Meine Anzeigen", myProProfile: "Mein Profi-Profil",
     notifPrefsTitle: "Benachrichtigungen", notifPrefsIntro: "Wählen Sie die Kategorien, für die Sie über neue Angebote benachrichtigt werden möchten. Deaktivieren Sie die, die Sie nicht betreffen.",
+    notifPrimerTitle: "Verpassen Sie keinen Job mehr", notifPrimerBody: "Werden Sie sofort benachrichtigt, wenn ein neuer Job in Ihren Kategorien in Ihrer Nähe veröffentlicht wird.",
+    notifPrimerLater: "Später", notifPrimerEnable: "Benachrichtigungen aktivieren",
+    notifBlockedTip: "Benachrichtigungen sind blockiert. Aktivieren Sie sie in den Browsereinstellungen, um keine neuen Jobs mehr zu verpassen.",
     logout: "Abmelden", artisanProfile: "Profil des Anbieters",
     descNeed: "Beschreibung des Auftrags:", editListing: "Anzeige bearbeiten", deleteListing: "Anzeige löschen",
     shareWhatsApp: "Auf WhatsApp teilen", seeItinerary: "Route anzeigen",
@@ -1599,6 +1630,9 @@ const I18N = {
     createAccountBtn: "创建我的账户", loginBtn: "登录", forgotPassword: "忘记密码?", orWord: "或", continueGoogle: "使用Google继续",
     adminDashboard: "管理员面板", secureChat: "安全聊天", myListings: "我的发布", myProProfile: "我的专业资料",
     notifPrefsTitle: "通知", notifPrefsIntro: "选择您希望收到新发布通知的类别。取消勾选与您无关的类别。",
+    notifPrimerTitle: "不再错过任何工作机会", notifPrimerBody: "您所在分类附近一有新工作发布，立即通知您。",
+    notifPrimerLater: "以后再说", notifPrimerEnable: "开启提醒",
+    notifBlockedTip: "通知已被屏蔽。请在浏览器设置中开启通知，以免错过新工作。",
     logout: "退出登录", artisanProfile: "服务商资料",
     descNeed: "需求描述:", editListing: "编辑发布", deleteListing: "删除发布",
     shareWhatsApp: "在WhatsApp上分享", seeItinerary: "查看路线",
@@ -1725,7 +1759,7 @@ auth.onAuthStateChanged(user => {
   currentUser = user;
   updateAccountUI(user);
   if (user && !user.isAnonymous) {
-    registerPushToken();
+    maybeShowNotifPrimer();
     checkPendingReviews(user.uid);
     syncEmailVerifiedBadge(user);
     setupPresence(user.uid);
@@ -3322,6 +3356,53 @@ if ('serviceWorker' in navigator) {
 // Messaging > Certificats Web Push). Obligatoire pour obtenir un jeton.
 const FCM_VAPID_KEY = 'BDjptctrpoeyowsCJT_qcpnUzy15FJm6lCcmq6rtNlCh9BpqS1MpQMSuQsvoMsIA_PIreqDR3PAS1ZxvsgbvRAg';
 
+// ===== ACCROCHE NOTIFICATIONS (avant le popup natif) =====
+// Règle d'or : Notification.requestPermission() n'est JAMAIS appelé sans
+// action volontaire de la personne. Un refus au popup natif est quasi
+// irréversible (le site ne peut plus jamais le redéclencher), donc on
+// maximise les chances d'un "Autoriser" en expliquant d'abord la valeur
+// via notre propre bannière, et on ne montre le popup natif que si la
+// personne clique elle-même sur "Activer les alertes".
+const NOTIF_PRIMER_SNOOZE_KEY = 'jobmarket_notif_primer_snooze';
+const NOTIF_PRIMER_SNOOZE_DAYS = 3;
+
+function maybeShowNotifPrimer() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+  // Déjà autorisé : pas besoin de bannière, on récupère juste le jeton en silence.
+  if (Notification.permission === 'granted') { registerPushToken(); return; }
+
+  // Déjà refusé au niveau du navigateur : redemander ne fera qu'agacer,
+  // le popup natif ne réapparaîtra plus de toute façon.
+  if (Notification.permission === 'denied') return;
+
+  // "Plus tard" récemment cliqué : on respecte le délai avant de redemander.
+  const snoozedAt = parseInt(localStorage.getItem(NOTIF_PRIMER_SNOOZE_KEY) || '0', 10);
+  const daysSince = (Date.now() - snoozedAt) / (1000 * 60 * 60 * 24);
+  if (snoozedAt && daysSince < NOTIF_PRIMER_SNOOZE_DAYS) return;
+
+  // Petit délai pour laisser la personne découvrir la carte d'abord plutôt
+  // que de lui sauter dessus dès l'arrivée : le contexte augmente le taux
+  // d'acceptation du popup natif qui suit.
+  setTimeout(() => {
+    const banner = document.getElementById('notifPrimer');
+    if (banner) banner.style.display = 'block';
+  }, 4000);
+}
+
+function respondToNotifPrimer(accepted) {
+  const banner = document.getElementById('notifPrimer');
+  if (banner) banner.style.display = 'none';
+
+  if (!accepted) {
+    localStorage.setItem(NOTIF_PRIMER_SNOOZE_KEY, Date.now().toString());
+    return;
+  }
+
+  localStorage.removeItem(NOTIF_PRIMER_SNOOZE_KEY);
+  registerPushToken();
+}
+
 function registerPushToken() {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
   if (!FCM_VAPID_KEY || FCM_VAPID_KEY === 'COLLE_TA_CLE_VAPID_ICI') return;
@@ -3443,12 +3524,24 @@ function timeAgo(timestamp) {
   return `il y a ${Math.floor(diffH / 24)} j`;
 }
 
+// Badge sur l'icône de l'app (barre des tâches / écran d'accueil PWA) —
+// support natif Chrome/Edge desktop + Android, ignoré silencieusement
+// ailleurs (Safari/iOS ne l'implémente pas encore).
+function updateAppBadge(count) {
+  try {
+    if (!('setAppBadge' in navigator)) return;
+    if (count > 0) navigator.setAppBadge(count).catch(() => {});
+    else navigator.clearAppBadge().catch(() => {});
+  } catch (e) { /* ignore silencieusement */ }
+}
+
 function refreshNotifPanel() {
   const lastSeen = getLastSeenNotifTime();
   const newJobs = allJobs.filter(j => j.timestamp > lastSeen).sort((a, b) => b.timestamp - a.timestamp);
 
   const dot = document.getElementById('notifDot');
   if (dot) dot.style.display = newJobs.length > 0 ? 'block' : 'none';
+  updateAppBadge(newJobs.length);
 
   const list = document.getElementById('notifList');
   if (!list) return;
@@ -3474,6 +3567,7 @@ function toggleNotifPanel() {
     refreshNotifPanel();
     // Marque comme vues : la prochaine ouverture ne montrera que les jobs postérieurs à maintenant
     localStorage.setItem(NOTIF_SEEN_KEY, Date.now().toString());
+    updateAppBadge(0);
     setTimeout(() => { const dot = document.getElementById('notifDot'); if (dot) dot.style.display = 'none'; }, 300);
   }
 }
