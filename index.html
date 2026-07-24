@@ -1692,6 +1692,9 @@ function setLanguage(lang) {
   localStorage.setItem('appLang', lang);
   localStorage.setItem('appLangChosen', '1');
   applyTranslations();
+  if (typeof currentUser !== 'undefined' && currentUser && !currentUser.isAnonymous && typeof syncLangToProfile === 'function') {
+    syncLangToProfile(currentUser.uid);
+  }
   const menu = document.getElementById('langMenu');
   if (menu) menu.style.display = 'none';
   const picker = document.getElementById('langPicker');
@@ -1760,6 +1763,7 @@ auth.onAuthStateChanged(user => {
   updateAccountUI(user);
   if (user && !user.isAnonymous) {
     maybeShowNotifPrimer();
+    syncLangToProfile(user.uid);
     checkPendingReviews(user.uid);
     syncEmailVerifiedBadge(user);
     setupPresence(user.uid);
@@ -1767,6 +1771,21 @@ auth.onAuthStateChanged(user => {
     teardownPresence();
   }
 });
+
+// Enregistre la langue actuelle de la personne dans son profil public, pour
+// que sendNotifications.js puisse envoyer les notifications push dans SA
+// langue plutôt qu'en français pour tout le monde. Écrit uniquement si la
+// valeur a changé, pour ne pas spammer la DB à chaque connexion.
+async function syncLangToProfile(uid) {
+  try {
+    const snap = await db.ref('profiles/' + uid + '/lang').once('value');
+    if (snap.val() !== currentLang) {
+      await db.ref('profiles/' + uid).update({ lang: currentLang });
+    }
+  } catch (e) {
+    console.warn('syncLangToProfile error', e);
+  }
+}
 
 // Badge automatique et gratuit : dès que Firebase confirme que l'email est
 // vérifié (lien cliqué, ou compte Google — toujours pré-vérifié), on
