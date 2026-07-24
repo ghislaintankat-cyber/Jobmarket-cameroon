@@ -40,6 +40,36 @@ async function getAllTokens() {
     .map(([uid, token]) => ({ uid, token }));
 }
 
+async function getProfilesMap() {
+  const snap = await db.ref("profiles").once("value");
+  return snap.val() || {};
+}
+
+// Même formule (haversine) que calcDist() côté client dans index.html —
+// gardez les deux synchronisées si l'une change.
+function distanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+const DEFAULT_MAX_DISTANCE_KM = 25;
+
+// true si rien n'indique qu'il faut exclure ce job pour cet utilisateur sur
+// la base de la distance. Volontairement permissif dans le doute (job sans
+// coordonnées, ou position de l'utilisateur inconnue) : on préfère notifier
+// en trop plutôt que rater un job faute de donnée GPS.
+function wantsDistance(uid, job, profilesMap, notifyPrefsMap) {
+  if (typeof job.lat !== "number" || typeof job.lng !== "number") return true;
+  const profile = profilesMap[uid];
+  if (!profile || typeof profile.lat !== "number" || typeof profile.lng !== "number") return true;
+  const prefs = notifyPrefsMap[uid] || {};
+  const maxDistanceKm = typeof prefs.maxDistanceKm === "number" ? prefs.maxDistanceKm : DEFAULT_MAX_DISTANCE_KM;
+  return distanceKm(profile.lat, profile.lng, job.lat, job.lng) <= maxDistanceKm;
+}
+
 async function getPresenceMap() {
   const snap = await db.ref("presence").once("value");
   return snap.val() || {};
@@ -179,19 +209,6 @@ function buildNotificationData(jobsForUid, lang) {
   return data;
 }
 
-async function getLangMap(uids) {
-  const map = new Map();
-  await Promise.all(uids.map(async (uid) => {
-    try {
-      const snap = await db.ref('profiles/' + uid + '/lang').once('value');
-      map.set(uid, snap.val() || 'fr');
-    } catch (e) {
-      map.set(uid, 'fr'); // en cas d'échec de lecture, on retombe sur le français plutôt que de bloquer l'envoi
-    }
-  }));
-  return map;
-}
-
 async function sendNotifications() {
   try {
     const jobsRef = db.ref("jobs");
@@ -213,6 +230,7 @@ async function sendNotifications() {
 
     const presenceMap = await getPresenceMap();
     const notifyPrefsMap = await getNotifyPrefs();
+    const profilesMap = await getProfilesMap();
     const now = Date.now();
 
     // ---- Phase 1 : réserver les jobs à traiter, répartir chaque
@@ -240,7 +258,9 @@ async function sendNotifications() {
       // que soient ses choix dans les préférences de notification.
       const category = (job.icon || "").toLowerCase();
       const pendingEntries = entries.filter(
-        (e) => !notifiedTo[e.uid] && wantsCategory(e.uid, category, notifyPrefsMap)
+        (e) => !notifiedTo[e.uid] &&
+          wantsCategory(e.uid, category, notifyPrefsMap) &&
+          wantsDistance(e.uid, job, profilesMap, notifyPrefsMap)
       );
       if (!pendingEntries.length) continue; // tout le monde a déjà été notifié, l'a vu en direct, ou n'est pas intéressé par cette catégorie
 
@@ -273,13 +293,12 @@ async function sendNotifications() {
     const invalidUids = [];
     const notifiedUpdates = {};
     let pushCount = 0;
-    const langMap = await getLangMap([...pushByUid.keys()]); // langue de chaque destinataire, pour une notif dans SA langue
-
     for (const [uid, jobsForUid] of pushByUid) {
       const token = tokenByUid.get(uid);
       if (!token) continue; // token supprimé entre-temps
 
-      const data = buildNotificationData(jobsForUid, langMap.get(uid));
+      const lang = (profilesMap[uid] && profilesMap[uid].lang) || 'fr';
+      const data = buildNotificationData(jobsForUid, lang);
 
       try {
         const response = await messaging.sendEachForMulticast({
