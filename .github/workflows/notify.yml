@@ -1,3 +1,4 @@
+
 // ===== Relais "notif instantanée" (Cloudflare Workers, gratuit, sans CB) =====
 //
 // Rôle : recevoir un signal "un job vient d'être publié" depuis index.html,
