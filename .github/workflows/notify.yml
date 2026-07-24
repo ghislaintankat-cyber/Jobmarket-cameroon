@@ -2,7 +2,15 @@ name: Notify Users of New Jobs
 
 on:
   schedule:
-    - cron: "*/10 * * * *" # toutes les 10 minutes
+    # 5 min au lieu de 10 : un job publié à 14h56 attend jusqu'à 5 min avant
+    # d'être notifié au lieu de 10 (et GitHub Actions ajoute déjà lui-même
+    # quelques minutes de délai en pratique aux heures de forte charge).
+    # NB : ce cron reste un compromis "polling", pas du vrai temps réel.
+    # Pour du push quasi instantané (job détecté en secondes, pas en minutes),
+    # il faudrait remplacer ce workflow par une Cloud Function Firebase
+    # déclenchée directement sur l'écriture "jobs/{id}" (onCreate) — voir
+    # https://firebase.google.com/docs/functions/database-events
+    - cron: "*/5 * * * *"
   workflow_dispatch: # déclenchement manuel possible
 
 concurrency:
