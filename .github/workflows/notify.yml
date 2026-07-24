@@ -1,40 +1,76 @@
-name: Notify Users of New Jobs
+// ===== Relais "notif instantanée" (Cloudflare Workers, gratuit, sans CB) =====
+//
+// Rôle : recevoir un signal "un job vient d'être publié" depuis index.html,
+// et déclencher IMMÉDIATEMENT le workflow GitHub Actions notify.yml (au lieu
+// d'attendre son prochain passage cron). notify.yml appelle ensuite
+// scripts/sendNotifications.js comme d'habitude — rien ne change côté envoi
+// des notifications, on gagne juste le délai d'attente du cron.
+//
+// Pourquoi passer par ici plutôt qu'appeler l'API GitHub directement depuis
+// index.html : ça exigerait d'exposer un token GitHub dans le code source
+// public de l'app, ce que n'importe qui pourrait alors utiliser pour
+// déclencher vos workflows à volonté. Ici, le token GitHub reste un secret
+// Cloudflare, jamais visible du navigateur — c'est la vraie protection.
+//
+// X-Trigger-Secret ci-dessous n'en est PAS une : il est lisible en clair
+// dans index.html (voir NOTIFY_TRIGGER_SECRET), donc n'importe qui peut le
+// copier. Il reste utile comme frein basique (empêche un scan random de
+// l'URL), mais la vraie protection contre l'abus, c'est la limite de
+// fréquence ci-dessous : même secret en main, personne ne peut faire partir
+// plus d'UN déclenchement GitHub toutes les MIN_INTERVAL_MS.
+const MIN_INTERVAL_MS = 20_000; // 20s : largement assez rapide comparé au cron de 15 min, mais borne l'abus et coalesce les publications rapprochées en un seul run.
 
-on:
-  schedule:
-    # 5 min au lieu de 10 : un job publié à 14h56 attend jusqu'à 5 min avant
-    # d'être notifié au lieu de 10 (et GitHub Actions ajoute déjà lui-même
-    # quelques minutes de délai en pratique aux heures de forte charge).
-    # NB : ce cron reste un compromis "polling", pas du vrai temps réel.
-    # Pour du push quasi instantané (job détecté en secondes, pas en minutes),
-    # il faudrait remplacer ce workflow par une Cloud Function Firebase
-    # déclenchée directement sur l'écriture "jobs/{id}" (onCreate) — voir
-    # https://firebase.google.com/docs/functions/database-events
-    - cron: "*/5 * * * *"
-  workflow_dispatch: # déclenchement manuel possible
+export default {
+  async fetch(request, env) {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
+    }
 
-concurrency:
-  group: notify-jobs
-  cancel-in-progress: false # on met en file d'attente plutôt que d'annuler un envoi en cours
+    const provided = request.headers.get('X-Trigger-Secret');
+    if (!provided || provided !== env.TRIGGER_SECRET) {
+      return new Response('Unauthorized', { status: 401 });
+    }
 
-jobs:
-  notify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    // Limite de fréquence globale via KV. Best-effort : si le KV est
+    // indisponible pour une raison quelconque, on continue sans limiter
+    // plutôt que de bloquer la fonctionnalité — le pire cas reste "un
+    // déclenchement GitHub en trop", jamais "notification perdue".
+    if (env.RATE_LIMIT_KV) {
+      try {
+        const last = await env.RATE_LIMIT_KV.get('last-dispatch');
+        const now = Date.now();
+        if (last && (now - Number(last)) < MIN_INTERVAL_MS) {
+          return new Response('Coalesced (rate-limited) — un déclenchement récent couvre déjà ce job', { status: 200 });
+        }
+        await env.RATE_LIMIT_KV.put('last-dispatch', String(now), { expirationTtl: 60 });
+      } catch (err) {
+        console.warn('Rate limit KV indisponible, on continue sans limiter', err);
+      }
+    }
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run notification script
-        run: node scripts/sendNotifications.js
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+    try {
+      const ghRes = await fetch(
+        `https://api.github.com/repos/${env.GH_OWNER}/${env.GH_REPO}/dispatches`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${env.GH_TOKEN}`,
+            'Accept': 'application/vnd.github+json',
+            'User-Agent': 'jobmarket-notify-trigger',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ event_type: 'new-job' })
+        }
+      );
+      if (!ghRes.ok) {
+        const text = await ghRes.text();
+        console.error('GitHub dispatch failed', ghRes.status, text);
+        return new Response('GitHub dispatch failed, cron de secours prendra le relais', { status: 502 });
+      }
+      return new Response('OK', { status: 200 });
+    } catch (err) {
+      console.error('Worker error', err);
+      return new Response('Erreur relais, cron de secours prendra le relais', { status: 500 });
+    }
+  }
+};
