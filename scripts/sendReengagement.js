@@ -102,6 +102,17 @@ function buildDigestData(count, lang) {
   };
 }
 
+// Alimente notifStats/{date}/sent (même compteur partagé que
+// scripts/sendNotifications.js), pour le dashboard admin. Non bloquant.
+async function bumpSentStat(count) {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    await db.ref(`notifStats/${today}/sent`).transaction((current) => (current || 0) + count);
+  } catch (e) {
+    console.warn("bumpSentStat error (non bloquant)", e);
+  }
+}
+
 async function sendReengagement() {
   try {
     const now = Date.now();
@@ -192,6 +203,7 @@ async function sendReengagement() {
     }
 
     if (Object.keys(updates).length) await db.ref().update(updates);
+    if (sentCount > 0) await bumpSentStat(sentCount);
 
     console.log(
       `✅ ${sentCount} digest(s) de relance envoyé(s). ` +
