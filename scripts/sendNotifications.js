@@ -1,386 +1,150 @@
+// ===== JobMarket Cameroon : notifier le propriétaire d'un job qu'on l'a contacté =====
+//
+// Rôle : dès qu'une entrée est ajoutée dans "job_contacts" (quelqu'un a
+// cliqué pour contacter le propriétaire d'un job via WhatsApp), prévenir
+// ce dernier par push. Contrairement à scripts/sendNotifications.js, il
+// n'y a ici qu'UN SEUL destinataire connu à l'avance (jobOwnerUid) — pas de
+// filtrage par catégorie/distance à faire, puisque ce n'est pas une
+// découverte de nouveau job mais une réponse directe à SA propre annonce.
+//
+// Déclenché instantanément via le même relais Cloudflare Worker que les
+// nouveaux jobs (voir worker/index.js, event_type "new-contact"), avec un
+// cron de secours plus espacé en filet de sécurité (voir contact-notify.yml).
+
 const admin = require("firebase-admin");
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  // Doit correspondre à databaseURL dans index.html / sw.js
   databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com"
 });
 
 const db = admin.database();
 const messaging = admin.messaging();
 
-// On ne traite que les jobs publiés dans cette fenêtre. Au-delà, on arrête
-// de "chercher" ce job pour de nouveaux destinataires (ex: quelqu'un qui
-// vient d'activer les notifications) — un job d'il y a une semaine n'a
-// plus d'intérêt à être poussé. Ça borne aussi le travail fait à chaque
-// run : on ne rescanne pas tout l'historique des jobs indéfiniment.
-const JOB_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
+// Comme pour les jobs (JOB_WINDOW_MS dans sendNotifications.js) : au-delà
+// de cette fenêtre, un contact non notifié n'est plus assez "frais" pour
+// qu'on s'en préoccupe à ce run (borne aussi le travail par exécution).
+const CONTACT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
 
-// Un utilisateur est considéré "actif dans l'app" si sa dernière présence
-// connue (écrite par index.html) dit "active" ET date de moins de ce
-// délai. Passé ce délai, on considère l'info potentiellement périmée
-// (onglet gelé, app tuée sans que onDisconnect ait eu le temps de se
-// déclencher, etc.) et on envoie quand même la notification par
-// prudence : mieux vaut une notification en trop qu'un job jamais vu.
-const PRESENCE_STALE_MS = 3 * 60 * 1000; // 3 min
-
-// Verrou par job : évite que deux exécutions qui se chevauchent (cron +
-// déclenchement manuel, par ex.) traitent le même job en même temps. Il
-// expire tout seul si une exécution plante avant de le libérer.
-const LOCK_TTL_MS = 4 * 60 * 1000; // 4 min (le workflow a un timeout de 5 min)
-
-// Alimente notifStats/{date}/sent, utilisé uniquement par le dashboard admin
-// pour calculer un taux d'ouverture approximatif (voir loadNotifOpenRate
-// dans index.html). Non bloquant : une erreur ici ne doit jamais empêcher
-// l'envoi réel des notifications, qui est le rôle principal du script.
-async function bumpSentStat(count) {
-  try {
-    const today = new Date().toISOString().slice(0, 10);
-    await db.ref(`notifStats/${today}/sent`).transaction((current) => (current || 0) + count);
-  } catch (e) {
-    console.warn("bumpSentStat error (non bloquant)", e);
-  }
-}
-
-async function getAllTokens() {
-  const snap = await db.ref("notificationTokens").once("value");
-  const data = snap.val() || {};
-  // { uid: token }  ->  [{ uid, token }, ...]
-  return Object.entries(data)
-    .filter(([, token]) => typeof token === "string" && token.length > 0)
-    .map(([uid, token]) => ({ uid, token }));
-}
-
-async function getProfilesMap() {
-  const snap = await db.ref("profiles").once("value");
-  return snap.val() || {};
-}
-
-// Même formule (haversine) que calcDist() côté client dans index.html —
-// gardez les deux synchronisées si l'une change.
-function distanceKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
-
-const DEFAULT_MAX_DISTANCE_KM = 25;
-
-// true si rien n'indique qu'il faut exclure ce job pour cet utilisateur sur
-// la base de la distance. Volontairement permissif dans le doute (job sans
-// coordonnées, ou position de l'utilisateur inconnue) : on préfère notifier
-// en trop plutôt que rater un job faute de donnée GPS.
-function wantsDistance(uid, job, profilesMap, notifyPrefsMap) {
-  if (typeof job.lat !== "number" || typeof job.lng !== "number") return true;
-  const profile = profilesMap[uid];
-  if (!profile || typeof profile.lat !== "number" || typeof profile.lng !== "number") return true;
-  const prefs = notifyPrefsMap[uid] || {};
-  const maxDistanceKm = typeof prefs.maxDistanceKm === "number" ? prefs.maxDistanceKm : DEFAULT_MAX_DISTANCE_KM;
-  return distanceKm(profile.lat, profile.lng, job.lat, job.lng) <= maxDistanceKm;
-}
-
-async function getPresenceMap() {
-  const snap = await db.ref("presence").once("value");
-  return snap.val() || {};
-}
-
-async function getNotifyPrefs() {
-  const snap = await db.ref("notifyPrefs").once("value");
-  return snap.val() || {};
-}
-
-// true si rien n'indique explicitement que cette catégorie est désactivée
-// pour cet utilisateur (voir setNotifCategoryPref côté client : seules les
-// exclusions sont stockées, absence de préférence = activé par défaut).
-function wantsCategory(uid, category, notifyPrefsMap) {
-  const prefs = notifyPrefsMap[uid];
-  if (!prefs) return true;
-  return prefs[category] !== false;
-}
-
-// true seulement si la personne est là, MAINTENANT, dans l'app.
-function isCurrentlyActive(uid, presenceMap) {
-  const p = presenceMap[uid];
-  if (!p || p.state !== "active") return false;
-  const lastChanged = typeof p.lastChanged === "number" ? p.lastChanged : 0;
-  return (Date.now() - lastChanged) < PRESENCE_STALE_MS;
-}
-
-async function removeInvalidTokens(uids) {
-  const updates = {};
-  uids.forEach((uid) => {
-    updates[`notificationTokens/${uid}`] = null;
-  });
-  if (Object.keys(updates).length) {
-    await db.ref().update(updates);
-  }
-}
-
-// Réservation atomique du job AVANT traitement : si une autre exécution
-// (deux runs qui se chevauchent) l'a déjà réclamé récemment, la
-// transaction échoue et on ne le prend pas.
-async function acquireLock(jobsRef, jobId) {
-  const lockRef = jobsRef.child(jobId).child("_lock");
-  const now = Date.now();
-  return lockRef.transaction((current) => {
-    if (typeof current === "number" && (now - current) < LOCK_TTL_MS) return; // verrouillé récemment -> annule
-    return now;
-  });
-}
-
-async function releaseLock(jobsRef, jobId) {
-  await jobsRef.child(jobId).child("_lock").remove().catch(() => {});
-}
-
-// Construit le contenu de la notification pour un utilisateur donné, en
-// fonction du nombre de jobs qu'il a en attente. Si le cron a raté
-// plusieurs jobs récents d'un coup (ou en a accumulé pendant un run
-// bloqué), on regroupe en UNE SEULE notification plutôt que d'en envoyer
-// une par job — sinon quelqu'un qui rouvre son téléphone après quelques
-// heures se prend une rafale de notifications d'un coup, ce qui pousse à
-// désactiver les notifications complètement.
-// Traductions des textes de notification. Miroir volontairement minimal des
-// langues gérées côté client (I18N dans index.html : fr/en/it/de/zh) — on ne
-// traduit ici que ce qui part réellement dans une notif push, pas toute
-// l'appli.
-const NOTIF_I18N = {
+const CONTACT_I18N = {
   fr: {
-    singleTitle: "Nouveau poste disponible",
-    singleBody: (title, typeContrat, location) => `${title} (${typeContrat || "Contrat"}) à ${location || "Non spécifié"}`,
-    multiTitle: (n) => `${n} nouveaux postes disponibles`,
-    andMore: (n) => ` et ${n} autre(s)`
+    title: "Quelqu'un s'intéresse à votre annonce",
+    body: (jobTitle) => `Une personne vient de vous contacter au sujet de : ${jobTitle}`
   },
   en: {
-    singleTitle: "New job available",
-    singleBody: (title, typeContrat, location) => `${title} (${typeContrat || "Contract"}) in ${location || "Unspecified"}`,
-    multiTitle: (n) => `${n} new jobs available`,
-    andMore: (n) => ` and ${n} more`
+    title: "Someone is interested in your listing",
+    body: (jobTitle) => `Someone just contacted you about: ${jobTitle}`
   },
   it: {
-    singleTitle: "Nuovo lavoro disponibile",
-    singleBody: (title, typeContrat, location) => `${title} (${typeContrat || "Contratto"}) a ${location || "Non specificato"}`,
-    multiTitle: (n) => `${n} nuovi lavori disponibili`,
-    andMore: (n) => ` e altri ${n}`
+    title: "Qualcuno è interessato al tuo annuncio",
+    body: (jobTitle) => `Qualcuno ti ha appena contattato per: ${jobTitle}`
   },
   de: {
-    singleTitle: "Neuer Job verfügbar",
-    singleBody: (title, typeContrat, location) => `${title} (${typeContrat || "Vertrag"}) in ${location || "Nicht angegeben"}`,
-    multiTitle: (n) => `${n} neue Jobs verfügbar`,
-    andMore: (n) => ` und ${n} weitere`
+    title: "Jemand interessiert sich für Ihr Angebot",
+    body: (jobTitle) => `Jemand hat Sie gerade kontaktiert bezüglich: ${jobTitle}`
   },
   zh: {
-    singleTitle: "有新工作机会",
-    singleBody: (title, typeContrat, location) => `${title}（${typeContrat || "合同"}）- ${location || "地点未指定"}`,
-    multiTitle: (n) => `${n} 个新工作机会`,
-    andMore: (n) => ` 及其他 ${n} 个`
+    title: "有人对您的招聘感兴趣",
+    body: (jobTitle) => `有人刚刚联系了您，关于：${jobTitle}`
   }
 };
 
-function notifStrings(lang) {
-  return NOTIF_I18N[lang] || NOTIF_I18N.fr;
-}
-
-// Récupère une URL de photo utilisable pour la vignette de la notif, en
-// tenant compte des deux formats existants dans les jobs (images[] le
-// format actuel, image la clé historique pour les anciens jobs).
-function firstJobImage(job) {
-  if (Array.isArray(job.images) && job.images[0]) return job.images[0];
-  if (job.image) return job.image;
-  return null;
-}
-
-function buildNotificationData(jobsForUid, lang) {
-  const s = notifStrings(lang);
-  if (jobsForUid.length === 1) {
-    const { jobId, job } = jobsForUid[0];
-    const image = firstJobImage(job);
-    const data = {
-      title: s.singleTitle,
-      body: s.singleBody(job.title, job.typeContrat, job.location),
-      jobId: String(jobId),
-      category: String(job.icon || "General"), // "icon" = vraie clé de catégorie côté client, voir correctif ci-dessus
-      location: String(job.location || "Global"),
-      salaire: String(job.salaire || "N/A")
-    };
-    if (image) data.image = String(image); // sw.js l'utilise pour la vignette de la notif
-    return data;
-  }
-  const titles = jobsForUid.slice(0, 3).map(({ job }) => job.title).filter(Boolean);
-  const extra = jobsForUid.length - titles.length;
-  const groupImage = firstJobImage(jobsForUid[0].job); // photo du job le plus récent du lot, à défaut d'un visuel "collage"
-  const data = {
-    title: s.multiTitle(jobsForUid.length),
-    body: titles.join(" • ") + (extra > 0 ? s.andMore(extra) : ""),
-    jobId: String(jobsForUid[0].jobId), // pour le clic : ouvre au moins la 1ère annonce
-    multiCount: String(jobsForUid.length)
+function buildContactNotifData(jobTitle, jobId, lang) {
+  const s = CONTACT_I18N[lang] || CONTACT_I18N.fr;
+  return {
+    title: s.title,
+    body: s.body(jobTitle || "votre annonce"),
+    jobId: jobId ? String(jobId) : "",
+    type: "job-contact"
   };
-  if (groupImage) data.image = String(groupImage);
-  return data;
 }
 
-async function sendNotifications() {
+async function sendContactNotifications() {
   try {
-    const jobsRef = db.ref("jobs");
-    const snapshot = await jobsRef.once("value");
-    const jobs = snapshot.val();
-
-    if (!jobs) {
-      console.log("Aucun job trouvé.");
-      return;
-    }
-
-    const entries = await getAllTokens();
-    const tokenByUid = new Map(entries.map((e) => [e.uid, e.token]));
-    console.log(`📱 ${entries.length} token(s) de notification enregistré(s).`);
-    if (!entries.length) {
-      console.log("Aucun token de notification enregistré, rien à envoyer.");
-      return;
-    }
-
-    const presenceMap = await getPresenceMap();
-    const notifyPrefsMap = await getNotifyPrefs();
-    const profilesMap = await getProfilesMap();
     const now = Date.now();
 
-    // ---- Phase 1 : réserver les jobs à traiter, répartir chaque
-    // destinataire en "push" (pas actif) ou "vu en direct" (actif dans
-    // l'app), regroupé PAR UTILISATEUR.
-    const claimedJobIds = [];
-    const pushByUid = new Map(); // uid -> [{ jobId, job }, ...]
-    const seenNowUpdates = {};
+    const [contactsSnap, tokensSnap, profilesSnap] = await Promise.all([
+      db.ref("job_contacts").once("value"),
+      db.ref("notificationTokens").once("value"),
+      db.ref("profiles").once("value")
+    ]);
 
-    for (const [jobId, job] of Object.entries(jobs)) {
-      const jobTimestamp = job.timestamp || 0;
-      if (now - jobTimestamp > JOB_WINDOW_MS) continue; // job trop ancien, on n'en parle plus
+    const contacts = contactsSnap.val() || {};
+    const tokensMap = tokensSnap.val() || {};
+    const profilesMap = profilesSnap.val() || {};
 
-      // notifiedTo suit, PAR UTILISATEUR, qui a déjà reçu ce job (push ou
-      // vu en direct). Un utilisateur qui vient d'activer les
-      // notifications recevra donc les jobs récents qu'il n'a pas encore
-      // vus, même si d'autres les ont déjà reçus.
-      const notifiedTo = job.notifiedTo || {};
-      // BUG CORRIGÉ : côté client (index.html), la catégorie du job est
-      // enregistrée dans le champ "icon" (ex: "btp", "electricite"), pas
-      // "category" — ce dernier n'existe pas dans les données. Avant ce
-      // correctif, "category" valait toujours "" ici, donc wantsCategory()
-      // ne trouvait jamais de préférence désactivée correspondante et
-      // laissait tout passer : tout le monde recevait tous les jobs, quels
-      // que soient ses choix dans les préférences de notification.
-      const category = (job.icon || "").toLowerCase();
-      const pendingEntries = entries.filter(
-        (e) => !notifiedTo[e.uid] &&
-          wantsCategory(e.uid, category, notifyPrefsMap) &&
-          wantsDistance(e.uid, job, profilesMap, notifyPrefsMap)
-      );
-      if (!pendingEntries.length) continue; // tout le monde a déjà été notifié, l'a vu en direct, ou n'est pas intéressé par cette catégorie
+    const pending = Object.entries(contacts).filter(([, c]) => {
+      if (!c || c.notifiedOwner) return false;
+      if (!c.jobOwnerUid || !c.timestamp) return false;
+      return (now - c.timestamp) <= CONTACT_WINDOW_MS;
+    });
 
-      const claim = await acquireLock(jobsRef, jobId);
-      if (!claim.committed) {
-        console.log(`⏭️ Job "${job.title}" déjà pris en charge par une autre exécution, ignoré pour ce run.`);
-        continue;
-      }
-      claimedJobIds.push(jobId);
-
-      pendingEntries.forEach((entry) => {
-        if (isCurrentlyActive(entry.uid, presenceMap)) {
-          seenNowUpdates[`jobs/${jobId}/notifiedTo/${entry.uid}`] = true;
-        } else {
-          if (!pushByUid.has(entry.uid)) pushByUid.set(entry.uid, []);
-          pushByUid.get(entry.uid).push({ jobId, job });
-        }
-      });
-    }
-
-    if (Object.keys(seenNowUpdates).length) await db.ref().update(seenNowUpdates);
-
-    if (!claimedJobIds.length) {
-      console.log("Rien de nouveau à notifier pour ce run.");
+    if (!pending.length) {
+      console.log("Aucun nouveau contact à notifier.");
       return;
     }
 
-    // ---- Phase 2 : un seul envoi push par utilisateur, même s'il a
-    // plusieurs jobs en attente (voir buildNotificationData ci-dessus).
-    const invalidUids = [];
-    const notifiedUpdates = {};
-    let pushCount = 0;
-    for (const [uid, jobsForUid] of pushByUid) {
-      const token = tokenByUid.get(uid);
-      if (!token) continue; // token supprimé entre-temps
+    const updates = {};
+    let sentCount = 0;
 
-      const lang = (profilesMap[uid] && profilesMap[uid].lang) || 'fr';
-      const data = buildNotificationData(jobsForUid, lang);
+    for (const [contactId, contact] of pending) {
+      const token = tokensMap[contact.jobOwnerUid];
+      if (!token) {
+        // Pas de token = propriétaire n'a pas les notifications activées :
+        // on marque quand même comme traité, sinon ce contact reste "en
+        // attente" indéfiniment et sera rescanné à chaque run pour rien.
+        updates[`job_contacts/${contactId}/notifiedOwner`] = true;
+        continue;
+      }
+
+      let jobTitle = "";
+      try {
+        const jobSnap = await db.ref(`jobs/${contact.jobId}/title`).once("value");
+        jobTitle = jobSnap.val() || "";
+      } catch (e) { /* job peut-être supprimé depuis : on notifie quand même, sans titre précis */ }
+
+      const lang = (profilesMap[contact.jobOwnerUid] && profilesMap[contact.jobOwnerUid].lang) || "fr";
+      const data = buildContactNotifData(jobTitle, contact.jobId, lang);
 
       try {
         const response = await messaging.sendEachForMulticast({
           tokens: [token],
           data,
-          // Urgency: high indique au service de push du navigateur de ne
-          // pas retarder la livraison (ex: économie de batterie sur
-          // Android/Chrome) — sans ça, une notif "temps réel" peut en
-          // pratique arriver plusieurs minutes en retard app fermée.
           webpush: { headers: { Urgency: "high" } }
         });
         const res = response.responses[0];
         if (res.success) {
-          pushCount++;
-          jobsForUid.forEach(({ jobId }) => { notifiedUpdates[`jobs/${jobId}/notifiedTo/${uid}`] = true; });
+          sentCount++;
+          updates[`job_contacts/${contactId}/notifiedOwner`] = true;
         } else {
           const code = res.error && res.error.code;
           if (
             code === "messaging/invalid-registration-token" ||
             code === "messaging/registration-token-not-registered"
           ) {
-            invalidUids.push(uid);
-            // Token mort : inutile de réessayer indéfiniment, on marque ces
-            // jobs comme "notifiés" pour ce uid pour ne pas les rescanner
-            // à chaque run tant que personne n'a réenregistré de token.
-            jobsForUid.forEach(({ jobId }) => { notifiedUpdates[`jobs/${jobId}/notifiedTo/${uid}`] = true; });
+            updates[`job_contacts/${contactId}/notifiedOwner`] = true; // token mort, inutile de retenter
+            updates[`notificationTokens/${contact.jobOwnerUid}`] = null;
           } else {
-            console.error(`❌ Erreur d'envoi (${code || "inconnue"}):`, res.error && res.error.message);
-            // Pas invalide, juste raté : ce uid sera retenté au run suivant.
+            console.error(`❌ Erreur d'envoi pour le contact ${contactId} (${code || "inconnue"}):`, res.error && res.error.message);
+            // Pas invalide, juste raté : ce contact sera retenté au run suivant.
           }
         }
       } catch (err) {
-        console.error(`❌ Erreur envoi pour ${jobsForUid.length} job(s), nouvelle tentative au prochain run:`, err);
+        console.error(`❌ Erreur envoi pour le contact ${contactId}, nouvelle tentative au prochain run:`, err);
       }
     }
 
-    try {
-      if (invalidUids.length) {
-        await removeInvalidTokens(invalidUids);
-        console.log(`🧹 ${invalidUids.length} token(s) invalide(s) supprimé(s).`);
-      }
-      if (Object.keys(notifiedUpdates).length) await db.ref().update(notifiedUpdates);
-      if (pushCount > 0) await bumpSentStat(pushCount);
-
-      console.log(
-        `✅ ${pushCount} notification(s) push envoyée(s) (${pushByUid.size} destinataire(s) ciblé(s)), ` +
-        `${Object.keys(seenNowUpdates).length} vu(s) en direct dans l'app, ${claimedJobIds.length} job(s) traité(s).`
-      );
-    } finally {
-      // Toujours libérer les verrous, même si l'écriture ci-dessus a échoué :
-      // sinon un job reste bloqué inutilement jusqu'à expiration du TTL (4
-      // min) au lieu d'être retenté dès le prochain run.
-      for (const jobId of claimedJobIds) await releaseLock(jobsRef, jobId);
-    }
+    if (Object.keys(updates).length) await db.ref().update(updates);
+    console.log(`✅ ${sentCount} notification(s) de contact envoyée(s) sur ${pending.length} en attente.`);
   } catch (err) {
     console.error("❌ Erreur globale:", err);
     process.exitCode = 1;
   }
 }
 
-// admin.database() garde une connexion websocket ouverte en permanence : sans
-// fermeture explicite, le processus Node ne se termine jamais tout seul (d'où
-// les runs GitHub Actions bloqués "In progress" pendant des heures). On ne
-// force PAS process.exit() immédiatement après : sur un flux stdout redirigé
-// (comme dans GitHub Actions), console.log() écrit de façon asynchrone, et un
-// exit() trop rapide peut couper la toute dernière ligne de log avant qu'elle
-// finisse de s'écrire. On laisse donc le processus se terminer naturellement
-// une fois la connexion Firebase fermée, avec un filet de sécurité différé.
-sendNotifications().finally(() => {
+sendContactNotifications().finally(() => {
   return admin.app().delete().catch(() => {});
 }).finally(() => {
   const safetyTimer = setTimeout(() => process.exit(process.exitCode || 0), 3000);
