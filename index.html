@@ -1410,6 +1410,7 @@ const I18N = {
     notifPrimerLater: "Plus tard", notifPrimerEnable: "Activer les alertes",
     notifBlockedTip: "Notifications bloquées. Activez-les dans les réglages de votre navigateur pour ne plus rater de job.",
     notifDistanceLabel: "Distance maximale", notifDistanceHint: "Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).",
+    notifGpsNudgeTitle: "Position non activée", notifGpsNudgeBody: "Activez votre position pour que le filtre de distance ci-dessous fonctionne vraiment.", notifGpsNudgeBtn: "Activer",
     logout: "Déconnexion", artisanProfile: "Profil de l'artisan",
     descNeed: "Description du besoin :", editListing: "Modifier l'annonce", deleteListing: "Supprimer l'annonce",
     shareWhatsApp: "Partager sur WhatsApp", seeItinerary: "Voir l'itinéraire",
@@ -1468,6 +1469,7 @@ const I18N = {
     notifPrimerLater: "Later", notifPrimerEnable: "Enable alerts",
     notifBlockedTip: "Notifications are blocked. Enable them in your browser settings to stop missing new jobs.",
     notifDistanceLabel: "Maximum distance", notifDistanceHint: "You'll only be notified about jobs within this radius of your location (requires location enabled).",
+    notifGpsNudgeTitle: "Location not enabled", notifGpsNudgeBody: "Turn on your location so the distance filter below actually works.", notifGpsNudgeBtn: "Enable",
     logout: "Log out", artisanProfile: "Provider's profile",
     descNeed: "Job description:", editListing: "Edit listing", deleteListing: "Delete listing",
     shareWhatsApp: "Share on WhatsApp", seeItinerary: "See route",
@@ -1526,6 +1528,7 @@ const I18N = {
     notifPrimerLater: "Più tardi", notifPrimerEnable: "Attiva gli avvisi",
     notifBlockedTip: "Notifiche bloccate. Attivale nelle impostazioni del browser per non perdere nuovi lavori.",
     notifDistanceLabel: "Distanza massima", notifDistanceHint: "Riceverai notifiche solo per i lavori entro questo raggio dalla tua posizione (richiede la geolocalizzazione attiva).",
+    notifGpsNudgeTitle: "Posizione non attivata", notifGpsNudgeBody: "Attiva la tua posizione perché il filtro di distanza qui sotto funzioni davvero.", notifGpsNudgeBtn: "Attiva",
     logout: "Disconnetti", artisanProfile: "Profilo del fornitore",
     descNeed: "Descrizione del lavoro:", editListing: "Modifica annuncio", deleteListing: "Elimina annuncio",
     shareWhatsApp: "Condividi su WhatsApp", seeItinerary: "Vedi itinerario",
@@ -1584,6 +1587,7 @@ const I18N = {
     notifPrimerLater: "Später", notifPrimerEnable: "Benachrichtigungen aktivieren",
     notifBlockedTip: "Benachrichtigungen sind blockiert. Aktivieren Sie sie in den Browsereinstellungen, um keine neuen Jobs mehr zu verpassen.",
     notifDistanceLabel: "Maximale Entfernung", notifDistanceHint: "Sie werden nur über Jobs in diesem Umkreis um Ihren Standort benachrichtigt (Standortfreigabe erforderlich).",
+    notifGpsNudgeTitle: "Standort nicht aktiviert", notifGpsNudgeBody: "Aktivieren Sie Ihren Standort, damit der Entfernungsfilter unten wirklich funktioniert.", notifGpsNudgeBtn: "Aktivieren",
     logout: "Abmelden", artisanProfile: "Profil des Anbieters",
     descNeed: "Beschreibung des Auftrags:", editListing: "Anzeige bearbeiten", deleteListing: "Anzeige löschen",
     shareWhatsApp: "Auf WhatsApp teilen", seeItinerary: "Route anzeigen",
@@ -1642,6 +1646,7 @@ const I18N = {
     notifPrimerLater: "以后再说", notifPrimerEnable: "开启提醒",
     notifBlockedTip: "通知已被屏蔽。请在浏览器设置中开启通知，以免错过新工作。",
     notifDistanceLabel: "最大距离", notifDistanceHint: "只有在此范围内的工作机会才会通知您（需要开启定位）。",
+    notifGpsNudgeTitle: "定位未开启", notifGpsNudgeBody: "开启定位后，下面的距离筛选才能真正生效。", notifGpsNudgeBtn: "开启",
     logout: "退出登录", artisanProfile: "服务商资料",
     descNeed: "需求描述:", editListing: "编辑发布", deleteListing: "删除发布",
     shareWhatsApp: "在WhatsApp上分享", seeItinerary: "查看路线",
@@ -2806,8 +2811,19 @@ async function openNotifPrefs() {
   }
 
   const currentMaxDist = typeof prefs.maxDistanceKm === 'number' ? prefs.maxDistanceKm : 25;
+  const hasLocation = !!(userCoords && typeof userCoords.lat === 'number');
 
-  list.innerHTML = NOTIF_CATEGORIES.map(cat => {
+  const gpsNudge = hasLocation ? '' : `
+    <div id="notifGpsNudge" style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:14px;padding:14px;margin-bottom:16px;display:flex;gap:12px;align-items:center;">
+      <span style="font-size:22px;flex-shrink:0;">📍</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:2px;" data-i18n="notifGpsNudgeTitle">Position non activée</div>
+        <div style="font-size:12px;color:#8888A8;" data-i18n="notifGpsNudgeBody">Activez votre position pour que le filtre de distance ci-dessous fonctionne vraiment.</div>
+      </div>
+      <button onclick="locateMe(); setTimeout(openNotifPrefs, 800);" style="flex-shrink:0;padding:8px 14px;background:var(--gold,#FFD700);border:none;border-radius:10px;color:#0A0A0F;font-size:12px;font-weight:700;cursor:pointer;" data-i18n="notifGpsNudgeBtn">Activer</button>
+    </div>`;
+
+  list.innerHTML = gpsNudge + NOTIF_CATEGORIES.map(cat => {
     const checked = prefs[cat.key] !== false; // pas de préférence enregistrée = activé
     return `<label style="display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--border,#222);cursor:pointer;">
       <span style="width:10px;height:10px;border-radius:50%;background:${cat.color};flex-shrink:0;"></span>
@@ -2826,6 +2842,7 @@ async function openNotifPrefs() {
         style="width:100%;accent-color:var(--gold,#FFD700);">
       <div style="color:#8888A8;font-size:12px;margin-top:6px;" data-i18n="notifDistanceHint">Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).</div>
     </div>`;
+  applyTranslations();
 }
 
 async function setNotifDistancePref(km) {
