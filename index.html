@@ -3560,10 +3560,18 @@ function setupPresence(uid) {
 
 function writePresenceState() {
   if (!presenceUid) return;
+  const isVisible = document.visibilityState === 'visible';
   db.ref('presence/' + presenceUid).set({
-    state: (document.visibilityState === 'visible') ? 'active' : 'inactive',
+    state: isVisible ? 'active' : 'inactive',
     lastChanged: firebase.database.ServerValue.TIMESTAMP
   });
+  // Trace distincte de "presence" (qui est éphémère/temps réel) : sert
+  // uniquement à scripts/sendReengagement.js pour savoir depuis combien de
+  // temps quelqu'un n'a pas eu l'app au premier plan, afin de lui proposer
+  // un résumé de rattrapage s'il devient inactif pendant plusieurs jours.
+  if (isVisible) {
+    db.ref('profiles/' + presenceUid).update({ lastActiveAt: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
+  }
 }
 
 function teardownPresence() {
