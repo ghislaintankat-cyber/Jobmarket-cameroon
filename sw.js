@@ -83,7 +83,7 @@ self.addEventListener('notificationclick', (event) => {
   if (event.action === 'dismiss') return;
 
   const jobId = event.notification.data && event.notification.data.jobId;
-  const targetUrl = self.registration.scope + (jobId ? '#job=' + jobId : ''); // ex: https://.../JobMarket Cameroon/#job=xyz
+  const targetUrl = self.registration.scope + (jobId ? '#job=' + jobId + '&src=push' : '#src=push'); // ex: https://.../JobMarket Cameroon/#job=xyz&src=push
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
@@ -104,7 +104,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
