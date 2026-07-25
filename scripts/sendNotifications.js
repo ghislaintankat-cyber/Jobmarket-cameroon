@@ -31,6 +31,19 @@ const PRESENCE_STALE_MS = 3 * 60 * 1000; // 3 min
 // expire tout seul si une exécution plante avant de le libérer.
 const LOCK_TTL_MS = 4 * 60 * 1000; // 4 min (le workflow a un timeout de 5 min)
 
+// Alimente notifStats/{date}/sent, utilisé uniquement par le dashboard admin
+// pour calculer un taux d'ouverture approximatif (voir loadNotifOpenRate
+// dans index.html). Non bloquant : une erreur ici ne doit jamais empêcher
+// l'envoi réel des notifications, qui est le rôle principal du script.
+async function bumpSentStat(count) {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    await db.ref(`notifStats/${today}/sent`).transaction((current) => (current || 0) + count);
+  } catch (e) {
+    console.warn("bumpSentStat error (non bloquant)", e);
+  }
+}
+
 async function getAllTokens() {
   const snap = await db.ref("notificationTokens").once("value");
   const data = snap.val() || {};
@@ -341,6 +354,7 @@ async function sendNotifications() {
         console.log(`🧹 ${invalidUids.length} token(s) invalide(s) supprimé(s).`);
       }
       if (Object.keys(notifiedUpdates).length) await db.ref().update(notifiedUpdates);
+      if (pushCount > 0) await bumpSentStat(pushCount);
 
       console.log(
         `✅ ${pushCount} notification(s) push envoyée(s) (${pushByUid.size} destinataire(s) ciblé(s)), ` +
