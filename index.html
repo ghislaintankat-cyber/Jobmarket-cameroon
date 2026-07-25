@@ -1155,6 +1155,7 @@ body{
       <div class="admin-stat">
         <div class="admin-stat-val" id="adminNotifOpenRate">--</div>
         <div class="admin-stat-label" data-i18n="adminStatNotifOpenRate">Taux d'ouverture notifs (7j)</div>
+        <div id="adminNotifOpenRateBreakdown" style="font-size:11px;color:#8888A8;margin-top:4px;">--</div>
       </div>
     </div>
     <div class="section-title" data-i18n="adminVerificationsTitle">Vérifications en attente</div>
@@ -1738,11 +1739,12 @@ const APP_BASE_URL = 'https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/
 const NOTIFY_TRIGGER_URL = 'https://jobmarket-notify-trigger.ghislaintankat.workers.dev';
 const NOTIFY_TRIGGER_SECRET = 'a8f3k29dQmZp71xR9kLm'; // doit être IDENTIQUE au secret TRIGGER_SECRET du worker
 
-function triggerInstantNotify() {
+function triggerInstantNotify(eventType) {
   try {
     fetch(NOTIFY_TRIGGER_URL, {
       method: 'POST',
-      headers: { 'X-Trigger-Secret': NOTIFY_TRIGGER_SECRET }
+      headers: { 'X-Trigger-Secret': NOTIFY_TRIGGER_SECRET, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_type: eventType || 'new-job' })
     }).catch(() => {}); // silencieux : le cron de secours couvre déjà ce cas
   } catch (e) { /* idem */ }
 }
@@ -1759,6 +1761,7 @@ function getReferralLink(uid) {
 // (#ref=UID), pour l'associer au compte au moment de l'inscription.
 let deepLinkJobId = null;
 let deepLinkFromPush = false; // vient d'un clic sur notif (voir sw.js, src=push) vs un lien WhatsApp partagé
+let deepLinkVariant = null; // variante A/B (ou "digest") de la notif cliquée, pour le suivi du taux d'ouverture
 (function captureIncomingLinks() {
   try {
     const hash = window.location.hash || '';
@@ -1767,6 +1770,8 @@ let deepLinkFromPush = false; // vient d'un clic sur notif (voir sw.js, src=push
     const jobMatch = hash.match(/job=([a-zA-Z0-9_-]+)/);
     if (jobMatch && jobMatch[1]) deepLinkJobId = jobMatch[1];
     if (/[#?&]src=push/.test(hash)) deepLinkFromPush = true;
+    const variantMatch = hash.match(/variant=([a-zA-Z0-9_-]+)/);
+    if (variantMatch && variantMatch[1]) deepLinkVariant = decodeURIComponent(variantMatch[1]);
   } catch(e) { /* ignore */ }
 })();
 
@@ -1801,7 +1806,7 @@ auth.onAuthStateChanged(user => {
     checkPendingReviews(user.uid);
     syncEmailVerifiedBadge(user);
     setupPresence(user.uid);
-    if (deepLinkFromPush && !deepLinkJobId) { logNotificationOpened(); deepLinkFromPush = false; } // clic sur une notif sans job précis (ex: résumé de relance)
+    if (deepLinkFromPush && !deepLinkJobId) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; } // clic sur une notif sans job précis (ex: résumé de relance)
   } else {
     teardownPresence();
   }
@@ -2388,7 +2393,7 @@ function syncJobs() {
       if (deepLinkJobId && jobsById[deepLinkJobId]) {
         const idToOpen = deepLinkJobId;
         deepLinkJobId = null;
-        if (deepLinkFromPush) { logNotificationOpened(); deepLinkFromPush = false; }
+        if (deepLinkFromPush) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; }
         setTimeout(() => openJobPreview(idToOpen), 300);
       }
       document.getElementById('jobCountBadge').textContent = allJobs.length;
@@ -2632,6 +2637,7 @@ async function loadNotifOpenRate() {
   if (!el) return;
   try {
     let totalSent = 0, totalOpened = 0;
+    const variantTotals = {}; // { A: {sent, opened}, B: {...}, digest: {...} }
     const days = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
@@ -2640,9 +2646,27 @@ async function loadNotifOpenRate() {
     const snaps = await Promise.all(days.map(d => db.ref('notifStats/' + d).once('value')));
     snaps.forEach(snap => {
       const v = snap.val();
-      if (v) { totalSent += v.sent || 0; totalOpened += v.opened || 0; }
+      if (!v) return;
+      Object.entries(v).forEach(([variant, stats]) => {
+        const sent = (stats && stats.sent) || 0;
+        const opened = (stats && stats.opened) || 0;
+        totalSent += sent; totalOpened += opened;
+        if (!variantTotals[variant]) variantTotals[variant] = { sent: 0, opened: 0 };
+        variantTotals[variant].sent += sent;
+        variantTotals[variant].opened += opened;
+      });
     });
     el.textContent = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) + '%' : '--';
+
+    const breakdownEl = document.getElementById('adminNotifOpenRateBreakdown');
+    if (breakdownEl) {
+      const parts = ['A', 'B'].map(v => {
+        const s = variantTotals[v];
+        if (!s || s.sent === 0) return `${v}: --`;
+        return `${v}: ${Math.round((s.opened / s.sent) * 100)}% (${s.sent})`;
+      });
+      breakdownEl.textContent = parts.join(' · ');
+    }
   } catch (e) {
     console.warn('loadNotifOpenRate error', e);
     el.textContent = '--';
@@ -3485,9 +3509,10 @@ if ('serviceWorker' in navigator) {
   // sw.js nous poste le jobId concerné (voir notificationclick dans sw.js)
   // plutôt que de recharger toute la page pour ça.
   navigator.serviceWorker.addEventListener('message', (event) => {
-    const jobId = event.data && event.data.type === 'open-job' && event.data.jobId;
-    if (!jobId) return;
-    logNotificationOpened(); // ce message ne peut venir que d'un clic sur une notif (voir sw.js), donc toujours un "open" réel
+    if (!event.data || event.data.type !== 'open-job') return;
+    const jobId = event.data.jobId;
+    logNotificationOpened(event.data.variant); // ce message ne peut venir que d'un clic sur une notif (voir sw.js), donc toujours un "open" réel
+    if (!jobId) return; // ex: résumé de relance, rien de spécifique à ouvrir
     if (typeof jobsById !== 'undefined' && jobsById[jobId]) {
       openJobPreview(jobId);
     } else {
@@ -3496,16 +3521,16 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Compteur d'ouvertures suite à une notification (agrégé par jour, pas lié
-// à une notif précise) — sert uniquement à calculer un taux d'ouverture
-// approximatif dans le dashboard admin. Transaction plutôt qu'un simple
-// set() pour éviter que deux ouvertures simultanées s'écrasent l'une
-// l'autre.
-function logNotificationOpened() {
+// Compteur d'ouvertures suite à une notification, par variante A/B (ou
+// "digest" pour la relance des inactifs) — sert au dashboard admin pour
+// comparer le taux d'ouverture des formulations testées. Transaction plutôt
+// qu'un simple set() pour éviter que deux ouvertures simultanées s'écrasent.
+function logNotificationOpened(variant) {
   if (!currentUser) return;
+  const key = variant || 'unknown';
   try {
     const today = new Date().toISOString().slice(0, 10);
-    db.ref('notifStats/' + today + '/opened').transaction((current) => (current || 0) + 1);
+    db.ref('notifStats/' + today + '/' + key + '/opened').transaction((current) => (current || 0) + 1);
   } catch (e) { /* stat non critique, on ignore silencieusement */ }
 }
 
@@ -4642,9 +4667,11 @@ async function contactViaWhatsAppFromPreview() {
             jobOwnerUid: job.user,
             contactUid: user.uid,
             timestamp: Date.now(),
-            reviewed: false // passera à true quand un avis aura été laissé ou ignoré
+            reviewed: false, // passera à true quand un avis aura été laissé ou ignoré
+            notifiedOwner: false // passera à true une fois le propriétaire notifié (voir scripts/sendContactNotifications.js)
         };
         await db.ref('job_contacts').push(contactData);
+        triggerInstantNotify('new-contact'); // prévient le propriétaire du job instantanément, sans attendre le cron
 
         const proTitle = profile.jobTitle || 'Non spécifié';
         const proSkills = profile.skills || 'Non spécifiés';
@@ -4734,9 +4761,11 @@ window.popupWhatsAppClick = async function(jobId) {
             jobOwnerUid: job.user,
             contactUid: user.uid,
             timestamp: Date.now(),
-            reviewed: false // passera à true quand un avis aura été laissé ou ignoré
+            reviewed: false, // passera à true quand un avis aura été laissé ou ignoré
+            notifiedOwner: false // passera à true une fois le propriétaire notifié (voir scripts/sendContactNotifications.js)
         };
         await db.ref('job_contacts').push(contactData);
+        triggerInstantNotify('new-contact'); // prévient le propriétaire du job instantanément, sans attendre le cron
 
         const proTitle = profile.jobTitle || 'Non spécifié';
         const proSkills = profile.skills || 'Non spécifiées';
