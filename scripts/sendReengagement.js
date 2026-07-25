@@ -142,11 +142,19 @@ async function sendReengagement() {
     let skippedActive = 0;
     let skippedCooldown = 0;
     let skippedNoMatch = 0;
+    let skippedUnknownActivity = 0;
 
     for (const { uid, token } of entries) {
       const profile = profilesMap[uid] || {};
 
-      const lastActiveAt = typeof profile.lastActiveAt === "number" ? profile.lastActiveAt : 0;
+      // Champ récent : les comptes qui n'ont pas encore rouvert l'app depuis
+      // le déploiement de cette fonctionnalité n'ont pas encore de valeur.
+      // On ne présume JAMAIS qu'une absence de donnée = inactivité — sinon
+      // tout le monde se fait traiter comme "inactif depuis toujours" au
+      // premier passage, ce qui a effectivement causé un envoi à tort à
+      // tous les utilisateurs.
+      if (typeof profile.lastActiveAt !== "number") { skippedUnknownActivity++; continue; }
+      const lastActiveAt = profile.lastActiveAt;
       if ((now - lastActiveAt) < INACTIVE_THRESHOLD_MS) { skippedActive++; continue; } // suit déjà l'app normalement
 
       const lastReengagedAt = reengageMap[uid] || 0;
@@ -187,7 +195,7 @@ async function sendReengagement() {
 
     console.log(
       `✅ ${sentCount} digest(s) de relance envoyé(s). ` +
-      `(${skippedActive} déjà actif(s), ${skippedCooldown} en cooldown, ${skippedNoMatch} sans job pertinent)`
+      `(${skippedActive} déjà actif(s), ${skippedCooldown} en cooldown, ${skippedNoMatch} sans job pertinent, ${skippedUnknownActivity} sans donnée d'activité)`
     );
   } catch (err) {
     console.error("❌ Erreur globale:", err);
