@@ -1,0 +1,35 @@
+name: Re-engage Inactive Users
+
+on:
+  schedule:
+    # Une fois par jour, à un horaire fixe (9h UTC ≈ 10h à Yaoundé, WAT = UTC+1).
+    # Pas besoin d'être plus fréquent : le cooldown de 4 jours dans le script
+    # empêche de toute façon de relancer trop souvent la même personne.
+    - cron: "0 9 * * *"
+  workflow_dispatch: # déclenchement manuel possible, utile pour tester
+
+concurrency:
+  group: reengage-users
+  cancel-in-progress: false
+
+jobs:
+  reengage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run re-engagement script
+        run: node scripts/sendReengagement.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
