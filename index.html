@@ -1152,6 +1152,10 @@ body{
         <div class="admin-stat-val">CM</div>
         <div class="admin-stat-label" data-i18n="adminStatCountry">Pays actif</div>
       </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminNotifOpenRate">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatNotifOpenRate">Taux d'ouverture notifs (7j)</div>
+      </div>
     </div>
     <div class="section-title" data-i18n="adminVerificationsTitle">Vérifications en attente</div>
     <div id="adminVerificationsList"></div>
@@ -1429,7 +1433,7 @@ const I18N = {
     chatSafetyNotice: "Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d'identité dans le chat.",
     chatInputPlaceholder: "Votre message...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Jobs total", adminStatUsers: "Utilisateurs",
-    adminStatToday: "Publiés aujourd'hui", adminStatCountry: "Pays actif",
+    adminStatToday: "Publiés aujourd'hui", adminStatCountry: "Pays actif", adminStatNotifOpenRate: "Taux d'ouverture notifs (7j)",
     adminVerificationsTitle: "Vérifications en attente", adminAllJobsTitle: "Tous les jobs",
     adminLoading: "Chargement...", adminNoPending: "Aucune demande en attente.",
     adminNoName: "Sans nom", adminNoJobTitle: "Métier non renseigné",
@@ -1487,7 +1491,7 @@ const I18N = {
     chatSafetyNotice: "No AI key, no message sent to an external model. Never share a password, SMS code, bank card or ID document in the chat.",
     chatInputPlaceholder: "Your message...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Total jobs", adminStatUsers: "Users",
-    adminStatToday: "Posted today", adminStatCountry: "Active country",
+    adminStatToday: "Posted today", adminStatCountry: "Active country", adminStatNotifOpenRate: "Notif open rate (7d)",
     adminVerificationsTitle: "Pending verifications", adminAllJobsTitle: "All jobs",
     adminLoading: "Loading...", adminNoPending: "No pending requests.",
     adminNoName: "No name", adminNoJobTitle: "Profession not specified",
@@ -1545,7 +1549,7 @@ const I18N = {
     chatSafetyNotice: "Nessuna chiave IA, nessun messaggio inviato a un modello esterno. Non condividere mai password, codici SMS, carte bancarie o documenti d'identità in chat.",
     chatInputPlaceholder: "Il tuo messaggio...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Lavori totali", adminStatUsers: "Utenti",
-    adminStatToday: "Pubblicati oggi", adminStatCountry: "Paese attivo",
+    adminStatToday: "Pubblicati oggi", adminStatCountry: "Paese attivo", adminStatNotifOpenRate: "Tasso apertura notifiche (7g)",
     adminVerificationsTitle: "Verifiche in attesa", adminAllJobsTitle: "Tutti i lavori",
     adminLoading: "Caricamento...", adminNoPending: "Nessuna richiesta in attesa.",
     adminNoName: "Senza nome", adminNoJobTitle: "Mestiere non specificato",
@@ -1603,7 +1607,7 @@ const I18N = {
     chatSafetyNotice: "Kein KI-Schlüssel, keine Nachricht wird an ein externes Modell gesendet. Teilen Sie im Chat niemals Passwörter, SMS-Codes, Bankkarten oder Ausweisdokumente.",
     chatInputPlaceholder: "Ihre Nachricht...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Jobs gesamt", adminStatUsers: "Benutzer",
-    adminStatToday: "Heute veröffentlicht", adminStatCountry: "Aktives Land",
+    adminStatToday: "Heute veröffentlicht", adminStatCountry: "Aktives Land", adminStatNotifOpenRate: "Öffnungsrate Benachrichtigungen (7T)",
     adminVerificationsTitle: "Ausstehende Verifizierungen", adminAllJobsTitle: "Alle Jobs",
     adminLoading: "Wird geladen...", adminNoPending: "Keine ausstehenden Anfragen.",
     adminNoName: "Ohne Namen", adminNoJobTitle: "Beruf nicht angegeben",
@@ -1661,7 +1665,7 @@ const I18N = {
     chatSafetyNotice: "没有AI密钥,不会向外部模型发送任何消息。切勿在聊天中分享密码、短信验证码、银行卡或身份证件。",
     chatInputPlaceholder: "您的消息...",
     adminBadge: "管理员", adminStatJobsTotal: "工作总数", adminStatUsers: "用户",
-    adminStatToday: "今日发布", adminStatCountry: "活跃国家",
+    adminStatToday: "今日发布", adminStatCountry: "活跃国家", adminStatNotifOpenRate: "通知打开率（7天）",
     adminVerificationsTitle: "待处理的验证", adminAllJobsTitle: "所有工作",
     adminLoading: "加载中...", adminNoPending: "没有待处理的申请。",
     adminNoName: "无名称", adminNoJobTitle: "职业未填写",
@@ -1749,6 +1753,7 @@ function getReferralLink(uid) {
 // Mémorise un éventuel code de parrainage présent dans le lien d'arrivée
 // (#ref=UID), pour l'associer au compte au moment de l'inscription.
 let deepLinkJobId = null;
+let deepLinkFromPush = false; // vient d'un clic sur notif (voir sw.js, src=push) vs un lien WhatsApp partagé
 (function captureIncomingLinks() {
   try {
     const hash = window.location.hash || '';
@@ -1756,6 +1761,7 @@ let deepLinkJobId = null;
     if (refMatch && refMatch[1]) localStorage.setItem('pendingReferralCode', refMatch[1]);
     const jobMatch = hash.match(/job=([a-zA-Z0-9_-]+)/);
     if (jobMatch && jobMatch[1]) deepLinkJobId = jobMatch[1];
+    if (/[#?&]src=push/.test(hash)) deepLinkFromPush = true;
   } catch(e) { /* ignore */ }
 })();
 
@@ -1790,6 +1796,7 @@ auth.onAuthStateChanged(user => {
     checkPendingReviews(user.uid);
     syncEmailVerifiedBadge(user);
     setupPresence(user.uid);
+    if (deepLinkFromPush && !deepLinkJobId) { logNotificationOpened(); deepLinkFromPush = false; } // clic sur une notif sans job précis (ex: résumé de relance)
   } else {
     teardownPresence();
   }
@@ -2376,6 +2383,7 @@ function syncJobs() {
       if (deepLinkJobId && jobsById[deepLinkJobId]) {
         const idToOpen = deepLinkJobId;
         deepLinkJobId = null;
+        if (deepLinkFromPush) { logNotificationOpened(); deepLinkFromPush = false; }
         setTimeout(() => openJobPreview(idToOpen), 300);
       }
       document.getElementById('jobCountBadge').textContent = allJobs.length;
@@ -2605,6 +2613,35 @@ function openAdminPanel() {
   openOverlay('adminPanel');
   loadAdminJobs();
   loadPendingVerifications();
+  loadNotifOpenRate();
+}
+
+// Agrège notifStats/{date}/{sent,opened} sur les 7 derniers jours pour
+// donner une idée grossière (pas exacte à la notif près, mais utile en
+// tendance) de l'engagement. "sent" est écrit par les scripts serveur
+// (sendNotifications.js, sendReengagement.js), "opened" par le client
+// quand quelqu'un arrive dans l'app via une notification (voir sw.js +
+// le message 'open-job' plus bas).
+async function loadNotifOpenRate() {
+  const el = document.getElementById('adminNotifOpenRate');
+  if (!el) return;
+  try {
+    let totalSent = 0, totalOpened = 0;
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    const snaps = await Promise.all(days.map(d => db.ref('notifStats/' + d).once('value')));
+    snaps.forEach(snap => {
+      const v = snap.val();
+      if (v) { totalSent += v.sent || 0; totalOpened += v.opened || 0; }
+    });
+    el.textContent = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) + '%' : '--';
+  } catch (e) {
+    console.warn('loadNotifOpenRate error', e);
+    el.textContent = '--';
+  }
 }
 
 async function loadPendingVerifications() {
@@ -3433,12 +3470,26 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
     const jobId = event.data && event.data.type === 'open-job' && event.data.jobId;
     if (!jobId) return;
+    logNotificationOpened(); // ce message ne peut venir que d'un clic sur une notif (voir sw.js), donc toujours un "open" réel
     if (typeof jobsById !== 'undefined' && jobsById[jobId]) {
       openJobPreview(jobId);
     } else {
       deepLinkJobId = jobId; // les jobs ne sont pas encore chargés, le mécanisme existant (ligne ~2251) prendra le relais
     }
   });
+}
+
+// Compteur d'ouvertures suite à une notification (agrégé par jour, pas lié
+// à une notif précise) — sert uniquement à calculer un taux d'ouverture
+// approximatif dans le dashboard admin. Transaction plutôt qu'un simple
+// set() pour éviter que deux ouvertures simultanées s'écrasent l'une
+// l'autre.
+function logNotificationOpened() {
+  if (!currentUser) return;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    db.ref('notifStats/' + today + '/opened').transaction((current) => (current || 0) + 1);
+  } catch (e) { /* stat non critique, on ignore silencieusement */ }
 }
 
 // ===== PUSH NOTIFICATIONS =====
