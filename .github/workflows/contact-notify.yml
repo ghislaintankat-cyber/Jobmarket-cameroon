@@ -1,0 +1,39 @@
+name: Notify Job Owner of New Contact
+
+on:
+  schedule:
+    # Filet de sécurité seulement : le déclenchement principal est instantané
+    # via le Cloudflare Worker (repository_dispatch, voir plus bas). Un
+    # contact est moins urgent qu'un nouveau job (la personne intéressée
+    # attend une réponse, mais un délai de quelques minutes en plus n'a pas
+    # le même impact qu'être devancé sur un job), d'où un intervalle large.
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [new-contact] # déclenché instantanément depuis index.html via worker/index.js
+
+concurrency:
+  group: notify-contacts
+  cancel-in-progress: false
+
+jobs:
+  notify-contact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run contact notification script
+        run: node scripts/sendContactNotifications.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
