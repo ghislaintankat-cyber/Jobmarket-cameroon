@@ -5014,8 +5014,10 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
         rating: selectedRating,
         comment,
         timestamp: Date.now(),
-        contactKey
+        contactKey,
+        notifiedOwner: false // passera à true une fois le prestataire notifié (voir scripts/sendReviewNotifications.js)
       });
+      triggerInstantNotify('new-review'); // prévient le prestataire noté instantanément, sans attendre le cron
 
       // Met à jour le compteur puis la moyenne, CHAMP PAR CHAMP : les règles de
       // sécurité Firebase n'autorisent quelqu'un d'autre que le propriétaire du
