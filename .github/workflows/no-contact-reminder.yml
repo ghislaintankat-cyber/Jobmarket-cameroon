@@ -1,0 +1,35 @@
+name: Remind No-Contact Jobs
+
+on:
+  schedule:
+    # Une fois par jour suffit largement : la fenêtre d'éligibilité est de
+    # 48h à 7 jours, et chaque job n'est de toute façon rappelé qu'UNE SEULE
+    # fois (voir job.noContactReminded dans le script).
+    - cron: "0 10 * * *"
+  workflow_dispatch: # déclenchement manuel possible, utile pour tester
+
+concurrency:
+  group: remind-no-contact-jobs
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run no-contact reminder script
+        run: node scripts/sendNoContactReminders.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
