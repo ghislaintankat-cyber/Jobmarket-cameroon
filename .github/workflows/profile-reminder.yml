@@ -1,0 +1,35 @@
+name: Remind Incomplete Profiles
+
+on:
+  schedule:
+    # Une fois par jour : chaque compte n'est rappelé qu'UNE SEULE fois
+    # (voir profiles/{uid}/profileReminderSent), pas besoin d'être plus
+    # fréquent.
+    - cron: "0 11 * * *"
+  workflow_dispatch: # déclenchement manuel possible, utile pour tester
+
+concurrency:
+  group: remind-profiles
+  cancel-in-progress: false
+
+jobs:
+  remind-profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run profile reminder script
+        run: node scripts/sendProfileReminders.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
