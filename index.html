@@ -3614,7 +3614,22 @@ function registerPushToken() {
       // comportement par défaut du SDK — c'est justement ce qui causait des
       // notifications en double avec sw.js quand les deux gestionnaires se
       // déclenchaient pour le même message.
-      messaging.onMessage(() => {});
+      // Les notifs de "nouveau job" n'ont pas de champ "type" et sont
+      // volontairement ignorées ici : la personne les voit déjà apparaître
+      // en direct dans le fil (section "NOTIFICATIONS DES JOBS EN TEMPS
+      // RÉEL" plus bas), et le serveur ne push de toute façon pas tant
+      // qu'elle est active (voir setupPresence). MAIS tous les autres
+      // types (contact, avis, rappels...) n'ont pas d'équivalent "déjà
+      // visible en direct" : sans ce toast, ils disparaissaient
+      // silencieusement dès que l'app était au premier plan — ce qui a été
+      // repéré en testant le rappel de profil.
+      messaging.onMessage((payload) => {
+        const data = payload.data || {};
+        if (data.type && data.title) {
+          showToast(data.title + (data.body ? ' — ' + data.body : ''), 'info');
+          if (typeof refreshNotifPanel === 'function') refreshNotifPanel();
+        }
+      });
     })
     .catch(err => console.warn('Service worker de notifications indisponible:', err.message));
 }
