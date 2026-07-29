@@ -8,6 +8,25 @@
 <meta name="description" content="JobMarket Cameroon - Trouvez des artisans et jobs proches de vous"/>
 <title>JobMarket Cameroon</title>
 
+<!-- Open Graph / Twitter Card : aperçu enrichi quand un lien de l'app est
+     partagé sur WhatsApp, Facebook, Twitter, etc. Reste STATIQUE (même
+     aperçu générique quelle que soit la page/le job partagé) car cette app
+     est une SPA sans rendu serveur — les robots qui génèrent ces aperçus
+     n'exécutent pas le JavaScript, ils ne lisent que le HTML initial. Un
+     aperçu dynamique par job (photo + titre du job précis) demanderait un
+     petit service séparé qui intercepte les robots avant qu'ils touchent
+     cette page. -->
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="JobMarket Cameroon"/>
+<meta property="og:title" content="JobMarket Cameroon"/>
+<meta property="og:description" content="Trouvez des artisans et jobs proches de vous au Cameroun : BTP, électricité, plomberie, ménage, jardinage, mécanique, informatique."/>
+<meta property="og:image" content="https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/icon-512.png"/>
+<meta property="og:url" content="https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="JobMarket Cameroon"/>
+<meta name="twitter:description" content="Trouvez des artisans et jobs proches de vous au Cameroun."/>
+<meta name="twitter:image" content="https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/icon-512.png"/>
+
 <!-- PWA Manifest inline -->
 <link rel="manifest" href="manifest.json">
 <!-- Fonts -->
@@ -1749,8 +1768,15 @@ function triggerInstantNotify(eventType) {
   } catch (e) { /* idem */ }
 }
 
+// URL du worker d'aperçu de partage (voir worker/share-preview.js) : sert
+// un aperçu Open Graph spécifique au job aux robots (WhatsApp, Facebook...),
+// et redirige les vraies personnes directement vers l'app. Nécessaire car
+// index.html est une SPA sans serveur : impossible de faire varier les
+// balises og:* par job directement dans la page.
+const SHARE_PREVIEW_URL = 'https://jobmarket-share.ghislaintankat.workers.dev';
+
 function getJobShareLink(jobId) {
-  return `${APP_BASE_URL}#job=${jobId}`;
+  return `${SHARE_PREVIEW_URL}/job/${jobId}`;
 }
 
 function getReferralLink(uid) {
