@@ -973,6 +973,10 @@ body{
       <label class="form-label" data-i18n="fieldDesc">Description</label>
       <textarea class="form-textarea" id="desc" data-i18n-placeholder="phDesc" placeholder="Decrivez le travail a effectuer..." required minlength="10" maxlength="3000"></textarea>
     </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="fieldRequirements">Exigences (optionnel)</label>
+      <textarea class="form-textarea" id="requirements" data-i18n-placeholder="phRequirements" placeholder="Ex: Ponctuel, experience minimum 2 ans, materiel personnel..." maxlength="800"></textarea>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="form-group">
         <label class="form-label" data-i18n="fieldPrice">Prix (XAF)</label>
@@ -1406,7 +1410,8 @@ const I18N = {
     catAll: "Tous", catBtp: "BTP", catElec: "Electricite", catPlomberie: "Plomberie",
     navMap: "Carte", navList: "Liste", navSearch: "Chercher", navAccount: "Compte",
     waMsgReferral: "Rejoins-moi sur JobMarket Cameroon pour trouver ou proposer des services près de chez toi : {link}",
-    waMsgShareJob: "🔊 *NOUVELLE OFFRE D'EMPLOI*\n\n*{title}*\n{desc}\n\n📍 Lieu : {location}\n💰 Rémunération : {price} XAF\n\n📞 Plus d'infos et contact ici : {link}",
+    waMsgShareJob: "🔊 *NOUVELLE OFFRE D'EMPLOI*\n\n*{title}*\n{desc}{requirements}\n\n📍 Lieu : {location}\n💰 Rémunération : {price} XAF\n\n📞 Plus d'infos et contact ici : {link}",
+    waMsgRequirementsLabel: "📋 *Exigences :*",
     waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?",
     catMenage: "Menage", catJardinage: "Jardinage", catMecanique: "Mecanique", catInfo: "Informatique",
     tipLocate: "Ma position", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Style carte",
@@ -1416,6 +1421,7 @@ const I18N = {
     optJardinage: "Jardinage", optMecanique: "Mecanique Auto", optInfo: "Informatique",
     fieldTitle: "Titre du job", phTitle: "Ex: Pose de carrelage salle de bain",
     fieldDesc: "Description", phDesc: "Decrivez le travail a effectuer...",
+    fieldRequirements: "Exigences (optionnel)", phRequirements: "Ex: Ponctuel, experience minimum 2 ans, materiel personnel...", requirementsLabel: "Exigences",
     fieldPrice: "Prix (XAF)", phPrice: "Ex: 15 000 XAF",
     fieldPhone: "Telephone", fieldLandmark: "Repere / Quartier", phLandmark: "Ex: Bastos, pres du rond-point...",
     fieldPhotos: "Photos (jusqu'a 5)", uploadTitle: "Ajouter des photos",
@@ -1465,7 +1471,8 @@ const I18N = {
     catAll: "All", catBtp: "Construction", catElec: "Electrical", catPlomberie: "Plumbing",
     navMap: "Map", navList: "List", navSearch: "Search", navAccount: "Account",
     waMsgReferral: "Join me on JobMarket Cameroon to find or offer services near you: {link}",
-    waMsgShareJob: "🔊 *NEW JOB OPENING*\n\n*{title}*\n{desc}\n\n📍 Location: {location}\n💰 Pay: {price} XAF\n\n📞 More info and contact here: {link}",
+    waMsgShareJob: "🔊 *NEW JOB OPENING*\n\n*{title}*\n{desc}{requirements}\n\n📍 Location: {location}\n💰 Pay: {price} XAF\n\n📞 More info and contact here: {link}",
+    waMsgRequirementsLabel: "📋 *Requirements:*",
     waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?",
     catMenage: "Cleaning", catJardinage: "Gardening", catMecanique: "Mechanics", catInfo: "IT",
     tipLocate: "My location", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Map style",
@@ -1475,6 +1482,7 @@ const I18N = {
     optJardinage: "Gardening", optMecanique: "Auto Mechanics", optInfo: "IT Services",
     fieldTitle: "Job title", phTitle: "E.g: Bathroom tiling",
     fieldDesc: "Description", phDesc: "Describe the work needed...",
+    fieldRequirements: "Requirements (optional)", phRequirements: "E.g: Punctual, min. 2 years experience, own tools...", requirementsLabel: "Requirements",
     fieldPrice: "Price (XAF)", phPrice: "E.g: 15,000 XAF",
     fieldPhone: "Phone", fieldLandmark: "Landmark / Neighborhood", phLandmark: "E.g: Bastos, near the roundabout...",
     fieldPhotos: "Photos (up to 5)", uploadTitle: "Add photos",
@@ -1524,7 +1532,8 @@ const I18N = {
     catAll: "Tutti", catBtp: "Edilizia", catElec: "Elettricità", catPlomberie: "Idraulica",
     navMap: "Mappa", navList: "Lista", navSearch: "Cerca", navAccount: "Account",
     waMsgReferral: "Unisciti a me su JobMarket Cameroon per trovare o offrire servizi vicino a te: {link}",
-    waMsgShareJob: "🔊 *NUOVA OFFERTA DI LAVORO*\n\n*{title}*\n{desc}\n\n📍 Luogo: {location}\n💰 Compenso: {price} XAF\n\n📞 Maggiori info e contatti qui: {link}",
+    waMsgShareJob: "🔊 *NUOVA OFFERTA DI LAVORO*\n\n*{title}*\n{desc}{requirements}\n\n📍 Luogo: {location}\n💰 Compenso: {price} XAF\n\n📞 Maggiori info e contatti qui: {link}",
+    waMsgRequirementsLabel: "📋 *Requisiti:*",
     waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?",
     catMenage: "Pulizie", catJardinage: "Giardinaggio", catMecanique: "Meccanica", catInfo: "Informatica",
     tipLocate: "La mia posizione", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Stile mappa",
@@ -1534,6 +1543,7 @@ const I18N = {
     optJardinage: "Giardinaggio", optMecanique: "Meccanica auto", optInfo: "Informatica",
     fieldTitle: "Titolo del lavoro", phTitle: "Es: Posa piastrelle bagno",
     fieldDesc: "Descrizione", phDesc: "Descrivi il lavoro da svolgere...",
+    fieldRequirements: "Requisiti (facoltativo)", phRequirements: "Es: Puntuale, esperienza minima 2 anni, attrezzatura propria...", requirementsLabel: "Requisiti",
     fieldPrice: "Prezzo (XAF)", phPrice: "Es: 15.000 XAF",
     fieldPhone: "Telefono", fieldLandmark: "Punto di riferimento / Quartiere", phLandmark: "Es: Bastos, vicino alla rotonda...",
     fieldPhotos: "Foto (fino a 5)", uploadTitle: "Aggiungi foto",
@@ -1583,7 +1593,8 @@ const I18N = {
     catAll: "Alle", catBtp: "Bau", catElec: "Elektrik", catPlomberie: "Sanitär",
     navMap: "Karte", navList: "Liste", navSearch: "Suchen", navAccount: "Konto",
     waMsgReferral: "Begleite mich auf JobMarket Cameroon, um Dienstleistungen in deiner Nähe zu finden oder anzubieten: {link}",
-    waMsgShareJob: "🔊 *NEUES STELLENANGEBOT*\n\n*{title}*\n{desc}\n\n📍 Ort: {location}\n💰 Vergütung: {price} XAF\n\n📞 Mehr Infos und Kontakt hier: {link}",
+    waMsgShareJob: "🔊 *NEUES STELLENANGEBOT*\n\n*{title}*\n{desc}{requirements}\n\n📍 Ort: {location}\n💰 Vergütung: {price} XAF\n\n📞 Mehr Infos und Kontakt hier: {link}",
+    waMsgRequirementsLabel: "📋 *Anforderungen:*",
     waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?",
     catMenage: "Reinigung", catJardinage: "Gartenarbeit", catMecanique: "Mechanik", catInfo: "IT",
     tipLocate: "Mein Standort", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Kartenstil",
@@ -1593,6 +1604,7 @@ const I18N = {
     optJardinage: "Gartenarbeit", optMecanique: "Kfz-Mechanik", optInfo: "IT-Dienste",
     fieldTitle: "Jobtitel", phTitle: "Z.B: Badezimmerfliesen verlegen",
     fieldDesc: "Beschreibung", phDesc: "Beschreiben Sie die auszuführende Arbeit...",
+    fieldRequirements: "Anforderungen (optional)", phRequirements: "Z.B: Pünktlich, min. 2 Jahre Erfahrung, eigenes Werkzeug...", requirementsLabel: "Anforderungen",
     fieldPrice: "Preis (XAF)", phPrice: "Z.B: 15.000 XAF",
     fieldPhone: "Telefon", fieldLandmark: "Orientierungspunkt / Viertel", phLandmark: "Z.B: Bastos, nahe dem Kreisverkehr...",
     fieldPhotos: "Fotos (bis zu 5)", uploadTitle: "Fotos hinzufügen",
@@ -1642,7 +1654,8 @@ const I18N = {
     catAll: "全部", catBtp: "建筑", catElec: "电工", catPlomberie: "水管",
     navMap: "地图", navList: "列表", navSearch: "搜索", navAccount: "账户",
     waMsgReferral: "加入我在JobMarket Cameroon,寻找或提供您附近的服务:{link}",
-    waMsgShareJob: "🔊 *新工作机会*\n\n*{title}*\n{desc}\n\n📍 地点：{location}\n💰 报酬：{price} XAF\n\n📞 更多信息及联系方式：{link}",
+    waMsgShareJob: "🔊 *新工作机会*\n\n*{title}*\n{desc}{requirements}\n\n📍 地点：{location}\n💰 报酬：{price} XAF\n\n📞 更多信息及联系方式：{link}",
+    waMsgRequirementsLabel: "📋 *要求：*",
     waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?",
     catMenage: "清洁", catJardinage: "园艺", catMecanique: "机械", catInfo: "信息技术",
     tipLocate: "我的位置", tipZoomIn: "放大", tipZoomOut: "缩小", tipMapStyle: "地图样式",
@@ -1652,6 +1665,7 @@ const I18N = {
     optJardinage: "园艺", optMecanique: "汽车机械", optInfo: "信息技术服务",
     fieldTitle: "工作标题", phTitle: "例:浴室瓷砖铺设",
     fieldDesc: "描述", phDesc: "描述需要完成的工作...",
+    fieldRequirements: "要求（选填）", phRequirements: "例：守时、至少2年经验、自备工具...", requirementsLabel: "要求",
     fieldPrice: "价格 (XAF)", phPrice: "例:15,000 XAF",
     fieldPhone: "电话", fieldLandmark: "地标/街区", phLandmark: "例:巴斯托斯,环岛附近...",
     fieldPhotos: "照片(最多5张)", uploadTitle: "添加照片",
@@ -2123,6 +2137,7 @@ async function addJob() {
         phone: phoneVal,
         landmark: document.getElementById('landmark').value.trim(),
         desc: document.getElementById('desc').value.trim(),
+        requirements: document.getElementById('requirements').value.trim(),
         // CORRECTION SANS CROCHETS : On utilise .at() pour contourner le bug
         icon: catVal.at(0),
         color: catVal.at(1),
@@ -2407,6 +2422,7 @@ function syncJobs() {
               </div>
               ${job.landmark ? `<div style="font-size:12px;color:#8888A8;margin-bottom:8px;">${job.landmark}</div>` : ''}
               ${job.desc ? `<div style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
+              ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
               ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
               <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
@@ -2496,7 +2512,7 @@ function updateJobsList(jobs) {
           if (p.verified) {
             badge = `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>`;
           } else if (p.phoneVerified) {
-            badge = `<span title="Numéro vérifié par SMS" style="font-size:11px;color:var(--green,#25D366);">📱</span>`;
+            badge = `<span title="Numéro vérifié par WhatsApp" style="font-size:11px;color:var(--green,#25D366);">📱</span>`;
           } else if (p.emailVerified) {
             badge = `<span title="Email vérifié" style="font-size:11px;color:var(--text-dim);">✉️</span>`;
           }
@@ -4038,6 +4054,7 @@ function editJobFromPreview() {
     document.getElementById('phone').value = job.phone || '';
     document.getElementById('landmark').value = job.landmark || '';
     document.getElementById('desc').value = job.desc || '';
+    document.getElementById('requirements').value = job.requirements || '';
 
     const catSelect = document.getElementById('category');
     if (catSelect) {
@@ -4522,6 +4539,7 @@ async function confirmVerificationCode() {
 
         await db.ref('profiles/' + user.uid).update({
             verified: true,
+            phoneVerified: true, // le code envoyé au numéro WhatsApp fourni, puis re-saisi ici, prouve la possession du numéro — ce champ n'était jusqu'ici jamais mis à jour malgré cette preuve
             verificationCode: null,
             verificationRequested: null,
             verificationDocs: null
@@ -4758,7 +4776,8 @@ function shareJobViaWhatsApp() {
     const job = window.currentPreviewJob;
     if (!job) return;
     const link = getJobShareLink(job.id);
-    const message = t('waMsgShareJob').replace('{title}', (job.title || '').toUpperCase()).replace('{desc}', job.desc || '').replace('{location}', job.location || 'Non spécifié').replace('{price}', job.price).replace('{link}', link);
+    const requirementsBlock = job.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + job.requirements : '';
+    const message = t('waMsgShareJob').replace('{title}', (job.title || '').toUpperCase()).replace('{desc}', job.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.location || 'Non spécifié').replace('{price}', job.price).replace('{link}', link);
     openWhatsAppReliably(null, null, message);
 }
 
@@ -4857,7 +4876,8 @@ window.popupShareClick = function(jobId) {
         return;
     }
     const link = getJobShareLink(jobId);
-    const message = t('waMsgShareJob').replace('{title}', (job.title || '').toUpperCase()).replace('{desc}', job.desc || '').replace('{location}', job.location || 'Non spécifié').replace('{price}', job.price).replace('{link}', link);
+    const requirementsBlock = job.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + job.requirements : '';
+    const message = t('waMsgShareJob').replace('{title}', (job.title || '').toUpperCase()).replace('{desc}', job.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.location || 'Non spécifié').replace('{price}', job.price).replace('{link}', link);
     openWhatsAppReliably(null, null, message);
     showToast('Partage sur WhatsApp!', 'success');
 }
