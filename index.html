@@ -2314,6 +2314,25 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Les photos sont hébergées sur Cloudinary, qui sait redimensionner à la
+// volée gratuitement via l'URL (pas besoin de compte payant ni de
+// retraitement côté serveur) — mais jusqu'ici, l'app servait toujours
+// l'image en pleine résolution d'origine, même pour une vignette de 40px.
+// Cette fonction insère les paramètres de transformation dans l'URL :
+// w_/h_ = dimensions cibles, c_fill = recadrage centré sans déformation,
+// g_auto = recadrage intelligent (garde le sujet principal), q_auto =
+// qualité automatique, f_auto = format le plus léger selon le navigateur
+// (WebP/AVIF quand supporté). Ne touche jamais aux URLs qui ne viennent
+// pas de Cloudinary (ui-avatars.com, data: URIs de prévisualisation
+// locale...) — elles sont renvoyées telles quelles.
+function cloudinaryResize(url, width, height) {
+  if (!url || typeof url !== 'string') return url;
+  if (!url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url;
+  const h = height || width;
+  const transform = `w_${width},h_${h},c_fill,g_auto,q_auto,f_auto`;
+  return url.replace('/upload/', `/upload/${transform}/`);
+}
+
 // Vérifie une liste de champs par leur id avec les règles HTML natives
 // (required, minlength, maxlength, pattern...) et affiche le message
 // d'aide du navigateur sur le premier champ invalide trouvé.
@@ -2388,7 +2407,7 @@ function syncJobs() {
               </div>
               ${job.landmark ? `<div style="font-size:12px;color:#8888A8;margin-bottom:8px;">${job.landmark}</div>` : ''}
               ${job.desc ? `<div style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
-              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${img}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
+              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
               <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
                 WhatsApp
@@ -2721,8 +2740,8 @@ async function loadPendingVerifications() {
       const docs = p.verificationDocs || {};
       const photos = (docs.idPhotoUrl || docs.selfiePhotoUrl) ? `
         <div style="display:flex;gap:6px;margin-top:8px;">
-          ${docs.idPhotoUrl ? `<a href="${docs.idPhotoUrl}" target="_blank" rel="noopener"><img src="${docs.idPhotoUrl}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
-          ${docs.selfiePhotoUrl ? `<a href="${docs.selfiePhotoUrl}" target="_blank" rel="noopener"><img src="${docs.selfiePhotoUrl}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
+          ${docs.idPhotoUrl ? `<a href="${docs.idPhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.idPhotoUrl, 120, 120)}" loading="lazy" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
+          ${docs.selfiePhotoUrl ? `<a href="${docs.selfiePhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.selfiePhotoUrl, 120, 120)}" loading="lazy" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
         </div>` : `<div style="font-size:11px;color:var(--danger,#e74c3c);margin-top:6px;">⚠️ Aucun document envoyé dans l'app — vérifier via WhatsApp</div>`;
       return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -3982,7 +4001,7 @@ async function openJobPreview(jobId) {
                             const profileImg = userData.profileImage || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=25D366&color=fff';
                             html += `
                                 <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 10px; transition: background 0.2s;" onclick="viewUserProfile('${contactUid}')" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
-                                    <img src="${escapeHtml(profileImg)}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #25D366;">
+                                    <img src="${escapeHtml(cloudinaryResize(profileImg, 80, 80))}" loading="lazy" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #25D366;">
                                     <div>
                                         <div style="font-weight: bold; color: var(--text); font-size: 14px;">${escapeHtml(name)}</div>
                                         <div style="font-size: 12px; color: var(--text-dim);">${escapeHtml(jobTitle)}</div>
@@ -4589,7 +4608,7 @@ async function saveProfile() {
         if (profileImageUrl && document.getElementById('userAvatar')) {
             const avatarEl = document.getElementById('userAvatar');
             avatarEl.innerHTML = '';
-            avatarEl.style.backgroundImage = `url('${profileImageUrl}')`;
+            avatarEl.style.backgroundImage = `url('${cloudinaryResize(profileImageUrl, 100, 100)}')`;
             avatarEl.style.backgroundSize = 'cover';
             avatarEl.style.backgroundPosition = 'center';
         }
