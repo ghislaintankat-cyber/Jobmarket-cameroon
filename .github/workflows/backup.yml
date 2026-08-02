@@ -1,0 +1,61 @@
+name: Backup Firebase Database
+
+on:
+  schedule:
+    # Une fois par jour suffit largement pour une app de ce volume.
+    - cron: "0 3 * * *"
+  workflow_dispatch: # déclenchement manuel possible, utile pour tester
+
+concurrency:
+  group: backup-database
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Export database to local JSON
+        run: node scripts/backupDatabase.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Clone private backup repository
+        run: git clone https://x-access-token:${{ secrets.BACKUP_REPO_TOKEN }}@github.com/ghislaintankat-cyber/jobmarket-backend.git backup-repo
+
+      - name: Copy today's backup into the backup repository
+        run: mkdir -p backup-repo/db-backups && cp backup-output/backup-*.json backup-repo/db-backups/
+
+      - name: Remove backups older than retention period
+        run: |
+          cd backup-repo/db-backups
+          cutoff=$(date -u -d '30 days ago' +%Y-%m-%d)
+          for f in backup-*.json; do
+            [ -e "$f" ] || continue
+            filedate=$(echo "$f" | sed -E 's/backup-([0-9]{4}-[0-9]{2}-[0-9]{2})\.json/\1/')
+            if [[ "$filedate" < "$cutoff" ]]; then
+              echo "Suppression de $f (plus vieux que $cutoff)"
+              rm "$f"
+            fi
+          done
+
+      - name: Commit and push
+        run: |
+          cd backup-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --staged --quiet || git commit -m "Sauvegarde automatique $(date -u +%Y-%m-%d)"
+          git push
