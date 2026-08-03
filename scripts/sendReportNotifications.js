@@ -1,9 +1,9 @@
-// ===== JobMarket Cameroon : notifier l'admin d'un nouveau signalement =====
+// ===== JobMarket Cameroon : notifier les admins d'un nouveau signalement =====
 //
 // Rôle : dès qu'un signalement est déposé (voir submitReport() dans
-// index.html), prévenir l'admin par push. Un seul destinataire connu à
-// l'avance (ADMIN_UID) — même logique que
-// scripts/sendContactNotifications.js et scripts/sendReviewNotifications.js.
+// index.html), prévenir tous les admins par push (voir admins/{uid} dans
+// Firebase — même logique que scripts/sendContactNotifications.js et
+// scripts/sendReviewNotifications.js pour le reste).
 //
 // Déclenché instantanément via le relais Cloudflare Worker (event_type
 // "new-report"), avec un cron de secours en filet de sécurité.
@@ -20,7 +20,10 @@ admin.initializeApp({
 const db = admin.database();
 const messaging = admin.messaging();
 
-const ADMIN_UID = "GrajEM98vOc1w3FUr9XeTN90rfl2";
+// Liste dynamique, plus un UID unique codé en dur : voir admins/{uid} dans
+// Firebase (et database.rules.json). Permet d'ajouter un admin de secours
+// sans toucher au code, et de notifier tout le monde en cas de
+// signalement plutôt qu'une seule personne qui pourrait être injoignable.
 
 // Comme pour les contacts/avis : au-delà de cette fenêtre, on n'insiste
 // plus pour ce signalement précis à ce run (il reste visible de toute
@@ -39,14 +42,16 @@ async function sendReportNotifications() {
   try {
     const now = Date.now();
 
-    const [reportsSnap, tokenSnap, jobsSnap] = await Promise.all([
+    const [reportsSnap, adminsSnap, tokensSnap, jobsSnap] = await Promise.all([
       db.ref("reports").orderByChild("status").equalTo("pending").once("value"),
-      db.ref(`notificationTokens/${ADMIN_UID}`).once("value"),
+      db.ref("admins").once("value"),
+      db.ref("notificationTokens").once("value"),
       db.ref("jobs").once("value")
     ]);
 
     const reports = reportsSnap.val() || {};
-    const token = tokenSnap.val();
+    const adminUids = Object.keys(adminsSnap.val() || {});
+    const tokensMap = tokensSnap.val() || {};
     const jobs = jobsSnap.val() || {};
 
     const pending = Object.entries(reports).filter(([, r]) => {
@@ -60,8 +65,14 @@ async function sendReportNotifications() {
       return;
     }
 
-    if (!token) {
-      console.log("Admin sans token de notification, signalements laissés en attente pour le dashboard.");
+    if (!adminUids.length) {
+      console.log("Aucun admin dans admins/, rien à notifier. Avez-vous bootstrappé le nœud admins/ dans Firebase ?");
+      return;
+    }
+
+    const adminTokens = adminUids.map((uid) => tokensMap[uid]).filter((t) => typeof t === "string" && t.length > 0);
+    if (!adminTokens.length) {
+      console.log("Aucun admin avec un token de notification, signalements laissés en attente pour le dashboard.");
       return;
     }
 
@@ -82,26 +93,27 @@ async function sendReportNotifications() {
 
       try {
         const response = await messaging.sendEachForMulticast({
-          tokens: [token],
+          tokens: adminTokens,
           data,
           webpush: { headers: { Urgency: "high" } }
         });
-        const res = response.responses[0];
-        if (res.success) {
-          sentCount++;
-          updates[`reports/${reportId}/notifiedAdmin`] = true;
-        } else {
+        if (response.successCount > 0) {
+          sentCount += response.successCount;
+          updates[`reports/${reportId}/notifiedAdmin`] = true; // au moins un admin a été prévenu, ça suffit pour ne pas rescanner ce signalement
+        }
+        response.responses.forEach((res, i) => {
+          if (res.success) return;
           const code = res.error && res.error.code;
           if (
             code === "messaging/invalid-registration-token" ||
             code === "messaging/registration-token-not-registered"
           ) {
-            updates[`reports/${reportId}/notifiedAdmin`] = true; // token mort, inutile de retenter
-            updates[`notificationTokens/${ADMIN_UID}`] = null;
+            const deadUid = adminUids[adminUids.findIndex((uid) => tokensMap[uid] === adminTokens[i])];
+            if (deadUid) updates[`notificationTokens/${deadUid}`] = null;
           } else {
             console.error(`❌ Erreur d'envoi pour le signalement ${reportId} (${code || "inconnue"}):`, res.error && res.error.message);
           }
-        }
+        });
       } catch (err) {
         console.error(`❌ Erreur envoi pour le signalement ${reportId}, nouvelle tentative au prochain run:`, err);
       }
