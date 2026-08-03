@@ -1086,7 +1086,7 @@ body{
    <div id="userDashboard" class="hidden">
   <div class="account-card">
     
-    <a class="account-item" href="#" onclick="openAdminPanel()">
+    <a class="account-item" id="adminMenuItem" href="#" onclick="openAdminPanel()">
       <div class="account-item-icon" style="background:rgba(255,215,0,0.15);">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       </div>
@@ -1327,7 +1327,27 @@ const CLOUDINARY_CLOUD_NAME = "dvoab3mzb";
 // ex: "2376XXXXXXXX") : c'est là que les demandes de vérification seront envoyées.
 const ADMIN_WHATSAPP_NUMBER = "237650420710";
 const CLOUDINARY_UPLOAD_PRESET = "job_preset";
-const ADMIN_UID = "GrajEM98vOc1w3FUr9XeTN90rfl2";
+// L'admin n'est plus un UID unique codé en dur ici : voir admins/{uid} dans
+// Firebase (et database.rules.json). Ça permet d'ajouter un admin de
+// secours sans toucher au code, juste en écrivant dans la base — et évite
+// que la perte d'un seul compte Google ne rende l'app impossible à gérer.
+let isAdmin = false;
+
+async function refreshAdminStatus(uid) {
+  if (!uid) { isAdmin = false; updateAdminMenuVisibility(); return; }
+  try {
+    const snap = await db.ref('admins/' + uid).once('value');
+    isAdmin = snap.val() === true;
+  } catch (e) {
+    isAdmin = false; // en cas d'échec de lecture, on refuse l'accès par prudence plutôt que de l'accorder à tort
+  }
+  updateAdminMenuVisibility();
+}
+
+function updateAdminMenuVisibility() {
+  const item = document.getElementById('adminMenuItem');
+  if (item) item.style.display = isAdmin ? '' : 'none';
+}
 
 let currentUser = null;
 let userCoords = null;
@@ -1936,9 +1956,11 @@ auth.onAuthStateChanged(user => {
     checkPendingReviews(user.uid);
     syncEmailVerifiedBadge(user);
     setupPresence(user.uid);
+    refreshAdminStatus(user.uid);
     if (deepLinkFromPush && !deepLinkJobId) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; } // clic sur une notif sans job précis (ex: résumé de relance)
   } else {
     teardownPresence();
+    refreshAdminStatus(null);
   }
 });
 
@@ -2812,7 +2834,7 @@ async function submitReport() {
 }
 
 function openAdminPanel() {
-  if (!currentUser || currentUser.uid !== ADMIN_UID) {
+  if (!currentUser || !isAdmin) {
     showToast('Acces reserve aux administrateurs', 'error');
     return;
   }
