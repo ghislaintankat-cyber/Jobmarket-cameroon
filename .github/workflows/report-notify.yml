@@ -1,0 +1,36 @@
+name: Notify Admin of New Report
+
+on:
+  schedule:
+    # Filet de sécurité seulement : le déclenchement principal est instantané
+    # via le Cloudflare Worker (repository_dispatch, voir plus bas).
+    - cron: "*/20 * * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [new-report] # déclenché instantanément depuis index.html via worker/index.js
+
+concurrency:
+  group: notify-reports
+  cancel-in-progress: false
+
+jobs:
+  notify-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run report notification script
+        run: node scripts/sendReportNotifications.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
