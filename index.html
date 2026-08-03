@@ -67,7 +67,7 @@
   --surface2: #252538;
   --border: rgba(255,255,255,0.07);
   --text: #F0F0F8;
-  --text-dim: #8888A8;
+  --text-dim: #9999BC;
   --danger: #FF3B30;
   --radius-sm: 12px;
   --radius-md: 18px;
@@ -561,8 +561,8 @@ body{
   align-self:flex-end;border-bottom-right-radius:4px;
 }
 .chat-msg.error{
-  color:#A6432F;
-  border:1px solid #A6432F;
+  color:var(--danger,#FF3B30);
+  border:1px solid var(--danger,#FF3B30);
 }
 .chat-msg.theirs{
   background:var(--surface2);color:var(--text);
@@ -784,9 +784,9 @@ body{
 </style>
 <div id="langPicker" style="display:none;position:fixed;inset:0;z-index:10500;background:rgba(10,10,15,0.88);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
   <div style="position:relative;width:100%;max-width:340px;background:#13131A;border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-    <button onclick="closeLangPicker()" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:#8888A8;cursor:pointer;font-size:14px;">✕</button>
+    <button onclick="closeLangPicker()" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:#9999BC;cursor:pointer;font-size:14px;">✕</button>
     <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;margin-bottom:4px;padding-right:24px;">Choisissez votre langue</div>
-    <div style="color:#8888A8;font-size:13px;margin-bottom:16px;">Choose your language</div>
+    <div style="color:#9999BC;font-size:13px;margin-bottom:16px;">Choose your language</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       <button class="lang-pick-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇫🇷 Français</button>
       <button class="lang-pick-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇬🇧 English</button>
@@ -810,11 +810,11 @@ body{
     <div style="width:42px;height:42px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);display:flex;align-items:center;justify-content:center;font-size:20px;">🔔</div>
     <div style="flex:1;min-width:0;">
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff;margin-bottom:4px;" data-i18n="notifPrimerTitle">Ne ratez plus aucun job</div>
-      <div style="color:#8888A8;font-size:13px;line-height:1.4;" data-i18n="notifPrimerBody">Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.</div>
+      <div style="color:#9999BC;font-size:13px;line-height:1.4;" data-i18n="notifPrimerBody">Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.</div>
     </div>
   </div>
   <div style="display:flex;gap:8px;margin-top:14px;">
-    <button onclick="respondToNotifPrimer(false)" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:#8888A8;font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
+    <button onclick="respondToNotifPrimer(false)" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:#9999BC;font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
     <button onclick="respondToNotifPrimer(true)" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="notifPrimerEnable">Activer les alertes</button>
   </div>
 </div>
@@ -833,7 +833,7 @@ body{
   </div>
   <div class="topbar-right">
     <div style="position:relative;">
-      <button class="icon-btn" id="langBtn" onclick="toggleLangMenu()" title="Language / Langue">
+      <button class="icon-btn" id="langBtn" onclick="toggleLangMenu()" data-i18n-title="tipLang" title="Langue">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
       </button>
       <div id="langMenu" style="display:none;position:absolute;top:48px;right:0;background:var(--dark);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:2100;min-width:170px;overflow:hidden;">
@@ -844,10 +844,10 @@ body{
         <button class="lang-option" onclick="setLanguage('zh')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇨🇳 中文</button>
       </div>
     </div>
-    <button class="icon-btn" id="searchBtn" onclick="toggleSearchPanel()" title="Rechercher">
+    <button class="icon-btn" id="searchBtn" onclick="toggleSearchPanel()" data-i18n-title="tipSearch" title="Rechercher">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
-    <button class="icon-btn" id="notifBtn" style="position:relative;" onclick="toggleNotifPanel()">
+    <button class="icon-btn" id="notifBtn" style="position:relative;" onclick="toggleNotifPanel()" data-i18n-title="tipNotifications" title="Notifications">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <div class="notif-dot" id="notifDot" style="display:none;"></div>
     </button>
@@ -945,7 +945,7 @@ body{
   <div class="sheet-handle"></div>
   <div class="sheet-header">
     <div class="sheet-title" data-i18n="publishTitle">Publier un Job</div>
-    <button class="icon-btn" onclick="toggleJobForm()">
+    <button class="icon-btn" onclick="toggleJobForm()" data-i18n-title="tipClose" title="Fermer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
@@ -1022,7 +1022,7 @@ body{
       <span data-i18n="jobsNearby">Jobs proches</span>
       <span class="badge badge-gold" id="jobCountBadge">0</span>
     </div>
-    <button class="icon-btn" onclick="closeSheet('jobsSheet')">
+    <button class="icon-btn" onclick="closeSheet('jobsSheet')" data-i18n-title="tipClose" title="Fermer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
@@ -1072,7 +1072,7 @@ body{
           <span data-i18n="createAccountBtn">Creer mon compte</span>
         </button>
         <div id="forgotPasswordLink" class="hidden" style="text-align:center;margin-top:10px;">
-          <a href="#" onclick="forgotPassword(); return false;" style="font-size:13px;color:var(--text-dim,#8888A8);text-decoration:underline;" data-i18n="forgotPassword">Mot de passe oublié ?</a>
+          <a href="#" onclick="forgotPassword(); return false;" style="font-size:13px;color:var(--text-dim,#9999BC);text-decoration:underline;" data-i18n="forgotPassword">Mot de passe oublié ?</a>
         </div>
         <div class="divider"><div class="divider-line"></div><div class="divider-text" data-i18n="orWord">ou</div><div class="divider-line"></div></div>
         <button class="btn btn-google" onclick="loginGoogle()">
@@ -1145,7 +1145,7 @@ body{
     <div class="overlay-title" data-i18n="notifPrefsTitle">Notifications</div>
   </div>
   <div class="overlay-body">
-    <p style="color:var(--text-dim,#8888A8);font-size:14px;line-height:1.5;margin:0 0 18px;" data-i18n="notifPrefsIntro">
+    <p style="color:var(--text-dim,#9999BC);font-size:14px;line-height:1.5;margin:0 0 18px;" data-i18n="notifPrefsIntro">
       Choisissez les catégories pour lesquelles vous voulez être notifié(e) des nouvelles offres. Décochez celles qui ne vous concernent pas.
     </p>
     <div id="notifPrefsList"></div>
@@ -1182,9 +1182,12 @@ body{
       <div class="admin-stat">
         <div class="admin-stat-val" id="adminNotifOpenRate">--</div>
         <div class="admin-stat-label" data-i18n="adminStatNotifOpenRate">Taux d'ouverture notifs (7j)</div>
-        <div id="adminNotifOpenRateBreakdown" style="font-size:11px;color:#8888A8;margin-top:4px;">--</div>
+        <div id="adminNotifOpenRateBreakdown" style="font-size:11px;color:#9999BC;margin-top:4px;">--</div>
       </div>
     </div>
+    <div class="section-title" data-i18n="adminReportsTitle">Signalements en attente</div>
+    <div id="adminReportsList"></div>
+
     <div class="section-title" data-i18n="adminVerificationsTitle">Vérifications en attente</div>
     <div id="adminVerificationsList"></div>
 
@@ -1220,7 +1223,33 @@ body{
   </div>
 </div>
 
-<!-- ===== BOTTOM NAV ===== -->
+<!-- ===== SIGNALEMENT D'UNE ANNONCE ===== -->
+<div class="overlay-page" id="reportModal">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('reportModal')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title" data-i18n="reportModalTitle">Signaler cette annonce</div>
+  </div>
+  <div class="overlay-body">
+    <p style="font-size:13px;color:#9999BC;margin-bottom:16px;" data-i18n="reportModalIntro">Un signal utile pour l'équipe : décrivez ce qui vous semble problématique. Les signalements abusifs peuvent être retracés jusqu'à votre compte.</p>
+    <div class="form-group">
+      <label class="form-label" data-i18n="reportReasonLabel">Motif</label>
+      <select class="form-select" id="reportReason">
+        <option value="fraud" data-i18n="reportReasonFraud">Arnaque / fraude suspectée</option>
+        <option value="inappropriate" data-i18n="reportReasonInappropriate">Contenu inapproprié</option>
+        <option value="misleading" data-i18n="reportReasonMisleading">Prix ou description trompeurs</option>
+        <option value="duplicate" data-i18n="reportReasonDuplicate">Annonce en double / spam</option>
+        <option value="other" data-i18n="reportReasonOther">Autre</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="reportCommentLabel">Détails (optionnel)</label>
+      <textarea class="form-textarea" id="reportComment" data-i18n-placeholder="phReportComment" placeholder="Expliquez brièvement le problème..." maxlength="500"></textarea>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:8px;" onclick="submitReport()" data-i18n="reportSubmitBtn">Envoyer le signalement</button>
+  </div>
+</div>
 <nav class="bottom-nav">
   <button class="nav-item active" id="navMap" onclick="activateNav('map')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
@@ -1420,6 +1449,7 @@ const I18N = {
     waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?",
     catMenage: "Menage", catJardinage: "Jardinage", catMecanique: "Mecanique", catInfo: "Informatique",
     tipLocate: "Ma position", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Style carte",
+    tipLang: "Langue", tipSearch: "Rechercher", tipNotifications: "Notifications", tipClose: "Fermer",
     distanceLabel: "Distance", itinLabel: "Itineraire", calculating: "Calcul en cours...", cancelBtn: "Annuler",
     publishTitle: "Publier un Job", fieldCategory: "Categorie",
     optBtp: "BTP / Maconnerie", optElec: "Electricite", optPlomberie: "Plomberie", optMenage: "Menage / Nettoyage",
@@ -1468,6 +1498,14 @@ const I18N = {
     adminStatToday: "Publiés aujourd'hui", adminStatCountry: "Pays actif", adminStatNotifOpenRate: "Taux d'ouverture notifs (7j)",
     adminVerificationsTitle: "Vérifications en attente", adminAllJobsTitle: "Tous les jobs",
     adminLoading: "Chargement...", adminNoPending: "Aucune demande en attente.",
+    reportLink: "Signaler cette annonce", reportModalTitle: "Signaler cette annonce",
+    reportModalIntro: "Un signal utile pour l'équipe : décrivez ce qui vous semble problématique. Les signalements abusifs peuvent être retracés jusqu'à votre compte.",
+    reportReasonLabel: "Motif", reportReasonFraud: "Arnaque / fraude suspectée", reportReasonInappropriate: "Contenu inapproprié",
+    reportReasonMisleading: "Prix ou description trompeurs", reportReasonDuplicate: "Annonce en double / spam", reportReasonOther: "Autre",
+    reportCommentLabel: "Détails (optionnel)", phReportComment: "Expliquez brièvement le problème...", reportSubmitBtn: "Envoyer le signalement",
+    adminReportsTitle: "Signalements en attente", adminNoReports: "Aucun signalement en attente.", adminJobDeleted: "Job déjà supprimé",
+    adminDismissReport: "Ignorer", adminDeleteJob: "Supprimer le job", adminConfirmDeleteJob: "Supprimer définitivement ce job ?",
+    adminLoadError: "Erreur de chargement.",
     adminNoName: "Sans nom", adminNoJobTitle: "Métier non renseigné",
     adminApprove: "Valider ✓", adminReject: "Refuser", adminAnonymous: "Anonyme", adminDeleteBtn: "Suppr."
   },
@@ -1482,6 +1520,7 @@ const I18N = {
     waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?",
     catMenage: "Cleaning", catJardinage: "Gardening", catMecanique: "Mechanics", catInfo: "IT",
     tipLocate: "My location", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Map style",
+    tipLang: "Language", tipSearch: "Search", tipNotifications: "Notifications", tipClose: "Close",
     distanceLabel: "Distance", itinLabel: "Route", calculating: "Calculating...", cancelBtn: "Cancel",
     publishTitle: "Post a Job", fieldCategory: "Category",
     optBtp: "Construction / Masonry", optElec: "Electrical", optPlomberie: "Plumbing", optMenage: "Cleaning",
@@ -1530,6 +1569,14 @@ const I18N = {
     adminStatToday: "Posted today", adminStatCountry: "Active country", adminStatNotifOpenRate: "Notif open rate (7d)",
     adminVerificationsTitle: "Pending verifications", adminAllJobsTitle: "All jobs",
     adminLoading: "Loading...", adminNoPending: "No pending requests.",
+    reportLink: "Report this listing", reportModalTitle: "Report this listing",
+    reportModalIntro: "A useful signal for the team: describe what seems wrong. Abusive reports can be traced back to your account.",
+    reportReasonLabel: "Reason", reportReasonFraud: "Suspected scam / fraud", reportReasonInappropriate: "Inappropriate content",
+    reportReasonMisleading: "Misleading price or description", reportReasonDuplicate: "Duplicate listing / spam", reportReasonOther: "Other",
+    reportCommentLabel: "Details (optional)", phReportComment: "Briefly explain the issue...", reportSubmitBtn: "Submit report",
+    adminReportsTitle: "Pending reports", adminNoReports: "No pending reports.", adminJobDeleted: "Job already deleted",
+    adminDismissReport: "Dismiss", adminDeleteJob: "Delete job", adminConfirmDeleteJob: "Permanently delete this job?",
+    adminLoadError: "Loading error.",
     adminNoName: "No name", adminNoJobTitle: "Profession not specified",
     adminApprove: "Approve ✓", adminReject: "Reject", adminAnonymous: "Anonymous", adminDeleteBtn: "Delete"
   },
@@ -1544,6 +1591,7 @@ const I18N = {
     waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?",
     catMenage: "Pulizie", catJardinage: "Giardinaggio", catMecanique: "Meccanica", catInfo: "Informatica",
     tipLocate: "La mia posizione", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Stile mappa",
+    tipLang: "Lingua", tipSearch: "Cerca", tipNotifications: "Notifiche", tipClose: "Chiudi",
     distanceLabel: "Distanza", itinLabel: "Itinerario", calculating: "Calcolo in corso...", cancelBtn: "Annulla",
     publishTitle: "Pubblica un lavoro", fieldCategory: "Categoria",
     optBtp: "Edilizia / Muratura", optElec: "Elettricità", optPlomberie: "Idraulica", optMenage: "Pulizie",
@@ -1592,6 +1640,14 @@ const I18N = {
     adminStatToday: "Pubblicati oggi", adminStatCountry: "Paese attivo", adminStatNotifOpenRate: "Tasso apertura notifiche (7g)",
     adminVerificationsTitle: "Verifiche in attesa", adminAllJobsTitle: "Tutti i lavori",
     adminLoading: "Caricamento...", adminNoPending: "Nessuna richiesta in attesa.",
+    reportLink: "Segnala questo annuncio", reportModalTitle: "Segnala questo annuncio",
+    reportModalIntro: "Un segnale utile per il team: descrivi cosa ti sembra problematico. Le segnalazioni abusive possono essere ricondotte al tuo account.",
+    reportReasonLabel: "Motivo", reportReasonFraud: "Truffa / frode sospetta", reportReasonInappropriate: "Contenuto inappropriato",
+    reportReasonMisleading: "Prezzo o descrizione ingannevoli", reportReasonDuplicate: "Annuncio duplicato / spam", reportReasonOther: "Altro",
+    reportCommentLabel: "Dettagli (facoltativo)", phReportComment: "Spiega brevemente il problema...", reportSubmitBtn: "Invia segnalazione",
+    adminReportsTitle: "Segnalazioni in attesa", adminNoReports: "Nessuna segnalazione in attesa.", adminJobDeleted: "Lavoro già eliminato",
+    adminDismissReport: "Ignora", adminDeleteJob: "Elimina lavoro", adminConfirmDeleteJob: "Eliminare definitivamente questo lavoro?",
+    adminLoadError: "Errore di caricamento.",
     adminNoName: "Senza nome", adminNoJobTitle: "Mestiere non specificato",
     adminApprove: "Approva ✓", adminReject: "Rifiuta", adminAnonymous: "Anonimo", adminDeleteBtn: "Elimina"
   },
@@ -1606,6 +1662,7 @@ const I18N = {
     waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?",
     catMenage: "Reinigung", catJardinage: "Gartenarbeit", catMecanique: "Mechanik", catInfo: "IT",
     tipLocate: "Mein Standort", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Kartenstil",
+    tipLang: "Sprache", tipSearch: "Suchen", tipNotifications: "Benachrichtigungen", tipClose: "Schließen",
     distanceLabel: "Entfernung", itinLabel: "Route", calculating: "Berechnung läuft...", cancelBtn: "Abbrechen",
     publishTitle: "Job veröffentlichen", fieldCategory: "Kategorie",
     optBtp: "Bau / Maurerarbeiten", optElec: "Elektrik", optPlomberie: "Sanitär", optMenage: "Reinigung",
@@ -1654,6 +1711,14 @@ const I18N = {
     adminStatToday: "Heute veröffentlicht", adminStatCountry: "Aktives Land", adminStatNotifOpenRate: "Öffnungsrate Benachrichtigungen (7T)",
     adminVerificationsTitle: "Ausstehende Verifizierungen", adminAllJobsTitle: "Alle Jobs",
     adminLoading: "Wird geladen...", adminNoPending: "Keine ausstehenden Anfragen.",
+    reportLink: "Diese Anzeige melden", reportModalTitle: "Diese Anzeige melden",
+    reportModalIntro: "Ein hilfreiches Signal für das Team: Beschreiben Sie, was Ihnen problematisch erscheint. Missbräuchliche Meldungen können zu Ihrem Konto zurückverfolgt werden.",
+    reportReasonLabel: "Grund", reportReasonFraud: "Vermuteter Betrug", reportReasonInappropriate: "Unangemessener Inhalt",
+    reportReasonMisleading: "Irreführender Preis oder Beschreibung", reportReasonDuplicate: "Doppelte Anzeige / Spam", reportReasonOther: "Sonstiges",
+    reportCommentLabel: "Details (optional)", phReportComment: "Beschreiben Sie kurz das Problem...", reportSubmitBtn: "Meldung senden",
+    adminReportsTitle: "Ausstehende Meldungen", adminNoReports: "Keine ausstehenden Meldungen.", adminJobDeleted: "Job bereits gelöscht",
+    adminDismissReport: "Verwerfen", adminDeleteJob: "Job löschen", adminConfirmDeleteJob: "Diesen Job endgültig löschen?",
+    adminLoadError: "Ladefehler.",
     adminNoName: "Ohne Namen", adminNoJobTitle: "Beruf nicht angegeben",
     adminApprove: "Genehmigen ✓", adminReject: "Ablehnen", adminAnonymous: "Anonym", adminDeleteBtn: "Löschen"
   },
@@ -1668,6 +1733,7 @@ const I18N = {
     waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?",
     catMenage: "清洁", catJardinage: "园艺", catMecanique: "机械", catInfo: "信息技术",
     tipLocate: "我的位置", tipZoomIn: "放大", tipZoomOut: "缩小", tipMapStyle: "地图样式",
+    tipLang: "语言", tipSearch: "搜索", tipNotifications: "通知", tipClose: "关闭",
     distanceLabel: "距离", itinLabel: "路线", calculating: "计算中...", cancelBtn: "取消",
     publishTitle: "发布工作", fieldCategory: "类别",
     optBtp: "建筑/泥瓦", optElec: "电工", optPlomberie: "水管工", optMenage: "清洁",
@@ -1716,6 +1782,14 @@ const I18N = {
     adminStatToday: "今日发布", adminStatCountry: "活跃国家", adminStatNotifOpenRate: "通知打开率（7天）",
     adminVerificationsTitle: "待处理的验证", adminAllJobsTitle: "所有工作",
     adminLoading: "加载中...", adminNoPending: "没有待处理的申请。",
+    reportLink: "举报此招聘信息", reportModalTitle: "举报此招聘信息",
+    reportModalIntro: "为团队提供有用的信号：请描述您认为有问题的地方。滥用举报可追溯到您的账户。",
+    reportReasonLabel: "原因", reportReasonFraud: "疑似诈骗", reportReasonInappropriate: "内容不当",
+    reportReasonMisleading: "价格或描述误导", reportReasonDuplicate: "重复发布/垃圾信息", reportReasonOther: "其他",
+    reportCommentLabel: "详情（选填）", phReportComment: "简要说明问题...", reportSubmitBtn: "提交举报",
+    adminReportsTitle: "待处理举报", adminNoReports: "没有待处理的举报。", adminJobDeleted: "工作已删除",
+    adminDismissReport: "忽略", adminDeleteJob: "删除工作", adminConfirmDeleteJob: "确定永久删除此工作吗？",
+    adminLoadError: "加载错误。",
     adminNoName: "无名称", adminNoJobTitle: "职业未填写",
     adminApprove: "批准 ✓", adminReject: "拒绝", adminAnonymous: "匿名", adminDeleteBtn: "删除"
   }
@@ -1735,8 +1809,15 @@ function applyTranslations() {
     el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
   });
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
-    el.title = t(el.getAttribute('data-i18n-title'));
+    const text = t(el.getAttribute('data-i18n-title'));
+    el.title = text;
+    // Un bouton avec seulement une icône (pas de texte visible) n'a rien à
+    // annoncer pour un lecteur d'écran sans ça — le title seul n'est pas
+    // fiable partout (souvent ignoré au clavier/tactile). On réutilise le
+    // même texte traduit comme nom accessible.
+    if (!el.hasAttribute('aria-label')) el.setAttribute('aria-label', text);
   });
+  document.documentElement.lang = currentLang || 'fr'; // pour que les lecteurs d'écran prononcent le contenu dans la bonne langue, pas seulement l'affichage
 }
 
 function toggleLangMenu() {
@@ -2431,10 +2512,10 @@ function syncJobs() {
                 <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
                 <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
               </div>
-              ${job.landmark ? `<div style="font-size:12px;color:#8888A8;margin-bottom:8px;">${job.landmark}</div>` : ''}
+              ${job.landmark ? `<div style="font-size:12px;color:#9999BC;margin-bottom:8px;">${job.landmark}</div>` : ''}
               ${job.desc ? `<div style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
               ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
-              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
+              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" alt="Photo de l'annonce" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
               <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
                 WhatsApp
@@ -2445,6 +2526,9 @@ function syncJobs() {
               </button>
               <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:var(--blue);color:white;padding:12px;border:none;border-radius:12px;margin-top:6px;font-weight:700;font-size:14px;cursor:pointer;">
                 Voir l'itineraire
+              </button>
+              <button onclick="openReportModal('${jobId}')" style="width:100%;background:none;color:#9999BC;padding:8px;border:none;font-size:12px;cursor:pointer;margin-top:4px;text-decoration:underline;">
+                🚩 ${t('reportLink')}
               </button>
             </div>
           `, { maxWidth: 280 });
@@ -2687,6 +2771,46 @@ function closeOverlay(id) {
 }
 
 // ===== ADMIN =====
+let reportingJobId = null;
+
+function openReportModal(jobId) {
+  if (!currentUser || currentUser.isAnonymous) {
+    showToast('Connectez-vous pour signaler une annonce.', 'error');
+    return;
+  }
+  reportingJobId = jobId;
+  document.getElementById('reportReason').value = 'fraud';
+  document.getElementById('reportComment').value = '';
+  openOverlay('reportModal');
+}
+
+async function submitReport() {
+  if (!reportingJobId || !currentUser) return;
+  const reason = document.getElementById('reportReason').value;
+  const comment = document.getElementById('reportComment').value.trim();
+
+  try {
+    // Clé = jobId + reporterUid plutôt qu'un push() : empêche naturellement
+    // la même personne de signaler dix fois la même annonce (voir règle
+    // Firebase, qui refuse l'écrasement d'un signalement déjà existant).
+    const reportId = `${reportingJobId}_${currentUser.uid}`;
+    await db.ref('reports/' + reportId).set({
+      jobId: reportingJobId,
+      reporterUid: currentUser.uid,
+      reason,
+      comment,
+      timestamp: Date.now(),
+      status: 'pending'
+    });
+    triggerInstantNotify('new-report'); // prévient l'admin instantanément, sans attendre le cron
+    closeOverlay('reportModal');
+    showToast('Signalement envoyé, merci.', 'success');
+  } catch (e) {
+    console.warn('Erreur envoi signalement', e);
+    showToast(e && e.code === 'PERMISSION_DENIED' ? 'Vous avez déjà signalé cette annonce.' : 'Erreur lors de l\'envoi, réessayez.', 'error');
+  }
+}
+
 function openAdminPanel() {
   if (!currentUser || currentUser.uid !== ADMIN_UID) {
     showToast('Acces reserve aux administrateurs', 'error');
@@ -2696,6 +2820,71 @@ function openAdminPanel() {
   loadAdminJobs();
   loadPendingVerifications();
   loadNotifOpenRate();
+  loadPendingReports();
+}
+
+async function loadPendingReports() {
+  const list = document.getElementById('adminReportsList');
+  if (!list) return;
+  list.innerHTML = `<div style="font-size:13px;color:var(--text-dim);">${t('adminLoading')}</div>`;
+
+  try {
+    const [reportsSnap, jobsSnap] = await Promise.all([
+      db.ref('reports').orderByChild('status').equalTo('pending').once('value'),
+      db.ref('jobs').once('value')
+    ]);
+    const reports = reportsSnap.val() || {};
+    const jobs = jobsSnap.val() || {};
+    const entries = Object.entries(reports);
+
+    if (!entries.length) {
+      list.innerHTML = `<div style="font-size:13px;color:var(--text-dim);">${t('adminNoReports')}</div>`;
+      return;
+    }
+
+    const reasonLabels = {
+      fraud: t('reportReasonFraud'), inappropriate: t('reportReasonInappropriate'),
+      misleading: t('reportReasonMisleading'), duplicate: t('reportReasonDuplicate'), other: t('reportReasonOther')
+    };
+
+    list.innerHTML = entries.map(([reportId, report]) => {
+      const job = jobs[report.jobId];
+      const jobTitle = job ? escapeHtml(job.title) : `<em>${t('adminJobDeleted')}</em>`;
+      const reasonLabel = reasonLabels[report.reason] || report.reason;
+      const date = new Date(report.timestamp).toLocaleString();
+      return `<div style="background:var(--surface,#1E1E2E);border-radius:12px;padding:12px;margin-bottom:10px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:4px;">${jobTitle}</div>
+        <div style="font-size:12px;color:var(--danger,#FF3B30);margin-bottom:4px;">🚩 ${escapeHtml(reasonLabel)}</div>
+        ${report.comment ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">"${escapeHtml(report.comment)}"</div>` : ''}
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">${date}</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="dismissReport('${reportId}')" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text);font-size:12px;cursor:pointer;">${t('adminDismissReport')}</button>
+          ${job ? `<button onclick="deleteReportedJob('${reportId}','${report.jobId}')" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--danger,#FF3B30);color:#fff;font-size:12px;cursor:pointer;">${t('adminDeleteJob')}</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.warn('Erreur chargement signalements', e);
+    list.innerHTML = `<div style="font-size:13px;color:var(--danger,#FF3B30);">${t('adminLoadError')}</div>`;
+  }
+}
+
+async function dismissReport(reportId) {
+  try {
+    await db.ref('reports/' + reportId + '/status').set('dismissed');
+    loadPendingReports();
+  } catch (e) { showToast('Erreur, réessayez.', 'error'); }
+}
+
+async function deleteReportedJob(reportId, jobId) {
+  if (!confirm(t('adminConfirmDeleteJob'))) return;
+  try {
+    await db.ref('jobs/' + jobId).remove();
+    await db.ref('reports/' + reportId + '/status').set('resolved');
+    loadPendingReports();
+    loadAdminJobs();
+    showToast('Job supprimé.', 'success');
+  } catch (e) { showToast('Erreur, réessayez.', 'error'); }
 }
 
 // Agrège notifStats/{date}/{sent,opened} sur les 7 derniers jours pour
@@ -2767,8 +2956,8 @@ async function loadPendingVerifications() {
       const docs = p.verificationDocs || {};
       const photos = (docs.idPhotoUrl || docs.selfiePhotoUrl) ? `
         <div style="display:flex;gap:6px;margin-top:8px;">
-          ${docs.idPhotoUrl ? `<a href="${docs.idPhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.idPhotoUrl, 120, 120)}" loading="lazy" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
-          ${docs.selfiePhotoUrl ? `<a href="${docs.selfiePhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.selfiePhotoUrl, 120, 120)}" loading="lazy" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
+          ${docs.idPhotoUrl ? `<a href="${docs.idPhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.idPhotoUrl, 120, 120)}" loading="lazy" alt="Pièce d'identité soumise" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
+          ${docs.selfiePhotoUrl ? `<a href="${docs.selfiePhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.selfiePhotoUrl, 120, 120)}" loading="lazy" alt="Selfie de vérification soumis" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
         </div>` : `<div style="font-size:11px;color:var(--danger,#e74c3c);margin-top:6px;">⚠️ Aucun document envoyé dans l'app — vérifier via WhatsApp</div>`;
       return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -2914,7 +3103,7 @@ async function openNotifPrefs() {
       <span style="font-size:22px;flex-shrink:0;">📍</span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:2px;" data-i18n="notifGpsNudgeTitle">Position non activée</div>
-        <div style="font-size:12px;color:#8888A8;" data-i18n="notifGpsNudgeBody">Activez votre position pour que le filtre de distance ci-dessous fonctionne vraiment.</div>
+        <div style="font-size:12px;color:#9999BC;" data-i18n="notifGpsNudgeBody">Activez votre position pour que le filtre de distance ci-dessous fonctionne vraiment.</div>
       </div>
       <button onclick="locateMe(); setTimeout(openNotifPrefs, 800);" style="flex-shrink:0;padding:8px 14px;background:var(--gold,#FFD700);border:none;border-radius:10px;color:#0A0A0F;font-size:12px;font-weight:700;cursor:pointer;" data-i18n="notifGpsNudgeBtn">Activer</button>
     </div>`;
@@ -2936,7 +3125,7 @@ async function openNotifPrefs() {
         oninput="document.getElementById('notifDistanceValue').textContent = this.value + ' km'"
         onchange="setNotifDistancePref(parseInt(this.value, 10))"
         style="width:100%;accent-color:var(--gold,#FFD700);">
-      <div style="color:#8888A8;font-size:12px;margin-top:6px;" data-i18n="notifDistanceHint">Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).</div>
+      <div style="color:#9999BC;font-size:12px;margin-top:6px;" data-i18n="notifDistanceHint">Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).</div>
     </div>`;
   applyTranslations();
 }
@@ -4028,7 +4217,7 @@ async function openJobPreview(jobId) {
                             const profileImg = userData.profileImage || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=25D366&color=fff';
                             html += `
                                 <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 10px; transition: background 0.2s;" onclick="viewUserProfile('${contactUid}')" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
-                                    <img src="${escapeHtml(cloudinaryResize(profileImg, 80, 80))}" loading="lazy" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #25D366;">
+                                    <img src="${escapeHtml(cloudinaryResize(profileImg, 80, 80))}" loading="lazy" alt="Photo de profil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #25D366;">
                                     <div>
                                         <div style="font-weight: bold; color: var(--text); font-size: 14px;">${escapeHtml(name)}</div>
                                         <div style="font-size: 12px; color: var(--text-dim);">${escapeHtml(jobTitle)}</div>
@@ -4140,7 +4329,7 @@ function renderProfileBadgeAndRating(profile) {
     const ratingHtml = count > 0 ? `
         <div style="display:flex;align-items:center;gap:6px;font-size:13px;">
             <span style="color:var(--gold,#FFD700);letter-spacing:1px;">${'★★★★★☆☆☆☆☆'.slice(5 - Math.round(avg), 10 - Math.round(avg))}</span>
-            <span style="color:var(--text-dim,#8888A8);">${avg.toFixed(1)}/5 · ${count} avis</span>
+            <span style="color:var(--text-dim,#9999BC);">${avg.toFixed(1)}/5 · ${count} avis</span>
         </div>` : '';
 
     if (!verifiedHtml && !ratingHtml) { el.innerHTML = ''; return; }
@@ -4180,10 +4369,10 @@ async function viewUserProfile(uid) {
         if (headerTitle) headerTitle.innerText = t("artisanProfile");
 
         if (data.profileImage) {
-            document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" style="width:100%; height:100%; object-fit:cover;">`;
+            document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" alt="Aperçu de la photo de profil" style="width:100%; height:100%; object-fit:cover;">`;
         } else {
             const name = data.name || 'Utilisateur';
-            document.getElementById('profileImagePreview').innerHTML = `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=25D366&color=fff" style="width:100%; height:100%; object-fit:cover;">`;
+            document.getElementById('profileImagePreview').innerHTML = `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=25D366&color=fff" alt="Avatar généré à partir du nom" style="width:100%; height:100%; object-fit:cover;">`;
         }
 
         // Le profil d'un AUTRE utilisateur n'affiche jamais ses blocs privés
@@ -4240,7 +4429,7 @@ async function openProfileSheet() {
         if (headerTitle) headerTitle.innerText = t("myProProfile");
 
         if (data.profileImage) {
-            document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" style="width:100%; height:100%; object-fit:cover;">`;
+            document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" alt="Aperçu de la photo de profil" style="width:100%; height:100%; object-fit:cover;">`;
         } else {
             document.getElementById('profileImagePreview').innerHTML = `<span style="color: #666; font-size: 12px;">Photo</span>`;
         }
@@ -4283,8 +4472,8 @@ function renderVerificationStatus(profile, user) {
     if (!box) return;
 
     const emailBadge = profile.emailVerified
-        ? `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">✉️ ${t('emailVerified')}</div>`
-        : `<div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:8px;">${t('emailNotVerified')}</div>`;
+        ? `<div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:8px;">✉️ ${t('emailVerified')}</div>`
+        : `<div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:8px;">${t('emailNotVerified')}</div>`;
 
     if (profile.verified) {
         box.innerHTML = emailBadge;
@@ -4308,14 +4497,14 @@ function renderVerificationStatus(profile, user) {
     const requestSent = profile.verificationRequested;
     if (requestSent) {
         box.innerHTML = emailBadge + `
-            <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-top:10px;">
+            <div style="font-size:13px;color:var(--text-dim,#9999BC);margin-top:10px;">
                 ${t('requestSent')}
             </div>`;
         return;
     }
 
     box.innerHTML = emailBadge + `
-        <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-top:10px;margin-bottom:10px;">
+        <div style="font-size:13px;color:var(--text-dim,#9999BC);margin-top:10px;margin-bottom:10px;">
             ${t('profileNotVerified')}
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
@@ -4324,10 +4513,10 @@ function renderVerificationStatus(profile, user) {
                     <span style="font-size:20px;">📱</span> Ton numéro WhatsApp <span style="font-size:11px;font-weight:600;color:#111;background:var(--green,#25D366);padding:2px 8px;border-radius:10px;">OBLIGATOIRE</span>
                 </div>
                 <input id="verifyWhatsAppInput" type="tel" placeholder="Ex: +237650420710" value="${escapeHtml(profile.whatsappNumber || '')}" style="width:100%;box-sizing:border-box;background:rgba(37,211,102,0.08);border:2px solid var(--green,#25D366);color:var(--text,#fff);padding:14px 12px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.5px;">
-                <div style="font-size:11px;color:var(--text-dim,#8888A8);margin-top:4px;">C'est sur ce numéro que tu recevras ton code de vérification à 7 chiffres.</div>
+                <div style="font-size:11px;color:var(--text-dim,#9999BC);margin-top:4px;">C'est sur ce numéro que tu recevras ton code de vérification à 7 chiffres.</div>
             </div>
             <div>
-                <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:4px;">📄 Photo de ta pièce d'identité (CNI, passeport...)</div>
+                <div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:4px;">📄 Photo de ta pièce d'identité (CNI, passeport...)</div>
                 <input type="file" id="verifyIdPhotoInput" accept="image/*" style="display:none;" onchange="previewVerificationPhoto(this,'verifyIdPhotoPreview')">
                 <div id="verifyIdPhotoPreview" onclick="document.getElementById('verifyIdPhotoInput').click()" style="cursor:pointer;height:90px;border:2px dashed var(--gold,#FFD700);background:rgba(255,215,0,0.06);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--gold,#FFD700);overflow:hidden;text-align:center;">
                     <span style="font-size:24px;">📄</span>
@@ -4335,7 +4524,7 @@ function renderVerificationStatus(profile, user) {
                 </div>
             </div>
             <div>
-                <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:4px;">🤳 Selfie de toi tenant la même pièce à côté de ton visage</div>
+                <div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:4px;">🤳 Selfie de toi tenant la même pièce à côté de ton visage</div>
                 <input type="file" id="verifySelfiePhotoInput" accept="image/*" style="display:none;" onchange="previewVerificationPhoto(this,'verifySelfiePhotoPreview')">
                 <div id="verifySelfiePhotoPreview" onclick="document.getElementById('verifySelfiePhotoInput').click()" style="cursor:pointer;height:90px;border:2px dashed var(--gold,#FFD700);background:rgba(255,215,0,0.06);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--gold,#FFD700);overflow:hidden;text-align:center;">
                     <span style="font-size:24px;">🤳</span>
@@ -4358,7 +4547,7 @@ function previewVerificationPhoto(input, previewId) {
         return;
     }
     const reader = new FileReader();
-    reader.onload = () => { preview.innerHTML = `<img src="${reader.result}" style="width:100%;height:100%;object-fit:cover;">`; };
+    reader.onload = () => { preview.innerHTML = `<img src="${reader.result}" alt="Aperçu de la photo sélectionnée" style="width:100%;height:100%;object-fit:cover;">`; };
     reader.readAsDataURL(file);
 }
 
@@ -4380,7 +4569,7 @@ function renderReferralBox(profile, user) {
 
     let html = `
         <div style="font-weight:700;font-size:14px;margin-bottom:8px;">🎁 ${t('referralProgram')}</div>
-        <div style="font-size:12px;color:var(--text-dim,#8888A8);margin-bottom:10px;">
+        <div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:10px;">
             ${t('referralExplain')}
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -4388,7 +4577,7 @@ function renderReferralBox(profile, user) {
             <button type="button" onclick="copyReferralLink('${link}')" style="background:var(--blue);border:none;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">${t('copyBtn')}</button>
         </div>
         <button type="button" onclick="shareReferralLink('${link}')" style="width:100%;background:#25D366;border:none;color:white;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">📞 ${t('shareWhatsApp')}</button>
-        <div style="font-size:12px;color:var(--text-dim,#8888A8);">
+        <div style="font-size:12px;color:var(--text-dim,#9999BC);">
             ${t('referralCountText').replace('{count}', count).replace('{next}', toNext)}
         </div>
     `;
@@ -4407,7 +4596,7 @@ function renderReferralBox(profile, user) {
 function renderBoostJobPicker(uid) {
     const myJobs = (typeof allJobs !== 'undefined' ? allJobs : []).filter(j => j.user === uid);
     if (myJobs.length === 0) {
-        return `<div style="font-size:12px;color:var(--text-dim,#8888A8);">${t('publishToBoost')}</div>`;
+        return `<div style="font-size:12px;color:var(--text-dim,#9999BC);">${t('publishToBoost')}</div>`;
     }
     return myJobs.map(j => {
         const isBoosted = j.boosted && j.boostedUntil > Date.now();
@@ -5053,13 +5242,13 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
   overlay.innerHTML = `
     <div style="background:var(--surface,#1a1a1a);border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center;">
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:6px;">Comment ça s'est passé ?</div>
-      <div style="font-size:13px;color:var(--text-dim,#8888A8);margin-bottom:16px;">Avec ${escapeHtml(ownerName)} pour "${escapeHtml(jobTitle)}"</div>
+      <div style="font-size:13px;color:var(--text-dim,#9999BC);margin-bottom:16px;">Avec ${escapeHtml(ownerName)} pour "${escapeHtml(jobTitle)}"</div>
       <div id="reviewStars" style="font-size:32px;margin-bottom:16px;">
         <span class="review-star" data-value="1" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="2" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="3" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="4" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="5" style="cursor:pointer;padding:4px;display:inline-block;">☆</span>
       </div>
       <textarea id="reviewComment" placeholder="Commentaire (optionnel)" maxlength="500" style="width:100%;min-height:70px;border-radius:10px;padding:10px;background:#111;color:#fff;border:1px solid var(--border,#333);margin-bottom:14px;box-sizing:border-box;"></textarea>
       <div style="display:flex;gap:10px;">
-        <button id="reviewSkipBtn" type="button" style="flex:1;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#8888A8);padding:12px;border-radius:12px;cursor:pointer;font-weight:600;">Plus tard</button>
+        <button id="reviewSkipBtn" type="button" style="flex:1;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#9999BC);padding:12px;border-radius:12px;cursor:pointer;font-weight:600;">Plus tard</button>
         <button id="reviewSubmitBtn" type="button" style="flex:1;background:#FFD700;color:#111;padding:12px;border:none;border-radius:12px;cursor:pointer;font-weight:800;">Envoyer</button>
       </div>
     </div>
@@ -5690,7 +5879,7 @@ function previewImage(event) {
     const reader = new FileReader();
     reader.onload = function(){
         const output = document.getElementById('profileImagePreview');
-        output.innerHTML = `<img src="${reader.result}" style="width:100%; height:100%; object-fit:cover;">`;
+        output.innerHTML = `<img src="${reader.result}" alt="Aperçu du document sélectionné" style="width:100%; height:100%; object-fit:cover;">`;
     };
     reader.readAsDataURL(event.target.files[0]);
 }
