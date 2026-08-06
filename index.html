@@ -3174,27 +3174,12 @@ async function setNotifCategoryPref(categoryKey, enabled) {
   }
 }
 
-// ===== CHAT (AI-powered "Chat sécurisé" via Gemini, gratuit) =====
-
-const CHAT_SYSTEM_PROMPT = `Tu es l'assistant du support client de JobMarket Cameroon, une application qui met en relation des particuliers avec des artisans et prestataires de proximité (BTP, électricité, plomberie, ménage, jardinage, mécanique, informatique, etc.).
-
-Réponds toujours en français, de façon chaleureuse, brève et concrète (2 à 5 phrases sauf si l'utilisateur demande plus de détails).
-
-Tu peux aider avec :
-- Comment publier un job / une demande de service sur la carte
-- Comment trouver un artisan proche (filtres par catégorie, distance, itinéraire)
-- Comment contacter ou évaluer un artisan
-- Des questions sur le compte, les notifications, ou l'utilisation générale de l'application
-- Des conseils généraux pour bien décrire un job ou choisir le bon prestataire
-
-Sur les notifications, plus précisément :
-- Elles se règlent dans le compte, section "Notifications" (icône cloche) : on peut y choisir les catégories de jobs pour lesquelles on veut être alerté (BTP, électricité, plomberie, ménage, jardinage, mécanique, informatique), et un curseur "Distance maximale" (5 à 100 km) pour ne recevoir que les jobs proches de sa position.
-- Le curseur de distance ne fonctionne que si la géolocalisation de l'app est activée ; sans position connue, l'utilisateur continue de recevoir toutes les notifications de ses catégories choisies, sans filtrage par distance.
-- Si les notifications ne s'affichent jamais du tout, la cause la plus fréquente est que le navigateur a été refusé au popup d'autorisation : il faut alors l'activer manuellement dans les réglages du navigateur (l'app ne peut pas redemander toute seule après un refus).
-
-Si la demande concerne un problème de compte nécessitant une action humaine (paiement contesté, signalement d'abus, suppression de compte), explique brièvement ce que tu peux faire et précise qu'un agent humain prendra le relais si nécessaire — ne prétends jamais avoir effectué une action que tu ne peux pas réellement faire (pas d'accès aux comptes, paiements, ou données réelles).
-
-Si la question sort complètement du cadre de JobMarket Cameroon, dis-le poliment et recentre la conversation.`;
+// ===== CHAT (assistant "Chat sécurisé", propulsé par Llama 3.3 70B via
+// Groq — gratuit, sans carte bancaire — appelé via un worker Cloudflare
+// qui garde la clé API secrète, avec repli automatique sur des réponses
+// locales si le worker est indisponible ou en cas de panne réseau. Le
+// prompt système vit désormais dans worker/chat-proxy.js, pas ici, pour
+// n'avoir qu'une seule version faisant foi.) =====
 
 let chatHistory = []; // historique envoyé à l'API — en mémoire seulement
 let chatLoading = false;
@@ -3722,34 +3707,41 @@ function askChatSuggestion(button) {
   sendChatMessage();
 }
 
+// URL du worker qui sécurise l'appel au modèle Llama (via Groq) — voir
+// worker/chat-proxy.js pour le pourquoi (la clé API ne doit jamais être
+// dans ce fichier, qui est public).
+const CHAT_PROXY_URL = 'https://jobmarket-chat-proxy.ghislaintankat.workers.dev';
+
 async function callChatAI(messages) {
   const lastMessage = messages[messages.length - 1];
-  return localChatAnswer(lastMessage ? lastMessage.content : '');
-  /* Legacy remote API implementation intentionally disabled.
-  const contents = messages.map((m) => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }]
-  }));
+  const question = lastMessage ? lastMessage.content : '';
 
-  const url = null; // Removed: this chat has no external AI endpoint.
+  try {
+    // Délai de sécurité : si le worker met trop de temps à répondre (ex:
+    // Groq lent, connexion capricieuse), on bascule sur l'assistant local
+    // plutôt que de laisser la personne face à un chargement infini.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents,
-      systemInstruction: { parts: [{ text: CHAT_SYSTEM_PROMPT }] }
-    })
-  });
+    const res = await fetch(CHAT_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
 
-  if (!response.ok) {
-    throw new Error('Request failed with status ' + response.status);
+    if (!res.ok) return localChatAnswer(question);
+
+    const data = await res.json();
+    if (data.fallback || !data.reply) return localChatAnswer(question);
+    return data.reply;
+  } catch (err) {
+    // Réseau indisponible, timeout, worker injoignable... dans tous les
+    // cas, mieux vaut une réponse locale limitée qu'un message d'erreur —
+    // l'assistant reste utilisable même hors ligne ou si Groq est en panne.
+    return localChatAnswer(question);
   }
-
-  const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text
-    || "Désolé, je n'ai pas pu générer de réponse. Pouvez-vous reformuler ?";
-  */
 }
 
 async function sendChatMessage() {
