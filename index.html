@@ -771,7 +771,7 @@ body{
   <div class="splash-logo">JM</div>
   <div>
     <div class="splash-title">JobMarket Cameroon</div>
-    <div class="splash-sub">Artisans qualifies pres de vous</div>
+    <div class="splash-sub" data-i18n="splashSubtitle">Artisans qualifiés près de vous</div>
   </div>
   <div class="splash-bar"><div class="splash-progress"></div></div>
 </div>
@@ -785,7 +785,7 @@ body{
 <div id="langPicker" style="display:none;position:fixed;inset:0;z-index:10500;background:rgba(10,10,15,0.88);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
   <div style="position:relative;width:100%;max-width:340px;background:#13131A;border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
     <button onclick="closeLangPicker()" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:#9999BC;cursor:pointer;font-size:14px;">✕</button>
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;margin-bottom:4px;padding-right:24px;">Choisissez votre langue</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;margin-bottom:4px;padding-right:24px;" data-i18n="langModalTitle">Choisissez votre langue</div>
     <div style="color:#9999BC;font-size:13px;margin-bottom:16px;">Choose your language</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       <button class="lang-pick-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇫🇷 Français</button>
@@ -1462,6 +1462,29 @@ function vibrateDevice(ms) {
 // ===== INTERNATIONALISATION (FR / EN / IT / DE / ZH) =====
 const I18N = {
   fr: {
+    // ===== Nouvelles cles ajoutees (audit traduction complet) =====
+    btnImproveDesc: "✨ Améliorer avec l'IA", btnSuggestPrice: "💡 Suggérer un prix", btnOptimizeProfile: "✨ Optimiser avec l'IA",
+    btnScamCheck: "🛡️ Analyser les signaux d'alerte", aiImproveMinLength: "Écrivez d'abord une courte description avant d'utiliser l'IA.", aiImproveLoading: "✨ Amélioration en cours...",
+    aiImproveSuccess: "Description améliorée !", aiUnavailable: "L'IA n'est pas disponible pour le moment, réessayez plus tard.", aiConnectionError: "Impossible de contacter l'IA. Vérifiez votre connexion.",
+    aiOptimizeMinLength: "Renseignez d'abord vos compétences avant d'utiliser l'IA.", aiOptimizeLoading: "✨ Optimisation en cours...", aiOptimizeSuccess: "Profil optimisé !",
+    aiPriceMinLength: "Renseignez d'abord un titre ou une description avant de demander un prix.", aiPriceLoading: "💡 Calcul en cours...", aiPriceEstimateLabel: "💡 Estimation :", aiPriceUseEstimation: "Utiliser cette estimation",
+    aiPriceApplied: "Prix appliqué", aiScamNothingToAnalyze: "Rien à analyser sur cette annonce.", aiScamLoading: "🛡️ Analyse en cours...",
+    aiScamDisclaimer: "Analyse automatique du texte, pas une preuve — restez vigilant et vérifiez avant de payer quoi que ce soit à l'avance.", splashSubtitle: "Artisans qualifiés près de vous", langModalTitle: "Choisissez votre langue",
+    emptyZoneSub: "Publiez le premier job dans cette zone", adminNoDocWarning: "⚠️ Aucun document envoyé dans l'app — vérifier via WhatsApp", noNewJobsYet: "Aucun nouveau job pour l'instant",
+    positionSelectedLabel: "📍 Position sélectionnée", loadingWhatsappContacts: "Chargement des contacts WhatsApp...", interestedPeopleTitle: "Personnes intéressées",
+    noContactYet: "Personne ne vous a encore contacté pour ce besoin.", yourWhatsappNumberLabel: "Ton numéro WhatsApp", whatsappNumberHint: "C'est sur ce numéro que tu recevras ton code de vérification à 7 chiffres.",
+    idPhotoHint: "📄 Photo de ta pièce d'identité (CNI, passeport...)", tapToAddPhoto: "Toucher pour ajouter la photo", selfieHint: "🤳 Selfie de toi tenant la même pièce à côté de ton visage",
+    tapToAddSelfie: "Toucher pour ajouter le selfie", noReviewsYet: "Pas encore d'avis pour ce prestataire.", loadingReviews: "Chargement des avis...",
+    reviewsLoadError: "Erreur de chargement des avis.", contactBeforeReview: "Contactez ce prestataire par WhatsApp pour pouvoir laisser un avis ensuite.", alreadyReviewed: "✓ Vous avez déjà laissé un avis pour cet échange.",
+    reviewModalTitle: "Comment ça s'est passé ?", prefSaveError: "Préférence non enregistrée (réseau instable ?), réessayez.", welcomeBack: "Bon retour !",
+    welcomeUser: "Bienvenue {name}", someUploadsFailed: "{n} photo(s) n'ont pas pu être envoyée(s) (réseau instable ?), le reste de l'annonce est publié quand même.", rejectedWrongType: "{n} fichier(s) ignoré(s) : format non supporté (JPG, PNG, WEBP ou GIF uniquement)",
+    rejectedTooBig: "{n} photo(s) ignorée(s) : plus de {mb} Mo", noWhatsappManualCode: "Aucun numéro WhatsApp enregistré pour ce profil. Code à transmettre manuellement : {code}", myPublicationsCount: "Vous avez {n} publication(s)",
+    newJobToast: "🎉 Nouveau job : {title} ({location}) vient d'être publié !", invalidPhotoFormat: "Photo invalide : JPG/PNG/WEBP, max {mb} Mo.", positionSavedComplete: "Position enregistrée ! Complétez le formulaire.",
+    positionSavedFill: "Position enregistrée ! Remplissez le formulaire de job.", photoUploadError: "Erreur lors de l'envoi de la photo (réseau instable ?), réessayez.", whatsappOpenError: "Erreur lors de l'ouverture de WhatsApp. Réessayez.",
+    chooseRatingFirst: "Choisissez une note avant d'envoyer", reviewSendError: "Erreur lors de l'envoi de l'avis", mustBeLoggedIn: "Vous devez être connecté.",
+    fillNameAndJob: "Veuillez renseigner votre nom/société et votre métier/spécialité.", profileSavedSuccess: "Profil Pro enregistré avec succès !", genericError: "Une erreur est survenue.",
+    mustBeLoggedInWhatsapp: "Vous devez être connecté pour écrire sur WhatsApp.", mustCompleteProfileContact: "Vous devez compléter votre profil (nom/société et métier/spécialité) pour contacter cette personne.", phoneUnavailable: "Numéro de téléphone indisponible.",
+    cannotComputeRoute: "Impossible de calculer l'itinéraire sans votre position.",
     notifTitle: "Nouveaux jobs", publishBtn: "Publier",
     catAll: "Tous", catBtp: "BTP", catElec: "Electricite", catPlomberie: "Plomberie",
     navMap: "Carte", navList: "Liste", navSearch: "Chercher", navAccount: "Compte",
@@ -1533,6 +1556,29 @@ const I18N = {
     adminApprove: "Valider ✓", adminReject: "Refuser", adminAnonymous: "Anonyme", adminDeleteBtn: "Suppr."
   },
   en: {
+    // ===== Nouvelles cles ajoutees (audit traduction complet) =====
+    btnImproveDesc: "✨ Improve with AI", btnSuggestPrice: "💡 Suggest a price", btnOptimizeProfile: "✨ Optimize with AI",
+    btnScamCheck: "🛡️ Analyze warning signs", aiImproveMinLength: "Write a short description first before using AI.", aiImproveLoading: "✨ Improving...",
+    aiImproveSuccess: "Description improved!", aiUnavailable: "AI is not available right now, please try again later.", aiConnectionError: "Could not reach the AI. Check your connection.",
+    aiOptimizeMinLength: "Fill in your skills first before using AI.", aiOptimizeLoading: "✨ Optimizing...", aiOptimizeSuccess: "Profile optimized!",
+    aiPriceMinLength: "Fill in a title or description first before asking for a price.", aiPriceLoading: "💡 Calculating...", aiPriceEstimateLabel: "💡 Estimate:", aiPriceUseEstimation: "Use this estimate",
+    aiPriceApplied: "Price applied", aiScamNothingToAnalyze: "Nothing to analyze on this listing.", aiScamLoading: "🛡️ Analyzing...",
+    aiScamDisclaimer: "Automatic text analysis, not proof — stay alert and check before paying anything upfront.", splashSubtitle: "Qualified tradespeople near you", langModalTitle: "Choose your language",
+    emptyZoneSub: "Post the first job in this area", adminNoDocWarning: "⚠️ No document sent in the app — verify via WhatsApp", noNewJobsYet: "No new jobs for now",
+    positionSelectedLabel: "📍 Position selected", loadingWhatsappContacts: "Loading WhatsApp contacts...", interestedPeopleTitle: "Interested people",
+    noContactYet: "No one has contacted you about this request yet.", yourWhatsappNumberLabel: "Your WhatsApp number", whatsappNumberHint: "You'll receive your 7-digit verification code on this number.",
+    idPhotoHint: "📄 Photo of your ID (national ID card, passport...)", tapToAddPhoto: "Tap to add the photo", selfieHint: "🤳 Selfie of you holding the same document next to your face",
+    tapToAddSelfie: "Tap to add the selfie", noReviewsYet: "No reviews yet for this provider.", loadingReviews: "Loading reviews...",
+    reviewsLoadError: "Error loading reviews.", contactBeforeReview: "Contact this provider via WhatsApp so you can leave a review afterwards.", alreadyReviewed: "✓ You have already left a review for this exchange.",
+    reviewModalTitle: "How did it go?", prefSaveError: "Preference not saved (unstable network?), please try again.", welcomeBack: "Welcome back!",
+    welcomeUser: "Welcome {name}", someUploadsFailed: "{n} photo(s) could not be uploaded (unstable network?), the rest of the listing was published anyway.", rejectedWrongType: "{n} file(s) ignored: unsupported format (JPG, PNG, WEBP or GIF only)",
+    rejectedTooBig: "{n} photo(s) ignored: over {mb} MB", noWhatsappManualCode: "No WhatsApp number saved for this profile. Code to share manually: {code}", myPublicationsCount: "You have {n} listing(s)",
+    newJobToast: "🎉 New job: {title} ({location}) was just posted!", invalidPhotoFormat: "Invalid photo: JPG/PNG/WEBP, max {mb} MB.", positionSavedComplete: "Position saved! Complete the form.",
+    positionSavedFill: "Position saved! Fill in the job form.", photoUploadError: "Error uploading the photo (unstable network?), please try again.", whatsappOpenError: "Error opening WhatsApp. Please try again.",
+    chooseRatingFirst: "Choose a rating before sending", reviewSendError: "Error sending the review", mustBeLoggedIn: "You must be logged in.",
+    fillNameAndJob: "Please fill in your name/company and your trade/specialty.", profileSavedSuccess: "Pro Profile saved successfully!", genericError: "An error occurred.",
+    mustBeLoggedInWhatsapp: "You must be logged in to message on WhatsApp.", mustCompleteProfileContact: "You must complete your profile (name/company and trade/specialty) to contact this person.", phoneUnavailable: "Phone number unavailable.",
+    cannotComputeRoute: "Cannot calculate the route without your position.",
     notifTitle: "New jobs", publishBtn: "Post",
     catAll: "All", catBtp: "Construction", catElec: "Electrical", catPlomberie: "Plumbing",
     navMap: "Map", navList: "List", navSearch: "Search", navAccount: "Account",
@@ -1604,6 +1650,29 @@ const I18N = {
     adminApprove: "Approve ✓", adminReject: "Reject", adminAnonymous: "Anonymous", adminDeleteBtn: "Delete"
   },
   it: {
+    // ===== Nouvelles cles ajoutees (audit traduction complet) =====
+    btnImproveDesc: "✨ Migliora con l'IA", btnSuggestPrice: "💡 Suggerisci un prezzo", btnOptimizeProfile: "✨ Ottimizza con l'IA",
+    btnScamCheck: "🛡️ Analizza i segnali d'allarme", aiImproveMinLength: "Scrivi prima una breve descrizione prima di usare l'IA.", aiImproveLoading: "✨ Miglioramento in corso...",
+    aiImproveSuccess: "Descrizione migliorata!", aiUnavailable: "L'IA non è disponibile al momento, riprova più tardi.", aiConnectionError: "Impossibile contattare l'IA. Controlla la tua connessione.",
+    aiOptimizeMinLength: "Inserisci prima le tue competenze prima di usare l'IA.", aiOptimizeLoading: "✨ Ottimizzazione in corso...", aiOptimizeSuccess: "Profilo ottimizzato!",
+    aiPriceMinLength: "Inserisci prima un titolo o una descrizione prima di chiedere un prezzo.", aiPriceLoading: "💡 Calcolo in corso...", aiPriceEstimateLabel: "💡 Stima:", aiPriceUseEstimation: "Usa questa stima",
+    aiPriceApplied: "Prezzo applicato", aiScamNothingToAnalyze: "Niente da analizzare in questo annuncio.", aiScamLoading: "🛡️ Analisi in corso...",
+    aiScamDisclaimer: "Analisi automatica del testo, non una prova — resta vigile e verifica prima di pagare qualsiasi cosa in anticipo.", splashSubtitle: "Artigiani qualificati vicino a te", langModalTitle: "Scegli la tua lingua",
+    emptyZoneSub: "Pubblica il primo lavoro in questa zona", adminNoDocWarning: "⚠️ Nessun documento inviato nell'app — verificare via WhatsApp", noNewJobsYet: "Nessun nuovo lavoro al momento",
+    positionSelectedLabel: "📍 Posizione selezionata", loadingWhatsappContacts: "Caricamento contatti WhatsApp...", interestedPeopleTitle: "Persone interessate",
+    noContactYet: "Nessuno ti ha ancora contattato per questa richiesta.", yourWhatsappNumberLabel: "Il tuo numero WhatsApp", whatsappNumberHint: "Riceverai il tuo codice di verifica a 7 cifre su questo numero.",
+    idPhotoHint: "📄 Foto del tuo documento d'identità (CI, passaporto...)", tapToAddPhoto: "Tocca per aggiungere la foto", selfieHint: "🤳 Selfie con lo stesso documento tenuto vicino al viso",
+    tapToAddSelfie: "Tocca per aggiungere il selfie", noReviewsYet: "Ancora nessuna recensione per questo prestatore.", loadingReviews: "Caricamento recensioni...",
+    reviewsLoadError: "Errore nel caricamento delle recensioni.", contactBeforeReview: "Contatta questo prestatore via WhatsApp per poter lasciare una recensione in seguito.", alreadyReviewed: "✓ Hai già lasciato una recensione per questo scambio.",
+    reviewModalTitle: "Com'è andata?", prefSaveError: "Preferenza non salvata (rete instabile?), riprova.", welcomeBack: "Bentornato!",
+    welcomeUser: "Benvenuto {name}", someUploadsFailed: "{n} foto non sono state caricate (rete instabile?), il resto dell'annuncio è stato comunque pubblicato.", rejectedWrongType: "{n} file ignorati: formato non supportato (solo JPG, PNG, WEBP o GIF)",
+    rejectedTooBig: "{n} foto ignorate: oltre {mb} MB", noWhatsappManualCode: "Nessun numero WhatsApp registrato per questo profilo. Codice da comunicare manualmente: {code}", myPublicationsCount: "Hai {n} annuncio/i",
+    newJobToast: "🎉 Nuovo lavoro: {title} ({location}) è appena stato pubblicato!", invalidPhotoFormat: "Foto non valida: JPG/PNG/WEBP, max {mb} MB.", positionSavedComplete: "Posizione salvata! Completa il modulo.",
+    positionSavedFill: "Posizione salvata! Compila il modulo del lavoro.", photoUploadError: "Errore durante l'invio della foto (rete instabile?), riprova.", whatsappOpenError: "Errore durante l'apertura di WhatsApp. Riprova.",
+    chooseRatingFirst: "Scegli una valutazione prima di inviare", reviewSendError: "Errore durante l'invio della recensione", mustBeLoggedIn: "Devi essere connesso.",
+    fillNameAndJob: "Inserisci il tuo nome/azienda e la tua professione/specialità.", profileSavedSuccess: "Profilo Pro salvato con successo!", genericError: "Si è verificato un errore.",
+    mustBeLoggedInWhatsapp: "Devi essere connesso per scrivere su WhatsApp.", mustCompleteProfileContact: "Devi completare il tuo profilo (nome/azienda e professione/specialità) per contattare questa persona.", phoneUnavailable: "Numero di telefono non disponibile.",
+    cannotComputeRoute: "Impossibile calcolare l'itinerario senza la tua posizione.",
     notifTitle: "Nuovi lavori", publishBtn: "Pubblica",
     catAll: "Tutti", catBtp: "Edilizia", catElec: "Elettricità", catPlomberie: "Idraulica",
     navMap: "Mappa", navList: "Lista", navSearch: "Cerca", navAccount: "Account",
@@ -1675,6 +1744,29 @@ const I18N = {
     adminApprove: "Approva ✓", adminReject: "Rifiuta", adminAnonymous: "Anonimo", adminDeleteBtn: "Elimina"
   },
   de: {
+    // ===== Nouvelles cles ajoutees (audit traduction complet) =====
+    btnImproveDesc: "✨ Mit KI verbessern", btnSuggestPrice: "💡 Preis vorschlagen", btnOptimizeProfile: "✨ Mit KI optimieren",
+    btnScamCheck: "🛡️ Warnsignale analysieren", aiImproveMinLength: "Schreiben Sie zuerst eine kurze Beschreibung, bevor Sie die KI nutzen.", aiImproveLoading: "✨ Wird verbessert...",
+    aiImproveSuccess: "Beschreibung verbessert!", aiUnavailable: "Die KI ist momentan nicht verfügbar, bitte versuchen Sie es später erneut.", aiConnectionError: "Die KI konnte nicht erreicht werden. Überprüfen Sie Ihre Verbindung.",
+    aiOptimizeMinLength: "Geben Sie zuerst Ihre Fähigkeiten ein, bevor Sie die KI nutzen.", aiOptimizeLoading: "✨ Wird optimiert...", aiOptimizeSuccess: "Profil optimiert!",
+    aiPriceMinLength: "Geben Sie zuerst einen Titel oder eine Beschreibung ein, bevor Sie einen Preis anfordern.", aiPriceLoading: "💡 Wird berechnet...", aiPriceEstimateLabel: "💡 Schätzung:", aiPriceUseEstimation: "Diese Schätzung verwenden",
+    aiPriceApplied: "Preis übernommen", aiScamNothingToAnalyze: "Nichts zu analysieren bei dieser Anzeige.", aiScamLoading: "🛡️ Wird analysiert...",
+    aiScamDisclaimer: "Automatische Textanalyse, kein Beweis — bleiben Sie wachsam und prüfen Sie, bevor Sie im Voraus etwas bezahlen.", splashSubtitle: "Qualifizierte Handwerker in Ihrer Nähe", langModalTitle: "Wählen Sie Ihre Sprache",
+    emptyZoneSub: "Veröffentlichen Sie den ersten Auftrag in dieser Gegend", adminNoDocWarning: "⚠️ Kein Dokument in der App gesendet — über WhatsApp überprüfen", noNewJobsYet: "Momentan keine neuen Aufträge",
+    positionSelectedLabel: "📍 Position ausgewählt", loadingWhatsappContacts: "WhatsApp-Kontakte werden geladen...", interestedPeopleTitle: "Interessierte Personen",
+    noContactYet: "Bisher hat Sie niemand zu dieser Anfrage kontaktiert.", yourWhatsappNumberLabel: "Ihre WhatsApp-Nummer", whatsappNumberHint: "Sie erhalten Ihren 7-stelligen Bestätigungscode auf dieser Nummer.",
+    idPhotoHint: "📄 Foto Ihres Ausweisdokuments (Personalausweis, Reisepass...)", tapToAddPhoto: "Tippen, um das Foto hinzuzufügen", selfieHint: "🤳 Selfie von Ihnen mit demselben Dokument neben Ihrem Gesicht",
+    tapToAddSelfie: "Tippen, um das Selfie hinzuzufügen", noReviewsYet: "Noch keine Bewertungen für diesen Anbieter.", loadingReviews: "Bewertungen werden geladen...",
+    reviewsLoadError: "Fehler beim Laden der Bewertungen.", contactBeforeReview: "Kontaktieren Sie diesen Anbieter über WhatsApp, um danach eine Bewertung abgeben zu können.", alreadyReviewed: "✓ Sie haben für diesen Austausch bereits eine Bewertung abgegeben.",
+    reviewModalTitle: "Wie ist es gelaufen?", prefSaveError: "Einstellung nicht gespeichert (instabile Verbindung?), bitte erneut versuchen.", welcomeBack: "Willkommen zurück!",
+    welcomeUser: "Willkommen {name}", someUploadsFailed: "{n} Foto(s) konnten nicht hochgeladen werden (instabile Verbindung?), der Rest der Anzeige wurde trotzdem veröffentlicht.", rejectedWrongType: "{n} Datei(en) übersprungen: nicht unterstütztes Format (nur JPG, PNG, WEBP oder GIF)",
+    rejectedTooBig: "{n} Foto(s) übersprungen: über {mb} MB", noWhatsappManualCode: "Keine WhatsApp-Nummer für dieses Profil gespeichert. Code manuell mitteilen: {code}", myPublicationsCount: "Sie haben {n} Anzeige(n)",
+    newJobToast: "🎉 Neuer Auftrag: {title} ({location}) wurde gerade veröffentlicht!", invalidPhotoFormat: "Ungültiges Foto: JPG/PNG/WEBP, max. {mb} MB.", positionSavedComplete: "Position gespeichert! Füllen Sie das Formular aus.",
+    positionSavedFill: "Position gespeichert! Füllen Sie das Auftragsformular aus.", photoUploadError: "Fehler beim Hochladen des Fotos (instabile Verbindung?), bitte erneut versuchen.", whatsappOpenError: "Fehler beim Öffnen von WhatsApp. Bitte erneut versuchen.",
+    chooseRatingFirst: "Wählen Sie eine Bewertung, bevor Sie senden", reviewSendError: "Fehler beim Senden der Bewertung", mustBeLoggedIn: "Sie müssen angemeldet sein.",
+    fillNameAndJob: "Bitte geben Sie Ihren Namen/Firma und Ihren Beruf/Ihre Spezialität ein.", profileSavedSuccess: "Profi-Profil erfolgreich gespeichert!", genericError: "Ein Fehler ist aufgetreten.",
+    mustBeLoggedInWhatsapp: "Sie müssen angemeldet sein, um über WhatsApp zu schreiben.", mustCompleteProfileContact: "Sie müssen Ihr Profil (Name/Firma und Beruf/Spezialität) vervollständigen, um diese Person zu kontaktieren.", phoneUnavailable: "Telefonnummer nicht verfügbar.",
+    cannotComputeRoute: "Route kann ohne Ihren Standort nicht berechnet werden.",
     notifTitle: "Neue Jobs", publishBtn: "Veröffentlichen",
     catAll: "Alle", catBtp: "Bau", catElec: "Elektrik", catPlomberie: "Sanitär",
     navMap: "Karte", navList: "Liste", navSearch: "Suchen", navAccount: "Konto",
@@ -1746,6 +1838,29 @@ const I18N = {
     adminApprove: "Genehmigen ✓", adminReject: "Ablehnen", adminAnonymous: "Anonym", adminDeleteBtn: "Löschen"
   },
   zh: {
+    // ===== Nouvelles cles ajoutees (audit traduction complet) =====
+    btnImproveDesc: "✨ 用AI优化", btnSuggestPrice: "💡 建议价格", btnOptimizeProfile: "✨ 用AI优化资料",
+    btnScamCheck: "🛡️ 分析风险信号", aiImproveMinLength: "请先输入简短描述,然后再使用AI。", aiImproveLoading: "✨ 优化中...",
+    aiImproveSuccess: "描述已优化!", aiUnavailable: "AI暂时不可用,请稍后再试。", aiConnectionError: "无法连接AI。请检查您的网络连接。",
+    aiOptimizeMinLength: "请先填写您的技能,然后再使用AI。", aiOptimizeLoading: "✨ 优化中...", aiOptimizeSuccess: "资料已优化!",
+    aiPriceMinLength: "请先填写标题或描述,然后再请求价格建议。", aiPriceLoading: "💡 计算中...", aiPriceEstimateLabel: "💡 估算:", aiPriceUseEstimation: "使用此估算",
+    aiPriceApplied: "价格已应用", aiScamNothingToAnalyze: "此信息暂无可分析内容。", aiScamLoading: "🛡️ 分析中...",
+    aiScamDisclaimer: "此为文本自动分析结果,并非证据 — 请保持警惕,在提前付款前务必核实。", splashSubtitle: "身边的专业工匠", langModalTitle: "选择您的语言",
+    emptyZoneSub: "成为此区域首个发布工作的人", adminNoDocWarning: "⚠️ 应用内未上传任何文件 — 请通过WhatsApp核实", noNewJobsYet: "暂无新的工作机会",
+    positionSelectedLabel: "📍 已选定位置", loadingWhatsappContacts: "正在加载WhatsApp联系人...", interestedPeopleTitle: "感兴趣的人",
+    noContactYet: "目前还没有人就此需求联系您。", yourWhatsappNumberLabel: "您的WhatsApp号码", whatsappNumberHint: "您将在此号码上收到7位数验证码。",
+    idPhotoHint: "📄 身份证件照片(身份证、护照等)", tapToAddPhoto: "点击添加照片", selfieHint: "🤳 手持同一证件贴近面部的自拍照",
+    tapToAddSelfie: "点击添加自拍照", noReviewsYet: "该服务者暂无评价。", loadingReviews: "正在加载评价...",
+    reviewsLoadError: "评价加载出错。", contactBeforeReview: "请先通过WhatsApp联系该服务者,之后才能留下评价。", alreadyReviewed: "✓ 您已针对此次交流留下评价。",
+    reviewModalTitle: "体验如何?", prefSaveError: "偏好设置未保存(网络不稳定?),请重试。", welcomeBack: "欢迎回来!",
+    welcomeUser: "欢迎 {name}", someUploadsFailed: "{n}张照片上传失败(网络不稳定?),但信息的其余部分已成功发布。", rejectedWrongType: "已忽略{n}个文件:格式不支持(仅支持JPG、PNG、WEBP或GIF)",
+    rejectedTooBig: "已忽略{n}张照片:超过{mb} MB", noWhatsappManualCode: "该资料未保存WhatsApp号码。请手动告知验证码:{code}", myPublicationsCount: "您有{n}条发布信息",
+    newJobToast: "🎉 新工作:{title}({location})刚刚发布!", invalidPhotoFormat: "照片无效:仅支持JPG/PNG/WEBP,最大{mb} MB。", positionSavedComplete: "位置已保存!请填写表单。",
+    positionSavedFill: "位置已保存!请填写工作表单。", photoUploadError: "照片上传出错(网络不稳定?),请重试。", whatsappOpenError: "打开WhatsApp时出错,请重试。",
+    chooseRatingFirst: "请先选择评分再发送", reviewSendError: "评价发送失败", mustBeLoggedIn: "您必须先登录。",
+    fillNameAndJob: "请填写您的姓名/公司名称及职业/专长。", profileSavedSuccess: "专业资料保存成功!", genericError: "发生了错误。",
+    mustBeLoggedInWhatsapp: "您必须先登录才能在WhatsApp上发送消息。", mustCompleteProfileContact: "您必须先完善资料(姓名/公司名称及职业/专长)才能联系此人。", phoneUnavailable: "电话号码不可用。",
+    cannotComputeRoute: "没有您的位置信息,无法计算路线。",
     notifTitle: "新工作", publishBtn: "发布",
     catAll: "全部", catBtp: "建筑", catElec: "电工", catPlomberie: "水管",
     navMap: "地图", navList: "列表", navSearch: "搜索", navAccount: "账户",
@@ -2021,7 +2136,7 @@ function loginEmail() {
   const passEl = document.getElementById('password');
   if (!validateFields(['email', 'password'])) return;
   auth.signInWithEmailAndPassword(emailEl.value, passEl.value)
-    .then(res => showToast(`Bon retour !`, 'success'))
+    .then(res => showToast(t('welcomeBack'), 'success'))
     .catch(err => showToast(err.message, 'error'));
 }
 
@@ -2029,7 +2144,7 @@ function loginGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   auth.signInWithPopup(provider)
     .then(res => {
-      showToast(`Bienvenue ${res.user.displayName}`, 'success');
+      showToast(t('welcomeUser').replace('{name}', res.user.displayName), 'success');
       if (res.additionalUserInfo && res.additionalUserInfo.isNewUser) {
         applyPendingReferral(res.user);
       }
@@ -2238,7 +2353,7 @@ async function addJob() {
         }
       }
       if (failedUploads > 0) {
-        showToast(`${failedUploads} photo(s) n'ont pas pu être envoyée(s) (réseau instable ?), le reste de l'annonce est publié quand même.`, 'error');
+        showToast(t('someUploadsFailed').replace('{n}', failedUploads), 'error');
       }
 
       // En modification, si aucune nouvelle photo n'est choisie, on garde les anciennes
@@ -2406,10 +2521,10 @@ function previewImages(input) {
   const { valid, rejectedWrongType, rejectedTooBig } = validateImageFiles(input.files);
 
   if (rejectedWrongType > 0) {
-    showToast(`${rejectedWrongType} fichier(s) ignoré(s) : format non supporté (JPG, PNG, WEBP ou GIF uniquement)`, 'error');
+    showToast(t('rejectedWrongType').replace('{n}', rejectedWrongType), 'error');
   }
   if (rejectedTooBig > 0) {
-    showToast(`${rejectedTooBig} photo(s) ignorée(s) : plus de ${MAX_IMAGE_SIZE_MB} Mo`, 'error');
+    showToast(t('rejectedTooBig').replace('{n}', rejectedTooBig).replace('{mb}', MAX_IMAGE_SIZE_MB), 'error');
   }
 
   // On remplace la sélection par uniquement les fichiers valides, pour être
@@ -2602,7 +2717,7 @@ function updateJobsList(jobs) {
     list.innerHTML = `<div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <div class="empty-title">Aucun job trouve</div>
-      <div class="empty-sub">Publiez le premier job dans cette zone</div>
+      <div class="empty-sub" data-i18n="emptyZoneSub">Publiez le premier job dans cette zone</div>
     </div>`;
     return;
   }
@@ -2983,7 +3098,7 @@ async function loadPendingVerifications() {
         <div style="display:flex;gap:6px;margin-top:8px;">
           ${docs.idPhotoUrl ? `<a href="${docs.idPhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.idPhotoUrl, 120, 120)}" loading="lazy" alt="Pièce d'identité soumise" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
           ${docs.selfiePhotoUrl ? `<a href="${docs.selfiePhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.selfiePhotoUrl, 120, 120)}" loading="lazy" alt="Selfie de vérification soumis" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
-        </div>` : `<div style="font-size:11px;color:var(--danger,#e74c3c);margin-top:6px;">⚠️ Aucun document envoyé dans l'app — vérifier via WhatsApp</div>`;
+        </div>` : `<div style="font-size:11px;color:var(--danger,#e74c3c);margin-top:6px;">${t('adminNoDocWarning')}</div>`;
       return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
         <div>
@@ -3030,7 +3145,7 @@ async function approveVerification(uid) {
       showToast('Code généré et WhatsApp ouvert pour l\'envoyer !', 'success');
     } else {
       if (waWindow) waWindow.close();
-      showToast(`Aucun numéro WhatsApp enregistré pour ce profil. Code à transmettre manuellement : ${code}`, 'info');
+      showToast(t('noWhatsappManualCode').replace('{code}', code), 'info');
     }
     loadPendingVerifications();
   } catch (e) {
@@ -3082,7 +3197,7 @@ function openMyJobs() {
   if (!currentUser || currentUser.isAnonymous) { showToast('Connectez-vous', 'error'); return; }
   const myJobs = allJobs.filter(j => j.user === currentUser.uid);
   if (myJobs.length === 0) { showToast('Aucune publication trouvee', 'info'); return; }
-  showToast(`Vous avez ${myJobs.length} publication(s)`, 'info');
+  showToast(t('myPublicationsCount').replace('{n}', myJobs.length), 'info');
   closeOverlay('accountPage');
   openSheet('jobsSheet');
   updateJobsList(myJobs);
@@ -3161,7 +3276,7 @@ async function setNotifDistancePref(km) {
     await db.ref(`notifyPrefs/${currentUser.uid}/maxDistanceKm`).set(km);
   } catch (e) {
     console.warn('Écriture préférence distance échouée', e);
-    showToast("Préférence non enregistrée (réseau instable ?), réessayez.", 'error');
+    showToast(t('prefSaveError'), 'error');
   }
 }
 
@@ -3173,7 +3288,7 @@ async function setNotifCategoryPref(categoryKey, enabled) {
     await db.ref(`notifyPrefs/${currentUser.uid}/${categoryKey}`).set(enabled ? null : false);
   } catch (e) {
     console.warn('Écriture préférence notif échouée', e);
-    showToast("Préférence non enregistrée (réseau instable ?), réessayez.", 'error');
+    showToast(t('prefSaveError'), 'error');
   }
 }
 
@@ -3763,13 +3878,13 @@ async function improveJobDescription() {
   const title = titleEl.value.trim();
   const desc = descEl.value.trim();
   if (desc.length < 10) {
-    showToast("Écrivez d'abord une courte description avant d'utiliser l'IA.", 'error');
+    showToast(t('aiImproveMinLength'), 'error');
     return;
   }
 
   const originalLabel = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '✨ Amélioration en cours...';
+  btn.textContent = t('aiImproveLoading');
 
   try {
     const controller = new AbortController();
@@ -3792,15 +3907,15 @@ async function improveJobDescription() {
 
     const data = await res.json();
     if (data.fallback || !data.title || !data.description) {
-      showToast("L'IA n'est pas disponible pour le moment, réessayez plus tard.", 'error');
+      showToast(t('aiUnavailable'), 'error');
       return;
     }
 
     titleEl.value = data.title;
     descEl.value = data.description;
-    showToast('Description améliorée !', 'success');
+    showToast(t('aiImproveSuccess'), 'success');
   } catch (err) {
-    showToast("Impossible de contacter l'IA. Vérifiez votre connexion.", 'error');
+    showToast(t('aiConnectionError'), 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -3821,13 +3936,13 @@ async function optimizeArtisanProfile() {
   const jobTitle = jobTitleEl.value.trim();
   const skills = skillsEl.value.trim();
   if (skills.length < 5) {
-    showToast("Renseignez d'abord vos compétences avant d'utiliser l'IA.", 'error');
+    showToast(t('aiOptimizeMinLength'), 'error');
     return;
   }
 
   const originalLabel = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '✨ Optimisation en cours...';
+  btn.textContent = t('aiOptimizeLoading');
 
   try {
     const controller = new AbortController();
@@ -3845,15 +3960,15 @@ async function optimizeArtisanProfile() {
 
     const data = await res.json();
     if (data.fallback || !data.jobTitle || !data.skills) {
-      showToast("L'IA n'est pas disponible pour le moment, réessayez plus tard.", 'error');
+      showToast(t('aiUnavailable'), 'error');
       return;
     }
 
     jobTitleEl.value = data.jobTitle;
     skillsEl.value = data.skills;
-    showToast('Profil optimisé !', 'success');
+    showToast(t('aiOptimizeSuccess'), 'success');
   } catch (err) {
-    showToast("Impossible de contacter l'IA. Vérifiez votre connexion.", 'error');
+    showToast(t('aiConnectionError'), 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -3878,13 +3993,13 @@ async function suggestJobPrice() {
   const title = titleEl.value.trim();
   const desc = descEl.value.trim();
   if (!title && desc.length < 10) {
-    showToast("Renseignez d'abord un titre ou une description avant de demander un prix.", 'error');
+    showToast(t('aiPriceMinLength'), 'error');
     return;
   }
 
   const originalLabel = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '💡 Calcul en cours...';
+  btn.textContent = t('aiPriceLoading');
   box.style.display = 'none';
 
   try {
@@ -3908,16 +4023,16 @@ async function suggestJobPrice() {
 
     const data = await res.json();
     if (data.fallback || typeof data.rangeLow !== 'number' || typeof data.rangeHigh !== 'number') {
-      showToast("L'IA n'est pas disponible pour le moment, réessayez plus tard.", 'error');
+      showToast(t('aiUnavailable'), 'error');
       return;
     }
 
     const fmt = (n) => n.toLocaleString('fr-FR');
     const suggestedText = `${fmt(data.rangeLow)} - ${fmt(data.rangeHigh)} FCFA`;
-    box.innerHTML = `💡 Estimation : <strong>${suggestedText}</strong><br>${data.note}<br><button type="button" onclick="document.getElementById('price').value='${suggestedText.replace(/'/g, "\\'")}'; showToast('Prix appliqué', 'success');" style="margin-top:6px;background:none;border:none;color:var(--accent,#25D366);text-decoration:underline;cursor:pointer;font-size:12px;padding:0;">Utiliser cette estimation</button>`;
+    box.innerHTML = `${t('aiPriceEstimateLabel') || '💡'} <strong>${suggestedText}</strong><br>${data.note}<br><button type="button" onclick="document.getElementById('price').value='${suggestedText.replace(/'/g, "\\'")}'; showToast(t('aiPriceApplied'), 'success');" style="margin-top:6px;background:none;border:none;color:var(--accent,#25D366);text-decoration:underline;cursor:pointer;font-size:12px;padding:0;">${t('aiPriceUseEstimation')}</button>`;
     box.style.display = 'block';
   } catch (err) {
-    showToast("Impossible de contacter l'IA. Vérifiez votre connexion.", 'error');
+    showToast(t('aiConnectionError'), 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -3941,13 +4056,13 @@ async function analyzeScamSignals() {
   const title = (job.title || '').trim();
   const desc = (job.desc || '').trim();
   if (!title && !desc) {
-    showToast("Rien à analyser sur cette annonce.", 'error');
+    showToast(t('aiScamNothingToAnalyze'), 'error');
     return;
   }
 
   const originalLabel = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '🛡️ Analyse en cours...';
+  btn.textContent = t('aiScamLoading');
   box.style.display = 'none';
 
   try {
@@ -3972,7 +4087,7 @@ async function analyzeScamSignals() {
     const data = await res.json();
     const validLevels = ['low', 'medium', 'high'];
     if (data.fallback || !validLevels.includes(data.riskLevel)) {
-      showToast("L'IA n'est pas disponible pour le moment, réessayez plus tard.", 'error');
+      showToast(t('aiUnavailable'), 'error');
       return;
     }
 
@@ -3984,10 +4099,10 @@ async function analyzeScamSignals() {
     const s = styles[data.riskLevel];
     box.style.background = s.bg;
     box.style.color = s.color;
-    box.innerHTML = `${s.icon} ${data.note}<br><span style="opacity:0.7;font-size:11px;">Analyse automatique du texte, pas une preuve — restez vigilant et vérifiez avant de payer quoi que ce soit à l'avance.</span>`;
+    box.innerHTML = `${s.icon} ${data.note}<br><span style="opacity:0.7;font-size:11px;">${t('aiScamDisclaimer')}</span>`;
     box.style.display = 'block';
   } catch (err) {
-    showToast("Impossible de contacter l'IA. Vérifiez votre connexion.", 'error');
+    showToast(t('aiConnectionError'), 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -4234,7 +4349,7 @@ db.ref('jobs').limitToLast(1).on('child_added', (snapshot) => {
   const nouveauJob = snapshot.val();
   
   // On utilise ta fonction showToast pour afficher la bulle d'alerte en direct !
-  showToast(`🎉 Nouveau job : ${nouveauJob.title} (${nouveauJob.landmark || 'Cameroun'}) vient d'être publié !`, 'info');
+  showToast(t('newJobToast').replace('{title}', nouveauJob.title).replace('{location}', nouveauJob.landmark || 'Cameroun'), 'info');
   refreshNotifPanel();
 });
 
@@ -4278,7 +4393,7 @@ function refreshNotifPanel() {
   if (!list) return;
 
   if (newJobs.length === 0) {
-    list.innerHTML = '<div style="padding:16px;color:var(--text-dim);text-align:center;font-size:13px;">Aucun nouveau job pour l\'instant</div>';
+    list.innerHTML = '<div style="padding:16px;color:var(--text-dim);text-align:center;font-size:13px;">' + t('noNewJobsYet') + '</div>';
     return;
   }
 
@@ -4319,7 +4434,7 @@ map.on('contextmenu', function(e) {
     .setLatLng(e.latlng)
     .setContent(`
       <div style="text-align:center; font-family:'DM Sans',sans-serif; padding:5px;">
-        <b style="color:var(--text,#F0F0F8); display:block; margin-bottom:10px; font-family:'Syne',sans-serif;">📍 Position sélectionnée</b>
+        <b style="color:var(--text,#F0F0F8); display:block; margin-bottom:10px; font-family:'Syne',sans-serif;" data-i18n="positionSelectedLabel">📍 Position sélectionnée</b>
         <button onclick="preparerNouveauJob(${lat}, ${lng})" style="background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800); color:#0A0A0F; border:none; padding:10px 16px; border-radius:12px; font-family:'Syne',sans-serif; font-weight:700; cursor:pointer;">
           âž• Publier un job ici
         </button>
@@ -4352,9 +4467,9 @@ function preparerNouveauJob(lat, lng) {
   const sheet = document.getElementById('jobFormSheet');
   if (sheet) {
     sheet.classList.add('open');
-    showToast("Position enregistrée ! Complétez le formulaire.", "success");
+    showToast(t('positionSavedComplete'), "success");
   } else {
-    showToast("Position enregistrée ! Remplissez le formulaire de job.", "success");
+    showToast(t('positionSavedFill'), "success");
   }
 }
   
@@ -4451,15 +4566,15 @@ async function openJobPreview(jobId) {
         const user = auth.currentUser;
         
         if (user && job.user === user.uid) {
-            contactsContainer.innerHTML = '<div style="margin-top: 15px; font-size: 14px; color: var(--text-dim);">Chargement des contacts WhatsApp...</div>';
+            contactsContainer.innerHTML = '<div style="margin-top: 15px; font-size: 14px; color: var(--text-dim);">' + t('loadingWhatsappContacts') + '</div>';
             
             try {
                 const snapshot = await db.ref('job_contacts').orderByChild('jobId').equalTo(jobId).once('value');
                 if (!snapshot.exists()) {
                     contactsContainer.innerHTML = `
                         <div style="margin-top: 20px; padding: 15px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;">
-                            <h3 style="margin:0 0 10px 0; font-size: 16px; color: var(--text);">Personnes intéressées</h3>
-                            <p style="font-size: 13px; color: var(--text-dim); margin: 0;">Personne ne vous a encore contacté pour ce besoin.</p>
+                            <h3 style="margin:0 0 10px 0; font-size: 16px; color: var(--text);" data-i18n="interestedPeopleTitle">Personnes intéressées</h3>
+                            <p style="font-size: 13px; color: var(--text-dim); margin: 0;" data-i18n="noContactYet">Personne ne vous a encore contacté pour ce besoin.</p>
                         </div>`;
                 } else {
                     const uniqueContacts = new Map();
@@ -4473,8 +4588,8 @@ async function openJobPreview(jobId) {
                     if (uniqueContacts.size === 0) {
                         contactsContainer.innerHTML = `
                             <div style="margin-top: 20px; padding: 15px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;">
-                                <h3 style="margin:0 0 10px 0; font-size: 16px; color: var(--text);">Personnes intéressées</h3>
-                                <p style="font-size: 13px; color: var(--text-dim); margin: 0;">Personne ne vous a encore contacté pour ce besoin.</p>
+                                <h3 style="margin:0 0 10px 0; font-size: 16px; color: var(--text);" data-i18n="interestedPeopleTitle">Personnes intéressées</h3>
+                                <p style="font-size: 13px; color: var(--text-dim); margin: 0;" data-i18n="noContactYet">Personne ne vous a encore contacté pour ce besoin.</p>
                             </div>`;
                     } else {
                         let html = `
@@ -4782,25 +4897,25 @@ function renderVerificationStatus(profile, user) {
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
             <div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--green,#25D366);margin-bottom:6px;">
-                    <span style="font-size:20px;">📱</span> Ton numéro WhatsApp <span style="font-size:11px;font-weight:600;color:#111;background:var(--green,#25D366);padding:2px 8px;border-radius:10px;">OBLIGATOIRE</span>
+                    <span style="font-size:20px;">📱</span> <span data-i18n="yourWhatsappNumberLabel">Ton numéro WhatsApp</span> <span style="font-size:11px;font-weight:600;color:#111;background:var(--green,#25D366);padding:2px 8px;border-radius:10px;">OBLIGATOIRE</span>
                 </div>
                 <input id="verifyWhatsAppInput" type="tel" placeholder="Ex: +237650420710" value="${escapeHtml(profile.whatsappNumber || '')}" style="width:100%;box-sizing:border-box;background:rgba(37,211,102,0.08);border:2px solid var(--green,#25D366);color:var(--text,#fff);padding:14px 12px;border-radius:10px;font-size:16px;font-weight:600;letter-spacing:0.5px;">
-                <div style="font-size:11px;color:var(--text-dim,#9999BC);margin-top:4px;">C'est sur ce numéro que tu recevras ton code de vérification à 7 chiffres.</div>
+                <div style="font-size:11px;color:var(--text-dim,#9999BC);margin-top:4px;" data-i18n="whatsappNumberHint">C'est sur ce numéro que tu recevras ton code de vérification à 7 chiffres.</div>
             </div>
             <div>
-                <div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:4px;">📄 Photo de ta pièce d'identité (CNI, passeport...)</div>
+                <div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:4px;" data-i18n="idPhotoHint">📄 Photo de ta pièce d'identité (CNI, passeport...)</div>
                 <input type="file" id="verifyIdPhotoInput" accept="image/*" style="display:none;" onchange="previewVerificationPhoto(this,'verifyIdPhotoPreview')">
                 <div id="verifyIdPhotoPreview" onclick="document.getElementById('verifyIdPhotoInput').click()" style="cursor:pointer;height:90px;border:2px dashed var(--gold,#FFD700);background:rgba(255,215,0,0.06);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--gold,#FFD700);overflow:hidden;text-align:center;">
                     <span style="font-size:24px;">📄</span>
-                    <span>Toucher pour ajouter la photo</span>
+                    <span data-i18n="tapToAddPhoto">Toucher pour ajouter la photo</span>
                 </div>
             </div>
             <div>
-                <div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:4px;">🤳 Selfie de toi tenant la même pièce à côté de ton visage</div>
+                <div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:4px;" data-i18n="selfieHint">🤳 Selfie de toi tenant la même pièce à côté de ton visage</div>
                 <input type="file" id="verifySelfiePhotoInput" accept="image/*" style="display:none;" onchange="previewVerificationPhoto(this,'verifySelfiePhotoPreview')">
                 <div id="verifySelfiePhotoPreview" onclick="document.getElementById('verifySelfiePhotoInput').click()" style="cursor:pointer;height:90px;border:2px dashed var(--gold,#FFD700);background:rgba(255,215,0,0.06);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--gold,#FFD700);overflow:hidden;text-align:center;">
                     <span style="font-size:24px;">🤳</span>
-                    <span>Toucher pour ajouter le selfie</span>
+                    <span data-i18n="tapToAddSelfie">Toucher pour ajouter le selfie</span>
                 </div>
             </div>
         </div>
@@ -4814,7 +4929,7 @@ function previewVerificationPhoto(input, previewId) {
     if (!preview || !input.files || !input.files[0]) return;
     const file = input.files[0];
     if (!ALLOWED_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-        showToast(`Photo invalide : JPG/PNG/WEBP, max ${MAX_IMAGE_SIZE_MB} Mo.`, 'error');
+        showToast(t('invalidPhotoFormat').replace('{mb}', MAX_IMAGE_SIZE_MB), 'error');
         input.value = '';
         return;
     }
@@ -5037,7 +5152,7 @@ function generateVerificationCode() {
 async function saveProfile() {
     const user = auth.currentUser;
     if (!user || user.isAnonymous) {
-        alert("Vous devez être connecté.");
+        alert(t('mustBeLoggedIn'));
         return;
     }
 
@@ -5065,7 +5180,7 @@ async function saveProfile() {
             profileImageUrl = await uploadToCloudinary(profileFile);
         } catch(e) {
             console.warn("Erreur upload photo", e);
-            showToast("Erreur lors de l'envoi de la photo (réseau instable ?), réessayez.", 'error');
+            showToast(t('photoUploadError'), 'error');
             btn.innerText = originalText;
             btn.disabled = false;
             return;
@@ -5073,7 +5188,7 @@ async function saveProfile() {
     }
 
     if (!name || !jobTitle) {
-        alert("Veuillez renseigner votre nom/société et votre métier/spécialité.");
+        alert(t('fillNameAndJob'));
         btn.innerText = originalText;
         btn.disabled = false;
         return;
@@ -5104,12 +5219,12 @@ async function saveProfile() {
             avatarEl.style.backgroundPosition = 'center';
         }
 
-        alert("Profil Pro enregistré avec succès !");
+        alert(t('profileSavedSuccess'));
         closeSheet('profileSheet');
         updateAccountUI(user);
     } catch (error) {
         console.error("Erreur d'enregistrement:", error);
-        alert("Une erreur est survenue.");
+        alert(t('genericError'));
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
@@ -5185,7 +5300,7 @@ async function contactViaWhatsAppFromPreview() {
 
     const user = auth.currentUser;
     if (!user || user.isAnonymous) {
-        alert("Vous devez être connecté pour écrire sur WhatsApp.");
+        alert(t('mustBeLoggedInWhatsapp'));
         closeJobPreview();
         if(typeof openOverlay === 'function') openOverlay('accountPage');
         return;
@@ -5200,7 +5315,7 @@ async function contactViaWhatsAppFromPreview() {
         const profile = snapshot.val() || {};
         if (!isProfileComplete(profile)) {
             if (waWindow) waWindow.close();
-            alert("Vous devez compléter votre profil (nom/société et métier/spécialité) pour contacter cette personne.");
+            alert(t('mustCompleteProfileContact'));
             closeJobPreview();
             openProfileSheet();
             return;
@@ -5209,7 +5324,7 @@ async function contactViaWhatsAppFromPreview() {
         const phone = job.phone;
         if (!phone) {
             if (waWindow) waWindow.close();
-            alert("Numéro de téléphone indisponible.");
+            alert(t('phoneUnavailable'));
             return;
         }
 
@@ -5239,7 +5354,7 @@ async function contactViaWhatsAppFromPreview() {
     } catch (e) {
         console.error("Erreur", e);
         if (waWindow) waWindow.close();
-        showToast("Erreur lors de l'ouverture de WhatsApp. Réessayez.", 'error');
+        showToast(t('whatsappOpenError'), 'error');
     }
 }
 
@@ -5263,7 +5378,7 @@ function drawRouteFromPreview() {
         focusJob(job.lat, job.lng);
         drawRoute(job.lat, job.lng);
     } else {
-        alert("Impossible de calculer l'itinéraire sans votre position.");
+        alert(t('cannotComputeRoute'));
     }
 }
       
@@ -5283,7 +5398,7 @@ window.popupWhatsAppClick = async function(jobId) {
 
     const user = auth.currentUser;
     if (!user || user.isAnonymous) {
-        alert("Vous devez être connecté pour écrire sur WhatsApp.");
+        alert(t('mustBeLoggedInWhatsapp'));
         if(typeof openOverlay === 'function') openOverlay('accountPage');
         return;
     }
@@ -5297,7 +5412,7 @@ window.popupWhatsAppClick = async function(jobId) {
         const profile = snapshot.val() || {};
         if (!isProfileComplete(profile)) {
             if (waWindow) waWindow.close();
-            alert("Vous devez compléter votre profil (nom/société et métier/spécialité) pour contacter cette personne.");
+            alert(t('mustCompleteProfileContact'));
             if(typeof openProfileSheet === 'function') openProfileSheet();
             return;
         }
@@ -5305,7 +5420,7 @@ window.popupWhatsAppClick = async function(jobId) {
         const phone = job.phone;
         if (!phone) {
             if (waWindow) waWindow.close();
-            alert("Numéro de téléphone indisponible.");
+            alert(t('phoneUnavailable'));
             return;
         }
 
@@ -5380,7 +5495,7 @@ async function renderOwnerReviews(ownerUid, containerId) {
         box.innerHTML = `
             <div style="margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
                 <h3 style="margin:0 0 6px 0;font-size:15px;color:var(--text);">Avis</h3>
-                <p style="font-size:13px;color:var(--text-dim);margin:0;">Pas encore d'avis pour ce prestataire.</p>
+                <p style="font-size:13px;color:var(--text-dim);margin:0;" data-i18n="noReviewsYet">Pas encore d'avis pour ce prestataire.</p>
             </div>`;
         return;
     }
@@ -5396,7 +5511,7 @@ async function renderOwnerReviews(ownerUid, containerId) {
                 <span style="font-size:12px;color:var(--text-dim);font-weight:400;">${avg.toFixed(1)}/5 · ${count} avis</span>
             </h3>
             <div id="${listId}" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
-                <div style="font-size:12px;color:var(--text-dim);">Chargement des avis...</div>
+                <div style="font-size:12px;color:var(--text-dim);" data-i18n="loadingReviews">Chargement des avis...</div>
             </div>
         </div>`;
 
@@ -5429,7 +5544,7 @@ async function renderOwnerReviews(ownerUid, containerId) {
     } catch (e) {
         console.warn('renderOwnerReviews error', e);
         const listEl = document.getElementById(listId);
-        if (listEl) listEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">Erreur de chargement des avis.</div>';
+        if (listEl) listEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">' + t('reviewsLoadError') + '</div>';
     }
 }
 
@@ -5459,12 +5574,12 @@ async function renderMyReviewAction(job) {
         });
 
         if (!myContactKey) {
-            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:var(--text-dim);">Contactez ce prestataire par WhatsApp pour pouvoir laisser un avis ensuite.</div>`;
+            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:var(--text-dim);">${t('contactBeforeReview')}</div>`;
             return;
         }
 
         if (myContact.reviewed) {
-            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:var(--green,#25D366);">✓ Vous avez déjà laissé un avis pour cet échange.</div>`;
+            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:var(--green,#25D366);">${t('alreadyReviewed')}</div>`;
             return;
         }
 
@@ -5513,7 +5628,7 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML = `
     <div style="background:var(--surface,#1a1a1a);border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center;">
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:6px;">Comment ça s'est passé ?</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:6px;" data-i18n="reviewModalTitle">Comment ça s'est passé ?</div>
       <div style="font-size:13px;color:var(--text-dim,#9999BC);margin-bottom:16px;">Avec ${escapeHtml(ownerName)} pour "${escapeHtml(jobTitle)}"</div>
       <div id="reviewStars" style="font-size:32px;margin-bottom:16px;">
         <span class="review-star" data-value="1" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="2" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="3" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="4" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="5" style="cursor:pointer;padding:4px;display:inline-block;">☆</span>
@@ -5553,7 +5668,7 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
   const submitBtn = overlay.querySelector('#reviewSubmitBtn');
   submitBtn.onclick = async () => {
     if (selectedRating === 0) {
-      showToast("Choisissez une note avant d'envoyer", 'error');
+      showToast(t('chooseRatingFirst'), 'error');
       return;
     }
     // Feedback visuel immédiat + anti double-clic : sans ça, sur un réseau lent,
@@ -5598,7 +5713,7 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
       overlay.remove();
     } catch (e) {
       console.error('submitReview error', e);
-      showToast("Erreur lors de l'envoi de l'avis", 'error');
+      showToast(t('reviewSendError'), 'error');
       submitBtn.disabled = false;
       submitBtn.textContent = 'Envoyer';
     }
@@ -5651,7 +5766,7 @@ document.addEventListener('click', (e) => {
              WhatsApp), et déclenchée manuellement plutôt qu'automatiquement pour
              ne pas gaspiller le budget IA sur des annonces jamais consultées en détail. -->
         <div id="previewScamCheck" style="margin:14px 0;">
-          <button type="button" class="btn-ai-improve" id="scamCheckBtn" onclick="analyzeScamSignals()" style="background:none;border:1px solid var(--border,#333);color:var(--text-dim,#999);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">🛡️ Analyser les signaux d'alerte</button>
+          <button type="button" class="btn-ai-improve" id="scamCheckBtn" onclick="analyzeScamSignals()" data-i18n="btnScamCheck" style="background:none;border:1px solid var(--border,#333);color:var(--text-dim,#999);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">🛡️ Analyser les signaux d'alerte</button>
           <div id="scamCheckBox" style="display:none;font-size:13px;margin-top:8px;padding:10px 12px;border-radius:8px;line-height:1.4;"></div>
         </div>
 
