@@ -972,6 +972,7 @@ body{
     <div class="form-group">
       <label class="form-label" data-i18n="fieldDesc">Description</label>
       <textarea class="form-textarea" id="desc" data-i18n-placeholder="phDesc" placeholder="Decrivez le travail a effectuer..." required minlength="10" maxlength="3000"></textarea>
+      <button type="button" class="btn-ai-improve" id="improveDescBtn" onclick="improveJobDescription()" data-i18n="btnImproveDesc" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">✨ Améliorer avec l'IA</button>
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="fieldRequirements">Exigences (optionnel)</label>
@@ -981,6 +982,8 @@ body{
       <div class="form-group">
         <label class="form-label" data-i18n="fieldPrice">Prix (XAF)</label>
         <input class="form-input" id="price" type="text" data-i18n-placeholder="phPrice" placeholder="Ex: 15 000 XAF" required maxlength="30"/>
+        <button type="button" class="btn-ai-improve" id="suggestPriceBtn" onclick="suggestJobPrice()" data-i18n="btnSuggestPrice" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">💡 Suggérer un prix</button>
+        <div id="priceSuggestionBox" style="display:none;font-size:12px;margin-top:6px;line-height:1.4;color:var(--text-secondary,#999);"></div>
       </div>
       <div class="form-group">
         <label class="form-label" data-i18n="fieldPhone">Telephone</label>
@@ -3744,6 +3747,253 @@ async function callChatAI(messages) {
   }
 }
 
+// Bouton "✨ Améliorer avec l'IA" du formulaire de publication : reformule
+// le titre + la description en une annonce plus claire, via le même worker
+// que le chat mais avec mode:'rewrite_job' (prompt différent côté worker,
+// voir chat-proxy.js). Pas de repli local ici — si l'IA n'est pas
+// disponible, on prévient simplement l'utilisateur plutôt que d'improviser
+// une reformulation approximative avec des règles fixes.
+async function improveJobDescription() {
+  const titleEl = document.getElementById('title');
+  const descEl = document.getElementById('desc');
+  const categoryEl = document.getElementById('category');
+  const btn = document.getElementById('improveDescBtn');
+  if (!titleEl || !descEl || !btn) return;
+
+  const title = titleEl.value.trim();
+  const desc = descEl.value.trim();
+  if (desc.length < 10) {
+    showToast("Écrivez d'abord une courte description avant d'utiliser l'IA.", 'error');
+    return;
+  }
+
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '✨ Amélioration en cours...';
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    const res = await fetch(CHAT_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'rewrite_job',
+        title,
+        description: desc,
+        category: categoryEl ? categoryEl.value.split('|')[0] : ''
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error('worker-http-error');
+
+    const data = await res.json();
+    if (data.fallback || !data.title || !data.description) {
+      showToast("L'IA n'est pas disponible pour le moment, réessayez plus tard.", 'error');
+      return;
+    }
+
+    titleEl.value = data.title;
+    descEl.value = data.description;
+    showToast('Description améliorée !', 'success');
+  } catch (err) {
+    showToast("Impossible de contacter l'IA. Vérifiez votre connexion.", 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+}
+
+// Bouton "✨ Optimiser avec l'IA" du Profil Pro : reformule le métier et
+// les compétences de façon plus professionnelle, via le même worker avec
+// mode:'optimize_profile'. Ne touche jamais au nom/société (identité de
+// la personne, pas à reformuler), seulement au métier/spécialité et aux
+// compétences déclarées — sans jamais en inventer de nouvelles.
+async function optimizeArtisanProfile() {
+  const jobTitleEl = document.getElementById('jobTitle');
+  const skillsEl = document.getElementById('skills');
+  const btn = document.getElementById('optimizeProfileBtn');
+  if (!jobTitleEl || !skillsEl || !btn) return;
+
+  const jobTitle = jobTitleEl.value.trim();
+  const skills = skillsEl.value.trim();
+  if (skills.length < 5) {
+    showToast("Renseignez d'abord vos compétences avant d'utiliser l'IA.", 'error');
+    return;
+  }
+
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '✨ Optimisation en cours...';
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    const res = await fetch(CHAT_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'optimize_profile', jobTitle, skills }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error('worker-http-error');
+
+    const data = await res.json();
+    if (data.fallback || !data.jobTitle || !data.skills) {
+      showToast("L'IA n'est pas disponible pour le moment, réessayez plus tard.", 'error');
+      return;
+    }
+
+    jobTitleEl.value = data.jobTitle;
+    skillsEl.value = data.skills;
+    showToast('Profil optimisé !', 'success');
+  } catch (err) {
+    showToast("Impossible de contacter l'IA. Vérifiez votre connexion.", 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+}
+
+// Bouton "💡 Suggérer un prix" du formulaire de publication : donne une
+// fourchette indicative en FCFA via mode:'suggest_price'. Contrairement
+// aux autres boutons IA, on n'écrase pas automatiquement le champ prix
+// (c'est une estimation générale, pas une donnée certaine) — on affiche
+// la suggestion à côté et la personne décide d'appliquer ou non via un
+// second bouton, pour garder la main sur son prix final.
+async function suggestJobPrice() {
+  const titleEl = document.getElementById('title');
+  const descEl = document.getElementById('desc');
+  const categoryEl = document.getElementById('category');
+  const priceEl = document.getElementById('price');
+  const btn = document.getElementById('suggestPriceBtn');
+  const box = document.getElementById('priceSuggestionBox');
+  if (!titleEl || !descEl || !priceEl || !btn || !box) return;
+
+  const title = titleEl.value.trim();
+  const desc = descEl.value.trim();
+  if (!title && desc.length < 10) {
+    showToast("Renseignez d'abord un titre ou une description avant de demander un prix.", 'error');
+    return;
+  }
+
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '💡 Calcul en cours...';
+  box.style.display = 'none';
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    const res = await fetch(CHAT_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'suggest_price',
+        title,
+        description: desc,
+        category: categoryEl ? categoryEl.value.split('|')[0] : ''
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error('worker-http-error');
+
+    const data = await res.json();
+    if (data.fallback || typeof data.rangeLow !== 'number' || typeof data.rangeHigh !== 'number') {
+      showToast("L'IA n'est pas disponible pour le moment, réessayez plus tard.", 'error');
+      return;
+    }
+
+    const fmt = (n) => n.toLocaleString('fr-FR');
+    const suggestedText = `${fmt(data.rangeLow)} - ${fmt(data.rangeHigh)} FCFA`;
+    box.innerHTML = `💡 Estimation : <strong>${suggestedText}</strong><br>${data.note}<br><button type="button" onclick="document.getElementById('price').value='${suggestedText.replace(/'/g, "\\'")}'; showToast('Prix appliqué', 'success');" style="margin-top:6px;background:none;border:none;color:var(--accent,#25D366);text-decoration:underline;cursor:pointer;font-size:12px;padding:0;">Utiliser cette estimation</button>`;
+    box.style.display = 'block';
+  } catch (err) {
+    showToast("Impossible de contacter l'IA. Vérifiez votre connexion.", 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+}
+
+// Bouton "🛡️ Analyser les signaux d'alerte" sur la fiche d'une annonce :
+// analyse le texte (titre/description/prix) via mode:'check_scam_signals'.
+// N'analyse QUE le texte de l'annonce affichée (window.currentPreviewJob,
+// posé par openJobPreview) — jamais le profil ou l'historique de son
+// auteur, que ce worker ne connaît pas. Le résultat reste une invitation à
+// la vigilance, jamais une accusation : le texte l'explique clairement à
+// chaque niveau de risque, et le bouton "Signaler" existant reste la
+// action à utiliser en cas de doute réel, pas ce simple indicateur.
+async function analyzeScamSignals() {
+  const job = window.currentPreviewJob;
+  const btn = document.getElementById('scamCheckBtn');
+  const box = document.getElementById('scamCheckBox');
+  if (!job || !btn || !box) return;
+
+  const title = (job.title || '').trim();
+  const desc = (job.desc || '').trim();
+  if (!title && !desc) {
+    showToast("Rien à analyser sur cette annonce.", 'error');
+    return;
+  }
+
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '🛡️ Analyse en cours...';
+  box.style.display = 'none';
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    const res = await fetch(CHAT_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'check_scam_signals',
+        title,
+        description: desc,
+        price: job.price ? String(job.price) : ''
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error('worker-http-error');
+
+    const data = await res.json();
+    const validLevels = ['low', 'medium', 'high'];
+    if (data.fallback || !validLevels.includes(data.riskLevel)) {
+      showToast("L'IA n'est pas disponible pour le moment, réessayez plus tard.", 'error');
+      return;
+    }
+
+    const styles = {
+      low: { bg: 'rgba(37,211,102,0.12)', color: '#25D366', icon: '✅' },
+      medium: { bg: 'rgba(255,215,0,0.12)', color: '#FFD700', icon: '⚠️' },
+      high: { bg: 'rgba(255,59,48,0.12)', color: '#FF3B30', icon: '🚨' }
+    };
+    const s = styles[data.riskLevel];
+    box.style.background = s.bg;
+    box.style.color = s.color;
+    box.innerHTML = `${s.icon} ${data.note}<br><span style="opacity:0.7;font-size:11px;">Analyse automatique du texte, pas une preuve — restez vigilant et vérifiez avant de payer quoi que ce soit à l'avance.</span>`;
+    box.style.display = 'block';
+  } catch (err) {
+    showToast("Impossible de contacter l'IA. Vérifiez votre connexion.", 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+}
+
 async function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const msg = input.value.trim();
@@ -4162,6 +4412,14 @@ async function openJobPreview(jobId) {
     const whatsAppBtnEl = document.getElementById('previewWhatsAppBtn');
     if (ownerActionsEl) ownerActionsEl.classList.toggle('hidden', !isOwner);
     if (whatsAppBtnEl) whatsAppBtnEl.classList.toggle('hidden', isOwner);
+
+    // Pas utile d'analyser sa propre annonce pour des signaux d'alerte, et on
+    // réinitialise l'affichage à chaque ouverture pour ne pas montrer le
+    // résultat d'une annonce précédente.
+    const scamCheckContainer = document.getElementById('previewScamCheck');
+    const scamCheckBox = document.getElementById('scamCheckBox');
+    if (scamCheckContainer) scamCheckContainer.style.display = isOwner ? 'none' : 'block';
+    if (scamCheckBox) { scamCheckBox.style.display = 'none'; scamCheckBox.innerHTML = ''; }
 
     document.getElementById('previewTitle').innerText = job.title || 'Titre non spécifié';
 
@@ -5388,6 +5646,15 @@ document.addEventListener('click', (e) => {
                 <h3 data-i18n="descNeed">Description du besoin :</h3>
         <p id="previewDescription">Détails de l'emploi ou du service demandé...</p>
 
+        <!-- Analyse IA des signaux d'alerte (arnaque potentielle) : masquée pour
+             ses propres annonces via previewScamCheck (même logique que le bouton
+             WhatsApp), et déclenchée manuellement plutôt qu'automatiquement pour
+             ne pas gaspiller le budget IA sur des annonces jamais consultées en détail. -->
+        <div id="previewScamCheck" style="margin:14px 0;">
+          <button type="button" class="btn-ai-improve" id="scamCheckBtn" onclick="analyzeScamSignals()" style="background:none;border:1px solid var(--border,#333);color:var(--text-dim,#999);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">🛡️ Analyser les signaux d'alerte</button>
+          <div id="scamCheckBox" style="display:none;font-size:13px;margin-top:8px;padding:10px 12px;border-radius:8px;line-height:1.4;"></div>
+        </div>
+
         <!-- Avis reçus par l'auteur de l'annonce : visible par tout le monde, pas
              seulement le propriétaire, pour permettre de décider AVANT de contacter. -->
         <div id="previewOwnerReviews"></div>
@@ -5873,6 +6140,7 @@ document.addEventListener('click', (e) => {
         <div class="profile-form-group">
             <label data-i18n="fieldSkills">Compétences (séparées par des virgules)</label>
             <textarea id="skills" class="profile-textarea" data-i18n-placeholder="phSkills" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..." maxlength="1000"></textarea>
+            <button type="button" class="btn-ai-improve" id="optimizeProfileBtn" onclick="optimizeArtisanProfile()" data-i18n="btnOptimizeProfile" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">✨ Optimiser avec l'IA</button>
         </div>
         <div id="profileBadgeRating" style="margin: 4px 0 16px 0;"></div>
         <div id="verificationStatusBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
