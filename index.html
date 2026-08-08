@@ -964,6 +964,7 @@ body{
         <option value="mecanique|#FF3B30" data-i18n="optMecanique">Mecanique Auto</option>
         <option value="informatique|#AF52DE" data-i18n="optInfo">Informatique</option>
       </select>
+      <button type="button" class="btn-ai-improve" id="suggestCategoryBtn" onclick="suggestJobCategory()" data-i18n="btnSuggestCategory" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">✨ Suggérer la catégorie</button>
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="fieldTitle">Titre du job</label>
@@ -1462,6 +1463,11 @@ function vibrateDevice(ms) {
 // ===== INTERNATIONALISATION (FR / EN / IT / DE / ZH) =====
 const I18N = {
   fr: {
+    jobModerationBlocked: "Publication refusée : {reason}", jobModerationBlockedGeneric: "Cette annonce ne peut pas être publiée telle quelle. Merci de la modifier.",
+    resultsPlural: "résultats", resultSingular: "résultat", searchIntentPrefix: "Aucun résultat exact. Vouliez-vous dire :", mapViewActivated: "Vue plan activée", satelliteViewActivated: "Vue satellite activée", activateLocationForRadius: "Active ta position pour filtrer par distance",
+    btnSuggestCategory: "✨ Suggérer la catégorie", aiCategoryMinLength: "Écrivez d'abord un titre ou une description avant d'utiliser l'IA.", aiCategoryLoading: "✨ Analyse en cours...", aiCategorySuggested: "Catégorie suggérée : {category}",
+    whatsappOpenedSuccess: "WhatsApp ouvert !",
+    shareOnWhatsappBtn: "🔄 Partager sur WhatsApp", viewRouteBtn: "Voir l'itinéraire", jobNotFoundAlert: "Job non trouvé", errorPrefix: "Erreur : ", sharedOnWhatsapp: "Partagé sur WhatsApp !",
     jobUpdated: "Annonce mise à jour !", jobPublished: "Job publié avec succès !",
     // ===== Cles ajoutees pour la traduction automatique des annonces =====
     jobTranslatedNotice: "🌐 Traduit automatiquement", viewOriginalText: "Voir l'original", viewTranslationText: "Voir la traduction",
@@ -1560,6 +1566,11 @@ const I18N = {
     adminApprove: "Valider ✓", adminReject: "Refuser", adminAnonymous: "Anonyme", adminDeleteBtn: "Suppr."
   },
   en: {
+    jobModerationBlocked: "Publication refused: {reason}", jobModerationBlockedGeneric: "This listing cannot be published as is. Please edit it.",
+    resultsPlural: "results", resultSingular: "result", searchIntentPrefix: "No exact match. Did you mean:", mapViewActivated: "Map view activated", satelliteViewActivated: "Satellite view activated", activateLocationForRadius: "Enable your location to filter by distance",
+    btnSuggestCategory: "✨ Suggest category", aiCategoryMinLength: "Write a title or description first before using AI.", aiCategoryLoading: "✨ Analyzing...", aiCategorySuggested: "Suggested category: {category}",
+    whatsappOpenedSuccess: "WhatsApp opened!",
+    shareOnWhatsappBtn: "🔄 Share on WhatsApp", viewRouteBtn: "View route", jobNotFoundAlert: "Job not found", errorPrefix: "Error: ", sharedOnWhatsapp: "Shared on WhatsApp!",
     jobUpdated: "Listing updated!", jobPublished: "Job published successfully!",
     // ===== Cles ajoutees pour la traduction automatique des annonces =====
     jobTranslatedNotice: "🌐 Automatically translated", viewOriginalText: "View original", viewTranslationText: "View translation",
@@ -1658,6 +1669,11 @@ const I18N = {
     adminApprove: "Approve ✓", adminReject: "Reject", adminAnonymous: "Anonymous", adminDeleteBtn: "Delete"
   },
   it: {
+    jobModerationBlocked: "Pubblicazione rifiutata: {reason}", jobModerationBlockedGeneric: "Questo annuncio non può essere pubblicato così com'è. Modificalo, per favore.",
+    resultsPlural: "risultati", resultSingular: "risultato", searchIntentPrefix: "Nessun risultato esatto. Intendevi:", mapViewActivated: "Vista mappa attivata", satelliteViewActivated: "Vista satellite attivata", activateLocationForRadius: "Attiva la tua posizione per filtrare per distanza",
+    btnSuggestCategory: "✨ Suggerisci categoria", aiCategoryMinLength: "Scrivi prima un titolo o una descrizione prima di usare l'IA.", aiCategoryLoading: "✨ Analisi in corso...", aiCategorySuggested: "Categoria suggerita: {category}",
+    whatsappOpenedSuccess: "WhatsApp aperto!",
+    shareOnWhatsappBtn: "🔄 Condividi su WhatsApp", viewRouteBtn: "Vedi itinerario", jobNotFoundAlert: "Lavoro non trovato", errorPrefix: "Errore: ", sharedOnWhatsapp: "Condiviso su WhatsApp!",
     jobUpdated: "Annuncio aggiornato!", jobPublished: "Lavoro pubblicato con successo!",
     // ===== Cles ajoutees pour la traduction automatique des annonces =====
     jobTranslatedNotice: "🌐 Tradotto automaticamente", viewOriginalText: "Vedi originale", viewTranslationText: "Vedi traduzione",
@@ -1756,6 +1772,11 @@ const I18N = {
     adminApprove: "Approva ✓", adminReject: "Rifiuta", adminAnonymous: "Anonimo", adminDeleteBtn: "Elimina"
   },
   de: {
+    jobModerationBlocked: "Veröffentlichung abgelehnt: {reason}", jobModerationBlockedGeneric: "Diese Anzeige kann so nicht veröffentlicht werden. Bitte bearbeiten Sie sie.",
+    resultsPlural: "Ergebnisse", resultSingular: "Ergebnis", searchIntentPrefix: "Keine exakte Übereinstimmung. Meinten Sie:", mapViewActivated: "Kartenansicht aktiviert", satelliteViewActivated: "Satellitenansicht aktiviert", activateLocationForRadius: "Aktivieren Sie Ihren Standort, um nach Entfernung zu filtern",
+    btnSuggestCategory: "✨ Kategorie vorschlagen", aiCategoryMinLength: "Schreiben Sie zuerst einen Titel oder eine Beschreibung, bevor Sie die KI nutzen.", aiCategoryLoading: "✨ Wird analysiert...", aiCategorySuggested: "Vorgeschlagene Kategorie: {category}",
+    whatsappOpenedSuccess: "WhatsApp geöffnet!",
+    shareOnWhatsappBtn: "🔄 Auf WhatsApp teilen", viewRouteBtn: "Route anzeigen", jobNotFoundAlert: "Auftrag nicht gefunden", errorPrefix: "Fehler: ", sharedOnWhatsapp: "Auf WhatsApp geteilt!",
     jobUpdated: "Anzeige aktualisiert!", jobPublished: "Auftrag erfolgreich veröffentlicht!",
     // ===== Cles ajoutees pour la traduction automatique des annonces =====
     jobTranslatedNotice: "🌐 Automatisch übersetzt", viewOriginalText: "Original anzeigen", viewTranslationText: "Übersetzung anzeigen",
@@ -1854,6 +1875,11 @@ const I18N = {
     adminApprove: "Genehmigen ✓", adminReject: "Ablehnen", adminAnonymous: "Anonym", adminDeleteBtn: "Löschen"
   },
   zh: {
+    jobModerationBlocked: "发布被拒绝:{reason}", jobModerationBlockedGeneric: "该信息目前无法发布,请修改后重试。",
+    resultsPlural: "个结果", resultSingular: "个结果", searchIntentPrefix: "未找到精确匹配。您是否想搜索:", mapViewActivated: "已切换到地图视图", satelliteViewActivated: "已切换到卫星视图", activateLocationForRadius: "请开启定位以按距离筛选",
+    btnSuggestCategory: "✨ 建议分类", aiCategoryMinLength: "请先输入标题或描述,然后再使用AI。", aiCategoryLoading: "✨ 分析中...", aiCategorySuggested: "建议分类:{category}",
+    whatsappOpenedSuccess: "WhatsApp已打开!",
+    shareOnWhatsappBtn: "🔄 分享到WhatsApp", viewRouteBtn: "查看路线", jobNotFoundAlert: "未找到该工作", errorPrefix: "错误:", sharedOnWhatsapp: "已分享到WhatsApp!",
     jobUpdated: "信息已更新!", jobPublished: "工作发布成功!",
     // ===== Cles ajoutees pour la traduction automatique des annonces =====
     jobTranslatedNotice: "🌐 自动翻译", viewOriginalText: "查看原文", viewTranslationText: "查看译文",
@@ -2087,6 +2113,44 @@ async function getTranslatedJobContent(job, jobId) {
     return translation;
   } catch (err) {
     return null; // silencieux : on retombe sur le texte original, jamais d'erreur visible ici
+  }
+}
+
+// Version SYNCHRONE, cache uniquement (jamais d'appel réseau) : à utiliser
+// dans les gestionnaires de clic qui doivent rester synchrones (ex: ouvrir
+// WhatsApp) — un `await` avant `window.open()` ferait bloquer la popup par
+// le navigateur sur mobile/Safari, car le "geste utilisateur" serait perdu
+// pendant l'attente. Si la traduction n'est pas encore en cache, on
+// retombe simplement sur le texte original — pas de traduction à la volée
+// ici, seulement quand le popup/carte l'a déjà pré-chargée.
+function getJobDisplayContent(job) {
+  const sourceLang = job.lang || 'fr';
+  if (currentLang !== sourceLang && job.translations && job.translations[currentLang]) {
+    return job.translations[currentLang];
+  }
+  return { title: job.title || '', desc: job.desc || '', requirements: job.requirements || '' };
+}
+
+// Traduction paresseuse du popup carte : ne se déclenche qu'à l'OUVERTURE
+// réelle du popup par l'utilisateur (pas au chargement de la carte), pour
+// ne jamais lancer des dizaines d'appels IA d'un coup pour des annonces
+// que personne ne regarde. Le contenu original s'affiche immédiatement à
+// l'ouverture, la traduction (cache ou IA) le remplace dès qu'elle arrive.
+async function translateMapPopupIfNeeded(job, jobId, marker) {
+  const translation = await getTranslatedJobContent(job, jobId);
+  if (!translation) return;
+  // Le popup a pu être refermé entre-temps — Leaflet ignore silencieusement
+  // les mises à jour DOM sur un popup fermé, donc pas besoin de vérifier ici.
+  const popupEl = marker.getPopup()?.getElement();
+  if (!popupEl) return;
+  const titleEl = popupEl.querySelector('[data-map-popup-title]');
+  const descEl = popupEl.querySelector('[data-map-popup-desc]');
+  const noticeEl = popupEl.querySelector('[data-map-popup-translation-notice]');
+  if (titleEl) titleEl.innerText = translation.title;
+  if (descEl) descEl.innerText = translation.desc;
+  if (noticeEl) {
+    noticeEl.style.display = 'block';
+    noticeEl.innerText = t('jobTranslatedNotice');
   }
 }
 
@@ -2495,6 +2559,39 @@ async function addJob() {
         lang: (editingJobId && existingJob && existingJob.lang) ? existingJob.lang : currentLang
       };
 
+      // Modération automatique : ne bloque QUE les cas clairement
+      // inappropriés (voir MODERATE_JOB_SYSTEM_PROMPT dans chat-proxy.js).
+      // "Fail-open" strict : toute panne, timeout ou réponse ambiguë de
+      // l'IA laisse la publication continuer normalement — jamais bloquer
+      // une annonce légitime pour une raison d'infrastructure. Le système
+      // de signalement existant reste le filet de sécurité principal.
+      try {
+        const modController = new AbortController();
+        const modTimeout = setTimeout(() => modController.abort(), 8000);
+        const modRes = await fetch(CHAT_PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'moderate_job',
+            title: jobData.title,
+            description: jobData.desc,
+            requirements: jobData.requirements
+          }),
+          signal: modController.signal
+        });
+        clearTimeout(modTimeout);
+        if (modRes.ok) {
+          const modData = await modRes.json();
+          if (!modData.fallback && modData.flagged === true) {
+            showToast(modData.reason ? t('jobModerationBlocked').replace('{reason}', modData.reason) : t('jobModerationBlockedGeneric'), 'error');
+            resetPublishBtn();
+            return;
+          }
+        }
+      } catch (modErr) {
+        // Silencieux et volontaire : voir commentaire "fail-open" ci-dessus.
+      }
+
       if (editingJobId) {
         // Le texte a peut-être changé : toute traduction mise en cache
         // deviendrait fausse/périmée. On l'efface pour forcer une nouvelle
@@ -2762,31 +2859,33 @@ function syncJobs() {
           .addTo(jobsLayer)
           .bindPopup(`
             <div style="min-width:240px;font-family:'DM Sans',sans-serif;">
-              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${job.title}</div>
+              <div data-map-popup-title style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${job.title}</div>
               <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
                 <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
                 <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
               </div>
               ${job.landmark ? `<div style="font-size:12px;color:#9999BC;margin-bottom:8px;">${job.landmark}</div>` : ''}
-              ${job.desc ? `<div style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
+              ${job.desc ? `<div data-map-popup-desc style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
               ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
               ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" alt="Photo de l'annonce" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
+              <div data-map-popup-translation-notice style="display:none;margin:6px 0;font-size:11px;color:#9999BC;"></div>
               <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
                 WhatsApp
               </button>
               
               <button onclick="popupShareClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#007AFF;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
-                 🔄 Partager sur WhatsApp
+                 ${t('shareOnWhatsappBtn')}
               </button>
               <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:var(--blue);color:white;padding:12px;border:none;border-radius:12px;margin-top:6px;font-weight:700;font-size:14px;cursor:pointer;">
-                Voir l'itineraire
+                ${t('viewRouteBtn')}
               </button>
               <button onclick="openReportModal('${jobId}')" style="width:100%;background:none;color:#9999BC;padding:8px;border:none;font-size:12px;cursor:pointer;margin-top:4px;text-decoration:underline;">
                 🚩 ${t('reportLink')}
               </button>
             </div>
           `, { maxWidth: 280 });
+        marker.on('popupopen', () => translateMapPopupIfNeeded(job, jobId, marker));
         jobWithId.marker = marker; // référence gardée pour pouvoir filtrer la carte (recherche/catégorie/rayon)
       });
 
@@ -2944,7 +3043,75 @@ function applyFilters() {
   });
 
   const countEl = document.getElementById('searchResultsCount');
-  if (countEl) countEl.textContent = filtered.length + (filtered.length > 1 ? ' resultats' : ' resultat');
+  if (countEl) countEl.textContent = filtered.length + ' ' + (filtered.length > 1 ? t('resultsPlural') : t('resultSingular'));
+
+  // Recherche intelligente : ne se déclenche QUE quand la recherche par
+  // mot-clé exact ne trouve RIEN, et seulement après un court délai sans
+  // frappe (pas à chaque touche) — pour ne jamais appeler l'IA pendant que
+  // la personne tape encore, et rester très économe en appels.
+  hideSearchIntentSuggestion();
+  clearTimeout(window.__searchIntentTimer);
+  if (searchLower.length >= 3 && filtered.length === 0) {
+    window.__searchIntentTimer = setTimeout(() => askSearchIntent(searchLower), 900);
+  }
+}
+
+// Bascule "did-you-mean" affichée sous le compteur de résultats quand la
+// recherche par mot-clé échoue mais que l'IA détecte une catégorie
+// probable (ex: "robinet qui fuit" -> Plomberie). Un clic applique le
+// filtre catégorie correspondant — jamais automatique, toujours un choix.
+async function askSearchIntent(query) {
+  // Le texte de recherche a pu changer pendant le délai : on vérifie qu'il
+  // s'agit toujours de la même requête avant d'afficher quoi que ce soit.
+  if (currentSearchText.trim().toLowerCase() !== query) return;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(CHAT_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'search_intent', query }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return;
+
+    const data = await res.json();
+    if (data.fallback || !data.category || data.category === 'none') return;
+    if (currentSearchText.trim().toLowerCase() !== query) return; // toujours d'actualité ?
+
+    showSearchIntentSuggestion(data.category);
+  } catch (err) {
+    // Silencieux : la recherche par mot-clé reste utilisable normalement,
+    // ce n'est qu'une suggestion en plus, jamais un blocage.
+  }
+}
+
+function showSearchIntentSuggestion(category) {
+  const countEl = document.getElementById('searchResultsCount');
+  if (!countEl) return;
+  let box = document.getElementById('searchIntentSuggestion');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'searchIntentSuggestion';
+    box.style.cssText = 'margin-top:6px;font-size:13px;color:var(--text-dim,#9999BC);';
+    countEl.insertAdjacentElement('afterend', box);
+  }
+  const label = t(CATEGORY_LABEL_KEYS[category]);
+  box.innerHTML = `${t('searchIntentPrefix')} <button type="button" onclick="applySearchIntentCategory('${category}')" style="background:none;border:none;color:var(--accent,#25D366);text-decoration:underline;cursor:pointer;font-size:13px;font-weight:700;padding:0;">${label}</button> ?`;
+  box.style.display = 'block';
+}
+
+function hideSearchIntentSuggestion() {
+  const box = document.getElementById('searchIntentSuggestion');
+  if (box) box.style.display = 'none';
+}
+
+function applySearchIntentCategory(category) {
+  hideSearchIntentSuggestion();
+  const btn = document.querySelector(`.cat-btn[onclick*="filterJobs('${category}'"]`);
+  filterJobs(category, btn || null);
 }
 
 // ===== CALC DISTANCE =====
@@ -2962,12 +3129,12 @@ function toggleMapStyle() {
     map.removeLayer(satelliteLayer);
     streetLayer.addTo(map);
     currentMapStyle = 'street';
-    showToast('Vue plan activee', 'info');
+    showToast(t('mapViewActivated'), 'info');
   } else {
     map.removeLayer(streetLayer);
     satelliteLayer.addTo(map);
     currentMapStyle = 'satellite';
-    showToast('Vue satellite activee', 'info');
+    showToast(t('satelliteViewActivated'), 'info');
   }
 }
 
@@ -4146,6 +4313,77 @@ async function suggestJobPrice() {
     const suggestedText = `${fmt(data.rangeLow)} - ${fmt(data.rangeHigh)} FCFA`;
     box.innerHTML = `${t('aiPriceEstimateLabel') || '💡'} <strong>${suggestedText}</strong><br>${data.note}<br><button type="button" onclick="document.getElementById('price').value='${suggestedText.replace(/'/g, "\\'")}'; showToast(t('aiPriceApplied'), 'success');" style="margin-top:6px;background:none;border:none;color:var(--accent,#25D366);text-decoration:underline;cursor:pointer;font-size:12px;padding:0;">${t('aiPriceUseEstimation')}</button>`;
     box.style.display = 'block';
+  } catch (err) {
+    showToast(t('aiConnectionError'), 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+}
+
+// Bouton "✨ Suggérer la catégorie" du formulaire de publication : lit le
+// titre/description et propose la catégorie la plus pertinente parmi les
+// 7 existantes (mode:'suggest_category'), même quand le texte ne contient
+// pas le mot-clé exact. La catégorie n'est jamais changée automatiquement
+// sans action de la personne — le bouton PRÉ-SÉLECTIONNE juste l'option
+// dans le menu déroulant, qui reste modifiable avant publication.
+const CATEGORY_SELECT_VALUES = {
+  btp: 'btp|#FF9500',
+  electricite: 'electricite|#FFD700',
+  plomberie: 'plomberie|#007AFF',
+  menage: 'menage|#25D366',
+  jardinage: 'jardinage|#34C759',
+  mecanique: 'mecanique|#FF3B30',
+  informatique: 'informatique|#AF52DE'
+};
+// Les clés i18n des libellés ne suivent pas une capitalisation simple du
+// code (ex: "electricite" -> "optElec", pas "optElectricite") — mappage explicite.
+const CATEGORY_LABEL_KEYS = {
+  btp: 'optBtp', electricite: 'optElec', plomberie: 'optPlomberie',
+  menage: 'optMenage', jardinage: 'optJardinage', mecanique: 'optMecanique', informatique: 'optInfo'
+};
+
+async function suggestJobCategory() {
+  const titleEl = document.getElementById('title');
+  const descEl = document.getElementById('desc');
+  const categoryEl = document.getElementById('category');
+  const btn = document.getElementById('suggestCategoryBtn');
+  if (!titleEl || !descEl || !categoryEl || !btn) return;
+
+  const title = titleEl.value.trim();
+  const desc = descEl.value.trim();
+  if (!title && desc.length < 10) {
+    showToast(t('aiCategoryMinLength'), 'error');
+    return;
+  }
+
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = t('aiCategoryLoading');
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    const res = await fetch(CHAT_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'suggest_category', title, description: desc }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) throw new Error('worker-http-error');
+
+    const data = await res.json();
+    const selectValue = data.category && CATEGORY_SELECT_VALUES[data.category];
+    if (data.fallback || !selectValue) {
+      showToast(t('aiUnavailable'), 'error');
+      return;
+    }
+
+    categoryEl.value = selectValue;
+    showToast(t('aiCategorySuggested').replace('{category}', t(CATEGORY_LABEL_KEYS[data.category])), 'success');
   } catch (err) {
     showToast(t('aiConnectionError'), 'error');
   } finally {
@@ -5501,9 +5739,10 @@ function shareJobViaWhatsApp() {
     const job = window.currentPreviewJob;
     if (!job) return;
     const link = getJobShareLink(job.id);
-    const requirementsBlock = job.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + job.requirements : '';
+    const displayContent = getJobDisplayContent(job);
+    const requirementsBlock = displayContent.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + displayContent.requirements : '';
     const phonesText = job.phone2 ? (job.phone + t('waMsgOrConnector') + job.phone2) : (job.phone || '—');
-    const message = t('waMsgShareJob').replace('{title}', (job.title || '').toUpperCase()).replace('{desc}', job.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.landmark || 'Non spécifié').replace('{price}', job.price).replace('{phone}', phonesText).replace('{link}', link);
+    const message = t('waMsgShareJob').replace('{title}', (displayContent.title || '').toUpperCase()).replace('{desc}', displayContent.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.landmark || 'Non spécifié').replace('{price}', job.price).replace('{phone}', phonesText).replace('{link}', link);
     openWhatsAppReliably(null, null, message);
 }
 
@@ -5529,7 +5768,7 @@ window.popupWhatsAppClick = async function(jobId) {
     const job = jobsById[jobId];
     if (!job) {
         console.error('Job non trouvé avec l\'ID:', jobId);
-        alert('Job non trouvé');
+        alert(t('jobNotFoundAlert'));
         return;
     }
 
@@ -5577,18 +5816,18 @@ window.popupWhatsAppClick = async function(jobId) {
         const profileName = profile.name || profile.company || 'Prestataire';
         
         const message = t('waMsgContactProvider')
-            .replace('{jobTitle}', job.title)
+            .replace('{jobTitle}', getJobDisplayContent(job).title)
             .replace('{profileName}', profileName)
             .replace('{proTitle}', proTitle)
             .replace('{proSkills}', proSkills);
         
         openWhatsAppReliably(waWindow, phone, message);
-        showToast('WhatsApp ouvert!', 'success');
+        showToast(t('whatsappOpenedSuccess'), 'success');
 
     } catch (e) {
         console.error("Erreur:", e);
         if (waWindow) waWindow.close();
-        alert('Erreur: ' + e.message);
+        alert(t('errorPrefix') + e.message);
     }
 }
 
@@ -5598,15 +5837,16 @@ window.popupShareClick = function(jobId) {
     const job = jobsById[jobId];
     if (!job) {
         console.error('Job non trouvé avec l\'ID:', jobId);
-        alert('Job non trouvé');
+        alert(t('jobNotFoundAlert'));
         return;
     }
     const link = getJobShareLink(jobId);
-    const requirementsBlock = job.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + job.requirements : '';
+    const displayContent = getJobDisplayContent(job);
+    const requirementsBlock = displayContent.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + displayContent.requirements : '';
     const phonesText = job.phone2 ? (job.phone + t('waMsgOrConnector') + job.phone2) : (job.phone || '—');
-    const message = t('waMsgShareJob').replace('{title}', (job.title || '').toUpperCase()).replace('{desc}', job.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.landmark || 'Non spécifié').replace('{price}', job.price).replace('{phone}', phonesText).replace('{link}', link);
+    const message = t('waMsgShareJob').replace('{title}', (displayContent.title || '').toUpperCase()).replace('{desc}', displayContent.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.landmark || 'Non spécifié').replace('{price}', job.price).replace('{phone}', phonesText).replace('{link}', link);
     openWhatsAppReliably(null, null, message);
-    showToast('Partage sur WhatsApp!', 'success');
+    showToast(t('sharedOnWhatsapp'), 'success');
 }
  
 // ===== SYSTÈME D'AVIS =====
@@ -6447,7 +6687,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = parseFloat(btn.dataset.radius);
       currentRadiusKm = (!r || r === 0) ? null : r;
       if (currentRadiusKm && !userCoords) {
-        showToast('Active ta position pour filtrer par distance', 'error');
+        showToast(t('activateLocationForRadius'), 'error');
       }
       applyFilters();
     });
