@@ -784,7 +784,7 @@ body{
 </style>
 <div id="langPicker" style="display:none;position:fixed;inset:0;z-index:10500;background:rgba(10,10,15,0.88);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
   <div style="position:relative;width:100%;max-width:340px;background:#13131A;border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-    <button onclick="closeLangPicker()" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:#9999BC;cursor:pointer;font-size:14px;">✕</button>
+    <button onclick="closeLangPicker()" data-i18n-aria-label="closeAriaLabel" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:#9999BC;cursor:pointer;font-size:14px;">✕</button>
     <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;margin-bottom:4px;padding-right:24px;" data-i18n="langModalTitle">Choisissez votre langue</div>
     <div style="color:#9999BC;font-size:13px;margin-bottom:16px;">Choose your language</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
@@ -900,7 +900,7 @@ body{
 
 <!-- ===== SEARCH PANEL (recherche par nom + filtre par rayon) ===== -->
 <div class="search-panel" id="searchPanel">
-  <input type="text" class="search-input" id="jobSearchInput" placeholder="Rechercher un job (ex: plombier, menage...)">
+  <input type="text" class="search-input" id="jobSearchInput" data-i18n-placeholder="searchJobPlaceholder" placeholder="Rechercher un job (ex: plombier, menage...)">
   <div class="filter-chips" id="radiusFilters">
     <button type="button" class="filter-chip active" data-radius="0">Tout</button>
     <button type="button" class="filter-chip" data-radius="0.5">500 m</button>
@@ -988,12 +988,12 @@ body{
       </div>
       <div class="form-group">
         <label class="form-label" data-i18n="fieldPhone">Telephone</label>
-        <input class="form-input" id="phone" type="tel" placeholder="6XX XXX XXX" required pattern="[0-9 ]{9,15}" title="Numero de telephone valide, ex: 6XX XXX XXX" maxlength="20"/>
+        <input class="form-input" id="phone" type="tel" placeholder="6XX XXX XXX" required pattern="[0-9 ]{9,15}" data-i18n-title="phoneValidTitle" title="Numero de telephone valide, ex: 6XX XXX XXX" maxlength="20"/>
       </div>
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="fieldPhone2">Deuxieme numero (optionnel)</label>
-      <input class="form-input" id="phone2" type="tel" placeholder="6XX XXX XXX" pattern="[0-9 ]{9,15}" title="Numero de telephone valide, ex: 6XX XXX XXX" maxlength="20"/>
+      <input class="form-input" id="phone2" type="tel" placeholder="6XX XXX XXX" pattern="[0-9 ]{9,15}" data-i18n-title="phoneValidTitle" title="Numero de telephone valide, ex: 6XX XXX XXX" maxlength="20"/>
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="fieldLandmark">Repere / Quartier</label>
@@ -1212,7 +1212,7 @@ body{
   <div class="chat-messages" id="chatMessages">
     <div class="chat-msg theirs" data-i18n="chatWelcomeMsg">Bonjour ! Je peux vous aider à utiliser JobMarket, publier une demande, trouver un artisan, comprendre les prix et repérer les signaux de fraude. Mes réponses restent sur cet appareil.</div>
   </div>
-  <div class="chat-suggestions" aria-label="Questions fréquentes">
+  <div class="chat-suggestions" data-i18n-aria-label="faqAriaLabel" aria-label="Questions fréquentes">
     <button class="chat-suggestion" type="button" data-query="Comment publier un job ?" data-i18n="chatSuggestion1" onclick="askChatSuggestion(this)">Comment publier un job ?</button>
     <button class="chat-suggestion" type="button" data-query="Comment éviter une arnaque ?" data-i18n="chatSuggestion2" onclick="askChatSuggestion(this)">Comment éviter une arnaque ?</button>
     <button class="chat-suggestion" type="button" data-query="Comment calculer ma marge ?" data-i18n="chatSuggestion3" onclick="askChatSuggestion(this)">Comment calculer ma marge ?</button>
@@ -1563,7 +1563,120 @@ const I18N = {
     adminDismissReport: "Ignorer", adminDeleteJob: "Supprimer le job", adminConfirmDeleteJob: "Supprimer définitivement ce job ?",
     adminLoadError: "Erreur de chargement.",
     adminNoName: "Sans nom", adminNoJobTitle: "Métier non renseigné",
-    adminApprove: "Valider ✓", adminReject: "Refuser", adminAnonymous: "Anonyme", adminDeleteBtn: "Suppr."
+    adminApprove: "Valider ✓", adminReject: "Refuser", adminAnonymous: "Anonyme", adminDeleteBtn: "Suppr.",
+    btnUseEstimate: "Utiliser cette estimation",
+    scamAutoAnalysisNote: "Analyse automatique du texte, pas une preuve — restez vigilant et vérifiez avant de payer quoi que ce soit à l'avance.",
+    priceEstimateLabel: "💡 Estimation :",
+    toastFillAllFields: "Remplissez tous les champs",
+    toastAccountCreated: "Compte créé ! Vérifiez votre email.",
+    toastWelcomeBack: "Bon retour !",
+    toastWelcomeName: "Bienvenue {name}",
+    toastLoggedOut: "Déconnecté",
+    toastEnterEmailFirst: "Entrez votre email d’abord, puis cliquez sur le lien",
+    toastEmailSent: "Email envoyé ! Vérifiez votre boîte de réception.",
+    toastResetLinkMaybeSent: "Si un compte existe avec cet email, un lien a été envoyé.",
+    toastGpsNotSupported: "GPS non supporté",
+    toastGpsUnavailable: "Position GPS non disponible",
+    toastLoginToPublish: "Connectez-vous pour publier",
+    toastFillRequiredFields: "Remplissez les champs obligatoires",
+    toastSomePhotosFailed: "{count} photo(s) n'ont pas pu être envoyée(s) (réseau instable ?), le reste de l'annonce est publié quand même.",
+    toastListingUpdated: "Annonce mise à jour !",
+    toastJobPublished: "Job publié avec succès !",
+    toastPublishError: "Erreur lors de la publication",
+    toastGpsRequiredPublish: "GPS requis pour publier",
+    toastFilesWrongType: "{count} fichier(s) ignoré(s) : format non supporté (JPG, PNG, WEBP ou GIF uniquement)",
+    toastFilesTooBig: "{count} photo(s) ignorée(s) : plus de {max} Mo",
+    toastGpsRequired: "Position GPS requise",
+    toastMapViewOn: "Vue plan activée",
+    toastSatelliteViewOn: "Vue satellite activée",
+    toastFilterCategoryHint: "Filtrez par catégorie en haut",
+    toastLoginToReport: "Connectez-vous pour signaler une annonce.",
+    toastReportSent: "Signalement envoyé, merci.",
+    toastAlreadyReported: "Vous avez déjà signalé cette annonce.",
+    toastSendErrorRetry: "Erreur lors de l'envoi, réessayez.",
+    toastAdminOnly: "Accès réservé aux administrateurs",
+    toastErrorRetry: "Erreur, réessayez.",
+    toastJobDeleted: "Job supprimé.",
+    toastCodeGenerated: "Code généré et WhatsApp ouvert pour l'envoyer !",
+    toastNoWhatsAppNumber: "Aucun numéro WhatsApp enregistré pour ce profil. Code à transmettre manuellement : {code}",
+    toastValidationError: "Erreur lors de la validation",
+    toastRequestRejected: "Demande refusée",
+    toastGenericError: "Erreur",
+    toastDeleteError: "Erreur lors de la suppression",
+    toastPleaseLogin: "Connectez-vous",
+    toastNoListingsFound: "Aucune publication trouvée",
+    toastYouHaveListings: "Vous avez {count} publication(s)",
+    toastPrefNotSaved: "Préférence non enregistrée (réseau instable ?), réessayez.",
+    toastWriteDescFirst: "Écrivez d'abord une courte description avant d'utiliser l'IA.",
+    toastAiUnavailable: "L'IA n'est pas disponible pour le moment, réessayez plus tard.",
+    toastDescImproved: "Description améliorée !",
+    toastAiConnectionError: "Impossible de contacter l'IA. Vérifiez votre connexion.",
+    toastFillSkillsFirst: "Renseignez d'abord vos compétences avant d'utiliser l'IA.",
+    toastProfileOptimized: "Profil optimisé !",
+    toastFillTitleOrDescFirst: "Renseignez d'abord un titre ou une description avant de demander un prix.",
+    toastPriceApplied: "Prix appliqué",
+    toastNothingToAnalyze: "Rien à analyser sur cette annonce.",
+    toastNewJobPublished: "🎉 Nouveau job : {title} ({location}) vient d'être publié !",
+    toastPositionSavedComplete: "Position enregistrée ! Complétez le formulaire.",
+    toastPositionSavedFill: "Position enregistrée ! Remplissez le formulaire de job.",
+    toastCantEditOthers: "Vous ne pouvez modifier que vos propres publications",
+    toastEditFieldsThenValidate: "Modifiez les champs puis validez",
+    toastCantDeleteOthers: "Vous ne pouvez supprimer que vos propres publications",
+    toastListingDeleted: "Annonce supprimée",
+    toastLoginToEditProfile: "Connectez-vous pour modifier votre profil",
+    toastInvalidPhoto: "Photo invalide : JPG/PNG/WEBP, max {max} Mo.",
+    toastLinkCopied: "Lien copié !",
+    toastCopyFailed: "Impossible de copier",
+    toastNoCreditsAvailable: "Aucun crédit disponible",
+    toastBoostedSeven: "Annonce mise en avant pour 7 jours !",
+    toastBoostError: "Erreur lors de la mise en avant",
+    toastNeedIdAndSelfie: "Ajoute une photo de ta pièce d'identité ET un selfie avant d'envoyer.",
+    toastNeedValidWhatsApp: "Entre un numéro WhatsApp valide (ex: +237650420710) pour recevoir ton code.",
+    toastRequestSent: "Demande envoyée !",
+    toastPhotoSendError: "Erreur lors de l'envoi des photos",
+    toastCodeMustBe7Digits: "Le code doit contenir exactement 7 chiffres.",
+    toastNoCodePending: "Aucun code en attente pour ce profil.",
+    toastWrongCode: "Code incorrect, réessaie.",
+    toastProfileVerified: "Profil vérifié !",
+    toastCodeVerifyError: "Erreur lors de la vérification du code",
+    toastPhotoUploadError: "Erreur lors de l'envoi de la photo (réseau instable ?), réessayez.",
+    toastWhatsAppOpenError: "Erreur lors de l'ouverture de WhatsApp. Réessayez.",
+    toastWhatsAppOpened: "WhatsApp ouvert!",
+    toastSharedWhatsApp: "Partagé sur WhatsApp!",
+    toastChooseRatingFirst: "Choisissez une note avant d'envoyer",
+    toastReviewThanks: "Merci pour votre avis !",
+    toastReviewSendError: "Erreur lors de l'envoi de l'avis",
+    toastEnableLocationForDistance: "Active ta position pour filtrer par distance",
+    reviewsTitle: "Avis",
+    reviewsNoneYet: "Pas encore d'avis pour ce prestataire.",
+    reviewsCountWord: "avis",
+    reviewsLoading: "Chargement des avis...",
+    reviewsContactFirst: "Contactez ce prestataire par WhatsApp pour pouvoir laisser un avis ensuite.",
+    reviewsAlreadyDone: "✓ Vous avez déjà laissé un avis pour cet échange.",
+    reviewsProviderFallback: "ce prestataire",
+    reviewsLeaveBtn: "⭐ Laisser un avis",
+    reviewsJobFallback: "ce besoin",
+    reviewPromptQuestion: "Comment ça s'est passé ?",
+    reviewPromptWith: "Avec {name} pour “{title}”",
+    reviewCommentPlaceholder: "Commentaire (optionnel)",
+    reviewSendBtn: "Envoyer",
+    reviewSending: "Envoi...",
+    searchJobPlaceholder: "Rechercher un job (ex: plombier, menage...)",
+    verifyCodePlaceholder: "Code à 7 chiffres",
+    companyNamePlaceholder: "Ex: Les Bâtisseurs du Cameroun",
+    phoneValidTitle: "Numero de telephone valide, ex: 6XX XXX XXX",
+    whatsappVerifiedTitle: "Numéro vérifié par WhatsApp",
+    emailVerifiedTitle: "Email vérifié",
+    closeAriaLabel: "Fermer",
+    faqAriaLabel: "Questions fréquentes",
+    altSelfieSubmitted: "Selfie de vérification soumis",
+    altIdSubmitted: "Pièce d'identité soumise",
+    altDocumentPreview: "Aperçu du document sélectionné",
+    altJobPhoto: "Photo de l'annonce",
+    altProfilePhotoPreview: "Aperçu de la photo de profil",
+    altGeneratedAvatar: "Avatar généré à partir du nom",
+    altSelectedPhotoPreview: "Aperçu de la photo sélectionnée",
+    altProfilePhoto: "Photo de profil"
   },
   en: {
     jobModerationBlocked: "Publication refused: {reason}", jobModerationBlockedGeneric: "This listing cannot be published as is. Please edit it.",
@@ -1666,7 +1779,120 @@ const I18N = {
     adminDismissReport: "Dismiss", adminDeleteJob: "Delete job", adminConfirmDeleteJob: "Permanently delete this job?",
     adminLoadError: "Loading error.",
     adminNoName: "No name", adminNoJobTitle: "Profession not specified",
-    adminApprove: "Approve ✓", adminReject: "Reject", adminAnonymous: "Anonymous", adminDeleteBtn: "Delete"
+    adminApprove: "Approve ✓", adminReject: "Reject", adminAnonymous: "Anonymous", adminDeleteBtn: "Delete",
+    btnUseEstimate: "Use this estimate",
+    scamAutoAnalysisNote: "Automatic text analysis, not proof — stay alert and verify before paying anything upfront.",
+    priceEstimateLabel: "💡 Estimate:",
+    toastFillAllFields: "Fill in all fields",
+    toastAccountCreated: "Account created! Check your email.",
+    toastWelcomeBack: "Welcome back!",
+    toastWelcomeName: "Welcome {name}",
+    toastLoggedOut: "Logged out",
+    toastEnterEmailFirst: "Enter your email first, then click the link",
+    toastEmailSent: "Email sent! Check your inbox.",
+    toastResetLinkMaybeSent: "If an account exists with this email, a link has been sent.",
+    toastGpsNotSupported: "GPS not supported",
+    toastGpsUnavailable: "GPS location unavailable",
+    toastLoginToPublish: "Log in to publish",
+    toastFillRequiredFields: "Fill in the required fields",
+    toastSomePhotosFailed: "{count} photo(s) could not be uploaded (unstable network?); the rest of the listing was still published.",
+    toastListingUpdated: "Listing updated!",
+    toastJobPublished: "Job published successfully!",
+    toastPublishError: "Error while publishing",
+    toastGpsRequiredPublish: "GPS required to publish",
+    toastFilesWrongType: "{count} file(s) ignored: unsupported format (JPG, PNG, WEBP or GIF only)",
+    toastFilesTooBig: "{count} photo(s) ignored: over {max} MB",
+    toastGpsRequired: "GPS location required",
+    toastMapViewOn: "Map view enabled",
+    toastSatelliteViewOn: "Satellite view enabled",
+    toastFilterCategoryHint: "Filter by category at the top",
+    toastLoginToReport: "Log in to report a listing.",
+    toastReportSent: "Report sent, thank you.",
+    toastAlreadyReported: "You have already reported this listing.",
+    toastSendErrorRetry: "Error while sending, please try again.",
+    toastAdminOnly: "Access restricted to administrators",
+    toastErrorRetry: "Error, please try again.",
+    toastJobDeleted: "Job deleted.",
+    toastCodeGenerated: "Code generated and WhatsApp opened to send it!",
+    toastNoWhatsAppNumber: "No WhatsApp number registered for this profile. Code to share manually: {code}",
+    toastValidationError: "Error during validation",
+    toastRequestRejected: "Request rejected",
+    toastGenericError: "Error",
+    toastDeleteError: "Error while deleting",
+    toastPleaseLogin: "Log in",
+    toastNoListingsFound: "No listings found",
+    toastYouHaveListings: "You have {count} listing(s)",
+    toastPrefNotSaved: "Preference not saved (unstable network?), please try again.",
+    toastWriteDescFirst: "Write a short description first before using AI.",
+    toastAiUnavailable: "AI is currently unavailable, please try again later.",
+    toastDescImproved: "Description improved!",
+    toastAiConnectionError: "Unable to reach the AI. Check your connection.",
+    toastFillSkillsFirst: "Enter your skills first before using AI.",
+    toastProfileOptimized: "Profile optimized!",
+    toastFillTitleOrDescFirst: "Enter a title or description first before requesting a price.",
+    toastPriceApplied: "Price applied",
+    toastNothingToAnalyze: "Nothing to analyze on this listing.",
+    toastNewJobPublished: "🎉 New job: {title} ({location}) was just published!",
+    toastPositionSavedComplete: "Location saved! Complete the form.",
+    toastPositionSavedFill: "Location saved! Fill in the job form.",
+    toastCantEditOthers: "You can only edit your own listings",
+    toastEditFieldsThenValidate: "Edit the fields then confirm",
+    toastCantDeleteOthers: "You can only delete your own listings",
+    toastListingDeleted: "Listing deleted",
+    toastLoginToEditProfile: "Log in to edit your profile",
+    toastInvalidPhoto: "Invalid photo: JPG/PNG/WEBP, max {max} MB.",
+    toastLinkCopied: "Link copied!",
+    toastCopyFailed: "Unable to copy",
+    toastNoCreditsAvailable: "No credits available",
+    toastBoostedSeven: "Listing boosted for 7 days!",
+    toastBoostError: "Error while boosting",
+    toastNeedIdAndSelfie: "Add a photo of your ID AND a selfie before sending.",
+    toastNeedValidWhatsApp: "Enter a valid WhatsApp number (e.g: +237650420710) to receive your code.",
+    toastRequestSent: "Request sent!",
+    toastPhotoSendError: "Error while sending photos",
+    toastCodeMustBe7Digits: "The code must contain exactly 7 digits.",
+    toastNoCodePending: "No pending code for this profile.",
+    toastWrongCode: "Incorrect code, try again.",
+    toastProfileVerified: "Profile verified!",
+    toastCodeVerifyError: "Error while verifying the code",
+    toastPhotoUploadError: "Error while uploading the photo (unstable network?), please try again.",
+    toastWhatsAppOpenError: "Error while opening WhatsApp. Please try again.",
+    toastWhatsAppOpened: "WhatsApp opened!",
+    toastSharedWhatsApp: "Shared on WhatsApp!",
+    toastChooseRatingFirst: "Choose a rating before sending",
+    toastReviewThanks: "Thank you for your review!",
+    toastReviewSendError: "Error while sending the review",
+    toastEnableLocationForDistance: "Enable your location to filter by distance",
+    reviewsTitle: "Reviews",
+    reviewsNoneYet: "No reviews yet for this provider.",
+    reviewsCountWord: "reviews",
+    reviewsLoading: "Loading reviews...",
+    reviewsContactFirst: "Contact this provider via WhatsApp to be able to leave a review afterwards.",
+    reviewsAlreadyDone: "✓ You have already left a review for this exchange.",
+    reviewsProviderFallback: "this provider",
+    reviewsLeaveBtn: "⭐ Leave a review",
+    reviewsJobFallback: "this request",
+    reviewPromptQuestion: "How did it go?",
+    reviewPromptWith: "With {name} for “{title}”",
+    reviewCommentPlaceholder: "Comment (optional)",
+    reviewSendBtn: "Send",
+    reviewSending: "Sending...",
+    searchJobPlaceholder: "Search a job (e.g: plumber, cleaning...)",
+    verifyCodePlaceholder: "7-digit code",
+    companyNamePlaceholder: "E.g: Cameroon Builders",
+    phoneValidTitle: "Valid phone number, e.g: 6XX XXX XXX",
+    whatsappVerifiedTitle: "Number verified via WhatsApp",
+    emailVerifiedTitle: "Email verified",
+    closeAriaLabel: "Close",
+    faqAriaLabel: "Frequently asked questions",
+    altSelfieSubmitted: "Verification selfie submitted",
+    altIdSubmitted: "ID document submitted",
+    altDocumentPreview: "Selected document preview",
+    altJobPhoto: "Listing photo",
+    altProfilePhotoPreview: "Profile photo preview",
+    altGeneratedAvatar: "Avatar generated from the name",
+    altSelectedPhotoPreview: "Selected photo preview",
+    altProfilePhoto: "Profile photo"
   },
   it: {
     jobModerationBlocked: "Pubblicazione rifiutata: {reason}", jobModerationBlockedGeneric: "Questo annuncio non può essere pubblicato così com'è. Modificalo, per favore.",
@@ -1769,7 +1995,120 @@ const I18N = {
     adminDismissReport: "Ignora", adminDeleteJob: "Elimina lavoro", adminConfirmDeleteJob: "Eliminare definitivamente questo lavoro?",
     adminLoadError: "Errore di caricamento.",
     adminNoName: "Senza nome", adminNoJobTitle: "Mestiere non specificato",
-    adminApprove: "Approva ✓", adminReject: "Rifiuta", adminAnonymous: "Anonimo", adminDeleteBtn: "Elimina"
+    adminApprove: "Approva ✓", adminReject: "Rifiuta", adminAnonymous: "Anonimo", adminDeleteBtn: "Elimina",
+    btnUseEstimate: "Usa questa stima",
+    scamAutoAnalysisNote: "Analisi automatica del testo, non una prova — resta vigile e verifica prima di pagare qualsiasi cosa in anticipo.",
+    priceEstimateLabel: "💡 Stima:",
+    toastFillAllFields: "Compila tutti i campi",
+    toastAccountCreated: "Account creato! Controlla la tua email.",
+    toastWelcomeBack: "Bentornato!",
+    toastWelcomeName: "Benvenuto/a {name}",
+    toastLoggedOut: "Disconnesso",
+    toastEnterEmailFirst: "Inserisci prima la tua email, poi clicca sul link",
+    toastEmailSent: "Email inviata! Controlla la tua casella di posta.",
+    toastResetLinkMaybeSent: "Se esiste un account con questa email, è stato inviato un link.",
+    toastGpsNotSupported: "GPS non supportato",
+    toastGpsUnavailable: "Posizione GPS non disponibile",
+    toastLoginToPublish: "Accedi per pubblicare",
+    toastFillRequiredFields: "Compila i campi obbligatori",
+    toastSomePhotosFailed: "{count} foto non caricate (rete instabile?): il resto dell'annuncio è stato comunque pubblicato.",
+    toastListingUpdated: "Annuncio aggiornato!",
+    toastJobPublished: "Lavoro pubblicato con successo!",
+    toastPublishError: "Errore durante la pubblicazione",
+    toastGpsRequiredPublish: "GPS richiesto per pubblicare",
+    toastFilesWrongType: "{count} file ignorati: formato non supportato (solo JPG, PNG, WEBP o GIF)",
+    toastFilesTooBig: "{count} foto ignorate: oltre {max} MB",
+    toastGpsRequired: "Posizione GPS richiesta",
+    toastMapViewOn: "Vista mappa attivata",
+    toastSatelliteViewOn: "Vista satellite attivata",
+    toastFilterCategoryHint: "Filtra per categoria in alto",
+    toastLoginToReport: "Accedi per segnalare un annuncio.",
+    toastReportSent: "Segnalazione inviata, grazie.",
+    toastAlreadyReported: "Hai già segnalato questo annuncio.",
+    toastSendErrorRetry: "Errore durante l'invio, riprova.",
+    toastAdminOnly: "Accesso riservato agli amministratori",
+    toastErrorRetry: "Errore, riprova.",
+    toastJobDeleted: "Lavoro eliminato.",
+    toastCodeGenerated: "Codice generato e WhatsApp aperto per inviarlo!",
+    toastNoWhatsAppNumber: "Nessun numero WhatsApp registrato per questo profilo. Codice da comunicare manualmente: {code}",
+    toastValidationError: "Errore durante la convalida",
+    toastRequestRejected: "Richiesta rifiutata",
+    toastGenericError: "Errore",
+    toastDeleteError: "Errore durante l'eliminazione",
+    toastPleaseLogin: "Accedi",
+    toastNoListingsFound: "Nessun annuncio trovato",
+    toastYouHaveListings: "Hai {count} annuncio/i",
+    toastPrefNotSaved: "Preferenza non salvata (rete instabile?), riprova.",
+    toastWriteDescFirst: "Scrivi prima una breve descrizione prima di usare l'IA.",
+    toastAiUnavailable: "L'IA non è disponibile al momento, riprova più tardi.",
+    toastDescImproved: "Descrizione migliorata!",
+    toastAiConnectionError: "Impossibile contattare l'IA. Controlla la tua connessione.",
+    toastFillSkillsFirst: "Inserisci prima le tue competenze prima di usare l'IA.",
+    toastProfileOptimized: "Profilo ottimizzato!",
+    toastFillTitleOrDescFirst: "Inserisci prima un titolo o una descrizione prima di richiedere un prezzo.",
+    toastPriceApplied: "Prezzo applicato",
+    toastNothingToAnalyze: "Niente da analizzare in questo annuncio.",
+    toastNewJobPublished: "🎉 Nuovo lavoro: {title} ({location}) appena pubblicato!",
+    toastPositionSavedComplete: "Posizione salvata! Completa il modulo.",
+    toastPositionSavedFill: "Posizione salvata! Compila il modulo del lavoro.",
+    toastCantEditOthers: "Puoi modificare solo i tuoi annunci",
+    toastEditFieldsThenValidate: "Modifica i campi e conferma",
+    toastCantDeleteOthers: "Puoi eliminare solo i tuoi annunci",
+    toastListingDeleted: "Annuncio eliminato",
+    toastLoginToEditProfile: "Accedi per modificare il tuo profilo",
+    toastInvalidPhoto: "Foto non valida: JPG/PNG/WEBP, max {max} MB.",
+    toastLinkCopied: "Link copiato!",
+    toastCopyFailed: "Impossibile copiare",
+    toastNoCreditsAvailable: "Nessun credito disponibile",
+    toastBoostedSeven: "Annuncio in evidenza per 7 giorni!",
+    toastBoostError: "Errore durante la promozione",
+    toastNeedIdAndSelfie: "Aggiungi una foto del tuo documento E un selfie prima di inviare.",
+    toastNeedValidWhatsApp: "Inserisci un numero WhatsApp valido (es: +237650420710) per ricevere il tuo codice.",
+    toastRequestSent: "Richiesta inviata!",
+    toastPhotoSendError: "Errore durante l'invio delle foto",
+    toastCodeMustBe7Digits: "Il codice deve contenere esattamente 7 cifre.",
+    toastNoCodePending: "Nessun codice in attesa per questo profilo.",
+    toastWrongCode: "Codice errato, riprova.",
+    toastProfileVerified: "Profilo verificato!",
+    toastCodeVerifyError: "Errore durante la verifica del codice",
+    toastPhotoUploadError: "Errore durante il caricamento della foto (rete instabile?), riprova.",
+    toastWhatsAppOpenError: "Errore durante l'apertura di WhatsApp. Riprova.",
+    toastWhatsAppOpened: "WhatsApp aperto!",
+    toastSharedWhatsApp: "Condiviso su WhatsApp!",
+    toastChooseRatingFirst: "Scegli una valutazione prima di inviare",
+    toastReviewThanks: "Grazie per la tua recensione!",
+    toastReviewSendError: "Errore durante l'invio della recensione",
+    toastEnableLocationForDistance: "Attiva la tua posizione per filtrare per distanza",
+    reviewsTitle: "Recensioni",
+    reviewsNoneYet: "Nessuna recensione per questo prestatore.",
+    reviewsCountWord: "recensioni",
+    reviewsLoading: "Caricamento recensioni...",
+    reviewsContactFirst: "Contatta questo prestatore su WhatsApp per poter lasciare una recensione in seguito.",
+    reviewsAlreadyDone: "✓ Hai già lasciato una recensione per questo scambio.",
+    reviewsProviderFallback: "questo prestatore",
+    reviewsLeaveBtn: "⭐ Lascia una recensione",
+    reviewsJobFallback: "questa richiesta",
+    reviewPromptQuestion: "Com'è andata?",
+    reviewPromptWith: "Con {name} per “{title}”",
+    reviewCommentPlaceholder: "Commento (facoltativo)",
+    reviewSendBtn: "Invia",
+    reviewSending: "Invio...",
+    searchJobPlaceholder: "Cerca un lavoro (es: idraulico, pulizie...)",
+    verifyCodePlaceholder: "Codice a 7 cifre",
+    companyNamePlaceholder: "Es: I Costruttori del Camerun",
+    phoneValidTitle: "Numero di telefono valido, es: 6XX XXX XXX",
+    whatsappVerifiedTitle: "Numero verificato via WhatsApp",
+    emailVerifiedTitle: "Email verificata",
+    closeAriaLabel: "Chiudi",
+    faqAriaLabel: "Domande frequenti",
+    altSelfieSubmitted: "Selfie di verifica inviato",
+    altIdSubmitted: "Documento d'identità inviato",
+    altDocumentPreview: "Anteprima del documento selezionato",
+    altJobPhoto: "Foto dell'annuncio",
+    altProfilePhotoPreview: "Anteprima della foto del profilo",
+    altGeneratedAvatar: "Avatar generato dal nome",
+    altSelectedPhotoPreview: "Anteprima della foto selezionata",
+    altProfilePhoto: "Foto del profilo"
   },
   de: {
     jobModerationBlocked: "Veröffentlichung abgelehnt: {reason}", jobModerationBlockedGeneric: "Diese Anzeige kann so nicht veröffentlicht werden. Bitte bearbeiten Sie sie.",
@@ -1872,7 +2211,120 @@ const I18N = {
     adminDismissReport: "Verwerfen", adminDeleteJob: "Job löschen", adminConfirmDeleteJob: "Diesen Job endgültig löschen?",
     adminLoadError: "Ladefehler.",
     adminNoName: "Ohne Namen", adminNoJobTitle: "Beruf nicht angegeben",
-    adminApprove: "Genehmigen ✓", adminReject: "Ablehnen", adminAnonymous: "Anonym", adminDeleteBtn: "Löschen"
+    adminApprove: "Genehmigen ✓", adminReject: "Ablehnen", adminAnonymous: "Anonym", adminDeleteBtn: "Löschen",
+    btnUseEstimate: "Diese Schätzung verwenden",
+    scamAutoAnalysisNote: "Automatische Textanalyse, kein Beweis — bleiben Sie wachsam und prüfen Sie, bevor Sie im Voraus etwas bezahlen.",
+    priceEstimateLabel: "💡 Schätzung:",
+    toastFillAllFields: "Bitte alle Felder ausfüllen",
+    toastAccountCreated: "Konto erstellt! Überprüfen Sie Ihre E-Mail.",
+    toastWelcomeBack: "Willkommen zurück!",
+    toastWelcomeName: "Willkommen {name}",
+    toastLoggedOut: "Abgemeldet",
+    toastEnterEmailFirst: "Geben Sie zuerst Ihre E-Mail-Adresse ein und klicken Sie dann auf den Link",
+    toastEmailSent: "E-Mail gesendet! Überprüfen Sie Ihren Posteingang.",
+    toastResetLinkMaybeSent: "Falls ein Konto mit dieser E-Mail existiert, wurde ein Link gesendet.",
+    toastGpsNotSupported: "GPS nicht unterstützt",
+    toastGpsUnavailable: "GPS-Position nicht verfügbar",
+    toastLoginToPublish: "Melden Sie sich an, um zu veröffentlichen",
+    toastFillRequiredFields: "Bitte Pflichtfelder ausfüllen",
+    toastSomePhotosFailed: "{count} Foto(s) konnten nicht hochgeladen werden (instabiles Netzwerk?), der Rest der Anzeige wurde trotzdem veröffentlicht.",
+    toastListingUpdated: "Anzeige aktualisiert!",
+    toastJobPublished: "Job erfolgreich veröffentlicht!",
+    toastPublishError: "Fehler bei der Veröffentlichung",
+    toastGpsRequiredPublish: "GPS erforderlich zum Veröffentlichen",
+    toastFilesWrongType: "{count} Datei(en) ignoriert: nicht unterstütztes Format (nur JPG, PNG, WEBP oder GIF)",
+    toastFilesTooBig: "{count} Foto(s) ignoriert: über {max} MB",
+    toastGpsRequired: "GPS-Position erforderlich",
+    toastMapViewOn: "Kartenansicht aktiviert",
+    toastSatelliteViewOn: "Satellitenansicht aktiviert",
+    toastFilterCategoryHint: "Oben nach Kategorie filtern",
+    toastLoginToReport: "Melden Sie sich an, um eine Anzeige zu melden.",
+    toastReportSent: "Meldung gesendet, danke.",
+    toastAlreadyReported: "Sie haben diese Anzeige bereits gemeldet.",
+    toastSendErrorRetry: "Fehler beim Senden, bitte erneut versuchen.",
+    toastAdminOnly: "Zugang nur für Administratoren",
+    toastErrorRetry: "Fehler, bitte erneut versuchen.",
+    toastJobDeleted: "Job gelöscht.",
+    toastCodeGenerated: "Code erstellt und WhatsApp zum Versenden geöffnet!",
+    toastNoWhatsAppNumber: "Keine WhatsApp-Nummer für dieses Profil registriert. Code manuell mitteilen: {code}",
+    toastValidationError: "Fehler bei der Validierung",
+    toastRequestRejected: "Anfrage abgelehnt",
+    toastGenericError: "Fehler",
+    toastDeleteError: "Fehler beim Löschen",
+    toastPleaseLogin: "Bitte anmelden",
+    toastNoListingsFound: "Keine Anzeigen gefunden",
+    toastYouHaveListings: "Sie haben {count} Anzeige(n)",
+    toastPrefNotSaved: "Einstellung nicht gespeichert (instabiles Netzwerk?), bitte erneut versuchen.",
+    toastWriteDescFirst: "Schreiben Sie zuerst eine kurze Beschreibung, bevor Sie die KI nutzen.",
+    toastAiUnavailable: "Die KI ist derzeit nicht verfügbar, bitte später erneut versuchen.",
+    toastDescImproved: "Beschreibung verbessert!",
+    toastAiConnectionError: "KI kann nicht erreicht werden. Überprüfen Sie Ihre Verbindung.",
+    toastFillSkillsFirst: "Geben Sie zuerst Ihre Fähigkeiten ein, bevor Sie die KI nutzen.",
+    toastProfileOptimized: "Profil optimiert!",
+    toastFillTitleOrDescFirst: "Geben Sie zuerst einen Titel oder eine Beschreibung ein, bevor Sie einen Preis anfordern.",
+    toastPriceApplied: "Preis übernommen",
+    toastNothingToAnalyze: "Bei dieser Anzeige gibt es nichts zu analysieren.",
+    toastNewJobPublished: "🎉 Neuer Job: {title} ({location}) wurde gerade veröffentlicht!",
+    toastPositionSavedComplete: "Position gespeichert! Formular vervollständigen.",
+    toastPositionSavedFill: "Position gespeichert! Job-Formular ausfüllen.",
+    toastCantEditOthers: "Sie können nur Ihre eigenen Anzeigen bearbeiten",
+    toastEditFieldsThenValidate: "Felder bearbeiten und dann bestätigen",
+    toastCantDeleteOthers: "Sie können nur Ihre eigenen Anzeigen löschen",
+    toastListingDeleted: "Anzeige gelöscht",
+    toastLoginToEditProfile: "Melden Sie sich an, um Ihr Profil zu bearbeiten",
+    toastInvalidPhoto: "Ungültiges Foto: JPG/PNG/WEBP, max. {max} MB.",
+    toastLinkCopied: "Link kopiert!",
+    toastCopyFailed: "Kopieren nicht möglich",
+    toastNoCreditsAvailable: "Keine Guthaben verfügbar",
+    toastBoostedSeven: "Anzeige für 7 Tage hervorgehoben!",
+    toastBoostError: "Fehler beim Hervorheben",
+    toastNeedIdAndSelfie: "Fügen Sie ein Foto Ihres Ausweises UND ein Selfie hinzu, bevor Sie senden.",
+    toastNeedValidWhatsApp: "Geben Sie eine gültige WhatsApp-Nummer ein (z.B.: +237650420710), um Ihren Code zu erhalten.",
+    toastRequestSent: "Anfrage gesendet!",
+    toastPhotoSendError: "Fehler beim Senden der Fotos",
+    toastCodeMustBe7Digits: "Der Code muss genau 7 Ziffern enthalten.",
+    toastNoCodePending: "Kein ausstehender Code für dieses Profil.",
+    toastWrongCode: "Falscher Code, bitte erneut versuchen.",
+    toastProfileVerified: "Profil verifiziert!",
+    toastCodeVerifyError: "Fehler bei der Code-Überprüfung",
+    toastPhotoUploadError: "Fehler beim Hochladen des Fotos (instabiles Netzwerk?), bitte erneut versuchen.",
+    toastWhatsAppOpenError: "Fehler beim Öffnen von WhatsApp. Bitte erneut versuchen.",
+    toastWhatsAppOpened: "WhatsApp geöffnet!",
+    toastSharedWhatsApp: "Auf WhatsApp geteilt!",
+    toastChooseRatingFirst: "Wählen Sie eine Bewertung, bevor Sie senden",
+    toastReviewThanks: "Vielen Dank für Ihre Bewertung!",
+    toastReviewSendError: "Fehler beim Senden der Bewertung",
+    toastEnableLocationForDistance: "Aktivieren Sie Ihren Standort, um nach Entfernung zu filtern",
+    reviewsTitle: "Bewertungen",
+    reviewsNoneYet: "Noch keine Bewertungen für diesen Anbieter.",
+    reviewsCountWord: "Bewertungen",
+    reviewsLoading: "Bewertungen werden geladen...",
+    reviewsContactFirst: "Kontaktieren Sie diesen Anbieter über WhatsApp, um später eine Bewertung abgeben zu können.",
+    reviewsAlreadyDone: "✓ Sie haben bereits eine Bewertung für diesen Austausch abgegeben.",
+    reviewsProviderFallback: "diesen Anbieter",
+    reviewsLeaveBtn: "⭐ Bewertung abgeben",
+    reviewsJobFallback: "diese Anfrage",
+    reviewPromptQuestion: "Wie ist es gelaufen?",
+    reviewPromptWith: "Mit {name} für “{title}”",
+    reviewCommentPlaceholder: "Kommentar (optional)",
+    reviewSendBtn: "Senden",
+    reviewSending: "Wird gesendet...",
+    searchJobPlaceholder: "Job suchen (z.B.: Klempner, Reinigung...)",
+    verifyCodePlaceholder: "7-stelliger Code",
+    companyNamePlaceholder: "Z.B.: Die Bauherren Kameruns",
+    phoneValidTitle: "Gültige Telefonnummer, z.B.: 6XX XXX XXX",
+    whatsappVerifiedTitle: "Nummer über WhatsApp verifiziert",
+    emailVerifiedTitle: "E-Mail verifiziert",
+    closeAriaLabel: "Schließen",
+    faqAriaLabel: "Häufig gestellte Fragen",
+    altSelfieSubmitted: "Verifizierungs-Selfie eingereicht",
+    altIdSubmitted: "Ausweisdokument eingereicht",
+    altDocumentPreview: "Vorschau des ausgewählten Dokuments",
+    altJobPhoto: "Anzeigenfoto",
+    altProfilePhotoPreview: "Vorschau des Profilfotos",
+    altGeneratedAvatar: "Aus dem Namen generierter Avatar",
+    altSelectedPhotoPreview: "Vorschau des ausgewählten Fotos",
+    altProfilePhoto: "Profilfoto"
   },
   zh: {
     jobModerationBlocked: "发布被拒绝:{reason}", jobModerationBlockedGeneric: "该信息目前无法发布,请修改后重试。",
@@ -1975,7 +2427,120 @@ const I18N = {
     adminDismissReport: "忽略", adminDeleteJob: "删除工作", adminConfirmDeleteJob: "确定永久删除此工作吗？",
     adminLoadError: "加载错误。",
     adminNoName: "无名称", adminNoJobTitle: "职业未填写",
-    adminApprove: "批准 ✓", adminReject: "拒绝", adminAnonymous: "匿名", adminDeleteBtn: "删除"
+    adminApprove: "批准 ✓", adminReject: "拒绝", adminAnonymous: "匿名", adminDeleteBtn: "删除",
+    btnUseEstimate: "使用此估算",
+    scamAutoAnalysisNote: "此为文本自动分析，并非证据——请保持警惕，在提前付款前进行核实。",
+    priceEstimateLabel: "💡 估算：",
+    toastFillAllFields: "请填写所有字段",
+    toastAccountCreated: "账户已创建！请检查您的邮箱。",
+    toastWelcomeBack: "欢迎回来！",
+    toastWelcomeName: "欢迎 {name}",
+    toastLoggedOut: "已退出登录",
+    toastEnterEmailFirst: "请先输入您的邮箱，然后点击链接",
+    toastEmailSent: "邮件已发送！请查看您的收件箱。",
+    toastResetLinkMaybeSent: "如果该邮箱存在账户，已发送链接。",
+    toastGpsNotSupported: "不支持GPS",
+    toastGpsUnavailable: "GPS位置不可用",
+    toastLoginToPublish: "登录后即可发布",
+    toastFillRequiredFields: "请填写必填字段",
+    toastSomePhotosFailed: "{count} 张照片上传失败（网络不稳定？），其余信息已成功发布。",
+    toastListingUpdated: "信息已更新！",
+    toastJobPublished: "工作发布成功！",
+    toastPublishError: "发布时出错",
+    toastGpsRequiredPublish: "发布需要GPS",
+    toastFilesWrongType: "已忽略 {count} 个文件：格式不支持（仅支持 JPG、PNG、WEBP 或 GIF）",
+    toastFilesTooBig: "已忽略 {count} 张照片：超过 {max} MB",
+    toastGpsRequired: "需要GPS位置",
+    toastMapViewOn: "已启用地图视图",
+    toastSatelliteViewOn: "已启用卫星视图",
+    toastFilterCategoryHint: "在顶部按类别筛选",
+    toastLoginToReport: "登录后即可举报信息。",
+    toastReportSent: "举报已发送，谢谢。",
+    toastAlreadyReported: "您已经举报过此信息。",
+    toastSendErrorRetry: "发送出错，请重试。",
+    toastAdminOnly: "仅限管理员访问",
+    toastErrorRetry: "出错了，请重试。",
+    toastJobDeleted: "工作已删除。",
+    toastCodeGenerated: "验证码已生成，WhatsApp已打开以便发送！",
+    toastNoWhatsAppNumber: "该资料未注册WhatsApp号码。请手动告知验证码：{code}",
+    toastValidationError: "验证时出错",
+    toastRequestRejected: "请求已拒绝",
+    toastGenericError: "错误",
+    toastDeleteError: "删除时出错",
+    toastPleaseLogin: "请登录",
+    toastNoListingsFound: "未找到发布信息",
+    toastYouHaveListings: "您有 {count} 条发布信息",
+    toastPrefNotSaved: "偏好设置未保存（网络不稳定？），请重试。",
+    toastWriteDescFirst: "使用AI之前请先写一段简短描述。",
+    toastAiUnavailable: "AI目前不可用，请稍后重试。",
+    toastDescImproved: "描述已优化！",
+    toastAiConnectionError: "无法连接AI，请检查网络连接。",
+    toastFillSkillsFirst: "使用AI之前请先填写您的技能。",
+    toastProfileOptimized: "资料已优化！",
+    toastFillTitleOrDescFirst: "请求价格之前请先填写标题或描述。",
+    toastPriceApplied: "价格已应用",
+    toastNothingToAnalyze: "此信息没有可分析的内容。",
+    toastNewJobPublished: "🎉 新工作：{title}（{location}）刚刚发布！",
+    toastPositionSavedComplete: "位置已保存！请填写表格。",
+    toastPositionSavedFill: "位置已保存！请填写工作表单。",
+    toastCantEditOthers: "您只能编辑自己发布的信息",
+    toastEditFieldsThenValidate: "修改字段后确认",
+    toastCantDeleteOthers: "您只能删除自己发布的信息",
+    toastListingDeleted: "信息已删除",
+    toastLoginToEditProfile: "登录后即可编辑您的资料",
+    toastInvalidPhoto: "照片无效：仅支持JPG/PNG/WEBP，最大 {max} MB。",
+    toastLinkCopied: "链接已复制！",
+    toastCopyFailed: "无法复制",
+    toastNoCreditsAvailable: "没有可用额度",
+    toastBoostedSeven: "信息已置顶推广7天！",
+    toastBoostError: "推广时出错",
+    toastNeedIdAndSelfie: "发送前请添加身份证照片和自拍照。",
+    toastNeedValidWhatsApp: "请输入有效的WhatsApp号码（例如：+237650420710）以接收验证码。",
+    toastRequestSent: "请求已发送！",
+    toastPhotoSendError: "发送照片时出错",
+    toastCodeMustBe7Digits: "验证码必须为7位数字。",
+    toastNoCodePending: "该资料没有待验证的代码。",
+    toastWrongCode: "验证码错误，请重试。",
+    toastProfileVerified: "资料已验证！",
+    toastCodeVerifyError: "验证代码时出错",
+    toastPhotoUploadError: "上传照片时出错（网络不稳定？），请重试。",
+    toastWhatsAppOpenError: "打开WhatsApp时出错，请重试。",
+    toastWhatsAppOpened: "WhatsApp已打开！",
+    toastSharedWhatsApp: "已分享到WhatsApp！",
+    toastChooseRatingFirst: "发送前请先选择评分",
+    toastReviewThanks: "感谢您的评价！",
+    toastReviewSendError: "发送评价时出错",
+    toastEnableLocationForDistance: "启用定位以按距离筛选",
+    reviewsTitle: "评价",
+    reviewsNoneYet: "该服务商暂无评价。",
+    reviewsCountWord: "条评价",
+    reviewsLoading: "正在加载评价...",
+    reviewsContactFirst: "请通过WhatsApp联系该服务商，之后才能留下评价。",
+    reviewsAlreadyDone: "✓ 您已经为此次交流留下过评价。",
+    reviewsProviderFallback: "该服务商",
+    reviewsLeaveBtn: "⭐ 留下评价",
+    reviewsJobFallback: "此需求",
+    reviewPromptQuestion: "进展如何？",
+    reviewPromptWith: "与{name}就“{title}”",
+    reviewCommentPlaceholder: "评论（选填）",
+    reviewSendBtn: "发送",
+    reviewSending: "发送中...",
+    searchJobPlaceholder: "搜索工作（例如：水管工、清洁...）",
+    verifyCodePlaceholder: "7位数字验证码",
+    companyNamePlaceholder: "例如：喀麦隆建筑者",
+    phoneValidTitle: "有效电话号码，例如：6XX XXX XXX",
+    whatsappVerifiedTitle: "已通过WhatsApp验证号码",
+    emailVerifiedTitle: "邮箱已验证",
+    closeAriaLabel: "关闭",
+    faqAriaLabel: "常见问题",
+    altSelfieSubmitted: "已提交验证自拍照",
+    altIdSubmitted: "已提交身份证件",
+    altDocumentPreview: "所选文件预览",
+    altJobPhoto: "信息照片",
+    altProfilePhotoPreview: "头像预览",
+    altGeneratedAvatar: "根据姓名生成的头像",
+    altSelectedPhotoPreview: "所选照片预览",
+    altProfilePhoto: "头像"
   }
 };
 
@@ -1991,6 +2556,9 @@ function applyTranslations() {
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+  document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+    el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
   });
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     const text = t(el.getAttribute('data-i18n-title'));
@@ -2292,11 +2860,11 @@ function signupEmail() {
   const emailEl = document.getElementById('email');
   const passEl = document.getElementById('password');
   if (!validateFields(['email', 'password'])) return;
-  if (!emailEl.value || !passEl.value) { showToast('Remplissez tous les champs', 'error'); return; }
+  if (!emailEl.value || !passEl.value) { showToast(t('toastFillAllFields'), 'error'); return; }
   auth.createUserWithEmailAndPassword(emailEl.value, passEl.value)
     .then(res => {
       res.user.sendEmailVerification();
-      showToast('Compte cree ! Verifiez votre email.', 'success');
+      showToast(t('toastAccountCreated'), 'success');
       applyPendingReferral(res.user);
     })
     .catch(err => showToast(err.message, 'error'));
@@ -2324,7 +2892,7 @@ function loginGoogle() {
 }
 
 function logout() {
-  auth.signOut().then(() => showToast('Deconnecte', 'info'));
+  auth.signOut().then(() => showToast(t('toastLoggedOut'), 'info'));
 }
 
 function isProfileComplete(profile) {
@@ -2390,17 +2958,17 @@ function forgotPassword() {
   const emailEl = document.getElementById('email');
   const email = emailEl.value.trim();
   if (!email) {
-    showToast('Entrez votre email d\u2019abord, puis cliquez sur le lien', 'error');
+    showToast(t('toastEnterEmailFirst'), 'error');
     emailEl.focus();
     return;
   }
   auth.sendPasswordResetEmail(email)
-    .then(() => showToast('Email envoye ! Verifiez votre boite de reception.', 'success'))
+    .then(() => showToast(t('toastEmailSent'), 'success'))
     .catch(err => {
       // Firebase renvoie parfois "user-not-found" — on reste volontairement
       // vague dans le message pour ne pas confirmer/infirmer l'existence
       // d'un compte a quelqu'un de malveillant.
-      showToast('Si un compte existe avec cet email, un lien a ete envoye.', 'info');
+      showToast(t('toastResetLinkMaybeSent'), 'info');
     });
 }
 
@@ -2408,7 +2976,7 @@ function forgotPassword() {
 let initialLocationSet = false; // Bloque le recentrage après le premier chargement
 
 function locateMe() {
-  if (!navigator.geolocation) { showToast('GPS non supporte', 'error'); return; }
+  if (!navigator.geolocation) { showToast(t('toastGpsNotSupported'), 'error'); return; }
   navigator.geolocation.getCurrentPosition(pos => {
     updateUserLocation(pos);
     navigator.geolocation.watchPosition(updateUserLocation, console.error, {
@@ -2416,7 +2984,7 @@ function locateMe() {
     });
     syncJobs();
   }, () => {
-    showToast('Position GPS non disponible', 'error');
+    showToast(t('toastGpsUnavailable'), 'error');
     syncJobs();
   }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
 }
@@ -2468,7 +3036,7 @@ function maybeSyncLocationToProfile(lat, lng) {
 // ===== JOB PUBLISH (création ou modification) =====
 async function addJob() {
   if (!currentUser || currentUser.isAnonymous) {
-    showToast('Connectez-vous pour publier', 'error');
+    showToast(t('toastLoginToPublish'), 'error');
     return;
   }
 
@@ -2480,7 +3048,7 @@ async function addJob() {
   const phone2Val = document.getElementById('phone2').value.trim();
 
   if (!titleVal || !priceVal || !phoneVal) {
-    showToast('Remplissez les champs obligatoires', 'error');
+    showToast(t('toastFillRequiredFields'), 'error');
     return;
   }
 
@@ -2610,7 +3178,7 @@ async function addJob() {
       syncJobs();
     } catch (error) {
       console.error(error);
-      showToast('Erreur lors de la publication', 'error');
+      showToast(t('toastPublishError'), 'error');
     }
     resetPublishBtn();
   };
@@ -2629,7 +3197,7 @@ async function addJob() {
   navigator.geolocation.getCurrentPosition(
     pos => publishWithPosition(pos.coords.latitude, pos.coords.longitude),
     () => {
-      showToast('GPS requis pour publier', 'error');
+      showToast(t('toastGpsRequiredPublish'), 'error');
       resetPublishBtn();
     },
     { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
@@ -2867,7 +3435,7 @@ function syncJobs() {
               ${job.landmark ? `<div style="font-size:12px;color:#9999BC;margin-bottom:8px;">${job.landmark}</div>` : ''}
               ${job.desc ? `<div data-map-popup-desc style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
               ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
-              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" alt="Photo de l'annonce" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
+              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" alt="${t('altJobPhoto')}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
               <div data-map-popup-translation-notice style="display:none;margin:6px 0;font-size:11px;color:#9999BC;"></div>
               <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
@@ -2961,9 +3529,9 @@ function updateJobsList(jobs) {
           if (p.verified) {
             badge = `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>`;
           } else if (p.phoneVerified) {
-            badge = `<span title="Numéro vérifié par WhatsApp" style="font-size:11px;color:var(--green,#25D366);">📱</span>`;
+            badge = `<span title="${t('whatsappVerifiedTitle')}" style="font-size:11px;color:var(--green,#25D366);">📱</span>`;
           } else if (p.emailVerified) {
-            badge = `<span title="Email vérifié" style="font-size:11px;color:var(--text-dim);">✉️</span>`;
+            badge = `<span title="${t('emailVerifiedTitle')}" style="font-size:11px;color:var(--text-dim);">✉️</span>`;
           }
           const rating = p.ratingCount ? `<span style="font-size:11px;color:#FFD700;font-weight:700;">★ ${p.ratingAvg.toFixed(1)}</span>` : '';
           return badge + rating;
@@ -2980,7 +3548,7 @@ function focusJob(lat, lng) {
 
 // ===== ROUTE =====
 function drawRoute(lat, lng) {
-  if (!userCoords) { showToast('Position GPS requise', 'error'); return; }
+  if (!userCoords) { showToast(t('toastGpsRequired'), 'error'); return; }
   if (routeControl) { try { map.removeControl(routeControl); } catch(e){} }
   try {
     routeControl = L.Routing.control({
@@ -3155,7 +3723,7 @@ function activateNav(tab) {
   } else if (tab === 'search') {
     closeOverlay('accountPage');
     openSheet('jobsSheet');
-    showToast('Filtrez par categorie en haut', 'info');
+    showToast(t('toastFilterCategoryHint'), 'info');
   }
 }
 
@@ -3197,7 +3765,7 @@ let reportingJobId = null;
 
 function openReportModal(jobId) {
   if (!currentUser || currentUser.isAnonymous) {
-    showToast('Connectez-vous pour signaler une annonce.', 'error');
+    showToast(t('toastLoginToReport'), 'error');
     return;
   }
   reportingJobId = jobId;
@@ -3226,16 +3794,16 @@ async function submitReport() {
     });
     triggerInstantNotify('new-report'); // prévient l'admin instantanément, sans attendre le cron
     closeOverlay('reportModal');
-    showToast('Signalement envoyé, merci.', 'success');
+    showToast(t('toastReportSent'), 'success');
   } catch (e) {
     console.warn('Erreur envoi signalement', e);
-    showToast(e && e.code === 'PERMISSION_DENIED' ? 'Vous avez déjà signalé cette annonce.' : 'Erreur lors de l\'envoi, réessayez.', 'error');
+    showToast(e && e.code === 'PERMISSION_DENIED' ? t('toastAlreadyReported') : t('toastSendErrorRetry'), 'error');
   }
 }
 
 function openAdminPanel() {
   if (!currentUser || !isAdmin) {
-    showToast('Acces reserve aux administrateurs', 'error');
+    showToast(t('toastAdminOnly'), 'error');
     return;
   }
   openOverlay('adminPanel');
@@ -3295,7 +3863,7 @@ async function dismissReport(reportId) {
   try {
     await db.ref('reports/' + reportId + '/status').set('dismissed');
     loadPendingReports();
-  } catch (e) { showToast('Erreur, réessayez.', 'error'); }
+  } catch (e) { showToast(t('toastErrorRetry'), 'error'); }
 }
 
 async function deleteReportedJob(reportId, jobId) {
@@ -3305,8 +3873,8 @@ async function deleteReportedJob(reportId, jobId) {
     await db.ref('reports/' + reportId + '/status').set('resolved');
     loadPendingReports();
     loadAdminJobs();
-    showToast('Job supprimé.', 'success');
-  } catch (e) { showToast('Erreur, réessayez.', 'error'); }
+    showToast(t('toastJobDeleted'), 'success');
+  } catch (e) { showToast(t('toastErrorRetry'), 'error'); }
 }
 
 // Agrège notifStats/{date}/{sent,opened} sur les 7 derniers jours pour
@@ -3378,8 +3946,8 @@ async function loadPendingVerifications() {
       const docs = p.verificationDocs || {};
       const photos = (docs.idPhotoUrl || docs.selfiePhotoUrl) ? `
         <div style="display:flex;gap:6px;margin-top:8px;">
-          ${docs.idPhotoUrl ? `<a href="${docs.idPhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.idPhotoUrl, 120, 120)}" loading="lazy" alt="Pièce d'identité soumise" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
-          ${docs.selfiePhotoUrl ? `<a href="${docs.selfiePhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.selfiePhotoUrl, 120, 120)}" loading="lazy" alt="Selfie de vérification soumis" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
+          ${docs.idPhotoUrl ? `<a href="${docs.idPhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.idPhotoUrl, 120, 120)}" loading="lazy" alt="${t('altIdSubmitted')}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
+          ${docs.selfiePhotoUrl ? `<a href="${docs.selfiePhotoUrl}" target="_blank" rel="noopener"><img src="${cloudinaryResize(docs.selfiePhotoUrl, 120, 120)}" loading="lazy" alt="${t('altSelfieSubmitted')}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"></a>` : ''}
         </div>` : `<div style="font-size:11px;color:var(--danger,#e74c3c);margin-top:6px;">${t('adminNoDocWarning')}</div>`;
       return `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -3424,7 +3992,7 @@ async function approveVerification(uid) {
     if (whatsappNumber) {
       const message = `Bonjour ${name}, ta demande de vérification JobMarket a été acceptée ✅.\nVoici ton code de vérification à saisir dans l'app : ${code}`;
       openWhatsAppReliably(waWindow, whatsappNumber, message);
-      showToast('Code généré et WhatsApp ouvert pour l\'envoyer !', 'success');
+      showToast(t('toastCodeGenerated'), 'success');
     } else {
       if (waWindow) waWindow.close();
       showToast(t('noWhatsappManualCode').replace('{code}', code), 'info');
@@ -3433,7 +4001,7 @@ async function approveVerification(uid) {
   } catch (e) {
     console.error('approveVerification error', e);
     if (waWindow) waWindow.close();
-    showToast('Erreur lors de la validation', 'error');
+    showToast(t('toastValidationError'), 'error');
   }
 }
 
@@ -3441,11 +4009,11 @@ async function rejectVerification(uid) {
   if (!confirm('Refuser cette demande ? La personne pourra en refaire une plus tard.')) return;
   try {
     await db.ref('profiles/' + uid).update({ verificationRequested: null, verificationDocs: null });
-    showToast('Demande refusée', 'info');
+    showToast(t('toastRequestRejected'), 'info');
     loadPendingVerifications();
   } catch (e) {
     console.error('rejectVerification error', e);
-    showToast('Erreur', 'error');
+    showToast(t('toastGenericError'), 'error');
   }
 }
 
@@ -3470,15 +4038,15 @@ async function deleteJob(id) {
   if (!confirm('Supprimer ce job ?')) return;
   try {
     await db.ref('jobs/' + id).remove();
-    showToast('Job supprime', 'success');
+    showToast(t('toastJobDeleted'), 'success');
     loadAdminJobs();
-  } catch(e) { showToast('Erreur lors de la suppression', 'error'); }
+  } catch(e) { showToast(t('toastDeleteError'), 'error'); }
 }
 
 function openMyJobs() {
-  if (!currentUser || currentUser.isAnonymous) { showToast('Connectez-vous', 'error'); return; }
+  if (!currentUser || currentUser.isAnonymous) { showToast(t('toastPleaseLogin'), 'error'); return; }
   const myJobs = allJobs.filter(j => j.user === currentUser.uid);
-  if (myJobs.length === 0) { showToast('Aucune publication trouvee', 'info'); return; }
+  if (myJobs.length === 0) { showToast(t('toastNoListingsFound'), 'info'); return; }
   showToast(t('myPublicationsCount').replace('{n}', myJobs.length), 'info');
   closeOverlay('accountPage');
   openSheet('jobsSheet');
@@ -3502,7 +4070,7 @@ const NOTIF_CATEGORIES = [
 ];
 
 async function openNotifPrefs() {
-  if (!currentUser || currentUser.isAnonymous) { showToast('Connectez-vous', 'error'); return; }
+  if (!currentUser || currentUser.isAnonymous) { showToast(t('toastPleaseLogin'), 'error'); return; }
   closeOverlay('accountPage');
   openOverlay('notifPrefsPage');
 
@@ -4126,7 +4694,7 @@ async function callChatAI(messages) {
     const res = await fetch(CHAT_PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, lang: currentLang }),
       signal: controller.signal
     });
     clearTimeout(timeout);
@@ -4179,7 +4747,8 @@ async function improveJobDescription() {
         mode: 'rewrite_job',
         title,
         description: desc,
-        category: categoryEl ? categoryEl.value.split('|')[0] : ''
+        category: categoryEl ? categoryEl.value.split('|')[0] : '',
+        lang: currentLang
       }),
       signal: controller.signal
     });
@@ -4233,7 +4802,7 @@ async function optimizeArtisanProfile() {
     const res = await fetch(CHAT_PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'optimize_profile', jobTitle, skills }),
+      body: JSON.stringify({ mode: 'optimize_profile', jobTitle, skills, lang: currentLang }),
       signal: controller.signal
     });
     clearTimeout(timeout);
@@ -4295,7 +4864,8 @@ async function suggestJobPrice() {
         mode: 'suggest_price',
         title,
         description: desc,
-        category: categoryEl ? categoryEl.value.split('|')[0] : ''
+        category: categoryEl ? categoryEl.value.split('|')[0] : '',
+        lang: currentLang
       }),
       signal: controller.signal
     });
@@ -4429,7 +4999,8 @@ async function analyzeScamSignals() {
         mode: 'check_scam_signals',
         title,
         description: desc,
-        price: job.price ? String(job.price) : ''
+        price: job.price ? String(job.price) : '',
+        lang: currentLang
       }),
       signal: controller.signal
     });
@@ -4979,7 +5550,7 @@ async function openJobPreview(jobId) {
                             const profileImg = userData.profileImage || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=25D366&color=fff';
                             html += `
                                 <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 10px; transition: background 0.2s;" onclick="viewUserProfile('${contactUid}')" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
-                                    <img src="${escapeHtml(cloudinaryResize(profileImg, 80, 80))}" loading="lazy" alt="Photo de profil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #25D366;">
+                                    <img src="${escapeHtml(cloudinaryResize(profileImg, 80, 80))}" loading="lazy" alt="${t('altProfilePhoto')}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #25D366;">
                                     <div>
                                         <div style="font-weight: bold; color: var(--text); font-size: 14px;">${escapeHtml(name)}</div>
                                         <div style="font-size: 12px; color: var(--text-dim);">${escapeHtml(jobTitle)}</div>
@@ -5005,7 +5576,7 @@ function editJobFromPreview() {
     const job = window.currentPreviewJob;
     if (!job) return;
     if (!currentUser || job.user !== currentUser.uid) {
-        showToast('Vous ne pouvez modifier que vos propres publications', 'error');
+        showToast(t('toastCantEditOthers'), 'error');
         return;
     }
 
@@ -5035,7 +5606,7 @@ function editJobFromPreview() {
 
     document.getElementById('jobPreviewDrawer').classList.remove('open');
     document.getElementById('jobFormSheet').classList.add('open');
-    showToast('Modifiez les champs puis validez', 'info');
+    showToast(t('toastEditFieldsThenValidate'), 'info');
 }
 
 // Supprime l'annonce actuellement affichée dans le drawer (réservé au propriétaire)
@@ -5043,18 +5614,18 @@ async function deleteJobFromPreview() {
     const job = window.currentPreviewJob;
     if (!job) return;
     if (!currentUser || job.user !== currentUser.uid) {
-        showToast('Vous ne pouvez supprimer que vos propres publications', 'error');
+        showToast(t('toastCantDeleteOthers'), 'error');
         return;
     }
     if (!confirm('Supprimer définitivement cette annonce ?')) return;
     try {
         await db.ref('jobs/' + job.id).remove();
-        showToast('Annonce supprimée', 'success');
+        showToast(t('toastListingDeleted'), 'success');
         document.getElementById('jobPreviewDrawer').classList.remove('open');
         syncJobs();
     } catch (e) {
         console.error(e);
-        showToast('Erreur lors de la suppression', 'error');
+        showToast(t('toastDeleteError'), 'error');
     }
 }
 
@@ -5131,10 +5702,10 @@ async function viewUserProfile(uid) {
         if (headerTitle) headerTitle.innerText = t("artisanProfile");
 
         if (data.profileImage) {
-            document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" alt="Aperçu de la photo de profil" style="width:100%; height:100%; object-fit:cover;">`;
+            document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" alt="${t('altProfilePhotoPreview')}" style="width:100%; height:100%; object-fit:cover;">`;
         } else {
             const name = data.name || 'Utilisateur';
-            document.getElementById('profileImagePreview').innerHTML = `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=25D366&color=fff" alt="Avatar généré à partir du nom" style="width:100%; height:100%; object-fit:cover;">`;
+            document.getElementById('profileImagePreview').innerHTML = `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=25D366&color=fff" alt="${t('altGeneratedAvatar')}" style="width:100%; height:100%; object-fit:cover;">`;
         }
 
         // Le profil d'un AUTRE utilisateur n'affiche jamais ses blocs privés
@@ -5163,7 +5734,7 @@ async function openProfileSheet() {
 
     const user = auth.currentUser;
     if (!user || user.isAnonymous) {
-        showToast('Connectez-vous pour modifier votre profil', 'error');
+        showToast(t('toastLoginToEditProfile'), 'error');
         return;
     }
 
@@ -5191,7 +5762,7 @@ async function openProfileSheet() {
         if (headerTitle) headerTitle.innerText = t("myProProfile");
 
         if (data.profileImage) {
-            document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" alt="Aperçu de la photo de profil" style="width:100%; height:100%; object-fit:cover;">`;
+            document.getElementById('profileImagePreview').innerHTML = `<img src="${escapeHtml(data.profileImage)}" alt="${t('altProfilePhotoPreview')}" style="width:100%; height:100%; object-fit:cover;">`;
         } else {
             document.getElementById('profileImagePreview').innerHTML = `<span style="color: #666; font-size: 12px;">Photo</span>`;
         }
@@ -5250,7 +5821,7 @@ function renderVerificationStatus(profile, user) {
                 ✅ Demande acceptée ! Entre le code à 7 chiffres reçu sur WhatsApp pour finaliser ta vérification.
             </div>
             <div style="display:flex;gap:6px;">
-                <input id="verifyCodeInput" type="text" inputmode="numeric" maxlength="7" placeholder="Code à 7 chiffres" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:10px 12px;border-radius:8px;font-size:14px;letter-spacing:2px;">
+                <input id="verifyCodeInput" type="text" inputmode="numeric" maxlength="7" data-i18n-placeholder="verifyCodePlaceholder" placeholder="Code à 7 chiffres" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:10px 12px;border-radius:8px;font-size:14px;letter-spacing:2px;">
                 <button type="button" id="confirmVerificationCodeBtn" onclick="confirmVerificationCode()" style="background:var(--gold,#FFD700);border:none;color:#111;padding:10px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Valider le code</button>
             </div>`;
         return;
@@ -5309,7 +5880,7 @@ function previewVerificationPhoto(input, previewId) {
         return;
     }
     const reader = new FileReader();
-    reader.onload = () => { preview.innerHTML = `<img src="${reader.result}" alt="Aperçu de la photo sélectionnée" style="width:100%;height:100%;object-fit:cover;">`; };
+    reader.onload = () => { preview.innerHTML = `<img src="${reader.result}" alt="${t('altSelectedPhotoPreview')}" style="width:100%;height:100%;object-fit:cover;">`; };
     reader.readAsDataURL(file);
 }
 
@@ -5373,8 +5944,8 @@ function renderBoostJobPicker(uid) {
 
 function copyReferralLink(link) {
     navigator.clipboard.writeText(link)
-        .then(() => showToast('Lien copié !', 'success'))
-        .catch(() => showToast('Impossible de copier', 'error'));
+        .then(() => showToast(t('toastLinkCopied'), 'success'))
+        .catch(() => showToast(t('toastCopyFailed'), 'error'));
 }
 
 function shareReferralLink(link) {
@@ -5389,7 +5960,7 @@ async function useBoostCredit(jobId) {
     try {
         const snap = await db.ref('profiles/' + user.uid + '/boostCredits').once('value');
         const credits = snap.val() || 0;
-        if (credits <= 0) { showToast('Aucun crédit disponible', 'error'); return; }
+        if (credits <= 0) { showToast(t('toastNoCreditsAvailable'), 'error'); return; }
 
         await db.ref('jobs/' + jobId).update({
             boosted: true,
@@ -5397,12 +5968,12 @@ async function useBoostCredit(jobId) {
         });
         await db.ref('profiles/' + user.uid + '/boostCredits').transaction(cur => Math.max(0, (cur || 0) - 1));
 
-        showToast('Annonce mise en avant pour 7 jours !', 'success');
+        showToast(t('toastBoostedSeven'), 'success');
         const freshSnap = await db.ref('profiles/' + user.uid).once('value');
         renderReferralBox(freshSnap.val() || {}, user);
     } catch (e) {
         console.error('useBoostCredit error', e);
-        showToast('Erreur lors de la mise en avant', 'error');
+        showToast(t('toastBoostError'), 'error');
     }
 }
 
@@ -5418,11 +5989,11 @@ async function requestVerification() {
     const whatsappNumber = waInput ? waInput.value.trim() : '';
 
     if (!idFile || !selfieFile) {
-        showToast('Ajoute une photo de ta pièce d\'identité ET un selfie avant d\'envoyer.', 'error');
+        showToast(t('toastNeedIdAndSelfie'), 'error');
         return;
     }
     if (!/^\+?\d{8,15}$/.test(whatsappNumber.replace(/[\s.-]/g, ''))) {
-        showToast('Entre un numéro WhatsApp valide (ex: +237650420710) pour recevoir ton code.', 'error');
+        showToast(t('toastNeedValidWhatsApp'), 'error');
         return;
     }
 
@@ -5457,11 +6028,11 @@ async function requestVerification() {
         openWhatsAppReliably(waWindow, ADMIN_WHATSAPP_NUMBER, message);
 
         renderVerificationStatus({ ...profile, verificationRequested: true, whatsappNumber }, user);
-        showToast('Demande envoyée !', 'success');
+        showToast(t('toastRequestSent'), 'success');
     } catch (e) {
         console.error('requestVerification error', e);
         if (waWindow) waWindow.close();
-        showToast('Erreur lors de l\'envoi des photos', 'error');
+        showToast(t('toastPhotoSendError'), 'error');
         if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
     }
 }
@@ -5476,7 +6047,7 @@ async function confirmVerificationCode() {
     const input = document.getElementById('verifyCodeInput');
     const code = input ? input.value.trim() : '';
     if (!/^\d{7}$/.test(code)) {
-        showToast('Le code doit contenir exactement 7 chiffres.', 'error');
+        showToast(t('toastCodeMustBe7Digits'), 'error');
         return;
     }
 
@@ -5489,13 +6060,13 @@ async function confirmVerificationCode() {
         const profile = snap.val() || {};
 
         if (!profile.verificationCode) {
-            showToast('Aucun code en attente pour ce profil.', 'error');
+            showToast(t('toastNoCodePending'), 'error');
             if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
             return;
         }
 
         if (code !== String(profile.verificationCode)) {
-            showToast('Code incorrect, réessaie.', 'error');
+            showToast(t('toastWrongCode'), 'error');
             if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
             return;
         }
@@ -5508,12 +6079,12 @@ async function confirmVerificationCode() {
             verificationDocs: null
         });
 
-        showToast('Profil vérifié !', 'success');
+        showToast(t('toastProfileVerified'), 'success');
         const freshSnap = await db.ref('profiles/' + user.uid).once('value');
         renderVerificationStatus(freshSnap.val() || {}, user);
     } catch (e) {
         console.error('confirmVerificationCode error', e);
-        showToast('Erreur lors de la vérification du code', 'error');
+        showToast(t('toastCodeVerifyError'), 'error');
         if (btn) { btn.disabled = false; btn.innerText = originalBtnText; }
     }
 }
@@ -5669,6 +6240,55 @@ function openWhatsAppReliably(placeholderWindow, phoneRaw, message) {
     window.location.href = url;
 }
 
+// Message de premier contact : au lieu du message-modèle rigide (variables
+// collées bout à bout), l'IA rédige un message qui relie explicitement les
+// compétences réelles de l'artisan au besoin décrit dans CETTE annonce
+// précise (voir buildCraftContactMessagePrompt dans chat-proxy.js) — sans
+// jamais inventer une compétence non fournie par le profil.
+//
+// "Fail-open" comme la modération : toute panne, lenteur ou réponse
+// invalide de l'IA retombe silencieusement sur le message-modèle existant,
+// qui reste parfaitement fonctionnel — jamais bloquer un contact pour une
+// raison d'infrastructure secondaire.
+async function craftContactMessage(job, profile) {
+  const proTitle = profile.jobTitle || 'Non spécifié';
+  const proSkills = profile.skills || 'Non spécifiés';
+  const profileName = profile.name || profile.company || 'Prestataire';
+  const displayContent = getJobDisplayContent(job); // titre déjà traduit si en cache
+
+  const fallbackMessage = t('waMsgContactProvider')
+      .replace('{jobTitle}', displayContent.title)
+      .replace('{profileName}', profileName)
+      .replace('{proTitle}', proTitle)
+      .replace('{proSkills}', proSkills);
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(CHAT_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'craft_contact_message',
+        jobTitle: displayContent.title,
+        jobDesc: displayContent.desc,
+        proTitle,
+        proSkills,
+        lang: job.lang || currentLang // langue lue par l'auteur de l'annonce
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return fallbackMessage;
+
+    const data = await res.json();
+    if (data.fallback || typeof data.message !== 'string' || !data.message.trim()) return fallbackMessage;
+    return data.message;
+  } catch (err) {
+    return fallbackMessage;
+  }
+}
+
 async function contactViaWhatsAppFromPreview() {
     const job = window.currentPreviewJob;
     if (!job) return;
@@ -5714,16 +6334,7 @@ async function contactViaWhatsAppFromPreview() {
         await db.ref('job_contacts').push(contactData);
         triggerInstantNotify('new-contact'); // prévient le propriétaire du job instantanément, sans attendre le cron
 
-        const proTitle = profile.jobTitle || 'Non spécifié';
-        const proSkills = profile.skills || 'Non spécifiés';
-        const profileName = profile.name || profile.company || 'Prestataire';
-
-        const message = t('waMsgContactProvider')
-            .replace('{jobTitle}', job.title)
-            .replace('{profileName}', profileName)
-            .replace('{proTitle}', proTitle)
-            .replace('{proSkills}', proSkills);
-
+        const message = await craftContactMessage(job, profile);
         openWhatsAppReliably(waWindow, phone, message);
 
     } catch (e) {
@@ -5811,16 +6422,7 @@ window.popupWhatsAppClick = async function(jobId) {
         await db.ref('job_contacts').push(contactData);
         triggerInstantNotify('new-contact'); // prévient le propriétaire du job instantanément, sans attendre le cron
 
-        const proTitle = profile.jobTitle || 'Non spécifié';
-        const proSkills = profile.skills || 'Non spécifiées';
-        const profileName = profile.name || profile.company || 'Prestataire';
-        
-        const message = t('waMsgContactProvider')
-            .replace('{jobTitle}', getJobDisplayContent(job).title)
-            .replace('{profileName}', profileName)
-            .replace('{proTitle}', proTitle)
-            .replace('{proSkills}', proSkills);
-        
+        const message = await craftContactMessage(job, profile);
         openWhatsAppReliably(waWindow, phone, message);
         showToast(t('whatsappOpenedSuccess'), 'success');
 
@@ -5871,7 +6473,7 @@ async function renderOwnerReviews(ownerUid, containerId) {
     if (count === 0) {
         box.innerHTML = `
             <div style="margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
-                <h3 style="margin:0 0 6px 0;font-size:15px;color:var(--text);">Avis</h3>
+                <h3 style="margin:0 0 6px 0;font-size:15px;color:var(--text);">${t('reviewsTitle')}</h3>
                 <p style="font-size:13px;color:var(--text-dim);margin:0;" data-i18n="noReviewsYet">Pas encore d'avis pour ce prestataire.</p>
             </div>`;
         return;
@@ -5884,8 +6486,8 @@ async function renderOwnerReviews(ownerUid, containerId) {
     box.innerHTML = `
         <div style="margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;">
             <h3 style="margin:0 0 8px 0;font-size:15px;color:var(--text);display:flex;align-items:center;gap:8px;">
-                Avis <span style="color:var(--gold,#FFD700);font-size:14px;letter-spacing:2px;">${starsHtml}</span>
-                <span style="font-size:12px;color:var(--text-dim);font-weight:400;">${avg.toFixed(1)}/5 · ${count} avis</span>
+                ${t('reviewsTitle')} <span style="color:var(--gold,#FFD700);font-size:14px;letter-spacing:2px;">${starsHtml}</span>
+                <span style="font-size:12px;color:var(--text-dim);font-weight:400;">${avg.toFixed(1)}/5 · ${count} ${t('reviewsCountWord')}</span>
             </h3>
             <div id="${listId}" style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
                 <div style="font-size:12px;color:var(--text-dim);" data-i18n="loadingReviews">Chargement des avis...</div>
@@ -5904,7 +6506,7 @@ async function renderOwnerReviews(ownerUid, containerId) {
 
         listEl.innerHTML = items.map(r => {
             const reviewer = profilesCache[r.reviewerUid] || {};
-            const name = reviewer.name || reviewer.company || 'Utilisateur';
+            const name = reviewer.name || reviewer.company || t('userFallback');
             const stars = '★★★★★☆☆☆☆☆'.slice(5 - (r.rating || 0), 10 - (r.rating || 0));
             const when = (typeof timeAgo === 'function' && r.timestamp) ? timeAgo(r.timestamp) : '';
             const comment = r.comment ? `<div style="font-size:13px;color:var(--text);margin-top:3px;">${escapeHtml(r.comment)}</div>` : '';
@@ -5918,11 +6520,65 @@ async function renderOwnerReviews(ownerUid, containerId) {
                     ${when ? `<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">${when}</div>` : ''}
                 </div>`;
         }).join('');
+
+        // Résumé IA des avis : évite d'obliger un visiteur à tout lire pour
+        // se faire une idée. Seulement si assez de commentaires substantiels
+        // (sinon un résumé n'apporte rien qu'une lecture directe ne donne
+        // pas déjà). Affiché seulement quand prêt, jamais bloquant.
+        const commentsForSummary = items.map(r => r.comment).filter(c => c && c.trim().length >= 8);
+        if (commentsForSummary.length >= 3) {
+            getReviewsSummary(ownerUid, commentsForSummary).then(summary => {
+                if (!summary) return;
+                const currentListEl = document.getElementById(listId);
+                if (!currentListEl) return; // popup peut avoir été fermé entre-temps
+                const summaryEl = document.createElement('div');
+                summaryEl.style.cssText = 'font-size:12px;color:var(--text-dim,#9999BC);font-style:italic;padding-bottom:8px;border-bottom:1px solid var(--border,#333);margin-bottom:2px;';
+                summaryEl.textContent = '💬 ' + summary;
+                currentListEl.insertAdjacentElement('afterbegin', summaryEl);
+            });
+        }
     } catch (e) {
         console.warn('renderOwnerReviews error', e);
         const listEl = document.getElementById(listId);
         if (listEl) listEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim);">' + t('reviewsLoadError') + '</div>';
     }
+}
+
+// Résumé IA des avis d'un prestataire, mis en cache dans Firebase pour
+// n'appeler l'IA qu'UNE FOIS par (langue, nombre d'avis) — tous les
+// visiteurs suivants dans la même langue réutilisent le même résumé tant
+// qu'aucun nouvel avis n'est arrivé. Dès qu'un nouvel avis change le
+// compte, la clé de cache change aussi, ce qui force naturellement une
+// regénération plutôt qu'un résumé obsolète.
+async function getReviewsSummary(ownerUid, comments) {
+  const cacheKey = `${currentLang}_${comments.length}`;
+  try {
+    const cached = await db.ref(`profiles/${ownerUid}/reviewSummaries/${cacheKey}`).once('value');
+    if (cached.exists() && cached.val().text) return cached.val().text;
+  } catch (e) {
+    // lecture cache échouée : on tente quand même une génération ci-dessous
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(CHAT_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'summarize_reviews', comments, lang: currentLang }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (data.fallback || typeof data.summary !== 'string' || !data.summary.trim()) return null;
+
+    db.ref(`profiles/${ownerUid}/reviewSummaries/${cacheKey}`).set({ text: data.summary }).catch(() => {});
+    return data.summary;
+  } catch (err) {
+    return null; // silencieux : la liste d'avis reste utilisable normalement sans résumé
+  }
 }
 
 // Affiche un bouton "Laisser un avis" si l'utilisateur connecté a déjà
@@ -5961,8 +6617,8 @@ async function renderMyReviewAction(job) {
         }
 
         const ownerProfile = profilesCache[job.user] || {};
-        const ownerName = ownerProfile.name || ownerProfile.company || 'ce prestataire';
-        box.innerHTML = `<button type="button" onclick="showReviewPrompt('${myContactKey}', '${job.user}', '${escapeHtml(job.title || '')}', '${escapeHtml(ownerName)}')" style="margin-top:12px;width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;">⭐ Laisser un avis</button>`;
+        const ownerName = ownerProfile.name || ownerProfile.company || t('reviewsProviderFallback');
+        box.innerHTML = `<button type="button" onclick="showReviewPrompt('${myContactKey}', '${job.user}', '${escapeHtml(job.title || '')}', '${escapeHtml(ownerName)}')" style="margin-top:12px;width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;">${t('reviewsLeaveBtn')}</button>`;
     } catch (e) {
         console.warn('renderMyReviewAction error', e);
     }
@@ -5986,9 +6642,9 @@ async function checkPendingReviews(uid) {
 
     const jobSnap = await db.ref('jobs/' + pending.jobId).once('value');
     const job = jobSnap.val();
-    const jobTitle = job ? job.title : 'ce besoin';
+    const jobTitle = job ? job.title : t('reviewsJobFallback');
     const ownerProfile = profilesCache[pending.jobOwnerUid] || {};
-    const ownerName = ownerProfile.name || ownerProfile.company || 'ce prestataire';
+    const ownerName = ownerProfile.name || ownerProfile.company || t('reviewsProviderFallback');
 
     showReviewPrompt(pendingKey, pending.jobOwnerUid, jobTitle, ownerName);
   } catch (e) {
@@ -6006,14 +6662,14 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
   overlay.innerHTML = `
     <div style="background:var(--surface,#1a1a1a);border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center;">
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:6px;" data-i18n="reviewModalTitle">Comment ça s'est passé ?</div>
-      <div style="font-size:13px;color:var(--text-dim,#9999BC);margin-bottom:16px;">Avec ${escapeHtml(ownerName)} pour "${escapeHtml(jobTitle)}"</div>
+      <div style="font-size:13px;color:var(--text-dim,#9999BC);margin-bottom:16px;">${t('reviewPromptWith').replace('{name}', escapeHtml(ownerName)).replace('{title}', escapeHtml(jobTitle))}</div>
       <div id="reviewStars" style="font-size:32px;margin-bottom:16px;">
         <span class="review-star" data-value="1" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="2" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="3" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="4" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="5" style="cursor:pointer;padding:4px;display:inline-block;">☆</span>
       </div>
-      <textarea id="reviewComment" placeholder="Commentaire (optionnel)" maxlength="500" style="width:100%;min-height:70px;border-radius:10px;padding:10px;background:#111;color:#fff;border:1px solid var(--border,#333);margin-bottom:14px;box-sizing:border-box;"></textarea>
+      <textarea id="reviewComment" placeholder="${t('reviewCommentPlaceholder')}" maxlength="500" style="width:100%;min-height:70px;border-radius:10px;padding:10px;background:#111;color:#fff;border:1px solid var(--border,#333);margin-bottom:14px;box-sizing:border-box;"></textarea>
       <div style="display:flex;gap:10px;">
-        <button id="reviewSkipBtn" type="button" style="flex:1;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#9999BC);padding:12px;border-radius:12px;cursor:pointer;font-weight:600;">Plus tard</button>
-        <button id="reviewSubmitBtn" type="button" style="flex:1;background:#FFD700;color:#111;padding:12px;border:none;border-radius:12px;cursor:pointer;font-weight:800;">Envoyer</button>
+        <button id="reviewSkipBtn" type="button" style="flex:1;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#9999BC);padding:12px;border-radius:12px;cursor:pointer;font-weight:600;">${t('notifPrimerLater')}</button>
+        <button id="reviewSubmitBtn" type="button" style="flex:1;background:#FFD700;color:#111;padding:12px;border:none;border-radius:12px;cursor:pointer;font-weight:800;">${t('reviewSendBtn')}</button>
       </div>
     </div>
   `;
@@ -6052,7 +6708,7 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
     // cliquer donne l'impression que "rien ne se passe" pendant l'attente du
     // serveur, et un second clic peut envoyer l'avis deux fois.
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Envoi...';
+    submitBtn.textContent = t('reviewSending');
     const comment = overlay.querySelector('#reviewComment').value.trim();
     try {
       await db.ref('reviews').push({
@@ -6086,13 +6742,13 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
       });
 
       await db.ref('job_contacts/' + contactKey + '/reviewed').set(true);
-      showToast('Merci pour votre avis !', 'success');
+      showToast(t('toastReviewThanks'), 'success');
       overlay.remove();
     } catch (e) {
       console.error('submitReview error', e);
       showToast(t('reviewSendError'), 'error');
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Envoyer';
+      submitBtn.textContent = t('reviewSendBtn');
     }
   };
 }
@@ -6623,7 +7279,7 @@ document.addEventListener('click', (e) => {
         </div>
         <div class="profile-form-group">
             <label data-i18n="fieldCompany">Société</label>
-            <input type="text" id="profileCompany" class="profile-input" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
+            <input type="text" id="profileCompany" class="profile-input" data-i18n-placeholder="companyNamePlaceholder" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
         </div>
         <div class="profile-form-group">
             <label data-i18n="fieldJobTitle">Ton métier / Spécialité</label>
@@ -6653,7 +7309,7 @@ function previewImage(event) {
     const reader = new FileReader();
     reader.onload = function(){
         const output = document.getElementById('profileImagePreview');
-        output.innerHTML = `<img src="${reader.result}" alt="Aperçu du document sélectionné" style="width:100%; height:100%; object-fit:cover;">`;
+        output.innerHTML = `<img src="${reader.result}" alt="${t('altDocumentPreview')}" style="width:100%; height:100%; object-fit:cover;">`;
     };
     reader.readAsDataURL(event.target.files[0]);
 }
