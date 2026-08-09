@@ -3391,81 +3391,131 @@ function getCatLabel(cat) {
   return keys[cat] ? t(keys[cat]) : cat;
 }
 
+// Nombre maximum d'annonces gardées en mémoire/affichées à la fois. Sans
+// cette limite, la base grossirait indéfiniment et chaque utilisateur
+// télécharge­rait un jeu de données de plus en plus lourd à chaque
+// chargement de l'app. Les annonces les PLUS RÉCENTES sont toujours
+// prioritaires (limitToLast sur les clés push, qui sont déjà
+// chronologiques) — les plus anciennes, généralement moins pertinentes
+// pour une demande de service, sortent progressivement de la vue.
+const JOBS_LIMIT = 500;
+
+// Construit le marqueur Leaflet (icône + popup) d'UNE SEULE annonce. Isolé
+// dans sa propre fonction pour pouvoir être appelé annonce par annonce
+// (ajout, modification) au lieu de tout reconstruire à chaque fois.
+function createJobMarker(job, jobId) {
+  const icon = L.divIcon({
+    html: `<div style="
+      background:${job.color || '#FFD700'};
+      color:#111;font-weight:800;font-size:9px;
+      padding:6px 8px;border-radius:10px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.3);
+      white-space:nowrap;
+      border:2px solid rgba(255,255,255,0.3);
+    ">${getCatIcon(job.icon)}</div>`,
+    iconSize: [null, null],
+    className: ''
+  });
+
+  const marker = L.marker([job.lat, job.lng], { icon })
+    .addTo(jobsLayer)
+    .bindPopup(`
+      <div style="min-width:240px;font-family:'DM Sans',sans-serif;">
+        <div data-map-popup-title style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${job.title}</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+          <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
+          <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
+        </div>
+        ${job.landmark ? `<div style="font-size:12px;color:#9999BC;margin-bottom:8px;">${job.landmark}</div>` : ''}
+        ${job.desc ? `<div data-map-popup-desc style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
+        ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
+        ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" alt="${t('altJobPhoto')}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
+        <div data-map-popup-translation-notice style="display:none;margin:6px 0;font-size:11px;color:#9999BC;"></div>
+        <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
+          WhatsApp
+        </button>
+        
+        <button onclick="popupShareClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#007AFF;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
+           ${t('shareOnWhatsappBtn')}
+        </button>
+        <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:var(--blue);color:white;padding:12px;border:none;border-radius:12px;margin-top:6px;font-weight:700;font-size:14px;cursor:pointer;">
+          ${t('viewRouteBtn')}
+        </button>
+        <button onclick="openReportModal('${jobId}')" style="width:100%;background:none;color:#9999BC;padding:8px;border:none;font-size:12px;cursor:pointer;margin-top:4px;text-decoration:underline;">
+          🚩 ${t('reportLink')}
+        </button>
+      </div>
+    `, { maxWidth: 280 });
+  marker.on('popupopen', () => translateMapPopupIfNeeded(job, jobId, marker));
+  return marker;
+}
+
+function removeJobMarker(jobId) {
+  const existing = jobsById[jobId];
+  if (existing && existing.marker) {
+    jobsLayer.removeLayer(existing.marker);
+    existing.marker.remove();
+  }
+}
+
+// Recalcule les compteurs/statistiques dérivés d'allJobs (déjà en mémoire,
+// donc quasi gratuit — contrairement à avant, ceci ne redéclenche JAMAIS
+// un téléchargement Firebase).
+function recalcJobStats() {
+  const today = new Date().setHours(0, 0, 0, 0);
+  const todayCount = allJobs.filter(j => j.timestamp > today).length;
+
+  document.getElementById('jobCountBadge').textContent = allJobs.length;
+  document.getElementById('adminTotalJobs').textContent = allJobs.length;
+  document.getElementById('adminTodayJobs').textContent = todayCount;
+
+  if (userCoords && allJobs.length > 0) {
+    const maxDist = allJobs.reduce((m, j) => Math.max(m, j.dist), 0);
+    document.getElementById('maxDistDisplay').textContent = maxDist.toFixed(1);
+  }
+
+  if (typeof refreshNotifPanel === 'function') refreshNotifPanel();
+}
+
+// Les annonces boostées (parrainage) passent devant, puis tri par distance.
+// Appelé après chaque ajout/modification pour garder l'ordre cohérent.
+function resortAllJobs() {
+  const now = Date.now();
+  allJobs.sort((a, b) => {
+    const aBoost = a.boosted && a.boostedUntil > now ? 1 : 0;
+    const bBoost = b.boosted && b.boostedUntil > now ? 1 : 0;
+    if (aBoost !== bBoost) return bBoost - aBoost;
+    return a.dist - b.dist;
+  });
+}
+
 function syncJobs() {
   try {
-    db.ref('jobs').on('value', snap => {
+    const jobsQuery = db.ref('jobs').limitToLast(JOBS_LIMIT);
+    let initialLoadDone = false;
+
+    // ---- Chargement initial : UN SEUL aller-retour réseau, borné à
+    // JOBS_LIMIT annonces, UN SEUL rendu — au lieu de retélécharger et
+    // tout reconstruire à chaque changement comme avant.
+    jobsQuery.once('value').then(snap => {
       allJobs = [];
-      jobsById = {}; // Réinitialiser la map
+      jobsById = {};
       jobsLayer.clearLayers();
-      let todayCount = 0;
-      const today = new Date().setHours(0,0,0,0);
 
       snap.forEach(child => {
         const job = child.val();
         const jobId = child.key;
         const dist = userCoords ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng) : 999;
         const jobWithId = { ...job, id: jobId, dist };
+        jobWithId.marker = createJobMarker(job, jobId);
         allJobs.push(jobWithId);
-        jobsById[jobId] = jobWithId; // Ajouter à la map
-        console.log('Job ajouté à jobsById:', jobId, jobWithId);
-        if (job.timestamp > today) todayCount++;
-
-        const icon = L.divIcon({
-          html: `<div style="
-            background:${job.color || '#FFD700'};
-            color:#111;font-weight:800;font-size:9px;
-            padding:6px 8px;border-radius:10px;
-            box-shadow:0 4px 12px rgba(0,0,0,0.3);
-            white-space:nowrap;
-            border:2px solid rgba(255,255,255,0.3);
-          ">${getCatIcon(job.icon)}</div>`,
-          iconSize: [null, null],
-          className: ''
-        });
-
-        const marker = L.marker([job.lat, job.lng], { icon })
-          .addTo(jobsLayer)
-          .bindPopup(`
-            <div style="min-width:240px;font-family:'DM Sans',sans-serif;">
-              <div data-map-popup-title style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${job.title}</div>
-              <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
-                <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
-                <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
-              </div>
-              ${job.landmark ? `<div style="font-size:12px;color:#9999BC;margin-bottom:8px;">${job.landmark}</div>` : ''}
-              ${job.desc ? `<div data-map-popup-desc style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
-              ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
-              ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" alt="${t('altJobPhoto')}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
-              <div data-map-popup-translation-notice style="display:none;margin:6px 0;font-size:11px;color:#9999BC;"></div>
-              <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
-                WhatsApp
-              </button>
-              
-              <button onclick="popupShareClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#007AFF;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
-                 ${t('shareOnWhatsappBtn')}
-              </button>
-              <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:var(--blue);color:white;padding:12px;border:none;border-radius:12px;margin-top:6px;font-weight:700;font-size:14px;cursor:pointer;">
-                ${t('viewRouteBtn')}
-              </button>
-              <button onclick="openReportModal('${jobId}')" style="width:100%;background:none;color:#9999BC;padding:8px;border:none;font-size:12px;cursor:pointer;margin-top:4px;text-decoration:underline;">
-                🚩 ${t('reportLink')}
-              </button>
-            </div>
-          `, { maxWidth: 280 });
-        marker.on('popupopen', () => translateMapPopupIfNeeded(job, jobId, marker));
-        jobWithId.marker = marker; // référence gardée pour pouvoir filtrer la carte (recherche/catégorie/rayon)
+        jobsById[jobId] = jobWithId;
       });
 
-      // Les annonces boostées (parrainage) passent devant, puis tri par distance
-      const now = Date.now();
-      allJobs.sort((a, b) => {
-        const aBoost = a.boosted && a.boostedUntil > now ? 1 : 0;
-        const bBoost = b.boosted && b.boostedUntil > now ? 1 : 0;
-        if (aBoost !== bBoost) return bBoost - aBoost;
-        return a.dist - b.dist;
-      });
-      applyFilters(); // réapplique recherche/catégorie/rayon actifs sur les nouvelles données
+      resortAllJobs();
+      applyFilters();
+      recalcJobStats();
 
       // Lien profond : quelqu'un a cliqué sur un lien "#job=..." partagé sur WhatsApp
       if (deepLinkJobId && jobsById[deepLinkJobId]) {
@@ -3474,17 +3524,57 @@ function syncJobs() {
         if (deepLinkFromPush) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; }
         setTimeout(() => openJobPreview(idToOpen), 300);
       }
-      document.getElementById('jobCountBadge').textContent = allJobs.length;
-      document.getElementById('adminTotalJobs').textContent = allJobs.length;
-      document.getElementById('adminTodayJobs').textContent = todayCount;
-      console.log('✅ syncJobs terminé. Total jobs:', allJobs.length, 'jobsById keys:', Object.keys(jobsById));
 
-      if (userCoords && allJobs.length > 0) {
-        const maxDist = allJobs[allJobs.length-1].dist;
-        document.getElementById('maxDistDisplay').textContent = maxDist.toFixed(1);
-      }
+      initialLoadDone = true;
+    }).catch(e => console.error('Sync jobs initial load error:', e));
 
-      if (typeof refreshNotifPanel === 'function') refreshNotifPanel();
+    // ---- Mises à jour EN DIRECT après le chargement initial : chacune ne
+    // porte que sur l'annonce concernée, jamais un re-téléchargement complet.
+    jobsQuery.on('child_added', snap => {
+      if (!initialLoadDone) return; // déjà traité par le chargement initial ci-dessus
+      const job = snap.val();
+      const jobId = snap.key;
+      if (jobsById[jobId]) return; // déjà présent (évite un doublon si les deux écouteurs se chevauchent)
+
+      const dist = userCoords ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng) : 999;
+      const jobWithId = { ...job, id: jobId, dist };
+      jobWithId.marker = createJobMarker(job, jobId);
+      allJobs.push(jobWithId);
+      jobsById[jobId] = jobWithId;
+
+      resortAllJobs();
+      applyFilters();
+      recalcJobStats();
+    });
+
+    jobsQuery.on('child_changed', snap => {
+      const job = snap.val();
+      const jobId = snap.key;
+      if (!jobsById[jobId]) return; // pas encore vu (rare, cas limite au tout début du chargement)
+
+      removeJobMarker(jobId);
+      const dist = userCoords ? calcDist(userCoords.lat, userCoords.lng, job.lat, job.lng) : 999;
+      const jobWithId = { ...job, id: jobId, dist };
+      jobWithId.marker = createJobMarker(job, jobId);
+      jobsById[jobId] = jobWithId;
+      const idx = allJobs.findIndex(j => j.id === jobId);
+      if (idx !== -1) allJobs[idx] = jobWithId; else allJobs.push(jobWithId);
+
+      resortAllJobs();
+      applyFilters();
+      recalcJobStats();
+    });
+
+    jobsQuery.on('child_removed', snap => {
+      const jobId = snap.key;
+      if (!jobsById[jobId]) return;
+
+      removeJobMarker(jobId);
+      delete jobsById[jobId];
+      allJobs = allJobs.filter(j => j.id !== jobId);
+
+      applyFilters();
+      recalcJobStats();
     });
   } catch(e) {
     console.error('Sync jobs error:', e);
@@ -4043,9 +4133,20 @@ async function deleteJob(id) {
   } catch(e) { showToast(t('toastDeleteError'), 'error'); }
 }
 
-function openMyJobs() {
+// Récupère les annonces d'UN utilisateur directement depuis Firebase (pas
+// depuis allJobs, plafonné à JOBS_LIMIT) — sinon une personne dont
+// l'annonce est plus ancienne que ce plafond ne la verrait plus dans "Mes
+// publications", alors qu'elle reste bien en ligne pour tout le monde.
+async function fetchUserJobs(uid) {
+  const snap = await db.ref('jobs').orderByChild('user').equalTo(uid).once('value');
+  const jobs = [];
+  snap.forEach(child => jobs.push({ ...child.val(), id: child.key }));
+  return jobs;
+}
+
+async function openMyJobs() {
   if (!currentUser || currentUser.isAnonymous) { showToast(t('toastPleaseLogin'), 'error'); return; }
-  const myJobs = allJobs.filter(j => j.user === currentUser.uid);
+  const myJobs = await fetchUserJobs(currentUser.uid);
   if (myJobs.length === 0) { showToast(t('toastNoListingsFound'), 'info'); return; }
   showToast(t('myPublicationsCount').replace('{n}', myJobs.length), 'info');
   closeOverlay('accountPage');
@@ -5260,7 +5361,10 @@ function teardownPresence() {
 let chargementInitialJobs = true;
 
 // On attend que Firebase finisse de charger les anciens jobs au démarrage
-db.ref('jobs').once('value', () => {
+// (limitToLast(1) suffit : on n'a besoin que d'UNE réponse pour savoir que
+// la connexion Firebase répond, pas de retélécharger tout le jeu de
+// données rien que pour lever ce drapeau).
+db.ref('jobs').limitToLast(1).once('value', () => {
   chargementInitialJobs = false;
   refreshNotifPanel();
 });
@@ -5919,19 +6023,28 @@ function renderReferralBox(profile, user) {
         html += `
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border,#333);">
             <div style="font-size:13px;font-weight:700;color:var(--gold,#FFD700);margin-bottom:8px;">✨ ${t('creditsAvailable').replace('{credits}', credits)}</div>
-            <div id="boostJobPicker">${renderBoostJobPicker(user.uid)}</div>
+            <div id="boostJobPicker" style="font-size:12px;color:var(--text-dim,#9999BC);">${t('loadingReviews')}</div>
         </div>`;
     }
 
     box.innerHTML = html;
+    if (credits > 0) renderBoostJobPicker(user.uid);
 }
 
-function renderBoostJobPicker(uid) {
-    const myJobs = (typeof allJobs !== 'undefined' ? allJobs : []).filter(j => j.user === uid);
+// Récupère et affiche les annonces boostables directement depuis Firebase
+// (pas depuis allJobs, plafonné à JOBS_LIMIT) — mêmes raisons que
+// fetchUserJobs ci-dessus : une annonce plus ancienne que ce plafond
+// resterait boostable mais invisible dans ce sélecteur sinon.
+async function renderBoostJobPicker(uid) {
+    const pickerEl = document.getElementById('boostJobPicker');
+    if (!pickerEl) return;
+    const myJobs = await fetchUserJobs(uid);
+    if (!document.getElementById('boostJobPicker')) return; // panneau refermé entre-temps
     if (myJobs.length === 0) {
-        return `<div style="font-size:12px;color:var(--text-dim,#9999BC);">${t('publishToBoost')}</div>`;
+        pickerEl.innerHTML = `<div style="font-size:12px;color:var(--text-dim,#9999BC);">${t('publishToBoost')}</div>`;
+        return;
     }
-    return myJobs.map(j => {
+    pickerEl.innerHTML = myJobs.map(j => {
         const isBoosted = j.boosted && j.boostedUntil > Date.now();
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;">
             <span style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(j.title)}</span>
@@ -5962,11 +6075,17 @@ async function useBoostCredit(jobId) {
         const credits = snap.val() || 0;
         if (credits <= 0) { showToast(t('toastNoCreditsAvailable'), 'error'); return; }
 
-        await db.ref('jobs/' + jobId).update({
-            boosted: true,
-            boostedUntil: Date.now() + 7 * 24 * 60 * 60 * 1000
-        });
-        await db.ref('profiles/' + user.uid + '/boostCredits').transaction(cur => Math.max(0, (cur || 0) - 1));
+        // Écriture ATOMIQUE : les deux changements (activer le boost ET
+        // dépenser le crédit) passent ensemble ou pas du tout. Avant, deux
+        // écritures séparées laissaient une fenêtre où quelqu'un pouvait en
+        // théorie déclencher le boost sans jamais faire aboutir la
+        // dépense du crédit — voir aussi la règle Firebase associée, qui
+        // vérifie indépendamment que le crédit a bien été décrémenté.
+        const updates = {};
+        updates['jobs/' + jobId + '/boosted'] = true;
+        updates['jobs/' + jobId + '/boostedUntil'] = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        updates['profiles/' + user.uid + '/boostCredits'] = credits - 1;
+        await db.ref().update(updates);
 
         showToast(t('toastBoostedSeven'), 'success');
         const freshSnap = await db.ref('profiles/' + user.uid).once('value');
