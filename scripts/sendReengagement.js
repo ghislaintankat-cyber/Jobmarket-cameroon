@@ -98,16 +98,18 @@ function buildDigestData(count, lang) {
   return {
     title: s.title(count),
     body: s.body(count),
-    type: "reengagement-digest"
+    type: "reengagement-digest",
+    variant: "digest",
+    lang // pour que sw.js puisse aussi traduire les boutons d'action de la notif
   };
 }
 
 // Alimente notifStats/{date}/sent (même compteur partagé que
 // scripts/sendNotifications.js), pour le dashboard admin. Non bloquant.
-async function bumpSentStat(count) {
+async function bumpSentStat(variant, count) {
   try {
     const today = new Date().toISOString().slice(0, 10);
-    await db.ref(`notifStats/${today}/sent`).transaction((current) => (current || 0) + count);
+    await db.ref(`notifStats/${today}/${variant}/sent`).transaction((current) => (current || 0) + count);
   } catch (e) {
     console.warn("bumpSentStat error (non bloquant)", e);
   }
@@ -181,7 +183,11 @@ async function sendReengagement() {
       const data = buildDigestData(matchingJobs.length, lang);
 
       try {
-        const response = await messaging.sendEachForMulticast({ tokens: [token], data });
+        const response = await messaging.sendEachForMulticast({
+          tokens: [token],
+          data,
+          webpush: { headers: { Urgency: "high" } }
+        });
         const res = response.responses[0];
         if (res.success) {
           sentCount++;
@@ -203,7 +209,7 @@ async function sendReengagement() {
     }
 
     if (Object.keys(updates).length) await db.ref().update(updates);
-    if (sentCount > 0) await bumpSentStat(sentCount);
+    if (sentCount > 0) await bumpSentStat("digest", sentCount);
 
     console.log(
       `✅ ${sentCount} digest(s) de relance envoyé(s). ` +
