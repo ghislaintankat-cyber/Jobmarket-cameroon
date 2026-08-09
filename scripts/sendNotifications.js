@@ -214,7 +214,8 @@ function buildNotificationData(jobsForUid, lang, variant) {
       category: String(job.icon || "General"), // "icon" = vraie clé de catégorie côté client, voir correctif ci-dessus
       location: String(job.location || "Global"),
       salaire: String(job.salaire || "N/A"),
-      variant
+      variant,
+      lang // pour que sw.js puisse aussi traduire les boutons d'action de la notif
     };
     if (image) data.image = String(image); // sw.js l'utilise pour la vignette de la notif
     return data;
@@ -228,7 +229,8 @@ function buildNotificationData(jobsForUid, lang, variant) {
     body: titles.join(" • ") + (extra > 0 ? s.andMore(extra) : ""),
     jobId: String(jobsForUid[0].jobId), // pour le clic : ouvre au moins la 1ère annonce
     multiCount: String(jobsForUid.length),
-    variant
+    variant,
+    lang // pour que sw.js puisse aussi traduire les boutons d'action de la notif
   };
   if (groupImage) data.image = String(groupImage);
   return data;
