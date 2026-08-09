@@ -65,7 +65,8 @@ function buildReminderData(jobTitle, jobId, lang) {
     title: s.title,
     body: s.body(jobTitle || "votre annonce"),
     jobId: jobId ? String(jobId) : "",
-    type: "no-contact-reminder"
+    type: "no-contact-reminder",
+    lang // pour que sw.js puisse aussi traduire les boutons d'action de la notif
   };
 }
 
@@ -119,7 +120,7 @@ async function sendNoContactReminders() {
         const response = await messaging.sendEachForMulticast({
           tokens: [token],
           data,
-          webpush: { headers: { Urgency: "normal" } }
+          webpush: { headers: { Urgency: "high" } }
         });
         const res = response.responses[0];
         if (res.success) {
