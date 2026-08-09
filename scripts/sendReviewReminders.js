@@ -61,7 +61,8 @@ function buildReviewReminderData(providerName, jobTitle, jobId, lang) {
     title: s.title,
     body: s.body(providerName || "le prestataire", jobTitle || "cette annonce"),
     jobId: jobId ? String(jobId) : "",
-    type: "review-reminder"
+    type: "review-reminder",
+    lang // pour que sw.js puisse aussi traduire les boutons d'action de la notif
   };
 }
 
@@ -114,7 +115,7 @@ async function sendReviewReminders() {
         const response = await messaging.sendEachForMulticast({
           tokens: [token],
           data,
-          webpush: { headers: { Urgency: "normal" } }
+          webpush: { headers: { Urgency: "high" } }
         });
         const res = response.responses[0];
         if (res.success) {
