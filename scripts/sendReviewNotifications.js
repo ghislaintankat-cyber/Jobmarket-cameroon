@@ -66,7 +66,8 @@ function buildReviewNotifData(rating, comment, lang) {
   return {
     title: s.title(rating),
     body: s.body(rating, comment),
-    type: "new-review"
+    type: "new-review",
+    lang // pour que sw.js puisse aussi traduire les boutons d'action de la notif
   };
 }
 
@@ -114,7 +115,7 @@ async function sendReviewNotifications() {
         const response = await messaging.sendEachForMulticast({
           tokens: [token],
           data,
-          webpush: { headers: { Urgency: "normal" } } // pas urgent : un avis peut attendre quelques minutes sans conséquence
+          webpush: { headers: { Urgency: "high" } } // priorité haute pour une livraison plus rapide (voir demande utilisateur)
         });
         const res = response.responses[0];
         if (res.success) {
