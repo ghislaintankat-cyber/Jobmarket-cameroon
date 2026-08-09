@@ -27,6 +27,19 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Libellés des boutons d'action de la notification, dans les 5 langues de
+// l'app. Le titre/corps de la notif sont déjà traduits côté serveur (voir
+// scripts/send*.js), mais CES boutons sont construits ici, dans le service
+// worker, qui ne connaît la langue du destinataire que si le serveur la
+// transmet explicitement dans le payload (voir data.lang plus bas).
+const ACTION_I18N = {
+  fr: { view: '👀 Voir le job', dismiss: 'Fermer' },
+  en: { view: '👀 View job', dismiss: 'Dismiss' },
+  it: { view: '👀 Vedi lavoro', dismiss: 'Chiudi' },
+  de: { view: '👀 Job ansehen', dismiss: 'Schließen' },
+  zh: { view: '👀 查看工作', dismiss: '关闭' }
+};
+
 // Notifications reçues quand l'app est fermée ou en arrière-plan.
 // Le serveur (scripts/sendNotifications.js) envoie désormais un message
 // "data-only" (sans champ "notification") : c'est volontaire, car un
@@ -36,6 +49,7 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   const data = payload.data || {};
   const title = data.title || 'JobMarket Cameroon';
+  const actionLabels = ACTION_I18N[data.lang] || ACTION_I18N.fr;
 
   const options = {
     body: data.body || '',
@@ -55,8 +69,8 @@ messaging.onBackgroundMessage((payload) => {
     // accélère la mise en contact, ce qui donne un service qui a l'air "au
     // point" comparé à une simple notif texte.
     actions: [
-      { action: 'view', title: '👀 Voir le job' },
-      { action: 'dismiss', title: 'Fermer' }
+      { action: 'view', title: actionLabels.view },
+      { action: 'dismiss', title: actionLabels.dismiss }
     ]
   };
 
@@ -83,14 +97,18 @@ self.addEventListener('notificationclick', (event) => {
   if (event.action === 'dismiss') return;
 
   const jobId = event.notification.data && event.notification.data.jobId;
-  const targetUrl = self.registration.scope + (jobId ? '#job=' + jobId + '&src=push' : '#src=push'); // ex: https://.../JobMarket Cameroon/#job=xyz&src=push
+  const variant = event.notification.data && event.notification.data.variant;
+  const variantParam = variant ? '&variant=' + encodeURIComponent(variant) : '';
+  const targetUrl = self.registration.scope + (jobId ? '#job=' + jobId + '&src=push' + variantParam : '#src=push' + variantParam); // ex: https://.../JobMarket Cameroon/#job=xyz&src=push&variant=A
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url.startsWith(self.registration.scope) && 'focus' in client) {
-          if (jobId && 'postMessage' in client) {
-            client.postMessage({ type: 'open-job', jobId });
+          // Toujours envoyé (même sans jobId, ex: le résumé de relance) pour
+          // que index.html puisse comptabiliser l'ouverture par variante.
+          if ('postMessage' in client) {
+            client.postMessage({ type: 'open-job', jobId: jobId || null, variant: variant || null });
           }
           return client.focus();
         }
@@ -104,7 +122,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
