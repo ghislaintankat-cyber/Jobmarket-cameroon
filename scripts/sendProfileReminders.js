@@ -57,7 +57,8 @@ function buildProfileReminderData(lang) {
   return {
     title: s.title,
     body: s.body,
-    type: "profile-reminder"
+    type: "profile-reminder",
+    lang // pour que sw.js puisse aussi traduire les boutons d'action de la notif
   };
 }
 
@@ -94,7 +95,7 @@ async function sendProfileReminders() {
         const response = await messaging.sendEachForMulticast({
           tokens: [token],
           data,
-          webpush: { headers: { Urgency: "normal" } }
+          webpush: { headers: { Urgency: "high" } }
         });
         const res = response.responses[0];
         if (res.success) {
