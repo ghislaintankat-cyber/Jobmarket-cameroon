@@ -57,7 +57,8 @@ function buildContactNotifData(jobTitle, jobId, lang) {
     title: s.title,
     body: s.body(jobTitle || "votre annonce"),
     jobId: jobId ? String(jobId) : "",
-    type: "job-contact"
+    type: "job-contact",
+    lang // pour que sw.js puisse aussi traduire les boutons d'action de la notif
   };
 }
 
