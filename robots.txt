@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jobmarket-share.ghislaintankat.workers.dev/sitemap.xml
