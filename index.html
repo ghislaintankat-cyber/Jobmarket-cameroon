@@ -27,6 +27,35 @@
 <meta name="twitter:description" content="Trouvez des artisans et jobs proches de vous au Cameroun."/>
 <meta name="twitter:image" content="https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/icon-512.png"/>
 
+<!-- Données structurées (schema.org) : aide Google à comprendre ce qu'est
+     le site (nom, zone couverte) pour l'affichage dans les résultats de
+     recherche. NE PAS utiliser le type "JobPosting" ici : JobPosting est
+     réservé aux offres d'EMPLOI (recrutement), et l'utiliser pour des
+     demandes de service entre particuliers serait un mésusage sanctionné
+     par Google (avertissement Search Console, voire perte du droit aux
+     résultats enrichis). Chaque annonce utilise le type "Demand" (le
+     pendant exact de "Offer" pour une demande, pas une offre) — voir
+     worker/share-preview.js, qui sert le balisage dynamique par annonce
+     aux robots. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "JobMarket Cameroon",
+  "url": "https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/",
+  "description": "Trouvez des artisans et prestataires de services proches de vous au Cameroun : BTP, électricité, plomberie, ménage, jardinage, mécanique, informatique.",
+  "inLanguage": ["fr", "en"],
+  "publisher": {
+    "@type": "Organization",
+    "name": "JobMarket Cameroon",
+    "areaServed": {
+      "@type": "Country",
+      "name": "Cameroon"
+    }
+  }
+}
+</script>
+
 <!-- PWA Manifest inline -->
 <link rel="manifest" href="manifest.json">
 <!-- Fonts -->
