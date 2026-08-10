@@ -1217,6 +1217,26 @@ body{
         <div class="admin-stat-label" data-i18n="adminStatNotifOpenRate">Taux d'ouverture notifs (7j)</div>
         <div id="adminNotifOpenRateBreakdown" style="font-size:11px;color:#9999BC;margin-top:4px;">--</div>
       </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatContacts">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatContactsWeek">Contacts WhatsApp (7j)</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatReviews">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatReviewsWeek">Avis laissés (7j)</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatSignups">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatSignupsWeek">Inscriptions (7j)</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatBoosts">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatBoostsWeek">Boosts utilisés (7j)</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatSearches">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatSearchesWeek">Recherches (7j)</div>
+      </div>
     </div>
     <div class="section-title" data-i18n="adminReportsTitle">Signalements en attente</div>
     <div id="adminReportsList"></div>
@@ -1394,9 +1414,35 @@ let profilesCache = {}; // uid -> {verified, ratingAvg, ratingCount, ...} tenu �
 // On écoute les profils en continu pour toujours avoir le vrai statut de
 // vérification et la vraie note moyenne, sans faire un appel réseau par carte.
 function syncProfilesCache() {
-  db.ref('profiles').on('value', snap => {
+  const profilesQuery = db.ref('profiles');
+  let initialLoadDone = false;
+
+  // Même principe que syncJobs() ci-dessous : UN SEUL téléchargement complet
+  // au démarrage, puis des mises à jour granulaires (un seul profil à la
+  // fois) au lieu de retélécharger TOUS les profils à chaque changement de
+  // N'IMPORTE LEQUEL — ce qui devient particulièrement coûteux maintenant
+  // que ratingAvg/ratingCount sont recalculés côté serveur après chaque
+  // avis (voir rating-sync.js), donc plus fréquemment modifiés qu'avant.
+  profilesQuery.once('value').then(snap => {
     profilesCache = snap.val() || {};
     if (allJobs.length) updateJobsList(allJobs); // rafraîchit badges/notes affichés
+    initialLoadDone = true;
+  }).catch(e => console.error('Sync profiles initial load error:', e));
+
+  profilesQuery.on('child_added', snap => {
+    if (!initialLoadDone) return; // déjà traité par le chargement initial ci-dessus
+    profilesCache[snap.key] = snap.val();
+    if (allJobs.length) updateJobsList(allJobs);
+  });
+
+  profilesQuery.on('child_changed', snap => {
+    profilesCache[snap.key] = snap.val();
+    if (allJobs.length) updateJobsList(allJobs);
+  });
+
+  profilesQuery.on('child_removed', snap => {
+    delete profilesCache[snap.key];
+    if (allJobs.length) updateJobsList(allJobs);
   });
 }
 let userMarker = null;
@@ -1580,7 +1626,7 @@ const I18N = {
     chatSafetyNotice: "Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d'identité dans le chat.",
     chatInputPlaceholder: "Votre message...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Jobs total", adminStatUsers: "Utilisateurs",
-    adminStatToday: "Publiés aujourd'hui", adminStatCountry: "Pays actif", adminStatNotifOpenRate: "Taux d'ouverture notifs (7j)",
+    adminStatToday: "Publiés aujourd'hui", adminStatCountry: "Pays actif", adminStatNotifOpenRate: "Taux d'ouverture notifs (7j)", adminStatContactsWeek: "Contacts WhatsApp (7j)", adminStatReviewsWeek: "Avis laissés (7j)", adminStatSignupsWeek: "Inscriptions (7j)", adminStatBoostsWeek: "Boosts utilisés (7j)", adminStatSearchesWeek: "Recherches (7j)",
     adminVerificationsTitle: "Vérifications en attente", adminAllJobsTitle: "Tous les jobs",
     adminLoading: "Chargement...", adminNoPending: "Aucune demande en attente.",
     reportLink: "Signaler cette annonce", reportModalTitle: "Signaler cette annonce",
@@ -1796,7 +1842,7 @@ const I18N = {
     chatSafetyNotice: "No AI key, no message sent to an external model. Never share a password, SMS code, bank card or ID document in the chat.",
     chatInputPlaceholder: "Your message...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Total jobs", adminStatUsers: "Users",
-    adminStatToday: "Posted today", adminStatCountry: "Active country", adminStatNotifOpenRate: "Notif open rate (7d)",
+    adminStatToday: "Posted today", adminStatCountry: "Active country", adminStatNotifOpenRate: "Notif open rate (7d)", adminStatContactsWeek: "WhatsApp contacts (7d)", adminStatReviewsWeek: "Reviews left (7d)", adminStatSignupsWeek: "Signups (7d)", adminStatBoostsWeek: "Boosts used (7d)", adminStatSearchesWeek: "Searches (7d)",
     adminVerificationsTitle: "Pending verifications", adminAllJobsTitle: "All jobs",
     adminLoading: "Loading...", adminNoPending: "No pending requests.",
     reportLink: "Report this listing", reportModalTitle: "Report this listing",
@@ -2012,7 +2058,7 @@ const I18N = {
     chatSafetyNotice: "Nessuna chiave IA, nessun messaggio inviato a un modello esterno. Non condividere mai password, codici SMS, carte bancarie o documenti d'identità in chat.",
     chatInputPlaceholder: "Il tuo messaggio...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Lavori totali", adminStatUsers: "Utenti",
-    adminStatToday: "Pubblicati oggi", adminStatCountry: "Paese attivo", adminStatNotifOpenRate: "Tasso apertura notifiche (7g)",
+    adminStatToday: "Pubblicati oggi", adminStatCountry: "Paese attivo", adminStatNotifOpenRate: "Tasso apertura notifiche (7g)", adminStatContactsWeek: "Contatti WhatsApp (7g)", adminStatReviewsWeek: "Recensioni lasciate (7g)", adminStatSignupsWeek: "Iscrizioni (7g)", adminStatBoostsWeek: "Boost utilizzati (7g)", adminStatSearchesWeek: "Ricerche (7g)",
     adminVerificationsTitle: "Verifiche in attesa", adminAllJobsTitle: "Tutti i lavori",
     adminLoading: "Caricamento...", adminNoPending: "Nessuna richiesta in attesa.",
     reportLink: "Segnala questo annuncio", reportModalTitle: "Segnala questo annuncio",
@@ -2228,7 +2274,7 @@ const I18N = {
     chatSafetyNotice: "Kein KI-Schlüssel, keine Nachricht wird an ein externes Modell gesendet. Teilen Sie im Chat niemals Passwörter, SMS-Codes, Bankkarten oder Ausweisdokumente.",
     chatInputPlaceholder: "Ihre Nachricht...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Jobs gesamt", adminStatUsers: "Benutzer",
-    adminStatToday: "Heute veröffentlicht", adminStatCountry: "Aktives Land", adminStatNotifOpenRate: "Öffnungsrate Benachrichtigungen (7T)",
+    adminStatToday: "Heute veröffentlicht", adminStatCountry: "Aktives Land", adminStatNotifOpenRate: "Öffnungsrate Benachrichtigungen (7T)", adminStatContactsWeek: "WhatsApp-Kontakte (7T)", adminStatReviewsWeek: "Abgegebene Bewertungen (7T)", adminStatSignupsWeek: "Anmeldungen (7T)", adminStatBoostsWeek: "Genutzte Boosts (7T)", adminStatSearchesWeek: "Suchanfragen (7T)",
     adminVerificationsTitle: "Ausstehende Verifizierungen", adminAllJobsTitle: "Alle Jobs",
     adminLoading: "Wird geladen...", adminNoPending: "Keine ausstehenden Anfragen.",
     reportLink: "Diese Anzeige melden", reportModalTitle: "Diese Anzeige melden",
@@ -2444,7 +2490,7 @@ const I18N = {
     chatSafetyNotice: "没有AI密钥,不会向外部模型发送任何消息。切勿在聊天中分享密码、短信验证码、银行卡或身份证件。",
     chatInputPlaceholder: "您的消息...",
     adminBadge: "管理员", adminStatJobsTotal: "工作总数", adminStatUsers: "用户",
-    adminStatToday: "今日发布", adminStatCountry: "活跃国家", adminStatNotifOpenRate: "通知打开率（7天）",
+    adminStatToday: "今日发布", adminStatCountry: "活跃国家", adminStatNotifOpenRate: "通知打开率（7天）", adminStatContactsWeek: "WhatsApp联系（7天）", adminStatReviewsWeek: "已留评价（7天）", adminStatSignupsWeek: "注册数（7天）", adminStatBoostsWeek: "已用推广（7天）", adminStatSearchesWeek: "搜索次数（7天）",
     adminVerificationsTitle: "待处理的验证", adminAllJobsTitle: "所有工作",
     adminLoading: "加载中...", adminNoPending: "没有待处理的申请。",
     reportLink: "举报此招聘信息", reportModalTitle: "举报此招聘信息",
@@ -2659,6 +2705,28 @@ function triggerInstantNotify(eventType) {
 // index.html est une SPA sans serveur : impossible de faire varier les
 // balises og:* par job directement dans la page.
 const SHARE_PREVIEW_URL = 'https://jobmarket-share.ghislaintankat.workers.dev';
+
+// Recalcul serveur de la note moyenne d'un prestataire (voir
+// worker/rating-sync.js) : le client ne peut plus écrire ratingAvg/
+// ratingCount lui-même (voir database.rules.json — ces deux champs sont
+// réservés aux admins), pour empêcher quiconque de forger une note
+// flatteuse ou de saboter celle d'un concurrent. Ce worker relit tous les
+// avis réels du prestataire et écrit la moyenne exacte avec des privilèges
+// admin. Appelé juste après l'ajout d'un nouvel avis — non bloquant : si
+// l'appel échoue, l'avis est déjà enregistré, seule la moyenne affichée
+// restera temporairement en retard d'un avis (elle se corrigera au
+// prochain avis soumis avec succès).
+const RATING_SYNC_URL = 'https://jobmarket-rating-sync.ghislaintankat.workers.dev';
+
+function syncOwnerRating(jobOwnerUid) {
+  try {
+    fetch(RATING_SYNC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobOwnerUid })
+    }).catch(() => {}); // silencieux : voir commentaire ci-dessus
+  } catch (e) { /* idem */ }
+}
 
 // ===== Traduction automatique des annonces (voir worker/translate-job.js) =====
 //
@@ -2894,6 +2962,7 @@ function signupEmail() {
     .then(res => {
       res.user.sendEmailVerification();
       showToast(t('toastAccountCreated'), 'success');
+      bumpDailyStat('signups');
       applyPendingReferral(res.user);
     })
     .catch(err => showToast(err.message, 'error'));
@@ -3199,6 +3268,7 @@ async function addJob() {
       } else {
         await db.ref('jobs').push(jobData);
         showToast(t('jobPublished'), 'success');
+        bumpDailyStat('jobsPublished');
         triggerInstantNotify();
       }
       editingJobId = null;
@@ -3929,6 +3999,7 @@ function openAdminPanel() {
   loadAdminJobs();
   loadPendingVerifications();
   loadNotifOpenRate();
+  loadDailyStats();
   loadPendingReports();
 }
 
@@ -4040,6 +4111,47 @@ async function loadNotifOpenRate() {
   } catch (e) {
     console.warn('loadNotifOpenRate error', e);
     el.textContent = '--';
+  }
+}
+
+// Agrège dailyStats/{date}/{metric} sur les 7 derniers jours pour le
+// dashboard admin — même principe que loadNotifOpenRate() juste au-dessus :
+// 7 petites lectures (une par jour) au lieu de scanner jobs/job_contacts/
+// reviews en entier, qui grossiraient indéfiniment avec l'usage de l'app.
+async function loadDailyStats() {
+  const targets = {
+    jobContacts: 'adminStatContacts',
+    reviewsSubmitted: 'adminStatReviews',
+    signups: 'adminStatSignups',
+    boostsUsed: 'adminStatBoosts',
+    searches: 'adminStatSearches'
+  };
+  if (!Object.values(targets).some(id => document.getElementById(id))) return;
+  try {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      days.push(d.toISOString().slice(0, 10));
+    }
+    const snaps = await Promise.all(days.map(d => db.ref('dailyStats/' + d).once('value')));
+    const totals = {};
+    snaps.forEach(snap => {
+      const v = snap.val();
+      if (!v) return;
+      Object.entries(v).forEach(([metric, count]) => {
+        totals[metric] = (totals[metric] || 0) + (count || 0);
+      });
+    });
+    Object.entries(targets).forEach(([metric, elId]) => {
+      const el = document.getElementById(elId);
+      if (el) el.textContent = totals[metric] || 0;
+    });
+  } catch (e) {
+    console.warn('loadDailyStats error', e);
+    Object.values(targets).forEach(elId => {
+      const el = document.getElementById(elId);
+      if (el) el.textContent = '--';
+    });
   }
 }
 
@@ -5228,6 +5340,25 @@ function logNotificationOpened(variant) {
   } catch (e) { /* stat non critique, on ignore silencieusement */ }
 }
 
+// Compteur léger pour le dashboard admin (jobs publiés, contacts WhatsApp,
+// avis laissés, inscriptions, boosts utilisés...) — une seule valeur par
+// jour et par métrique dans dailyStats/{date}/{metric}, jamais l'historique
+// complet des jobs/contacts/avis eux-mêmes. Ça permet d'afficher des
+// tendances (aujourd'hui, cette semaine) sans jamais retélécharger toute la
+// base — même principe que notifStats/logNotificationOpened ci-dessus,
+// généralisé à toutes les actions clés de l'app. Transaction plutôt que
+// get()+set() pour rester correct même si deux actions arrivent en même
+// temps sur des appareils différents. Jamais bloquant : une stat ratée ne
+// doit jamais empêcher l'action réelle (publication, contact...) d'aboutir
+// — c'est pourquoi chaque appel est fire-and-forget avec son propre
+// try/catch.
+function bumpDailyStat(metric) {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    db.ref('dailyStats/' + today + '/' + metric).transaction((current) => (current || 0) + 1);
+  } catch (e) { /* stat non critique, on ignore silencieusement */ }
+}
+
 // ===== PUSH NOTIFICATIONS =====
 // Clé VAPID publique (Firebase Console > Paramètres du projet > Cloud
 // Messaging > Certificats Web Push). Obligatoire pour obtenir un jeton.
@@ -6117,6 +6248,7 @@ async function useBoostCredit(jobId) {
         await db.ref().update(updates);
 
         showToast(t('toastBoostedSeven'), 'success');
+        bumpDailyStat('boostsUsed');
         const freshSnap = await db.ref('profiles/' + user.uid).once('value');
         renderReferralBox(freshSnap.val() || {}, user);
     } catch (e) {
@@ -6480,6 +6612,7 @@ async function contactViaWhatsAppFromPreview() {
             notifiedOwner: false // passera à true une fois le propriétaire notifié (voir scripts/sendContactNotifications.js)
         };
         await db.ref('job_contacts').push(contactData);
+        bumpDailyStat('jobContacts');
         triggerInstantNotify('new-contact'); // prévient le propriétaire du job instantanément, sans attendre le cron
 
         const message = await craftContactMessage(job, profile);
@@ -6568,6 +6701,7 @@ window.popupWhatsAppClick = async function(jobId) {
             notifiedOwner: false // passera à true une fois le propriétaire notifié (voir scripts/sendContactNotifications.js)
         };
         await db.ref('job_contacts').push(contactData);
+        bumpDailyStat('jobContacts');
         triggerInstantNotify('new-contact'); // prévient le propriétaire du job instantanément, sans attendre le cron
 
         const message = await craftContactMessage(job, profile);
@@ -6870,26 +7004,17 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
       });
       triggerInstantNotify('new-review'); // prévient le prestataire noté instantanément, sans attendre le cron
 
-      // Met à jour le compteur puis la moyenne, CHAMP PAR CHAMP : les règles de
-      // sécurité Firebase n'autorisent quelqu'un d'autre que le propriétaire du
-      // profil à écrire QUE sur ces deux champs précis (ratingAvg, ratingCount).
-      // Faire une transaction sur le nœud du profil entier (comme avant) est
-      // refusé par les règles pour toute personne autre que le propriétaire,
-      // même si les champs pris séparément sont eux autorisés — exactement le
-      // même principe que le système de parrainage plus haut dans ce fichier,
-      // qui écrit déjà correctement champ par champ pour cette raison.
-      let newRatingCount;
-      await db.ref('profiles/' + jobOwnerUid + '/ratingCount').transaction(cur => {
-        newRatingCount = (cur || 0) + 1;
-        return newRatingCount;
-      });
-      await db.ref('profiles/' + jobOwnerUid + '/ratingAvg').transaction(cur => {
-        const oldAvg = cur || 0;
-        const oldCount = newRatingCount - 1;
-        return (oldAvg * oldCount + selectedRating) / newRatingCount;
-      });
+      // Le calcul de la moyenne (ratingAvg/ratingCount) n'est plus fait ici,
+      // exprès : ces deux champs sont désormais réservés aux admins côté
+      // règles Firebase (voir database.rules.json), et recalculés par un
+      // worker serveur de confiance (rating-sync.js) à partir des avis
+      // réels — voir syncOwnerRating() plus haut dans ce fichier pour le
+      // pourquoi (avant, n'importe qui pouvait écrire directement une note
+      // flatteuse ou saboter celle d'un concurrent, avis réel ou pas).
+      syncOwnerRating(jobOwnerUid);
 
       await db.ref('job_contacts/' + contactKey + '/reviewed').set(true);
+      bumpDailyStat('reviewsSubmitted');
       showToast(t('toastReviewThanks'), 'success');
       overlay.remove();
     } catch (e) {
@@ -7478,9 +7603,26 @@ function toggleSearchPanel() {
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('jobSearchInput');
   if (input) {
+    // Anti-rebond dédié à la stat : applyFilters() doit rester instantané à
+    // chaque frappe pour l'expérience de recherche, mais compter une
+    // "recherche" à chaque caractère tapé exploserait le nombre d'écritures
+    // pour un signal sans intérêt. On ne compte qu'une fois l'utilisateur
+    // arrêté de taper, et seulement si le texte a changé depuis la dernière
+    // fois comptée (évite de recompter au focus/blur sans frappe réelle).
+    let searchStatTimer = null;
+    let lastCountedSearch = '';
     input.addEventListener('input', (e) => {
       currentSearchText = e.target.value;
       applyFilters();
+
+      clearTimeout(searchStatTimer);
+      searchStatTimer = setTimeout(() => {
+        const term = currentSearchText.trim();
+        if (term.length >= 2 && term !== lastCountedSearch) {
+          lastCountedSearch = term;
+          bumpDailyStat('searches');
+        }
+      }, 800);
     });
   }
 
