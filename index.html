@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script>
+  // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
+  // un flash visible (thème sombre par défaut puis bascule vers clair).
+  try {
+    var savedTheme = localStorage.getItem('jmc_theme');
+    if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch (e) {}
+</script>
   <meta name="google-site-verification" content="0_-xcrADFwsu6oefUuQE1JTLLzyfl-ptmIqpmvDb7fo" />
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
@@ -105,6 +113,23 @@
   --shadow-gold: 0 0 30px rgba(255,215,0,0.15);
   --transition: cubic-bezier(0.34,1.56,0.64,1);
   --ease: cubic-bezier(0.25,0.46,0.45,0.94);
+}
+
+/* ===== THÈME CLAIR ===== */
+/* N'écrase que les variables de fond/texte/bordure — les couleurs d'accent
+   (or, bleu, vert...) restent identiques pour garder l'identité visuelle,
+   sauf --gold qui bascule sur sa variante plus foncée (--gold-dim) : du
+   texte doré clair sur fond blanc serait illisible. */
+:root[data-theme="light"] {
+  --gold: #C9A800;
+  --dark: #FFFFFF;
+  --dark2: #F5F5FA;
+  --dark3: #ECECF3;
+  --surface: #FFFFFF;
+  --surface2: #F0F0F5;
+  --border: rgba(0,0,0,0.1);
+  --text: #16161F;
+  --text-dim: #5C5C78;
 }
 
 /* ===== RESET & BASE ===== */
@@ -888,6 +913,34 @@ body{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       <span data-i18n="publishBtn">Publier</span>
     </button>
+    <div style="position:relative;">
+      <button class="icon-btn" id="settingsBtn" onclick="toggleSettingsPanel()" data-i18n-title="tipSettings" title="Paramètres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <div id="settingsPanel" style="display:none;position:absolute;top:48px;right:0;width:260px;background:var(--dark);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:2100;padding:16px;">
+        <div style="font-weight:700;margin-bottom:12px;font-family:'Syne',sans-serif;" data-i18n="settingsTitle">Paramètres</div>
+
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;" data-i18n="settingsLanguage">Langue</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+          <button onclick="setLanguage('fr')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇫🇷</button>
+          <button onclick="setLanguage('en')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇬🇧</button>
+          <button onclick="setLanguage('it')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇮🇹</button>
+          <button onclick="setLanguage('de')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇩🇪</button>
+          <button onclick="setLanguage('zh')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇨🇳</button>
+        </div>
+
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;" data-i18n="settingsTheme">Thème</div>
+        <button id="themeToggleBtn" onclick="toggleTheme()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
+          <span id="themeToggleIcon">🌙</span>
+          <span id="themeToggleLabel" data-i18n="themeDark">Sombre</span>
+        </button>
+
+        <div style="font-size:12px;color:var(--text-dim);margin:14px 0 8px 0;" data-i18n="settingsNotifications">Notifications</div>
+        <button type="button" onclick="toggleSettingsPanel(); toggleNotifPanel();" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
+          🔔 <span data-i18n="settingsManageNotifications">Gérer les préférences</span>
+        </button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -1058,6 +1111,10 @@ body{
     <button class="icon-btn" onclick="closeSheet('jobsSheet')" data-i18n-title="tipClose" title="Fermer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
+  </div>
+  <div style="display:flex;gap:8px;padding:0 16px 12px 16px;">
+    <button type="button" id="jobsFilterAllBtn" class="jobs-filter-seg active" onclick="showAllJobsInSheet()" data-i18n="filterAllJobs">Tous</button>
+    <button type="button" id="jobsFilterSavedBtn" class="jobs-filter-seg" onclick="showSavedJobsInSheet()" data-i18n="filterSavedJobs">Sauvegardés</button>
   </div>
   <div class="sheet-body">
     <div id="listContent">
@@ -1406,6 +1463,12 @@ let currentUser = null;
 let userCoords = null;
 let allJobs = [];
 let jobsById = {}; // Map pour retrouver les jobs par ID
+
+// Jobs sauvegardés/mis en favoris par l'utilisateur connecté (voir
+// syncSavedJobs() plus bas, appelée au login). Set de jobId, pour un accès
+// instantané depuis le rendu des boutons "🔖" (pas d'aller-retour réseau
+// à chaque affichage d'un popup).
+let savedJobIds = new Set();
 let currentCategory = 'all';   // catégorie active (boutons du haut)
 let currentSearchText = '';    // texte tapé dans la recherche
 let currentRadiusKm = null;    // rayon actif (500m/2km/5km/10km) ou null = tout
@@ -1538,6 +1601,10 @@ function vibrateDevice(ms) {
 // ===== INTERNATIONALISATION (FR / EN / IT / DE / ZH) =====
 const I18N = {
   fr: {
+    settingsNotifications: "Notifications", settingsManageNotifications: "Gérer les préférences",
+    saveLabel: "Sauvegarder", savedLabel: "Sauvegardé", jobSavedToast: "Annonce sauvegardée !", jobUnsavedToast: "Annonce retirée des sauvegardes", filterAllJobs: "Tous", filterSavedJobs: "Sauvegardés",
+    tipSettings: "Paramètres", settingsTitle: "Paramètres", settingsLanguage: "Langue", settingsTheme: "Thème", themeDark: "Sombre", themeLight: "Clair",
+    showMoreText: "...voir plus", showLessText: "voir moins",
     jobModerationBlocked: "Publication refusée : {reason}", jobModerationBlockedGeneric: "Cette annonce ne peut pas être publiée telle quelle. Merci de la modifier.",
     resultsPlural: "résultats", resultSingular: "résultat", searchIntentPrefix: "Aucun résultat exact. Vouliez-vous dire :", mapViewActivated: "Vue plan activée", satelliteViewActivated: "Vue satellite activée", activateLocationForRadius: "Active ta position pour filtrer par distance",
     btnSuggestCategory: "✨ Suggérer la catégorie", aiCategoryMinLength: "Écrivez d'abord un titre ou une description avant d'utiliser l'IA.", aiCategoryLoading: "✨ Analyse en cours...", aiCategorySuggested: "Catégorie suggérée : {category}",
@@ -1754,6 +1821,10 @@ const I18N = {
     altProfilePhoto: "Photo de profil"
   },
   en: {
+    settingsNotifications: "Notifications", settingsManageNotifications: "Manage preferences",
+    saveLabel: "Save", savedLabel: "Saved", jobSavedToast: "Listing saved!", jobUnsavedToast: "Listing removed from saved", filterAllJobs: "All", filterSavedJobs: "Saved",
+    tipSettings: "Settings", settingsTitle: "Settings", settingsLanguage: "Language", settingsTheme: "Theme", themeDark: "Dark", themeLight: "Light",
+    showMoreText: "...show more", showLessText: "show less",
     jobModerationBlocked: "Publication refused: {reason}", jobModerationBlockedGeneric: "This listing cannot be published as is. Please edit it.",
     resultsPlural: "results", resultSingular: "result", searchIntentPrefix: "No exact match. Did you mean:", mapViewActivated: "Map view activated", satelliteViewActivated: "Satellite view activated", activateLocationForRadius: "Enable your location to filter by distance",
     btnSuggestCategory: "✨ Suggest category", aiCategoryMinLength: "Write a title or description first before using AI.", aiCategoryLoading: "✨ Analyzing...", aiCategorySuggested: "Suggested category: {category}",
@@ -1970,6 +2041,10 @@ const I18N = {
     altProfilePhoto: "Profile photo"
   },
   it: {
+    settingsNotifications: "Notifiche", settingsManageNotifications: "Gestisci preferenze",
+    saveLabel: "Salva", savedLabel: "Salvato", jobSavedToast: "Annuncio salvato!", jobUnsavedToast: "Annuncio rimosso dai salvati", filterAllJobs: "Tutti", filterSavedJobs: "Salvati",
+    tipSettings: "Impostazioni", settingsTitle: "Impostazioni", settingsLanguage: "Lingua", settingsTheme: "Tema", themeDark: "Scuro", themeLight: "Chiaro",
+    showMoreText: "...vedi altro", showLessText: "vedi meno",
     jobModerationBlocked: "Pubblicazione rifiutata: {reason}", jobModerationBlockedGeneric: "Questo annuncio non può essere pubblicato così com'è. Modificalo, per favore.",
     resultsPlural: "risultati", resultSingular: "risultato", searchIntentPrefix: "Nessun risultato esatto. Intendevi:", mapViewActivated: "Vista mappa attivata", satelliteViewActivated: "Vista satellite attivata", activateLocationForRadius: "Attiva la tua posizione per filtrare per distanza",
     btnSuggestCategory: "✨ Suggerisci categoria", aiCategoryMinLength: "Scrivi prima un titolo o una descrizione prima di usare l'IA.", aiCategoryLoading: "✨ Analisi in corso...", aiCategorySuggested: "Categoria suggerita: {category}",
@@ -2186,6 +2261,10 @@ const I18N = {
     altProfilePhoto: "Foto del profilo"
   },
   de: {
+    settingsNotifications: "Benachrichtigungen", settingsManageNotifications: "Einstellungen verwalten",
+    saveLabel: "Speichern", savedLabel: "Gespeichert", jobSavedToast: "Anzeige gespeichert!", jobUnsavedToast: "Anzeige aus Gespeichert entfernt", filterAllJobs: "Alle", filterSavedJobs: "Gespeichert",
+    tipSettings: "Einstellungen", settingsTitle: "Einstellungen", settingsLanguage: "Sprache", settingsTheme: "Design", themeDark: "Dunkel", themeLight: "Hell",
+    showMoreText: "...mehr anzeigen", showLessText: "weniger anzeigen",
     jobModerationBlocked: "Veröffentlichung abgelehnt: {reason}", jobModerationBlockedGeneric: "Diese Anzeige kann so nicht veröffentlicht werden. Bitte bearbeiten Sie sie.",
     resultsPlural: "Ergebnisse", resultSingular: "Ergebnis", searchIntentPrefix: "Keine exakte Übereinstimmung. Meinten Sie:", mapViewActivated: "Kartenansicht aktiviert", satelliteViewActivated: "Satellitenansicht aktiviert", activateLocationForRadius: "Aktivieren Sie Ihren Standort, um nach Entfernung zu filtern",
     btnSuggestCategory: "✨ Kategorie vorschlagen", aiCategoryMinLength: "Schreiben Sie zuerst einen Titel oder eine Beschreibung, bevor Sie die KI nutzen.", aiCategoryLoading: "✨ Wird analysiert...", aiCategorySuggested: "Vorgeschlagene Kategorie: {category}",
@@ -2402,6 +2481,10 @@ const I18N = {
     altProfilePhoto: "Profilfoto"
   },
   zh: {
+    settingsNotifications: "通知", settingsManageNotifications: "管理偏好设置",
+    saveLabel: "收藏", savedLabel: "已收藏", jobSavedToast: "已收藏该信息!", jobUnsavedToast: "已从收藏中移除", filterAllJobs: "全部", filterSavedJobs: "已收藏",
+    tipSettings: "设置", settingsTitle: "设置", settingsLanguage: "语言", settingsTheme: "主题", themeDark: "深色", themeLight: "浅色",
+    showMoreText: "...显示更多", showLessText: "收起",
     jobModerationBlocked: "发布被拒绝:{reason}", jobModerationBlockedGeneric: "该信息目前无法发布,请修改后重试。",
     resultsPlural: "个结果", resultSingular: "个结果", searchIntentPrefix: "未找到精确匹配。您是否想搜索:", mapViewActivated: "已切换到地图视图", satelliteViewActivated: "已切换到卫星视图", activateLocationForRadius: "请开启定位以按距离筛选",
     btnSuggestCategory: "✨ 建议分类", aiCategoryMinLength: "请先输入标题或描述,然后再使用AI。", aiCategoryLoading: "✨ 分析中...", aiCategorySuggested: "建议分类:{category}",
@@ -2819,6 +2902,16 @@ async function translateMapPopupIfNeeded(job, jobId, marker) {
   }
 }
 
+// Bouton "...voir plus" du popup carte (style WhatsApp) : bascule entre
+// description tronquée à 3 lignes et texte complet, sans jamais recharger
+// le popup — juste une classe CSS qui va et vient.
+function toggleDescClamp(btn) {
+  const descEl = btn.previousElementSibling;
+  if (!descEl || !descEl.classList.contains('popup-desc-clamp')) return;
+  const expanded = descEl.classList.toggle('expanded');
+  btn.textContent = expanded ? t('showLessText') : t('showMoreText');
+}
+
 // Bascule "voir l'original" / "voir la traduction" dans le popup d'une annonce.
 window.__jobTranslationState = { showingTranslation: false, original: null, translated: null };
 
@@ -2911,14 +3004,52 @@ auth.onAuthStateChanged(user => {
     syncEmailVerifiedBadge(user);
     setupPresence(user.uid);
     refreshAdminStatus(user.uid);
+    syncSavedJobs(user.uid);
     if (deepLinkFromPush && !deepLinkJobId) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; } // clic sur une notif sans job précis (ex: résumé de relance)
   } else {
     teardownPresence();
     refreshAdminStatus(null);
+    savedJobIds = new Set();
   }
 });
 
-// Enregistre la langue actuelle de la personne dans son profil public, pour
+// Charge la liste des jobs sauvegardés/favoris de la personne connectée
+// (léger : juste les clés, pas les jobs entiers — voir showSavedJobs()
+// pour la jointure avec allJobs au moment de l'affichage).
+function syncSavedJobs(uid) {
+  db.ref('profiles/' + uid + '/savedJobs').once('value').then(snap => {
+    savedJobIds = new Set(snap.exists() ? Object.keys(snap.val()) : []);
+  }).catch(() => {});
+}
+
+// Bascule l'état sauvegardé d'une annonce. Optimiste côté UI (le bouton
+// change immédiatement), best-effort côté écriture — cohérent avec le
+// reste de l'app (ex: préférences de notification).
+function toggleSaveJob(jobId) {
+  if (!currentUser || currentUser.isAnonymous) { showToast(t('toastPleaseLogin'), 'error'); return; }
+  const nowSaved = !savedJobIds.has(jobId);
+  if (nowSaved) savedJobIds.add(jobId); else savedJobIds.delete(jobId);
+
+  db.ref('profiles/' + currentUser.uid + '/savedJobs/' + jobId).set(nowSaved ? true : null).catch(() => {
+    // Écriture échouée : on annule l'état optimiste pour rester cohérent avec Firebase.
+    if (nowSaved) savedJobIds.delete(jobId); else savedJobIds.add(jobId);
+    updateSaveButtonsUI(jobId);
+    showToast(t('prefSaveError'), 'error');
+  });
+
+  updateSaveButtonsUI(jobId);
+  showToast(nowSaved ? t('jobSavedToast') : t('jobUnsavedToast'), 'success');
+}
+
+// Un même job peut avoir un bouton "🔖" affiché à deux endroits en même
+// temps (popup carte ET modale détaillée) — on met les deux à jour.
+function updateSaveButtonsUI(jobId) {
+  const saved = savedJobIds.has(jobId);
+  document.querySelectorAll(`[data-save-btn="${jobId}"]`).forEach(btn => {
+    btn.textContent = saved ? '🔖 ' + t('savedLabel') : '🔖 ' + t('saveLabel');
+    btn.classList.toggle('saved', saved);
+  });
+}
 // que sendNotifications.js puisse envoyer les notifications push dans SA
 // langue plutôt qu'en français pour tout le monde. Écrit uniquement si la
 // valeur a changé, pour ne pas spammer la DB à chaque connexion.
@@ -3526,7 +3657,7 @@ function createJobMarker(job, jobId) {
           <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
         </div>
         ${job.landmark ? `<div style="font-size:12px;color:#9999BC;margin-bottom:8px;">${job.landmark}</div>` : ''}
-        ${job.desc ? `<div data-map-popup-desc style="font-size:13px;margin-bottom:10px;line-height:1.5;">${job.desc}</div>` : ''}
+        ${job.desc ? `<div data-map-popup-desc class="popup-desc-clamp" style="font-size:13px;margin-bottom:4px;line-height:1.5;">${job.desc}</div>${job.desc.length > 100 ? `<button type="button" onclick="toggleDescClamp(this)" class="popup-desc-toggle" style="background:none;border:none;color:var(--accent,#25D366);font-size:12px;font-weight:700;cursor:pointer;padding:0 0 10px 0;">${t('showMoreText')}</button>` : ''}` : ''}
         ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
         ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" alt="${t('altJobPhoto')}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
         <div data-map-popup-translation-notice style="display:none;margin:6px 0;font-size:11px;color:#9999BC;"></div>
@@ -3540,6 +3671,9 @@ function createJobMarker(job, jobId) {
         </button>
         <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:var(--blue);color:white;padding:12px;border:none;border-radius:12px;margin-top:6px;font-weight:700;font-size:14px;cursor:pointer;">
           ${t('viewRouteBtn')}
+        </button>
+        <button onclick="toggleSaveJob('${jobId}')" data-save-btn="${jobId}" class="${savedJobIds.has(jobId) ? 'saved' : ''}" style="width:100%;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#999);padding:8px;border-radius:8px;font-size:12px;cursor:pointer;margin-top:6px;">
+          🔖 ${savedJobIds.has(jobId) ? t('savedLabel') : t('saveLabel')}
         </button>
         <button onclick="openReportModal('${jobId}')" style="width:100%;background:none;color:#9999BC;padding:8px;border:none;font-size:12px;cursor:pointer;margin-top:4px;text-decoration:underline;">
           🚩 ${t('reportLink')}
@@ -3896,6 +4030,27 @@ function toggleMapStyle() {
 }
 
 // ===== NAVIGATION =====
+// Sélecteur "Tous / Sauvegardés" du panneau Liste (voir jobsFilterAllBtn /
+// jobsFilterSavedBtn dans le HTML). Ne touche jamais allJobs lui-même —
+// juste ce qui est affiché dans ce panneau précis.
+function showAllJobsInSheet() {
+  document.getElementById('jobsFilterAllBtn')?.classList.add('active');
+  document.getElementById('jobsFilterSavedBtn')?.classList.remove('active');
+  updateJobsList(allJobs);
+}
+
+function showSavedJobsInSheet() {
+  document.getElementById('jobsFilterSavedBtn')?.classList.add('active');
+  document.getElementById('jobsFilterAllBtn')?.classList.remove('active');
+  if (!currentUser || currentUser.isAnonymous) {
+    showToast(t('toastPleaseLogin'), 'error');
+    updateJobsList([]);
+    return;
+  }
+  const saved = allJobs.filter(j => savedJobIds.has(j.id));
+  updateJobsList(saved);
+}
+
 function activateNav(tab) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('nav' + tab.charAt(0).toUpperCase() + tab.slice(1))?.classList.add('active');
@@ -5708,6 +5863,12 @@ async function openJobPreview(jobId) {
 
     window.currentPreviewJob = job;
 
+    const saveBtnEl = document.getElementById('previewSaveBtn');
+    if (saveBtnEl) {
+        saveBtnEl.setAttribute('data-save-btn', jobId);
+        updateSaveButtonsUI(jobId);
+    }
+
     // Est-ce ma propre annonce ? On affiche "Modifier"/"Supprimer" dans ce cas,
     // et on masque le bouton "Contacter par WhatsApp" (inutile pour se contacter soi-même).
     const isOwner = !!(auth.currentUser && job.user === auth.currentUser.uid);
@@ -7107,6 +7268,9 @@ document.addEventListener('click', (e) => {
         <button class="btn btn-blue" onclick="drawRouteFromPreview()">
             <span data-i18n="seeItinerary">Voir l'itinéraire</span>
         </button>
+        <button class="btn" id="previewSaveBtn" data-save-btn="" onclick="toggleSaveJob(window.currentPreviewJob && window.currentPreviewJob.id)" style="background:none;border:1px solid var(--border,#333);color:var(--text-dim,#999);">
+            🔖 <span data-i18n="saveLabel">Sauvegarder</span>
+        </button>
     </div>
 </div>
   <style>
@@ -7225,7 +7389,40 @@ document.addEventListener('click', (e) => {
     transform: scale(0.98);
   }
 
+/* Sélecteur "Tous / Sauvegardés" en haut du panneau Liste */
+.jobs-filter-seg {
+  flex: 1;
+  padding: 8px 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.jobs-filter-seg.active {
+  background: var(--gold);
+  color: #111;
+  border-color: var(--gold);
+}
+
 /* ===== ENHANCED FEATURES - NEW STYLES ===== */
+
+/* Description tronquée à 3 lignes dans le popup carte (style WhatsApp) :
+   évite qu'une longue annonce ne recouvre tout l'écran sur mobile. Le
+   bouton "...voir plus" (voir toggleDescClamp()) retire cette classe. */
+.popup-desc-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.popup-desc-clamp.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
 
 /* FEATURE 1: Advanced Job Search */
 .search-panel {
@@ -7261,6 +7458,15 @@ document.addEventListener('click', (e) => {
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
+  caret-color: var(--text);
+  -webkit-text-fill-color: var(--text); /* certains navigateurs mobiles ignorent "color" seul et rendent le texte tapé invisible sans ceci */
+}
+.search-input:-webkit-autofill,
+.search-input:-webkit-autofill:hover,
+.search-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset !important;
+  transition: background-color 9999s ease-in-out 0s; /* empêche le fond blanc forcé par l'auto-remplissage */
 }
 .search-input:focus {
   border-color: var(--gold);
@@ -7600,7 +7806,36 @@ function toggleSearchPanel() {
   }
 }
 
+function toggleSettingsPanel() {
+  const panel = document.getElementById('settingsPanel');
+  if (panel) panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+}
+
+// Bascule thème sombre/clair, persisté pour les prochaines visites (voir
+// aussi le script d'initialisation précoce en tout début de <head>, qui
+// applique ce choix avant même le premier rendu pour éviter un flash).
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const next = isLight ? 'dark' : 'light';
+  if (next === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  try { localStorage.setItem('jmc_theme', next); } catch (e) {}
+  updateThemeToggleUI(next);
+}
+
+function updateThemeToggleUI(theme) {
+  const icon = document.getElementById('themeToggleIcon');
+  const label = document.getElementById('themeToggleLabel');
+  if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
+  if (label) label.textContent = theme === 'light' ? t('themeLight') : t('themeDark');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  updateThemeToggleUI(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+
   const input = document.getElementById('jobSearchInput');
   if (input) {
     // Anti-rebond dédié à la stat : applyFilters() doit rester instantané à
