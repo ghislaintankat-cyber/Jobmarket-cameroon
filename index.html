@@ -113,6 +113,7 @@
   --shadow-gold: 0 0 30px rgba(255,215,0,0.15);
   --transition: cubic-bezier(0.34,1.56,0.64,1);
   --ease: cubic-bezier(0.25,0.46,0.45,0.94);
+  --glass-bg: rgba(10,10,15,0.85);
 }
 
 /* ===== THÈME CLAIR ===== */
@@ -130,6 +131,7 @@
   --border: rgba(0,0,0,0.1);
   --text: #16161F;
   --text-dim: #5C5C78;
+  --glass-bg: rgba(255,255,255,0.9);
 }
 
 /* ===== RESET & BASE ===== */
@@ -282,7 +284,7 @@ body{
 }
 .side-btn{
   width:50px;height:50px;border:none;cursor:pointer;
-  background:rgba(10,10,15,0.85);
+  background:var(--glass-bg);
   backdrop-filter:blur(16px);
   border-radius:14px;border:1px solid var(--border);
   color:var(--text);
@@ -293,7 +295,7 @@ body{
 .side-btn:active{transform:scale(0.9);}
 .side-btn svg{width:20px;height:20px;}
 .dist-badge{
-  background:rgba(10,10,15,0.9);
+  background:var(--glass-bg);
   backdrop-filter:blur(16px);
   border:1px solid var(--border);
   border-radius:14px;
@@ -886,18 +888,6 @@ body{
     </div>
   </div>
   <div class="topbar-right">
-    <div style="position:relative;">
-      <button class="icon-btn" id="langBtn" onclick="toggleLangMenu()" data-i18n-title="tipLang" title="Langue">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-      </button>
-      <div id="langMenu" style="display:none;position:absolute;top:48px;right:0;background:var(--dark);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:2100;min-width:170px;overflow:hidden;">
-        <button class="lang-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇫🇷 Français</button>
-        <button class="lang-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇬🇧 English</button>
-        <button class="lang-option" onclick="setLanguage('it')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇮🇹 Italiano</button>
-        <button class="lang-option" onclick="setLanguage('de')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇩🇪 Deutsch</button>
-        <button class="lang-option" onclick="setLanguage('zh')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:none;border:none;color:#fff;text-align:left;cursor:pointer;font-size:14px;">🇨🇳 中文</button>
-      </div>
-    </div>
     <button class="icon-btn" id="searchBtn" onclick="toggleSearchPanel()" data-i18n-title="tipSearch" title="Rechercher">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
@@ -909,10 +899,6 @@ body{
       <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:700;" data-i18n="notifTitle">Nouveaux jobs</div>
       <div id="notifList" style="padding:8px;"></div>
     </div>
-    <button class="post-btn" onclick="toggleJobForm()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      <span data-i18n="publishBtn">Publier</span>
-    </button>
     <div style="position:relative;">
       <button class="icon-btn" id="settingsBtn" onclick="toggleSettingsPanel()" data-i18n-title="tipSettings" title="Paramètres">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -7447,12 +7433,14 @@ document.addEventListener('click', (e) => {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  color: var(--text);
+  color: var(--text) !important;
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
   caret-color: var(--text);
-  -webkit-text-fill-color: var(--text); /* certains navigateurs mobiles ignorent "color" seul et rendent le texte tapé invisible sans ceci */
+  -webkit-text-fill-color: var(--text) !important; /* certains navigateurs mobiles ignorent "color" seul et rendent le texte tapé invisible sans ceci */
+  transform: translateZ(0); /* force sa propre couche de rendu : évite un bug où le texte tapé ne se rafraîchit pas visuellement dans un parent flouté (backdrop-filter) sur certains Android/Chrome mobile */
+  -webkit-transform: translateZ(0);
 }
 .search-input:-webkit-autofill,
 .search-input:-webkit-autofill:hover,
