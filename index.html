@@ -856,6 +856,44 @@ body{
 <!-- ===== TOAST ===== -->
 <div id="toast"></div>
 
+<!-- ===== ÉCRAN D'ACCUEIL (onboarding, affiché une seule fois au tout premier lancement,
+     juste après le choix de la langue, tant que 'jmc_onboarding_seen' n'est pas mémorisé) ===== -->
+<style>
+.onb-slide{display:none;flex-direction:column;align-items:center;text-align:center;}
+.onb-slide.active{display:flex;}
+.onb-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.18);transition:background .2s,width .2s;}
+.onb-dot.active{background:var(--gold,#FFD700);width:20px;border-radius:4px;}
+</style>
+<div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:10400;background:rgba(10,10,15,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
+  <div style="position:relative;width:100%;max-width:360px;background:#13131A;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px 24px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <button onclick="skipOnboarding()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:#9999BC;font-size:13px;font-weight:600;cursor:pointer;padding:6px;" data-i18n="onbSkip">Passer</button>
+
+    <div class="onb-slide active" data-slide="0">
+      <div style="font-size:44px;margin-bottom:16px;">🗺️</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:8px;" data-i18n="onbTitle1">Trouvez un pro près de chez vous</div>
+      <div style="color:#9999BC;font-size:14px;line-height:1.5;" data-i18n="onbBody1">Explorez la carte pour découvrir des artisans qualifiés autour de vous, avec leur note et leur distance.</div>
+    </div>
+    <div class="onb-slide" data-slide="1">
+      <div style="font-size:44px;margin-bottom:16px;">➕</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:8px;" data-i18n="onbTitle2">Publiez votre besoin en quelques secondes</div>
+      <div style="color:#9999BC;font-size:14px;line-height:1.5;" data-i18n="onbBody2">Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.</div>
+    </div>
+    <div class="onb-slide" data-slide="2">
+      <div style="font-size:44px;margin-bottom:16px;">✅</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:8px;" data-i18n="onbTitle3">Contactez en toute confiance</div>
+      <div style="color:#9999BC;font-size:14px;line-height:1.5;" data-i18n="onbBody3">Consultez les avis et les badges vérifiés, puis échangez directement via le chat sécurisé de l'app.</div>
+    </div>
+
+    <div style="display:flex;gap:6px;justify-content:center;margin:22px 0 18px;">
+      <div class="onb-dot active" data-dot="0"></div>
+      <div class="onb-dot" data-dot="1"></div>
+      <div class="onb-dot" data-dot="2"></div>
+    </div>
+
+    <button id="onbNextBtn" onclick="onboardingNext()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:14px;color:#0A0A0F;font-size:14px;font-weight:800;cursor:pointer;" data-i18n="onbNext">Suivant</button>
+  </div>
+</div>
+
 <!-- ===== ACCROCHE NOTIFICATIONS (pré-prompt avant le popup natif du navigateur) =====
      But : ne JAMAIS déclencher Notification.requestPermission() à froid.
      Un refus au popup natif du navigateur est quasi définitif (aucun moyen de
@@ -1544,7 +1582,7 @@ window.addEventListener('load', () => {
 // (ici ou via le menu langue en haut de l'écran), 'appLangChosen' est mémorisé et ce
 // panneau ne réapparaît plus.
 function maybeShowLangPicker() {
-  if (localStorage.getItem('appLangChosen')) return;
+  if (localStorage.getItem('appLangChosen')) { maybeShowOnboarding(); return; }
   const picker = document.getElementById('langPicker');
   if (picker) picker.style.display = 'flex';
 }
@@ -1553,6 +1591,32 @@ function closeLangPicker() {
   localStorage.setItem('appLangChosen', '1');
   const picker = document.getElementById('langPicker');
   if (picker) picker.style.display = 'none';
+  maybeShowOnboarding();
+}
+
+// ===== ONBOARDING (3 écrans, une seule fois par appareil) =====
+let onbIndex = 0;
+const ONB_SLIDE_COUNT = 3;
+
+function maybeShowOnboarding() {
+  if (localStorage.getItem('jmc_onboarding_seen')) return;
+  const overlay = document.getElementById('onboardingOverlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function onboardingNext() {
+  if (onbIndex >= ONB_SLIDE_COUNT - 1) { skipOnboarding(); return; }
+  onbIndex++;
+  document.querySelectorAll('.onb-slide').forEach(el => el.classList.toggle('active', +el.dataset.slide === onbIndex));
+  document.querySelectorAll('.onb-dot').forEach(el => el.classList.toggle('active', +el.dataset.dot === onbIndex));
+  const btn = document.getElementById('onbNextBtn');
+  if (btn && onbIndex === ONB_SLIDE_COUNT - 1) btn.textContent = t('onbStart');
+}
+
+function skipOnboarding() {
+  localStorage.setItem('jmc_onboarding_seen', '1');
+  const overlay = document.getElementById('onboardingOverlay');
+  if (overlay) overlay.style.display = 'none';
 }
 
 // ===== TOAST =====
@@ -1601,6 +1665,10 @@ const I18N = {
     aiPriceMinLength: "Renseignez d'abord un titre ou une description avant de demander un prix.", aiPriceLoading: "💡 Calcul en cours...", aiPriceEstimateLabel: "💡 Estimation :", aiPriceUseEstimation: "Utiliser cette estimation",
     aiPriceApplied: "Prix appliqué", aiScamNothingToAnalyze: "Rien à analyser sur cette annonce.", aiScamLoading: "🛡️ Analyse en cours...",
     aiScamDisclaimer: "Analyse automatique du texte, pas une preuve — restez vigilant et vérifiez avant de payer quoi que ce soit à l'avance.", splashSubtitle: "Artisans qualifiés près de vous", langModalTitle: "Choisissez votre langue",
+    onbSkip: "Passer", onbNext: "Suivant", onbStart: "Commencer",
+    onbTitle1: "Trouvez un pro près de chez vous", onbBody1: "Explorez la carte pour découvrir des artisans qualifiés autour de vous, avec leur note et leur distance.",
+    onbTitle2: "Publiez votre besoin en quelques secondes", onbBody2: "Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.",
+    onbTitle3: "Contactez en toute confiance", onbBody3: "Consultez les avis et les badges vérifiés, puis échangez directement via le chat sécurisé de l'app.",
     emptyZoneSub: "Publiez le premier job dans cette zone", adminNoDocWarning: "⚠️ Aucun document envoyé dans l'app — vérifier via WhatsApp", noNewJobsYet: "Aucun nouveau job pour l'instant",
     positionSelectedLabel: "📍 Position sélectionnée", loadingWhatsappContacts: "Chargement des contacts WhatsApp...", interestedPeopleTitle: "Personnes intéressées",
     noContactYet: "Personne ne vous a encore contacté pour ce besoin.", yourWhatsappNumberLabel: "Ton numéro WhatsApp", whatsappNumberHint: "C'est sur ce numéro que tu recevras ton code de vérification à 7 chiffres.",
@@ -1821,6 +1889,10 @@ const I18N = {
     aiPriceMinLength: "Fill in a title or description first before asking for a price.", aiPriceLoading: "💡 Calculating...", aiPriceEstimateLabel: "💡 Estimate:", aiPriceUseEstimation: "Use this estimate",
     aiPriceApplied: "Price applied", aiScamNothingToAnalyze: "Nothing to analyze on this listing.", aiScamLoading: "🛡️ Analyzing...",
     aiScamDisclaimer: "Automatic text analysis, not proof — stay alert and check before paying anything upfront.", splashSubtitle: "Qualified tradespeople near you", langModalTitle: "Choose your language",
+    onbSkip: "Skip", onbNext: "Next", onbStart: "Get started",
+    onbTitle1: "Find a pro near you", onbBody1: "Browse the map to discover qualified tradespeople around you, with their rating and distance.",
+    onbTitle2: "Post your need in seconds", onbBody2: "Tap the + button to describe what you need. Nearby providers are notified instantly.",
+    onbTitle3: "Reach out with confidence", onbBody3: "Check reviews and verified badges, then chat directly through the app's secure chat.",
     emptyZoneSub: "Post the first job in this area", adminNoDocWarning: "⚠️ No document sent in the app — verify via WhatsApp", noNewJobsYet: "No new jobs for now",
     positionSelectedLabel: "📍 Position selected", loadingWhatsappContacts: "Loading WhatsApp contacts...", interestedPeopleTitle: "Interested people",
     noContactYet: "No one has contacted you about this request yet.", yourWhatsappNumberLabel: "Your WhatsApp number", whatsappNumberHint: "You'll receive your 7-digit verification code on this number.",
@@ -2041,6 +2113,10 @@ const I18N = {
     aiPriceMinLength: "Inserisci prima un titolo o una descrizione prima di chiedere un prezzo.", aiPriceLoading: "💡 Calcolo in corso...", aiPriceEstimateLabel: "💡 Stima:", aiPriceUseEstimation: "Usa questa stima",
     aiPriceApplied: "Prezzo applicato", aiScamNothingToAnalyze: "Niente da analizzare in questo annuncio.", aiScamLoading: "🛡️ Analisi in corso...",
     aiScamDisclaimer: "Analisi automatica del testo, non una prova — resta vigile e verifica prima di pagare qualsiasi cosa in anticipo.", splashSubtitle: "Artigiani qualificati vicino a te", langModalTitle: "Scegli la tua lingua",
+    onbSkip: "Salta", onbNext: "Avanti", onbStart: "Inizia",
+    onbTitle1: "Trova un professionista vicino a te", onbBody1: "Esplora la mappa per scoprire artigiani qualificati intorno a te, con valutazione e distanza.",
+    onbTitle2: "Pubblica la tua richiesta in pochi secondi", onbBody2: "Tocca il pulsante + per descrivere ciò di cui hai bisogno. I professionisti vicini vengono avvisati subito.",
+    onbTitle3: "Contatta con fiducia", onbBody3: "Consulta le recensioni e i badge verificati, poi chatta direttamente tramite la chat sicura dell'app.",
     emptyZoneSub: "Pubblica il primo lavoro in questa zona", adminNoDocWarning: "⚠️ Nessun documento inviato nell'app — verificare via WhatsApp", noNewJobsYet: "Nessun nuovo lavoro al momento",
     positionSelectedLabel: "📍 Posizione selezionata", loadingWhatsappContacts: "Caricamento contatti WhatsApp...", interestedPeopleTitle: "Persone interessate",
     noContactYet: "Nessuno ti ha ancora contattato per questa richiesta.", yourWhatsappNumberLabel: "Il tuo numero WhatsApp", whatsappNumberHint: "Riceverai il tuo codice di verifica a 7 cifre su questo numero.",
@@ -2261,6 +2337,10 @@ const I18N = {
     aiPriceMinLength: "Geben Sie zuerst einen Titel oder eine Beschreibung ein, bevor Sie einen Preis anfordern.", aiPriceLoading: "💡 Wird berechnet...", aiPriceEstimateLabel: "💡 Schätzung:", aiPriceUseEstimation: "Diese Schätzung verwenden",
     aiPriceApplied: "Preis übernommen", aiScamNothingToAnalyze: "Nichts zu analysieren bei dieser Anzeige.", aiScamLoading: "🛡️ Wird analysiert...",
     aiScamDisclaimer: "Automatische Textanalyse, kein Beweis — bleiben Sie wachsam und prüfen Sie, bevor Sie im Voraus etwas bezahlen.", splashSubtitle: "Qualifizierte Handwerker in Ihrer Nähe", langModalTitle: "Wählen Sie Ihre Sprache",
+    onbSkip: "Überspringen", onbNext: "Weiter", onbStart: "Loslegen",
+    onbTitle1: "Finden Sie einen Profi in Ihrer Nähe", onbBody1: "Durchsuchen Sie die Karte, um qualifizierte Handwerker in Ihrer Nähe mit Bewertung und Entfernung zu entdecken.",
+    onbTitle2: "Veröffentlichen Sie Ihren Bedarf in Sekunden", onbBody2: "Tippen Sie auf +, um zu beschreiben, was Sie brauchen. Anbieter in der Nähe werden sofort benachrichtigt.",
+    onbTitle3: "Kontaktieren Sie mit Vertrauen", onbBody3: "Prüfen Sie Bewertungen und verifizierte Badges und chatten Sie dann direkt über den sicheren Chat der App.",
     emptyZoneSub: "Veröffentlichen Sie den ersten Auftrag in dieser Gegend", adminNoDocWarning: "⚠️ Kein Dokument in der App gesendet — über WhatsApp überprüfen", noNewJobsYet: "Momentan keine neuen Aufträge",
     positionSelectedLabel: "📍 Position ausgewählt", loadingWhatsappContacts: "WhatsApp-Kontakte werden geladen...", interestedPeopleTitle: "Interessierte Personen",
     noContactYet: "Bisher hat Sie niemand zu dieser Anfrage kontaktiert.", yourWhatsappNumberLabel: "Ihre WhatsApp-Nummer", whatsappNumberHint: "Sie erhalten Ihren 7-stelligen Bestätigungscode auf dieser Nummer.",
@@ -2481,6 +2561,10 @@ const I18N = {
     aiPriceMinLength: "请先填写标题或描述,然后再请求价格建议。", aiPriceLoading: "💡 计算中...", aiPriceEstimateLabel: "💡 估算:", aiPriceUseEstimation: "使用此估算",
     aiPriceApplied: "价格已应用", aiScamNothingToAnalyze: "此信息暂无可分析内容。", aiScamLoading: "🛡️ 分析中...",
     aiScamDisclaimer: "此为文本自动分析结果,并非证据 — 请保持警惕,在提前付款前务必核实。", splashSubtitle: "身边的专业工匠", langModalTitle: "选择您的语言",
+    onbSkip: "跳过", onbNext: "下一步", onbStart: "开始使用",
+    onbTitle1: "寻找您附近的专业人士", onbBody1: "浏览地图,发现您周围合格的工匠,查看他们的评分和距离。",
+    onbTitle2: "几秒钟内发布您的需求", onbBody2: "点击 + 按钮描述您的需求,附近的服务商会立即收到通知。",
+    onbTitle3: "放心联系", onbBody3: "查看评价和认证徽章,然后通过应用内的安全聊天直接交流。",
     emptyZoneSub: "成为此区域首个发布工作的人", adminNoDocWarning: "⚠️ 应用内未上传任何文件 — 请通过WhatsApp核实", noNewJobsYet: "暂无新的工作机会",
     positionSelectedLabel: "📍 已选定位置", loadingWhatsappContacts: "正在加载WhatsApp联系人...", interestedPeopleTitle: "感兴趣的人",
     noContactYet: "目前还没有人就此需求联系您。", yourWhatsappNumberLabel: "您的WhatsApp号码", whatsappNumberHint: "您将在此号码上收到7位数验证码。",
@@ -2726,6 +2810,7 @@ function setLanguage(lang) {
   if (menu) menu.style.display = 'none';
   const picker = document.getElementById('langPicker');
   if (picker) picker.style.display = 'none';
+  if (typeof maybeShowOnboarding === 'function') maybeShowOnboarding();
   // Ré-affiche les listes/dynamiques dont le texte dépend de la langue (catégories, etc.)
   if (typeof allJobs !== 'undefined' && typeof updateJobsList === 'function') updateJobsList(allJobs);
 }
