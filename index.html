@@ -927,9 +927,6 @@ body{
     </div>
   </div>
   <div class="topbar-right">
-    <button class="icon-btn" id="searchBtn" onclick="toggleSearchPanel()" data-i18n-title="tipSearch" title="Rechercher">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    </button>
     <button class="icon-btn" id="notifBtn" style="position:relative;" onclick="toggleNotifPanel()" data-i18n-title="tipNotifications" title="Notifications">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <div class="notif-dot" id="notifDot" style="display:none;"></div>
@@ -4120,6 +4117,11 @@ function activateNav(tab) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('nav' + tab.charAt(0).toUpperCase() + tab.slice(1))?.classList.add('active');
 
+  if (tab !== 'search') {
+    const panel = document.getElementById('searchPanel');
+    if (panel) panel.classList.remove('open');
+  }
+
   if (tab === 'map') {
     closeSheet('jobsSheet');
     closeOverlay('accountPage');
@@ -4132,7 +4134,12 @@ function activateNav(tab) {
   } else if (tab === 'search') {
     closeOverlay('accountPage');
     openSheet('jobsSheet');
-    showToast(t('toastFilterCategoryHint'), 'info');
+    const panel = document.getElementById('searchPanel');
+    if (panel) {
+      panel.classList.add('open');
+      const input = document.getElementById('jobSearchInput');
+      if (input) input.focus();
+    }
   }
 }
 
