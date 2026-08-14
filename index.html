@@ -840,16 +840,16 @@ body{
 .lang-pick-option:active{transform:scale(0.97);}
 </style>
 <div id="langPicker" style="display:none;position:fixed;inset:0;z-index:10500;background:rgba(10,10,15,0.88);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
-  <div style="position:relative;width:100%;max-width:340px;background:#13131A;border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-    <button onclick="closeLangPicker()" data-i18n-aria-label="closeAriaLabel" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:#9999BC;cursor:pointer;font-size:14px;">✕</button>
-    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;margin-bottom:4px;padding-right:24px;" data-i18n="langModalTitle">Choisissez votre langue</div>
-    <div style="color:#9999BC;font-size:13px;margin-bottom:16px;">Choose your language</div>
+  <div style="position:relative;width:100%;max-width:340px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <button onclick="closeLangPicker()" data-i18n-aria-label="closeAriaLabel" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:var(--text-dim);cursor:pointer;font-size:14px;">✕</button>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--text);margin-bottom:4px;padding-right:24px;" data-i18n="langModalTitle">Choisissez votre langue</div>
+    <div style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">Choose your language</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
-      <button class="lang-pick-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇫🇷 Français</button>
-      <button class="lang-pick-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇬🇧 English</button>
-      <button class="lang-pick-option" onclick="setLanguage('it')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇮🇹 Italiano</button>
-      <button class="lang-pick-option" onclick="setLanguage('de')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇩🇪 Deutsch</button>
-      <button class="lang-pick-option" onclick="setLanguage('zh')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:#1E1E2E;border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:#fff;text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇨🇳 中文</button>
+      <button class="lang-pick-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇫🇷 Français</button>
+      <button class="lang-pick-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇬🇧 English</button>
+      <button class="lang-pick-option" onclick="setLanguage('it')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇮🇹 Italiano</button>
+      <button class="lang-pick-option" onclick="setLanguage('de')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇩🇪 Deutsch</button>
+      <button class="lang-pick-option" onclick="setLanguage('zh')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇨🇳 中文</button>
     </div>
   </div>
 </div>
@@ -866,23 +866,23 @@ body{
 .onb-dot.active{background:var(--gold,#FFD700);width:20px;border-radius:4px;}
 </style>
 <div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:10400;background:rgba(10,10,15,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
-  <div style="position:relative;width:100%;max-width:360px;background:#13131A;border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px 24px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-    <button onclick="skipOnboarding()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:#9999BC;font-size:13px;font-weight:600;cursor:pointer;padding:6px;" data-i18n="onbSkip">Passer</button>
+  <div style="position:relative;width:100%;max-width:360px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px 24px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <button onclick="skipOnboarding()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;padding:6px;" data-i18n="onbSkip">Passer</button>
 
     <div class="onb-slide active" data-slide="0">
       <div style="font-size:44px;margin-bottom:16px;">🗺️</div>
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:8px;" data-i18n="onbTitle1">Trouvez un pro près de chez vous</div>
-      <div style="color:#9999BC;font-size:14px;line-height:1.5;" data-i18n="onbBody1">Explorez la carte pour découvrir des artisans qualifiés autour de vous, avec leur note et leur distance.</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle1">Trouvez un pro près de chez vous</div>
+      <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody1">Explorez la carte pour découvrir des artisans qualifiés autour de vous, avec leur note et leur distance.</div>
     </div>
     <div class="onb-slide" data-slide="1">
       <div style="font-size:44px;margin-bottom:16px;">➕</div>
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:8px;" data-i18n="onbTitle2">Publiez votre besoin en quelques secondes</div>
-      <div style="color:#9999BC;font-size:14px;line-height:1.5;" data-i18n="onbBody2">Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle2">Publiez votre besoin en quelques secondes</div>
+      <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody2">Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.</div>
     </div>
     <div class="onb-slide" data-slide="2">
       <div style="font-size:44px;margin-bottom:16px;">✅</div>
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:8px;" data-i18n="onbTitle3">Contactez en toute confiance</div>
-      <div style="color:#9999BC;font-size:14px;line-height:1.5;" data-i18n="onbBody3">Consultez les avis et les badges vérifiés, puis échangez directement via le chat sécurisé de l'app.</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle3">Contactez en toute confiance</div>
+      <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody3">Consultez les avis et les badges vérifiés, puis échangez directement via le chat sécurisé de l'app.</div>
     </div>
 
     <div style="display:flex;gap:6px;justify-content:center;margin:22px 0 18px;">
@@ -900,16 +900,16 @@ body{
      Un refus au popup natif du navigateur est quasi définitif (aucun moyen de
      redemander depuis le site), donc on explique d'abord la valeur, et seul un
      clic volontaire sur "Activer" déclenche le vrai popup natif. -->
-<div id="notifPrimer" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;max-width:420px;margin:0 auto;background:#13131A;border:1px solid rgba(255,215,0,0.25);border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:9000;">
+<div id="notifPrimer" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;max-width:420px;margin:0 auto;background:var(--dark2);border:1px solid rgba(255,215,0,0.25);border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:9000;">
   <div style="display:flex;gap:12px;align-items:flex-start;">
     <div style="width:42px;height:42px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);display:flex;align-items:center;justify-content:center;font-size:20px;">🔔</div>
     <div style="flex:1;min-width:0;">
-      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff;margin-bottom:4px;" data-i18n="notifPrimerTitle">Ne ratez plus aucun job</div>
-      <div style="color:#9999BC;font-size:13px;line-height:1.4;" data-i18n="notifPrimerBody">Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--text);margin-bottom:4px;" data-i18n="notifPrimerTitle">Ne ratez plus aucun job</div>
+      <div style="color:var(--text-dim);font-size:13px;line-height:1.4;" data-i18n="notifPrimerBody">Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.</div>
     </div>
   </div>
   <div style="display:flex;gap:8px;margin-top:14px;">
-    <button onclick="respondToNotifPrimer(false)" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:#9999BC;font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
+    <button onclick="respondToNotifPrimer(false)" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
     <button onclick="respondToNotifPrimer(true)" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="notifPrimerEnable">Activer les alertes</button>
   </div>
 </div>
@@ -1287,7 +1287,7 @@ body{
       <div class="admin-stat">
         <div class="admin-stat-val" id="adminNotifOpenRate">--</div>
         <div class="admin-stat-label" data-i18n="adminStatNotifOpenRate">Taux d'ouverture notifs (7j)</div>
-        <div id="adminNotifOpenRateBreakdown" style="font-size:11px;color:#9999BC;margin-top:4px;">--</div>
+        <div id="adminNotifOpenRateBreakdown" style="font-size:11px;color:var(--text-dim);margin-top:4px;">--</div>
       </div>
       <div class="admin-stat">
         <div class="admin-stat-val" id="adminStatContacts">--</div>
@@ -1357,7 +1357,7 @@ body{
     <div class="overlay-title" data-i18n="reportModalTitle">Signaler cette annonce</div>
   </div>
   <div class="overlay-body">
-    <p style="font-size:13px;color:#9999BC;margin-bottom:16px;" data-i18n="reportModalIntro">Un signal utile pour l'équipe : décrivez ce qui vous semble problématique. Les signalements abusifs peuvent être retracés jusqu'à votre compte.</p>
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;" data-i18n="reportModalIntro">Un signal utile pour l'équipe : décrivez ce qui vous semble problématique. Les signalements abusifs peuvent être retracés jusqu'à votre compte.</p>
     <div class="form-group">
       <label class="form-label" data-i18n="reportReasonLabel">Motif</label>
       <select class="form-select" id="reportReason">
@@ -1484,6 +1484,11 @@ let jobsById = {}; // Map pour retrouver les jobs par ID
 // instantané depuis le rendu des boutons "🔖" (pas d'aller-retour réseau
 // à chaque affichage d'un popup).
 let savedJobIds = new Set();
+
+// Quel onglet du panneau Liste est actif ('all' ou 'saved') — sert à
+// rafraîchir le bon contenu quand un job est sauvegardé/désauvegardé
+// pendant que ce panneau est déjà ouvert (voir toggleSaveJob()).
+let jobsSheetFilter = 'all';
 let currentCategory = 'all';   // catégorie active (boutons du haut)
 let currentSearchText = '';    // texte tapé dans la recherche
 let currentRadiusKm = null;    // rayon actif (500m/2km/5km/10km) ou null = tout
@@ -1642,6 +1647,7 @@ function vibrateDevice(ms) {
 // ===== INTERNATIONALISATION (FR / EN / IT / DE / ZH) =====
 const I18N = {
   fr: {
+    emptyStateNoJobs: "Aucun job trouvé",
     settingsNotifications: "Notifications", settingsManageNotifications: "Gérer les préférences",
     saveLabel: "Sauvegarder", savedLabel: "Sauvegardé", jobSavedToast: "Annonce sauvegardée !", jobUnsavedToast: "Annonce retirée des sauvegardes", filterAllJobs: "Tous", filterSavedJobs: "Sauvegardés",
     tipSettings: "Paramètres", settingsTitle: "Paramètres", settingsLanguage: "Langue", settingsTheme: "Thème", themeDark: "Sombre", themeLight: "Clair",
@@ -1866,6 +1872,7 @@ const I18N = {
     altProfilePhoto: "Photo de profil"
   },
   en: {
+    emptyStateNoJobs: "No jobs found",
     settingsNotifications: "Notifications", settingsManageNotifications: "Manage preferences",
     saveLabel: "Save", savedLabel: "Saved", jobSavedToast: "Listing saved!", jobUnsavedToast: "Listing removed from saved", filterAllJobs: "All", filterSavedJobs: "Saved",
     tipSettings: "Settings", settingsTitle: "Settings", settingsLanguage: "Language", settingsTheme: "Theme", themeDark: "Dark", themeLight: "Light",
@@ -2090,6 +2097,7 @@ const I18N = {
     altProfilePhoto: "Profile photo"
   },
   it: {
+    emptyStateNoJobs: "Nessun lavoro trovato",
     settingsNotifications: "Notifiche", settingsManageNotifications: "Gestisci preferenze",
     saveLabel: "Salva", savedLabel: "Salvato", jobSavedToast: "Annuncio salvato!", jobUnsavedToast: "Annuncio rimosso dai salvati", filterAllJobs: "Tutti", filterSavedJobs: "Salvati",
     tipSettings: "Impostazioni", settingsTitle: "Impostazioni", settingsLanguage: "Lingua", settingsTheme: "Tema", themeDark: "Scuro", themeLight: "Chiaro",
@@ -2314,6 +2322,7 @@ const I18N = {
     altProfilePhoto: "Foto del profilo"
   },
   de: {
+    emptyStateNoJobs: "Keine Aufträge gefunden",
     settingsNotifications: "Benachrichtigungen", settingsManageNotifications: "Einstellungen verwalten",
     saveLabel: "Speichern", savedLabel: "Gespeichert", jobSavedToast: "Anzeige gespeichert!", jobUnsavedToast: "Anzeige aus Gespeichert entfernt", filterAllJobs: "Alle", filterSavedJobs: "Gespeichert",
     tipSettings: "Einstellungen", settingsTitle: "Einstellungen", settingsLanguage: "Sprache", settingsTheme: "Design", themeDark: "Dunkel", themeLight: "Hell",
@@ -2538,6 +2547,7 @@ const I18N = {
     altProfilePhoto: "Profilfoto"
   },
   zh: {
+    emptyStateNoJobs: "未找到工作",
     settingsNotifications: "通知", settingsManageNotifications: "管理偏好设置",
     saveLabel: "收藏", savedLabel: "已收藏", jobSavedToast: "已收藏该信息!", jobUnsavedToast: "已从收藏中移除", filterAllJobs: "全部", filterSavedJobs: "已收藏",
     tipSettings: "设置", settingsTitle: "设置", settingsLanguage: "语言", settingsTheme: "主题", themeDark: "深色", themeLight: "浅色",
@@ -2813,12 +2823,17 @@ function setLanguage(lang) {
   if (typeof allJobs !== 'undefined' && typeof updateJobsList === 'function') updateJobsList(allJobs);
 }
 
-// Ferme le menu de langue si on clique ailleurs sur la page
+// Ferme les panneaux Paramètres/Notifications si on clique ailleurs sur la page
 document.addEventListener('click', function(e) {
-  const menu = document.getElementById('langMenu');
-  const btn = document.getElementById('langBtn');
-  if (menu && menu.style.display === 'block' && !menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
-    menu.style.display = 'none';
+  const settingsPanel = document.getElementById('settingsPanel');
+  const settingsBtn = document.getElementById('settingsBtn');
+  if (settingsPanel && settingsPanel.style.display === 'block' && !settingsPanel.contains(e.target) && e.target !== settingsBtn && !settingsBtn.contains(e.target)) {
+    settingsPanel.style.display = 'none';
+  }
+  const notifPanel = document.getElementById('notifPanel');
+  const notifBtn = document.getElementById('notifBtn');
+  if (notifPanel && notifPanel.style.display === 'block' && !notifPanel.contains(e.target) && e.target !== notifBtn && !notifBtn.contains(e.target)) {
+    notifPanel.style.display = 'none';
   }
 });
 
@@ -3100,7 +3115,17 @@ function toggleSaveJob(jobId) {
   });
 
   updateSaveButtonsUI(jobId);
+  refreshJobsSheetIfOpen();
   showToast(nowSaved ? t('jobSavedToast') : t('jobUnsavedToast'), 'success');
+}
+
+// Si le panneau Liste est ouvert au moment où on sauvegarde/désauvegarde un
+// job, on le rafraîchit tout de suite (badge 🔖 sur la carte, ou carte qui
+// disparaît de l'onglet "Sauvegardés") au lieu d'attendre une réouverture.
+function refreshJobsSheetIfOpen() {
+  const sheet = document.getElementById('jobsSheet');
+  if (!sheet || !sheet.classList.contains('open')) return;
+  if (jobsSheetFilter === 'saved') showSavedJobsInSheet(); else showAllJobsInSheet();
 }
 
 // Un même job peut avoir un bouton "🔖" affiché à deux endroits en même
@@ -3718,11 +3743,11 @@ function createJobMarker(job, jobId) {
           <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
           <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
         </div>
-        ${job.landmark ? `<div style="font-size:12px;color:#9999BC;margin-bottom:8px;">${job.landmark}</div>` : ''}
+        ${job.landmark ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${job.landmark}</div>` : ''}
         ${job.desc ? `<div data-map-popup-desc class="popup-desc-clamp" style="font-size:13px;margin-bottom:4px;line-height:1.5;">${job.desc}</div>${job.desc.length > 100 ? `<button type="button" onclick="toggleDescClamp(this)" class="popup-desc-toggle" style="background:none;border:none;color:var(--accent,#25D366);font-size:12px;font-weight:700;cursor:pointer;padding:0 0 10px 0;">${t('showMoreText')}</button>` : ''}` : ''}
         ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
         ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" alt="${t('altJobPhoto')}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
-        <div data-map-popup-translation-notice style="display:none;margin:6px 0;font-size:11px;color:#9999BC;"></div>
+        <div data-map-popup-translation-notice style="display:none;margin:6px 0;font-size:11px;color:var(--text-dim);"></div>
         <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
           WhatsApp
@@ -3737,7 +3762,7 @@ function createJobMarker(job, jobId) {
         <button onclick="toggleSaveJob('${jobId}')" data-save-btn="${jobId}" class="${savedJobIds.has(jobId) ? 'saved' : ''}" style="width:100%;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#999);padding:8px;border-radius:8px;font-size:12px;cursor:pointer;margin-top:6px;">
           🔖 ${savedJobIds.has(jobId) ? t('savedLabel') : t('saveLabel')}
         </button>
-        <button onclick="openReportModal('${jobId}')" style="width:100%;background:none;color:#9999BC;padding:8px;border:none;font-size:12px;cursor:pointer;margin-top:4px;text-decoration:underline;">
+        <button onclick="openReportModal('${jobId}')" style="width:100%;background:none;color:var(--text-dim);padding:8px;border:none;font-size:12px;cursor:pointer;margin-top:4px;text-decoration:underline;">
           🚩 ${t('reportLink')}
         </button>
       </div>
@@ -3883,7 +3908,7 @@ function updateJobsList(jobs) {
   if (jobs.length === 0) {
     list.innerHTML = `<div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <div class="empty-title">Aucun job trouve</div>
+      <div class="empty-title" data-i18n="emptyStateNoJobs">Aucun job trouvé</div>
       <div class="empty-sub" data-i18n="emptyZoneSub">Publiez le premier job dans cette zone</div>
     </div>`;
     return;
@@ -3896,7 +3921,7 @@ function updateJobsList(jobs) {
         <span style="font-size:11px;font-weight:800;color:${job.color || '#FFD700'};">${getCatIcon(job.icon)}</span>
       </div>
       <div class="job-card-body">
-        <div class="job-card-title">${(job.boosted && job.boostedUntil > Date.now()) ? '🚀 ' : ''}${escapeHtml(job.title)}</div>
+        <div class="job-card-title">${(job.boosted && job.boostedUntil > Date.now()) ? '🚀 ' : ''}${savedJobIds.has(job.id) ? '🔖 ' : ''}${escapeHtml(job.title)}</div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${escapeHtml(job.landmark) || getCatLabel(job.icon)}</div>
         <div class="job-card-meta">
           <span class="job-card-price">${job.price}</span>
@@ -4096,12 +4121,14 @@ function toggleMapStyle() {
 // jobsFilterSavedBtn dans le HTML). Ne touche jamais allJobs lui-même —
 // juste ce qui est affiché dans ce panneau précis.
 function showAllJobsInSheet() {
+  jobsSheetFilter = 'all';
   document.getElementById('jobsFilterAllBtn')?.classList.add('active');
   document.getElementById('jobsFilterSavedBtn')?.classList.remove('active');
   updateJobsList(allJobs);
 }
 
 function showSavedJobsInSheet() {
+  jobsSheetFilter = 'saved';
   document.getElementById('jobsFilterSavedBtn')?.classList.add('active');
   document.getElementById('jobsFilterAllBtn')?.classList.remove('active');
   if (!currentUser || currentUser.isAnonymous) {
@@ -4561,8 +4588,8 @@ async function openNotifPrefs() {
     <div id="notifGpsNudge" style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.25);border-radius:14px;padding:14px;margin-bottom:16px;display:flex;gap:12px;align-items:center;">
       <span style="font-size:22px;flex-shrink:0;">📍</span>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:2px;" data-i18n="notifGpsNudgeTitle">Position non activée</div>
-        <div style="font-size:12px;color:#9999BC;" data-i18n="notifGpsNudgeBody">Activez votre position pour que le filtre de distance ci-dessous fonctionne vraiment.</div>
+        <div style="font-size:13px;color:var(--text);font-weight:600;margin-bottom:2px;" data-i18n="notifGpsNudgeTitle">Position non activée</div>
+        <div style="font-size:12px;color:var(--text-dim);" data-i18n="notifGpsNudgeBody">Activez votre position pour que le filtre de distance ci-dessous fonctionne vraiment.</div>
       </div>
       <button onclick="locateMe(); setTimeout(openNotifPrefs, 800);" style="flex-shrink:0;padding:8px 14px;background:var(--gold,#FFD700);border:none;border-radius:10px;color:#0A0A0F;font-size:12px;font-weight:700;cursor:pointer;" data-i18n="notifGpsNudgeBtn">Activer</button>
     </div>`;
@@ -4584,7 +4611,7 @@ async function openNotifPrefs() {
         oninput="document.getElementById('notifDistanceValue').textContent = this.value + ' km'"
         onchange="setNotifDistancePref(parseInt(this.value, 10))"
         style="width:100%;accent-color:var(--gold,#FFD700);">
-      <div style="color:#9999BC;font-size:12px;margin-top:6px;" data-i18n="notifDistanceHint">Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).</div>
+      <div style="color:var(--text-dim);font-size:12px;margin-top:6px;" data-i18n="notifDistanceHint">Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).</div>
     </div>`;
   applyTranslations();
 }
@@ -5825,6 +5852,8 @@ function toggleNotifPanel() {
   const isOpen = panel.style.display === 'block';
   panel.style.display = isOpen ? 'none' : 'block';
   if (!isOpen) {
+    const settingsPanel = document.getElementById('settingsPanel');
+    if (settingsPanel) settingsPanel.style.display = 'none'; // un seul panneau ouvert à la fois, plus lisible
     refreshNotifPanel();
     // Marque comme vues : la prochaine ouverture ne montrera que les jobs postérieurs à maintenant
     localStorage.setItem(NOTIF_SEEN_KEY, Date.now().toString());
@@ -7181,7 +7210,7 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
       <div id="reviewStars" style="font-size:32px;margin-bottom:16px;">
         <span class="review-star" data-value="1" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="2" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="3" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="4" style="cursor:pointer;padding:4px;display:inline-block;">☆</span><span class="review-star" data-value="5" style="cursor:pointer;padding:4px;display:inline-block;">☆</span>
       </div>
-      <textarea id="reviewComment" placeholder="${t('reviewCommentPlaceholder')}" maxlength="500" style="width:100%;min-height:70px;border-radius:10px;padding:10px;background:#111;color:#fff;border:1px solid var(--border,#333);margin-bottom:14px;box-sizing:border-box;"></textarea>
+      <textarea id="reviewComment" placeholder="${t('reviewCommentPlaceholder')}" maxlength="500" style="width:100%;min-height:70px;border-radius:10px;padding:10px;background:var(--surface);color:var(--text);border:1px solid var(--border,#333);margin-bottom:14px;box-sizing:border-box;"></textarea>
       <div style="display:flex;gap:10px;">
         <button id="reviewSkipBtn" type="button" style="flex:1;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#9999BC);padding:12px;border-radius:12px;cursor:pointer;font-weight:600;">${t('notifPrimerLater')}</button>
         <button id="reviewSubmitBtn" type="button" style="flex:1;background:#FFD700;color:#111;padding:12px;border:none;border-radius:12px;cursor:pointer;font-weight:800;">${t('reviewSendBtn')}</button>
@@ -7225,6 +7254,7 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
     submitBtn.disabled = true;
     submitBtn.textContent = t('reviewSending');
     const comment = overlay.querySelector('#reviewComment').value.trim();
+    let reviewCreated = false;
     try {
       await db.ref('reviews').push({
         jobOwnerUid,
@@ -7235,6 +7265,7 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
         contactKey,
         notifiedOwner: false // passera à true une fois le prestataire notifié (voir scripts/sendReviewNotifications.js)
       });
+      reviewCreated = true; // à partir d'ici, la notification part déjà — voir plus bas en cas d'échec de l'étape suivante
       triggerInstantNotify('new-review'); // prévient le prestataire noté instantanément, sans attendre le cron
 
       // Le calcul de la moyenne (ratingAvg/ratingCount) n'est plus fait ici,
@@ -7246,12 +7277,23 @@ function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
       // flatteuse ou saboter celle d'un concurrent, avis réel ou pas).
       syncOwnerRating(jobOwnerUid);
 
-      await db.ref('job_contacts/' + contactKey + '/reviewed').set(true);
+      try {
+        await db.ref('job_contacts/' + contactKey + '/reviewed').set(true);
+      } catch (flagErr) {
+        // L'avis a bien été créé (la personne notée a déjà reçu sa
+        // notification) — mais si CETTE écriture-ci échoue, le contact
+        // reste marqué "non noté" côté base, et checkPendingReviews()
+        // réaffichera ce même prompt indéfiniment à chaque connexion,
+        // pour un avis pourtant déjà bien enregistré. Log détaillé exprès
+        // pour repérer précisément ce cas s'il se reproduit.
+        console.error('submitReview: avis créé mais échec du marquage reviewed=true', contactKey, flagErr);
+      }
+
       bumpDailyStat('reviewsSubmitted');
       showToast(t('toastReviewThanks'), 'success');
       overlay.remove();
     } catch (e) {
-      console.error('submitReview error', e);
+      console.error('submitReview error (reviewCreated=' + reviewCreated + ')', e);
       showToast(t('reviewSendError'), 'error');
       submitBtn.disabled = false;
       submitBtn.textContent = t('reviewSendBtn');
@@ -7502,7 +7544,7 @@ document.addEventListener('click', (e) => {
   top: 68px;
   left: 0;
   right: 0;
-  z-index: 998;
+  z-index: 1050; /* au-dessus de .category-bar (999), qui recouvrait le champ de recherche et rendait le texte tapé invisible */
   background: var(--dark2);
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
@@ -7880,7 +7922,13 @@ function toggleSearchPanel() {
 
 function toggleSettingsPanel() {
   const panel = document.getElementById('settingsPanel');
-  if (panel) panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
+  if (!panel) return;
+  const opening = (panel.style.display === 'none' || !panel.style.display);
+  panel.style.display = opening ? 'block' : 'none';
+  if (opening) {
+    const notifPanel = document.getElementById('notifPanel');
+    if (notifPanel) notifPanel.style.display = 'none'; // un seul panneau ouvert à la fois, plus lisible
+  }
 }
 
 // Bascule thème sombre/clair, persisté pour les prochaines visites (voir
