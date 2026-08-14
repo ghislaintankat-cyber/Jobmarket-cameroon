@@ -254,7 +254,7 @@ body{
   display:flex;gap:8px;
   padding:10px 16px;
   overflow-x:auto;
-  background:rgba(10,10,15,0.6);
+  background:var(--glass-bg);
   backdrop-filter:blur(16px);
   -webkit-backdrop-filter:blur(16px);
   scrollbar-width:none;
@@ -436,7 +436,7 @@ body{
   position:fixed;bottom:0;left:0;right:0;z-index:1000;
   height:82px;
   display:flex;align-items:center;
-  background:rgba(10,10,15,0.9);
+  background:var(--glass-bg);
   backdrop-filter:blur(24px);
   -webkit-backdrop-filter:blur(24px);
   border-top:1px solid var(--border);
@@ -532,7 +532,7 @@ body{
 /* ===== ITINERARY PANEL ===== */
 .itin-panel{
   position:fixed;bottom:96px;left:14px;z-index:999;
-  background:rgba(10,10,15,0.92);
+  background:var(--glass-bg);
   backdrop-filter:blur(20px);
   border:1px solid var(--border);
   border-radius:var(--radius-md);
@@ -921,6 +921,25 @@ body{
   </div>
 </div>
 
+<!-- ===== INVITE D'INSTALLATION PWA =====
+     Capture l'événement natif "beforeinstallprompt" (Android/Chrome — pas
+     Safari iOS, qui n'a pas cette API) pour proposer une bannière à notre
+     image plutôt que la mini-barre générique du navigateur, au bon moment
+     plutôt qu'au chargement. Voir initInstallPrompt() plus bas. -->
+<div id="installPrompt" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;max-width:420px;margin:0 auto;background:var(--dark2);border:1px solid rgba(255,215,0,0.25);border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:8900;">
+  <div style="display:flex;gap:12px;align-items:flex-start;">
+    <div style="width:42px;height:42px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#0A0A0F;">JM</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--text);margin-bottom:4px;" data-i18n="installPromptTitle">Installe l'app sur ton téléphone</div>
+      <div style="color:var(--text-dim);font-size:13px;line-height:1.4;" data-i18n="installPromptBody">Accès plus rapide depuis l'écran d'accueil, comme une vraie application.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button onclick="respondToInstallPrompt(false)" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
+    <button onclick="respondToInstallPrompt(true)" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="installPromptInstall">Installer</button>
+  </div>
+</div>
+
 <!-- ===== ACCROCHE NOTIFICATIONS (pré-prompt avant le popup natif du navigateur) =====
      But : ne JAMAIS déclencher Notification.requestPermission() à froid.
      Un refus au popup natif du navigateur est quasi définitif (aucun moyen de
@@ -1185,11 +1204,10 @@ body{
   </div>
   <div class="sheet-body">
     <div id="listContent">
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <div class="empty-title" data-i18n="emptyTitle">Aucun job trouve</div>
-        <div class="empty-sub" data-i18n="emptySub">Publiez le premier job dans cette zone</div>
-      </div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
     </div>
   </div>
 </div>
@@ -1731,6 +1749,7 @@ const I18N = {
     aiScamDisclaimer: "Analyse automatique du texte, pas une preuve — restez vigilant et vérifiez avant de payer quoi que ce soit à l'avance.", splashSubtitle: "Artisans qualifiés près de vous", langModalTitle: "Choisissez votre langue",
     offlineBannerText: "Pas de connexion internet — certaines actions peuvent échouer",
     shareNewJobTitle: "Annonce publiée !", shareNewJobBody: "Partage-la maintenant sur WhatsApp pour toucher plus de monde dès les premières minutes.", shareNewJobBtn: "Partager sur WhatsApp",
+    copyLinkBtn: "Copier le lien", linkCopied: "Lien copié !", copyLinkFailed: "Impossible de copier le lien",
     onbSkip: "Passer", onbNext: "Suivant", onbStart: "Commencer",
     onbTitle1: "Trouvez un pro près de chez vous", onbBody1: "Explorez la carte pour découvrir des artisans qualifiés autour de vous, avec leur note et leur distance.",
     onbTitle2: "Publiez votre besoin en quelques secondes", onbBody2: "Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.",
@@ -1780,6 +1799,7 @@ const I18N = {
     notifPrefsTitle: "Notifications", notifPrefsIntro: "Choisissez les catégories pour lesquelles vous voulez être notifié(e) des nouvelles offres. Décochez celles qui ne vous concernent pas.",
     notifPrimerTitle: "Ne ratez plus aucun job", notifPrimerBody: "Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.",
     notifPrimerLater: "Plus tard", notifPrimerEnable: "Activer les alertes",
+    installPromptTitle: "Installe l'app sur ton téléphone", installPromptBody: "Accès plus rapide depuis l'écran d'accueil, comme une vraie application.", installPromptInstall: "Installer",
     boostExpiryTitle: "Ta mise en avant expire bientôt", boostExpiryBody: "\"{title}\" redescend dans le classement dans environ {hours}h.", boostExpiryRenewBtn: "Renouveler (1 crédit)",
     notifBlockedTip: "Notifications bloquées. Activez-les dans les réglages de votre navigateur pour ne plus rater de job.",
     notifDistanceLabel: "Distance maximale", notifDistanceHint: "Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).",
@@ -1960,6 +1980,7 @@ const I18N = {
     aiScamDisclaimer: "Automatic text analysis, not proof — stay alert and check before paying anything upfront.", splashSubtitle: "Qualified tradespeople near you", langModalTitle: "Choose your language",
     offlineBannerText: "No internet connection — some actions may fail",
     shareNewJobTitle: "Listing published!", shareNewJobBody: "Share it now on WhatsApp to reach more people in the first few minutes.", shareNewJobBtn: "Share on WhatsApp",
+    copyLinkBtn: "Copy link", linkCopied: "Link copied!", copyLinkFailed: "Couldn't copy the link",
     onbSkip: "Skip", onbNext: "Next", onbStart: "Get started",
     onbTitle1: "Find a pro near you", onbBody1: "Browse the map to discover qualified tradespeople around you, with their rating and distance.",
     onbTitle2: "Post your need in seconds", onbBody2: "Tap the + button to describe what you need. Nearby providers are notified instantly.",
@@ -2009,6 +2030,7 @@ const I18N = {
     notifPrefsTitle: "Notifications", notifPrefsIntro: "Choose which categories you want to be notified about for new listings. Uncheck the ones that don't concern you.",
     notifPrimerTitle: "Never miss a job again", notifPrimerBody: "Get alerted the moment a new job in your categories is posted near you.",
     notifPrimerLater: "Later", notifPrimerEnable: "Enable alerts",
+    installPromptTitle: "Install the app on your phone", installPromptBody: "Faster access from your home screen, just like a real app.", installPromptInstall: "Install",
     boostExpiryTitle: "Your boost is expiring soon", boostExpiryBody: "\"{title}\" will drop back in the ranking in about {hours}h.", boostExpiryRenewBtn: "Renew (1 credit)",
     notifBlockedTip: "Notifications are blocked. Enable them in your browser settings to stop missing new jobs.",
     notifDistanceLabel: "Maximum distance", notifDistanceHint: "You'll only be notified about jobs within this radius of your location (requires location enabled).",
@@ -2189,6 +2211,7 @@ const I18N = {
     aiScamDisclaimer: "Analisi automatica del testo, non una prova — resta vigile e verifica prima di pagare qualsiasi cosa in anticipo.", splashSubtitle: "Artigiani qualificati vicino a te", langModalTitle: "Scegli la tua lingua",
     offlineBannerText: "Nessuna connessione internet — alcune azioni potrebbero non funzionare",
     shareNewJobTitle: "Annuncio pubblicato!", shareNewJobBody: "Condividilo subito su WhatsApp per raggiungere più persone nei primi minuti.", shareNewJobBtn: "Condividi su WhatsApp",
+    copyLinkBtn: "Copia il link", linkCopied: "Link copiato!", copyLinkFailed: "Impossibile copiare il link",
     onbSkip: "Salta", onbNext: "Avanti", onbStart: "Inizia",
     onbTitle1: "Trova un professionista vicino a te", onbBody1: "Esplora la mappa per scoprire artigiani qualificati intorno a te, con valutazione e distanza.",
     onbTitle2: "Pubblica la tua richiesta in pochi secondi", onbBody2: "Tocca il pulsante + per descrivere ciò di cui hai bisogno. I professionisti vicini vengono avvisati subito.",
@@ -2238,6 +2261,7 @@ const I18N = {
     notifPrefsTitle: "Notifiche", notifPrefsIntro: "Scegli le categorie per cui vuoi ricevere notifiche di nuovi annunci. Deseleziona quelle che non ti interessano.",
     notifPrimerTitle: "Non perdere più nessun lavoro", notifPrimerBody: "Ricevi un avviso non appena viene pubblicato un nuovo lavoro nelle tue categorie vicino a te.",
     notifPrimerLater: "Più tardi", notifPrimerEnable: "Attiva gli avvisi",
+    installPromptTitle: "Installa l'app sul tuo telefono", installPromptBody: "Accesso più rapido dalla schermata iniziale, come una vera app.", installPromptInstall: "Installa",
     boostExpiryTitle: "La tua promozione sta per scadere", boostExpiryBody: "\"{title}\" scenderà in classifica tra circa {hours}h.", boostExpiryRenewBtn: "Rinnova (1 credito)",
     notifBlockedTip: "Notifiche bloccate. Attivale nelle impostazioni del browser per non perdere nuovi lavori.",
     notifDistanceLabel: "Distanza massima", notifDistanceHint: "Riceverai notifiche solo per i lavori entro questo raggio dalla tua posizione (richiede la geolocalizzazione attiva).",
@@ -2418,6 +2442,7 @@ const I18N = {
     aiScamDisclaimer: "Automatische Textanalyse, kein Beweis — bleiben Sie wachsam und prüfen Sie, bevor Sie im Voraus etwas bezahlen.", splashSubtitle: "Qualifizierte Handwerker in Ihrer Nähe", langModalTitle: "Wählen Sie Ihre Sprache",
     offlineBannerText: "Keine Internetverbindung — einige Aktionen funktionieren möglicherweise nicht",
     shareNewJobTitle: "Anzeige veröffentlicht!", shareNewJobBody: "Teile sie jetzt auf WhatsApp, um in den ersten Minuten mehr Leute zu erreichen.", shareNewJobBtn: "Auf WhatsApp teilen",
+    copyLinkBtn: "Link kopieren", linkCopied: "Link kopiert!", copyLinkFailed: "Link konnte nicht kopiert werden",
     onbSkip: "Überspringen", onbNext: "Weiter", onbStart: "Loslegen",
     onbTitle1: "Finden Sie einen Profi in Ihrer Nähe", onbBody1: "Durchsuchen Sie die Karte, um qualifizierte Handwerker in Ihrer Nähe mit Bewertung und Entfernung zu entdecken.",
     onbTitle2: "Veröffentlichen Sie Ihren Bedarf in Sekunden", onbBody2: "Tippen Sie auf +, um zu beschreiben, was Sie brauchen. Anbieter in der Nähe werden sofort benachrichtigt.",
@@ -2467,6 +2492,7 @@ const I18N = {
     notifPrefsTitle: "Benachrichtigungen", notifPrefsIntro: "Wählen Sie die Kategorien, für die Sie über neue Angebote benachrichtigt werden möchten. Deaktivieren Sie die, die Sie nicht betreffen.",
     notifPrimerTitle: "Verpassen Sie keinen Job mehr", notifPrimerBody: "Werden Sie sofort benachrichtigt, wenn ein neuer Job in Ihren Kategorien in Ihrer Nähe veröffentlicht wird.",
     notifPrimerLater: "Später", notifPrimerEnable: "Benachrichtigungen aktivieren",
+    installPromptTitle: "Installiere die App auf deinem Handy", installPromptBody: "Schnellerer Zugriff vom Startbildschirm, wie eine echte App.", installPromptInstall: "Installieren",
     boostExpiryTitle: "Deine Hervorhebung läuft bald ab", boostExpiryBody: "\"{title}\" fällt in etwa {hours}Std. wieder in der Rangliste zurück.", boostExpiryRenewBtn: "Verlängern (1 Guthaben)",
     notifBlockedTip: "Benachrichtigungen sind blockiert. Aktivieren Sie sie in den Browsereinstellungen, um keine neuen Jobs mehr zu verpassen.",
     notifDistanceLabel: "Maximale Entfernung", notifDistanceHint: "Sie werden nur über Jobs in diesem Umkreis um Ihren Standort benachrichtigt (Standortfreigabe erforderlich).",
@@ -2647,6 +2673,7 @@ const I18N = {
     aiScamDisclaimer: "此为文本自动分析结果,并非证据 — 请保持警惕,在提前付款前务必核实。", splashSubtitle: "身边的专业工匠", langModalTitle: "选择您的语言",
     offlineBannerText: "无网络连接 — 部分操作可能无法完成",
     shareNewJobTitle: "发布成功！", shareNewJobBody: "现在就分享到WhatsApp，在最初几分钟触达更多人。", shareNewJobBtn: "分享到WhatsApp",
+    copyLinkBtn: "复制链接", linkCopied: "链接已复制！", copyLinkFailed: "无法复制链接",
     onbSkip: "跳过", onbNext: "下一步", onbStart: "开始使用",
     onbTitle1: "寻找您附近的专业人士", onbBody1: "浏览地图,发现您周围合格的工匠,查看他们的评分和距离。",
     onbTitle2: "几秒钟内发布您的需求", onbBody2: "点击 + 按钮描述您的需求,附近的服务商会立即收到通知。",
@@ -2696,6 +2723,7 @@ const I18N = {
     notifPrefsTitle: "通知", notifPrefsIntro: "选择您希望收到新发布通知的类别。取消勾选与您无关的类别。",
     notifPrimerTitle: "不再错过任何工作机会", notifPrimerBody: "您所在分类附近一有新工作发布，立即通知您。",
     notifPrimerLater: "以后再说", notifPrimerEnable: "开启提醒",
+    installPromptTitle: "将应用安装到手机", installPromptBody: "从主屏幕直接打开，像真正的应用一样更快捷。", installPromptInstall: "安装",
     boostExpiryTitle: "你的置顶推广即将到期", boostExpiryBody: "\"{title}\" 大约 {hours} 小时后将回落排名。", boostExpiryRenewBtn: "续期(1个额度)",
     notifBlockedTip: "通知已被屏蔽。请在浏览器设置中开启通知，以免错过新工作。",
     notifDistanceLabel: "最大距离", notifDistanceHint: "只有在此范围内的工作机会才会通知您（需要开启定位）。",
@@ -3847,9 +3875,14 @@ function createJobMarker(job, jobId) {
           WhatsApp
         </button>
         
-        <button onclick="popupShareClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#007AFF;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
-           ${t('shareOnWhatsappBtn')}
-        </button>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button onclick="popupShareClick('${jobId}')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:#007AFF;color:white;padding:12px;text-align:center;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:14px;">
+             ${t('shareOnWhatsappBtn')}
+          </button>
+          <button onclick="copyJobLink('${jobId}')" title="${t('copyLinkBtn')}" style="flex-shrink:0;width:46px;background:var(--surface2,#252538);color:var(--text);border:1px solid var(--border);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
         <button onclick="drawRoute(${job.lat},${job.lng})" style="width:100%;background:var(--blue);color:white;padding:12px;border:none;border-radius:12px;margin-top:6px;font-weight:700;font-size:14px;cursor:pointer;">
           ${t('viewRouteBtn')}
         </button>
@@ -4910,6 +4943,26 @@ function csText(key) {
 // sélectionnée au lieu de toujours répondre en français).
 const LOCAL_CHAT_KNOWLEDGE = [
   {
+    terms:['boost','mise en avant','mettre en avant','credit de boost','renouveler le boost','expire bientot','booster mon annonce','boost my listing','highlight my listing','boost credit','renew my boost','expiring soon','promuovere il mio annuncio','credito di promozione','rinnovare la promozione','sta per scadere','anzeige hervorheben','boost guthaben','hervorhebung verlangern','lauft bald ab','置顶推广','推广额度','续期推广','即将到期'],
+    answers: {
+      fr: `Une annonce boostée 🚀 reste en tête du classement pendant 7 jours. Vous gagnez des crédits de boost en parrainant d'autres utilisateurs (Compte → Parrainage). Quand un boost approche de son expiration, un bandeau propose de le renouveler en un tap depuis « Mes publications » si vous avez un crédit disponible.`,
+      en: `A boosted 🚀 listing stays at the top of the ranking for 7 days. You earn boost credits by referring other users (Account → Referral). When a boost is about to expire, a banner offers a one-tap renewal from "My listings" if you have a credit available.`,
+      it: `Un annuncio promosso 🚀 resta in cima alla classifica per 7 giorni. Guadagni crediti promozione invitando altri utenti (Account → Programma referral). Quando una promozione sta per scadere, un banner propone di rinnovarla in un tocco da «I miei annunci» se hai un credito disponibile.`,
+      de: `Eine hervorgehobene 🚀 Anzeige bleibt 7 Tage lang ganz oben in der Rangliste. Sie erhalten Boost-Guthaben, indem Sie andere Nutzer werben (Konto → Empfehlungsprogramm). Wenn eine Hervorhebung bald abläuft, bietet ein Banner unter "Meine Anzeigen" eine Verlängerung mit einem Tippen an, sofern Sie ein Guthaben haben.`,
+      zh: `置顶推广🚀的发布信息会在排名中保持首位7天。通过邀请其他用户注册(账户→推荐计划)可获得推广额度。当推广即将到期时,如果您还有可用额度,系统会在"我的发布"页面弹出提示,一键即可续期。`
+    }
+  },
+  {
+    terms:['partager','partager une annonce','partager sur whatsapp','diffuser mon annonce','lien de partage','share a listing','share on whatsapp','spread my listing','share link','condividere un annuncio','condividere su whatsapp','link di condivisione','anzeige teilen','auf whatsapp teilen','freigabelink','分享发布','分享到whatsapp','分享链接'],
+    answers: {
+      fr: `Ouvrez une annonce sur la carte et appuyez sur « Partager » pour l'envoyer sur WhatsApp avec un lien direct — utile pour toucher plus de monde. Juste après avoir publié une annonce, l'app vous propose aussi de la partager immédiatement.`,
+      en: `Open a listing on the map and tap "Share" to send it on WhatsApp with a direct link — useful for reaching more people. Right after posting a listing, the app also offers to share it immediately.`,
+      it: `Apri un annuncio sulla mappa e tocca «Condividi» per inviarlo su WhatsApp con un link diretto — utile per raggiungere più persone. Subito dopo aver pubblicato un annuncio, l'app propone anche di condividerlo immediatamente.`,
+      de: `Öffnen Sie eine Anzeige auf der Karte und tippen Sie auf "Teilen", um sie mit einem direkten Link auf WhatsApp zu senden — nützlich, um mehr Leute zu erreichen. Direkt nach der Veröffentlichung schlägt die App auch vor, die Anzeige sofort zu teilen.`,
+      zh: `在地图上打开一条发布信息,点击"分享"即可通过WhatsApp发送直达链接——有助于触达更多人。发布成功后,应用也会立即提示您分享该发布信息。`
+    }
+  },
+  {
     terms:['mes publications','ma publication','supprimer une annonce','supprimer mon job','modifier une annonce','modifier mon job','my listings','my listing','delete a listing','delete my job','edit a listing','edit my job','i miei annunci','eliminare un annuncio','modificare un annuncio','meine anzeigen','anzeige loschen','anzeige bearbeiten','我的发布','删除发布','修改发布'],
     answers: {
       fr: `Ouvrez Compte → « Mes publications » (connexion requise) pour voir toutes vos annonces, avec un bouton pour supprimer celles que vous avez publiées. Il n'y a pas encore de modification directe : supprimez l'ancienne annonce puis republiez-en une nouvelle à jour.`,
@@ -4962,11 +5015,11 @@ const LOCAL_CHAT_KNOWLEDGE = [
   {
     terms:['notification','notifications','cloche','alerte','new jobs bell','notification bell','notifica','notifiche','campanella','benachrichtigung','glocke','新工作通知','铃铛提醒'],
     answers: {
-      fr: `La cloche en haut de l'écran affiche les nouveaux jobs publiés autour de vous. Un point s'allume quand il y a du nouveau ; appuyez dessus pour voir la liste.`,
-      en: `The bell at the top of the screen shows new jobs posted near you. A dot lights up when there's something new; tap it to see the list.`,
-      it: `La campanella in alto sullo schermo mostra i nuovi lavori pubblicati vicino a te. Un puntino si accende quando c'è qualcosa di nuovo; toccalo per vedere l'elenco.`,
-      de: `Die Glocke oben im Bildschirm zeigt neue Jobs in Ihrer Nähe an. Ein Punkt leuchtet auf, wenn es etwas Neues gibt; tippen Sie darauf, um die Liste zu sehen.`,
-      zh: `屏幕顶部的铃铛图标会显示您附近发布的新工作。有新内容时会出现一个红点;点击它即可查看列表。`
+      fr: `La cloche en haut de l'écran affiche les nouveaux jobs publiés autour de vous. Un point s'allume quand il y a du nouveau ; appuyez dessus pour voir la liste. Pour choisir les catégories qui vous intéressent, allez dans Paramètres (⚙️) → Notifications.`,
+      en: `The bell at the top of the screen shows new jobs posted near you. A dot lights up when there's something new; tap it to see the list. To choose which categories you're interested in, go to Settings (⚙️) → Notifications.`,
+      it: `La campanella in alto sullo schermo mostra i nuovi lavori pubblicati vicino a te. Un puntino si accende quando c'è qualcosa di nuovo; toccalo per vedere l'elenco. Per scegliere le categorie che ti interessano, vai su Impostazioni (⚙️) → Notifiche.`,
+      de: `Die Glocke oben im Bildschirm zeigt neue Jobs in Ihrer Nähe an. Ein Punkt leuchtet auf, wenn es etwas Neues gibt; tippen Sie darauf, um die Liste zu sehen. Um die für Sie interessanten Kategorien auszuwählen, gehen Sie zu Einstellungen (⚙️) → Benachrichtigungen.`,
+      zh: `屏幕顶部的铃铛图标会显示您附近发布的新工作。有新内容时会出现一个红点;点击它即可查看列表。如需选择您感兴趣的类别,请前往"设置"(⚙️)→"通知"。`
     }
   },
   {
@@ -5032,21 +5085,21 @@ const LOCAL_CHAT_KNOWLEDGE = [
   {
     terms:['trouver un artisan','rechercher un prestataire','artisan proche','filtre categorie','find a tradesperson','search for a provider','nearby tradesperson','filter by category','trovare un artigiano','cercare un fornitore','artigiano vicino','filtro categoria','handwerker finden','anbieter suchen','handwerker in der nahe','kategorie filter','寻找工匠','搜索服务商','附近的工匠','按类别筛选'],
     answers: {
-      fr: `Utilisez la carte ou la liste, puis filtrez par catégorie (BTP, Électricité, Plomberie, Ménage, Jardinage, Mécanique, Informatique). Ouvrez une annonce pour comparer la description, le prix et les informations visibles. Avant de choisir un artisan, demandez un devis écrit, vérifiez son profil et convenez du travail avant tout paiement.`,
-      en: `Use the map or the list, then filter by category (Construction, Electrical, Plumbing, Cleaning, Gardening, Mechanics, IT). Open a listing to compare the description, price and visible information. Before choosing a tradesperson, ask for a written quote, check their profile and agree on the work before making any payment.`,
-      it: `Usa la mappa o l'elenco, poi filtra per categoria (Edilizia, Elettricità, Idraulica, Pulizie, Giardinaggio, Meccanica, Informatica). Apri un annuncio per confrontare descrizione, prezzo e informazioni visibili. Prima di scegliere un artigiano, chiedi un preventivo scritto, verifica il suo profilo e concorda il lavoro prima di qualsiasi pagamento.`,
-      de: `Nutzen Sie die Karte oder die Liste und filtern Sie dann nach Kategorie (Bau, Elektrik, Sanitär, Reinigung, Gartenarbeit, Mechanik, IT). Öffnen Sie eine Anzeige, um Beschreibung, Preis und sichtbare Informationen zu vergleichen. Bevor Sie sich für einen Handwerker entscheiden, fordern Sie ein schriftliches Angebot an, prüfen Sie sein Profil und vereinbaren Sie die Arbeit, bevor Sie bezahlen.`,
-      zh: `使用地图或列表功能,按类别筛选(建筑、电工、水管、清洁、园艺、机械、信息技术)。打开一条发布信息以比较描述、价格及可见信息。在选择工匠之前,请索取书面报价、核实其资料,并在付款前就工作内容达成一致。`
+      fr: `Utilisez la carte ou la liste, puis filtrez par catégorie (BTP, Électricité, Plomberie, Ménage, Jardinage, Mécanique, Informatique). Pour chercher par mot-clé, appuyez sur l'onglet « Chercher » en bas de l'écran. Ouvrez une annonce pour comparer la description, le prix et les informations visibles. Avant de choisir un artisan, demandez un devis écrit, vérifiez son profil et convenez du travail avant tout paiement.`,
+      en: `Use the map or the list, then filter by category (Construction, Electrical, Plumbing, Cleaning, Gardening, Mechanics, IT). To search by keyword, tap the "Search" tab at the bottom of the screen. Open a listing to compare the description, price and visible information. Before choosing a tradesperson, ask for a written quote, check their profile and agree on the work before making any payment.`,
+      it: `Usa la mappa o l'elenco, poi filtra per categoria (Edilizia, Elettricità, Idraulica, Pulizie, Giardinaggio, Meccanica, Informatica). Per cercare per parola chiave, tocca la scheda «Cerca» in basso sullo schermo. Apri un annuncio per confrontare descrizione, prezzo e informazioni visibili. Prima di scegliere un artigiano, chiedi un preventivo scritto, verifica il suo profilo e concorda il lavoro prima di qualsiasi pagamento.`,
+      de: `Nutzen Sie die Karte oder die Liste und filtern Sie dann nach Kategorie (Bau, Elektrik, Sanitär, Reinigung, Gartenarbeit, Mechanik, IT). Um nach Stichwort zu suchen, tippen Sie unten im Bildschirm auf den Tab "Suchen". Öffnen Sie eine Anzeige, um Beschreibung, Preis und sichtbare Informationen zu vergleichen. Bevor Sie sich für einen Handwerker entscheiden, fordern Sie ein schriftliches Angebot an, prüfen Sie sein Profil und vereinbaren Sie die Arbeit, bevor Sie bezahlen.`,
+      zh: `使用地图或列表功能,按类别筛选(建筑、电工、水管、清洁、园艺、机械、信息技术)。如需按关键词搜索,请点击屏幕底部的"搜索"标签。打开一条发布信息以比较描述、价格及可见信息。在选择工匠之前,请索取书面报价、核实其资料,并在付款前就工作内容达成一致。`
     }
   },
   {
     terms:['publier','poster une annonce','ajouter un job','creer une demande','appui long','publish a job','post a listing','add a job','create a request','long press on map','pubblicare un lavoro','postare un annuncio','creare una richiesta','pressione prolungata','job veroffentlichen','anzeige posten','anfrage erstellen','langes drucken','发布工作','添加工作','创建需求','长按地图'],
     answers: {
-      fr: `Deux façons de publier : appuyez sur le bouton + (en haut ou en bas de l'écran), ou faites un appui long (clic droit sur ordinateur) directement à l'endroit voulu sur la carte puis « Publier un job ici ». Choisissez une catégorie, ajoutez un titre clair, le budget, votre téléphone et une description précise. Ne publiez pas de mot de passe, code SMS ou document d'identité.`,
-      en: `Two ways to post: tap the + button (at the top or bottom of the screen), or long-press (right-click on a computer) directly on the desired spot on the map, then "Post a job here". Choose a category, add a clear title, the budget, your phone number and a precise description. Don't post a password, SMS code or ID document.`,
-      it: `Due modi per pubblicare: tocca il pulsante + (in alto o in basso sullo schermo), oppure fai una pressione prolungata (clic destro su computer) direttamente nel punto desiderato sulla mappa e poi «Pubblica un lavoro qui». Scegli una categoria, aggiungi un titolo chiaro, il budget, il tuo telefono e una descrizione precisa. Non pubblicare password, codici SMS o documenti d'identità.`,
-      de: `Zwei Möglichkeiten zu veröffentlichen: Tippen Sie auf die Schaltfläche + (oben oder unten im Bildschirm), oder drücken Sie lange (Rechtsklick am Computer) direkt an der gewünschten Stelle auf der Karte und dann "Job hier veröffentlichen". Wählen Sie eine Kategorie, fügen Sie einen klaren Titel, das Budget, Ihre Telefonnummer und eine genaue Beschreibung hinzu. Veröffentlichen Sie kein Passwort, keinen SMS-Code und kein Ausweisdokument.`,
-      zh: `有两种发布方式:点击屏幕上方或下方的"+"按钮,或者直接在地图上想要的位置长按(电脑上为右键点击),然后选择"在此发布工作"。选择类别,填写清晰的标题、预算、电话号码和详细描述。请勿发布密码、短信验证码或身份证件。`
+      fr: `Deux façons de publier : appuyez sur le gros bouton + doré en bas de l'écran, ou faites un appui long (clic droit sur ordinateur) directement à l'endroit voulu sur la carte puis « Publier un job ici ». Choisissez une catégorie, ajoutez un titre clair, le budget, votre téléphone et une description précise. Ne publiez pas de mot de passe, code SMS ou document d'identité.`,
+      en: `Two ways to post: tap the big gold + button at the bottom of the screen, or long-press (right-click on a computer) directly on the desired spot on the map, then "Post a job here". Choose a category, add a clear title, the budget, your phone number and a precise description. Don't post a password, SMS code or ID document.`,
+      it: `Due modi per pubblicare: tocca il grande pulsante dorato + in basso sullo schermo, oppure fai una pressione prolungata (clic destro su computer) direttamente nel punto desiderato sulla mappa e poi «Pubblica un lavoro qui». Scegli una categoria, aggiungi un titolo chiaro, il budget, il tuo telefono e una descrizione precisa. Non pubblicare password, codici SMS o documenti d'identità.`,
+      de: `Zwei Möglichkeiten zu veröffentlichen: Tippen Sie auf die große goldene +-Schaltfläche unten im Bildschirm, oder drücken Sie lange (Rechtsklick am Computer) direkt an der gewünschten Stelle auf der Karte und dann "Job hier veröffentlichen". Wählen Sie eine Kategorie, fügen Sie einen klaren Titel, das Budget, Ihre Telefonnummer und eine genaue Beschreibung hinzu. Veröffentlichen Sie kein Passwort, keinen SMS-Code und kein Ausweisdokument.`,
+      zh: `有两种发布方式:点击屏幕底部的金色大"+"按钮,或者直接在地图上想要的位置长按(电脑上为右键点击),然后选择"在此发布工作"。选择类别,填写清晰的标题、预算、电话号码和详细描述。请勿发布密码、短信验证码或身份证件。`
     }
   },
   {
@@ -5759,6 +5812,70 @@ const FCM_VAPID_KEY = 'BDjptctrpoeyowsCJT_qcpnUzy15FJm6lCcmq6rtNlCh9BpqS1MpQMSuQ
 // personne clique elle-même sur "Activer les alertes".
 const NOTIF_PRIMER_SNOOZE_KEY = 'jobmarket_notif_primer_snooze';
 const NOTIF_PRIMER_SNOOZE_DAYS = 3;
+
+// ===== INSTALLATION PWA =====
+const INSTALL_SNOOZE_KEY = 'jmc_install_snoozed_at';
+const INSTALL_SNOOZE_DAYS = 10;
+let deferredInstallPrompt = null;
+
+// "beforeinstallprompt" ne se déclenche que si le navigateur juge l'app
+// installable (manifest valide, service worker actif...) — donc rien à
+// vérifier nous-mêmes côté critères, seulement empêcher la mini-barre
+// native de s'afficher toute seule et garder l'événement pour notre bouton.
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  maybeShowInstallPrompt();
+});
+
+// Déjà installée (ouverte en mode standalone, ou l'utilisateur vient de
+// l'installer) : plus jamais de bannière à afficher.
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  const banner = document.getElementById('installPrompt');
+  if (banner) banner.style.display = 'none';
+  try { localStorage.setItem(INSTALL_SNOOZE_KEY, 'installed'); } catch (e) {}
+});
+
+function maybeShowInstallPrompt() {
+  if (!deferredInstallPrompt) return;
+  if (window.matchMedia('(display-mode: standalone)').matches) return; // déjà installée
+
+  const snoozed = localStorage.getItem(INSTALL_SNOOZE_KEY);
+  if (snoozed === 'installed') return;
+  const snoozedAt = parseInt(snoozed || '0', 10);
+  const daysSince = (Date.now() - snoozedAt) / (1000 * 60 * 60 * 24);
+  if (snoozedAt && daysSince < INSTALL_SNOOZE_DAYS) return;
+
+  // On évite de superposer plusieurs bandeaux du bas en même temps
+  // (rappel notifications, rappel boost...) : si l'un d'eux est déjà
+  // visible, on retente un peu plus tard plutôt que de s'empiler dessus.
+  const busy = ['notifPrimer', 'boostExpiryBanner'].some(id => {
+    const el = document.getElementById(id);
+    return el && el.style.display !== 'none' && el.style.display !== '';
+  });
+  if (busy) { setTimeout(maybeShowInstallPrompt, 3000); return; }
+
+  setTimeout(() => {
+    const banner = document.getElementById('installPrompt');
+    if (banner && deferredInstallPrompt) banner.style.display = 'block';
+  }, 6000);
+}
+
+async function respondToInstallPrompt(accepted) {
+  const banner = document.getElementById('installPrompt');
+  if (banner) banner.style.display = 'none';
+
+  if (!accepted || !deferredInstallPrompt) {
+    localStorage.setItem(INSTALL_SNOOZE_KEY, Date.now().toString());
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice; // 'accepted' | 'dismissed'
+  if (outcome !== 'accepted') localStorage.setItem(INSTALL_SNOOZE_KEY, Date.now().toString());
+  deferredInstallPrompt = null;
+}
 
 function maybeShowNotifPrimer() {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
@@ -7123,6 +7240,38 @@ function shareJobViaWhatsApp(jobId, job) {
     showToast(t('sharedOnWhatsapp'), 'success');
 }
 
+// Copie le lien direct d'une annonce, pour la partager par un autre canal
+// que WhatsApp (SMS, Facebook, Telegram...). navigator.clipboard n'est pas
+// disponible sur tous les navigateurs Android plus anciens encore en usage
+// au Cameroun — d'où le repli sur document.execCommand('copy'), obsolète
+// mais bien plus largement supporté.
+function copyJobLink(jobId) {
+  const link = getJobShareLink(jobId);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link)
+      .then(() => showToast(t('linkCopied'), 'success'))
+      .catch(() => copyJobLinkFallback(link));
+  } else {
+    copyJobLinkFallback(link);
+  }
+}
+
+function copyJobLinkFallback(link) {
+  try {
+    const el = document.createElement('textarea');
+    el.value = link;
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast(t('linkCopied'), 'success');
+  } catch (e) {
+    showToast(t('copyLinkFailed'), 'error');
+  }
+}
+
 window.popupShareClick = function(jobId) {
     // Ouvert à tout le monde, connecté ou non — c'est le principal levier
     // de croissance virale de l'app.
@@ -7799,7 +7948,7 @@ document.addEventListener('click', (e) => {
   gap: 8px;
   padding: 10px 16px;
   overflow-x: auto;
-  background: rgba(10,10,15,0.6);
+  background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
