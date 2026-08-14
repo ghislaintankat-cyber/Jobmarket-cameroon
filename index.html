@@ -1860,6 +1860,7 @@ const I18N = {
     phoneValidTitle: "Numero de telephone valide, ex: 6XX XXX XXX",
     whatsappVerifiedTitle: "Numéro vérifié par WhatsApp",
     emailVerifiedTitle: "Email vérifié",
+    verifiedBadgeLabel: "Vérifié",
     closeAriaLabel: "Fermer",
     faqAriaLabel: "Questions fréquentes",
     altSelfieSubmitted: "Selfie de vérification soumis",
@@ -2085,6 +2086,7 @@ const I18N = {
     phoneValidTitle: "Valid phone number, e.g: 6XX XXX XXX",
     whatsappVerifiedTitle: "Number verified via WhatsApp",
     emailVerifiedTitle: "Email verified",
+    verifiedBadgeLabel: "Verified",
     closeAriaLabel: "Close",
     faqAriaLabel: "Frequently asked questions",
     altSelfieSubmitted: "Verification selfie submitted",
@@ -2310,6 +2312,7 @@ const I18N = {
     phoneValidTitle: "Numero di telefono valido, es: 6XX XXX XXX",
     whatsappVerifiedTitle: "Numero verificato via WhatsApp",
     emailVerifiedTitle: "Email verificata",
+    verifiedBadgeLabel: "Verificato",
     closeAriaLabel: "Chiudi",
     faqAriaLabel: "Domande frequenti",
     altSelfieSubmitted: "Selfie di verifica inviato",
@@ -2535,6 +2538,7 @@ const I18N = {
     phoneValidTitle: "Gültige Telefonnummer, z.B.: 6XX XXX XXX",
     whatsappVerifiedTitle: "Nummer über WhatsApp verifiziert",
     emailVerifiedTitle: "E-Mail verifiziert",
+    verifiedBadgeLabel: "Verifiziert",
     closeAriaLabel: "Schließen",
     faqAriaLabel: "Häufig gestellte Fragen",
     altSelfieSubmitted: "Verifizierungs-Selfie eingereicht",
@@ -2760,6 +2764,7 @@ const I18N = {
     phoneValidTitle: "有效电话号码，例如：6XX XXX XXX",
     whatsappVerifiedTitle: "已通过WhatsApp验证号码",
     emailVerifiedTitle: "邮箱已验证",
+    verifiedBadgeLabel: "已认证",
     closeAriaLabel: "关闭",
     faqAriaLabel: "常见问题",
     altSelfieSubmitted: "已提交验证自拍照",
@@ -3743,6 +3748,19 @@ function createJobMarker(job, jobId) {
           <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
           <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
         </div>
+        ${(() => {
+          const p = profilesCache[job.user] || {};
+          let badge = '';
+          if (p.verified) {
+            badge = `<span style="display:inline-flex;align-items:center;gap:3px;color:var(--blue);font-size:12px;font-weight:600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>${t('verifiedBadgeLabel')}</span>`;
+          } else if (p.phoneVerified) {
+            badge = `<span style="font-size:12px;color:var(--green,#25D366);font-weight:600;">📱 ${t('whatsappVerifiedTitle')}</span>`;
+          } else if (p.emailVerified) {
+            badge = `<span style="font-size:12px;color:var(--text-dim);font-weight:600;">✉️ ${t('emailVerifiedTitle')}</span>`;
+          }
+          const rating = p.ratingCount ? `<span style="font-size:12px;color:#FFD700;font-weight:700;">★ ${p.ratingAvg.toFixed(1)} (${p.ratingCount})</span>` : '';
+          return (badge || rating) ? `<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;">${badge}${rating}</div>` : '';
+        })()}
         ${job.landmark ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${job.landmark}</div>` : ''}
         ${job.desc ? `<div data-map-popup-desc class="popup-desc-clamp" style="font-size:13px;margin-bottom:4px;line-height:1.5;">${job.desc}</div>${job.desc.length > 100 ? `<button type="button" onclick="toggleDescClamp(this)" class="popup-desc-toggle" style="background:none;border:none;color:var(--accent,#25D366);font-size:12px;font-weight:700;cursor:pointer;padding:0 0 10px 0;">${t('showMoreText')}</button>` : ''}` : ''}
         ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
