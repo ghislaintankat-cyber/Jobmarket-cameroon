@@ -857,6 +857,32 @@ body{
 <!-- ===== TOAST ===== -->
 <div id="toast"></div>
 
+<!-- Bandeau "hors connexion" : au lieu qu'une action (publier, contacter,
+     laisser un avis...) échoue en silence ou avec une erreur générique
+     quand le réseau tombe, on prévient tout de suite et clairement — voir
+     initOfflineDetection() plus bas, qui écoute les événements
+     online/offline du navigateur. -->
+<div id="offlineBanner" style="position:fixed;top:0;left:0;right:0;z-index:1100;background:#FF3B30;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:6px 12px;transform:translateY(-100%);transition:transform 0.3s var(--ease,ease);">
+  📡 <span data-i18n="offlineBannerText">Pas de connexion internet — certaines actions peuvent échouer</span>
+</div>
+
+<!-- Modale "Partager ton annonce", proposée juste après une publication réussie
+     (voir promptShareNewJob()) — le moment où l'annonce a le plus besoin de
+     visibilité est juste après sa mise en ligne, avant qu'elle ne redescende
+     dans le classement au fil des publications suivantes. -->
+<div id="shareNewJobModal" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(10,10,15,0.75);align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:340px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center;">
+    <div style="font-size:38px;margin-bottom:12px;">📣</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--text);margin-bottom:6px;" data-i18n="shareNewJobTitle">Annonce publiée !</div>
+    <div style="color:var(--text-dim);font-size:13px;line-height:1.5;margin-bottom:18px;" data-i18n="shareNewJobBody">Partage-la maintenant sur WhatsApp pour toucher plus de monde dès les premières minutes.</div>
+    <button id="shareNewJobBtn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:13px;border-radius:14px;border:none;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:10px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
+      <span data-i18n="shareNewJobBtn">Partager sur WhatsApp</span>
+    </button>
+    <button onclick="document.getElementById('shareNewJobModal').style.display='none';" style="width:100%;background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;padding:8px;" data-i18n="notifPrimerLater">Plus tard</button>
+  </div>
+</div>
+
 <!-- ===== ÉCRAN D'ACCUEIL (onboarding, affiché une seule fois au tout premier lancement,
      juste après le choix de la langue, tant que 'jmc_onboarding_seen' n'est pas mémorisé) ===== -->
 <style>
@@ -911,6 +937,24 @@ body{
   <div style="display:flex;gap:8px;margin-top:14px;">
     <button onclick="respondToNotifPrimer(false)" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
     <button onclick="respondToNotifPrimer(true)" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="notifPrimerEnable">Activer les alertes</button>
+  </div>
+</div>
+
+<!-- Bandeau de rappel avant expiration d'un boost, affiché seulement à l'ouverture
+     de "Mes publications" quand une annonce boostée du propriétaire arrive à
+     échéance sous 24h et qu'il lui reste au moins un crédit pour la renouveler
+     (voir checkBoostExpiry()). -->
+<div id="boostExpiryBanner" style="display:none;position:fixed;left:16px;right:16px;bottom:16px;max-width:420px;margin:0 auto;background:var(--dark2);border:1px solid rgba(255,215,0,0.25);border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:9000;">
+  <div style="display:flex;gap:12px;align-items:flex-start;">
+    <div style="width:42px;height:42px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);display:flex;align-items:center;justify-content:center;font-size:20px;">🚀</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--text);margin-bottom:4px;" id="boostExpiryTitle" data-i18n="boostExpiryTitle">Ta mise en avant expire bientôt</div>
+      <div style="color:var(--text-dim);font-size:13px;line-height:1.4;" id="boostExpiryBody"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button onclick="dismissBoostExpiryBanner()" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
+    <button id="boostExpiryRenewBtn" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="boostExpiryRenewBtn">Renouveler (1 crédit)</button>
   </div>
 </div>
 
@@ -1632,6 +1676,22 @@ function showToast(msg, type='info') {
   toastTimer = setTimeout(() => { t.className = ''; }, 3000);
 }
 
+// ===== DÉTECTION HORS CONNEXION =====
+// navigator.onLine + les événements online/offline détectent une coupure
+// réseau franche (mode avion, zone sans couverture) — pas une connexion
+// lente/instable, que le navigateur ne peut pas distinguer d'une connexion
+// normale. C'est volontairement simple : le but est juste d'éviter qu'un
+// utilisateur se demande pourquoi "rien ne marche" quand il n'a tout
+// simplement plus de réseau, pas de diagnostiquer la qualité du signal.
+function initOfflineDetection() {
+  const banner = document.getElementById('offlineBanner');
+  if (!banner) return;
+  const update = () => { banner.style.transform = navigator.onLine ? 'translateY(-100%)' : 'translateY(0)'; };
+  window.addEventListener('online', update);
+  window.addEventListener('offline', update);
+  update();
+}
+
 // ===== VIBRATION (retour haptique) =====
 // Fonction unique et sécurisée utilisée partout dans l'app.
 // Remarque : la vibration ne fonctionne que sur téléphone Android (Chrome/Edge/Samsung
@@ -1669,6 +1729,8 @@ const I18N = {
     aiPriceMinLength: "Renseignez d'abord un titre ou une description avant de demander un prix.", aiPriceLoading: "💡 Calcul en cours...", aiPriceEstimateLabel: "💡 Estimation :", aiPriceUseEstimation: "Utiliser cette estimation",
     aiPriceApplied: "Prix appliqué", aiScamNothingToAnalyze: "Rien à analyser sur cette annonce.", aiScamLoading: "🛡️ Analyse en cours...",
     aiScamDisclaimer: "Analyse automatique du texte, pas une preuve — restez vigilant et vérifiez avant de payer quoi que ce soit à l'avance.", splashSubtitle: "Artisans qualifiés près de vous", langModalTitle: "Choisissez votre langue",
+    offlineBannerText: "Pas de connexion internet — certaines actions peuvent échouer",
+    shareNewJobTitle: "Annonce publiée !", shareNewJobBody: "Partage-la maintenant sur WhatsApp pour toucher plus de monde dès les premières minutes.", shareNewJobBtn: "Partager sur WhatsApp",
     onbSkip: "Passer", onbNext: "Suivant", onbStart: "Commencer",
     onbTitle1: "Trouvez un pro près de chez vous", onbBody1: "Explorez la carte pour découvrir des artisans qualifiés autour de vous, avec leur note et leur distance.",
     onbTitle2: "Publiez votre besoin en quelques secondes", onbBody2: "Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.",
@@ -1718,6 +1780,7 @@ const I18N = {
     notifPrefsTitle: "Notifications", notifPrefsIntro: "Choisissez les catégories pour lesquelles vous voulez être notifié(e) des nouvelles offres. Décochez celles qui ne vous concernent pas.",
     notifPrimerTitle: "Ne ratez plus aucun job", notifPrimerBody: "Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.",
     notifPrimerLater: "Plus tard", notifPrimerEnable: "Activer les alertes",
+    boostExpiryTitle: "Ta mise en avant expire bientôt", boostExpiryBody: "\"{title}\" redescend dans le classement dans environ {hours}h.", boostExpiryRenewBtn: "Renouveler (1 crédit)",
     notifBlockedTip: "Notifications bloquées. Activez-les dans les réglages de votre navigateur pour ne plus rater de job.",
     notifDistanceLabel: "Distance maximale", notifDistanceHint: "Vous ne serez notifié(e) que pour les jobs situés dans ce rayon autour de votre position (nécessite la géolocalisation activée).",
     notifGpsNudgeTitle: "Position non activée", notifGpsNudgeBody: "Activez votre position pour que le filtre de distance ci-dessous fonctionne vraiment.", notifGpsNudgeBtn: "Activer",
@@ -1895,6 +1958,8 @@ const I18N = {
     aiPriceMinLength: "Fill in a title or description first before asking for a price.", aiPriceLoading: "💡 Calculating...", aiPriceEstimateLabel: "💡 Estimate:", aiPriceUseEstimation: "Use this estimate",
     aiPriceApplied: "Price applied", aiScamNothingToAnalyze: "Nothing to analyze on this listing.", aiScamLoading: "🛡️ Analyzing...",
     aiScamDisclaimer: "Automatic text analysis, not proof — stay alert and check before paying anything upfront.", splashSubtitle: "Qualified tradespeople near you", langModalTitle: "Choose your language",
+    offlineBannerText: "No internet connection — some actions may fail",
+    shareNewJobTitle: "Listing published!", shareNewJobBody: "Share it now on WhatsApp to reach more people in the first few minutes.", shareNewJobBtn: "Share on WhatsApp",
     onbSkip: "Skip", onbNext: "Next", onbStart: "Get started",
     onbTitle1: "Find a pro near you", onbBody1: "Browse the map to discover qualified tradespeople around you, with their rating and distance.",
     onbTitle2: "Post your need in seconds", onbBody2: "Tap the + button to describe what you need. Nearby providers are notified instantly.",
@@ -1944,6 +2009,7 @@ const I18N = {
     notifPrefsTitle: "Notifications", notifPrefsIntro: "Choose which categories you want to be notified about for new listings. Uncheck the ones that don't concern you.",
     notifPrimerTitle: "Never miss a job again", notifPrimerBody: "Get alerted the moment a new job in your categories is posted near you.",
     notifPrimerLater: "Later", notifPrimerEnable: "Enable alerts",
+    boostExpiryTitle: "Your boost is expiring soon", boostExpiryBody: "\"{title}\" will drop back in the ranking in about {hours}h.", boostExpiryRenewBtn: "Renew (1 credit)",
     notifBlockedTip: "Notifications are blocked. Enable them in your browser settings to stop missing new jobs.",
     notifDistanceLabel: "Maximum distance", notifDistanceHint: "You'll only be notified about jobs within this radius of your location (requires location enabled).",
     notifGpsNudgeTitle: "Location not enabled", notifGpsNudgeBody: "Turn on your location so the distance filter below actually works.", notifGpsNudgeBtn: "Enable",
@@ -2121,6 +2187,8 @@ const I18N = {
     aiPriceMinLength: "Inserisci prima un titolo o una descrizione prima di chiedere un prezzo.", aiPriceLoading: "💡 Calcolo in corso...", aiPriceEstimateLabel: "💡 Stima:", aiPriceUseEstimation: "Usa questa stima",
     aiPriceApplied: "Prezzo applicato", aiScamNothingToAnalyze: "Niente da analizzare in questo annuncio.", aiScamLoading: "🛡️ Analisi in corso...",
     aiScamDisclaimer: "Analisi automatica del testo, non una prova — resta vigile e verifica prima di pagare qualsiasi cosa in anticipo.", splashSubtitle: "Artigiani qualificati vicino a te", langModalTitle: "Scegli la tua lingua",
+    offlineBannerText: "Nessuna connessione internet — alcune azioni potrebbero non funzionare",
+    shareNewJobTitle: "Annuncio pubblicato!", shareNewJobBody: "Condividilo subito su WhatsApp per raggiungere più persone nei primi minuti.", shareNewJobBtn: "Condividi su WhatsApp",
     onbSkip: "Salta", onbNext: "Avanti", onbStart: "Inizia",
     onbTitle1: "Trova un professionista vicino a te", onbBody1: "Esplora la mappa per scoprire artigiani qualificati intorno a te, con valutazione e distanza.",
     onbTitle2: "Pubblica la tua richiesta in pochi secondi", onbBody2: "Tocca il pulsante + per descrivere ciò di cui hai bisogno. I professionisti vicini vengono avvisati subito.",
@@ -2170,6 +2238,7 @@ const I18N = {
     notifPrefsTitle: "Notifiche", notifPrefsIntro: "Scegli le categorie per cui vuoi ricevere notifiche di nuovi annunci. Deseleziona quelle che non ti interessano.",
     notifPrimerTitle: "Non perdere più nessun lavoro", notifPrimerBody: "Ricevi un avviso non appena viene pubblicato un nuovo lavoro nelle tue categorie vicino a te.",
     notifPrimerLater: "Più tardi", notifPrimerEnable: "Attiva gli avvisi",
+    boostExpiryTitle: "La tua promozione sta per scadere", boostExpiryBody: "\"{title}\" scenderà in classifica tra circa {hours}h.", boostExpiryRenewBtn: "Rinnova (1 credito)",
     notifBlockedTip: "Notifiche bloccate. Attivale nelle impostazioni del browser per non perdere nuovi lavori.",
     notifDistanceLabel: "Distanza massima", notifDistanceHint: "Riceverai notifiche solo per i lavori entro questo raggio dalla tua posizione (richiede la geolocalizzazione attiva).",
     notifGpsNudgeTitle: "Posizione non attivata", notifGpsNudgeBody: "Attiva la tua posizione perché il filtro di distanza qui sotto funzioni davvero.", notifGpsNudgeBtn: "Attiva",
@@ -2347,6 +2416,8 @@ const I18N = {
     aiPriceMinLength: "Geben Sie zuerst einen Titel oder eine Beschreibung ein, bevor Sie einen Preis anfordern.", aiPriceLoading: "💡 Wird berechnet...", aiPriceEstimateLabel: "💡 Schätzung:", aiPriceUseEstimation: "Diese Schätzung verwenden",
     aiPriceApplied: "Preis übernommen", aiScamNothingToAnalyze: "Nichts zu analysieren bei dieser Anzeige.", aiScamLoading: "🛡️ Wird analysiert...",
     aiScamDisclaimer: "Automatische Textanalyse, kein Beweis — bleiben Sie wachsam und prüfen Sie, bevor Sie im Voraus etwas bezahlen.", splashSubtitle: "Qualifizierte Handwerker in Ihrer Nähe", langModalTitle: "Wählen Sie Ihre Sprache",
+    offlineBannerText: "Keine Internetverbindung — einige Aktionen funktionieren möglicherweise nicht",
+    shareNewJobTitle: "Anzeige veröffentlicht!", shareNewJobBody: "Teile sie jetzt auf WhatsApp, um in den ersten Minuten mehr Leute zu erreichen.", shareNewJobBtn: "Auf WhatsApp teilen",
     onbSkip: "Überspringen", onbNext: "Weiter", onbStart: "Loslegen",
     onbTitle1: "Finden Sie einen Profi in Ihrer Nähe", onbBody1: "Durchsuchen Sie die Karte, um qualifizierte Handwerker in Ihrer Nähe mit Bewertung und Entfernung zu entdecken.",
     onbTitle2: "Veröffentlichen Sie Ihren Bedarf in Sekunden", onbBody2: "Tippen Sie auf +, um zu beschreiben, was Sie brauchen. Anbieter in der Nähe werden sofort benachrichtigt.",
@@ -2396,6 +2467,7 @@ const I18N = {
     notifPrefsTitle: "Benachrichtigungen", notifPrefsIntro: "Wählen Sie die Kategorien, für die Sie über neue Angebote benachrichtigt werden möchten. Deaktivieren Sie die, die Sie nicht betreffen.",
     notifPrimerTitle: "Verpassen Sie keinen Job mehr", notifPrimerBody: "Werden Sie sofort benachrichtigt, wenn ein neuer Job in Ihren Kategorien in Ihrer Nähe veröffentlicht wird.",
     notifPrimerLater: "Später", notifPrimerEnable: "Benachrichtigungen aktivieren",
+    boostExpiryTitle: "Deine Hervorhebung läuft bald ab", boostExpiryBody: "\"{title}\" fällt in etwa {hours}Std. wieder in der Rangliste zurück.", boostExpiryRenewBtn: "Verlängern (1 Guthaben)",
     notifBlockedTip: "Benachrichtigungen sind blockiert. Aktivieren Sie sie in den Browsereinstellungen, um keine neuen Jobs mehr zu verpassen.",
     notifDistanceLabel: "Maximale Entfernung", notifDistanceHint: "Sie werden nur über Jobs in diesem Umkreis um Ihren Standort benachrichtigt (Standortfreigabe erforderlich).",
     notifGpsNudgeTitle: "Standort nicht aktiviert", notifGpsNudgeBody: "Aktivieren Sie Ihren Standort, damit der Entfernungsfilter unten wirklich funktioniert.", notifGpsNudgeBtn: "Aktivieren",
@@ -2573,6 +2645,8 @@ const I18N = {
     aiPriceMinLength: "请先填写标题或描述,然后再请求价格建议。", aiPriceLoading: "💡 计算中...", aiPriceEstimateLabel: "💡 估算:", aiPriceUseEstimation: "使用此估算",
     aiPriceApplied: "价格已应用", aiScamNothingToAnalyze: "此信息暂无可分析内容。", aiScamLoading: "🛡️ 分析中...",
     aiScamDisclaimer: "此为文本自动分析结果,并非证据 — 请保持警惕,在提前付款前务必核实。", splashSubtitle: "身边的专业工匠", langModalTitle: "选择您的语言",
+    offlineBannerText: "无网络连接 — 部分操作可能无法完成",
+    shareNewJobTitle: "发布成功！", shareNewJobBody: "现在就分享到WhatsApp，在最初几分钟触达更多人。", shareNewJobBtn: "分享到WhatsApp",
     onbSkip: "跳过", onbNext: "下一步", onbStart: "开始使用",
     onbTitle1: "寻找您附近的专业人士", onbBody1: "浏览地图,发现您周围合格的工匠,查看他们的评分和距离。",
     onbTitle2: "几秒钟内发布您的需求", onbBody2: "点击 + 按钮描述您的需求,附近的服务商会立即收到通知。",
@@ -2622,6 +2696,7 @@ const I18N = {
     notifPrefsTitle: "通知", notifPrefsIntro: "选择您希望收到新发布通知的类别。取消勾选与您无关的类别。",
     notifPrimerTitle: "不再错过任何工作机会", notifPrimerBody: "您所在分类附近一有新工作发布，立即通知您。",
     notifPrimerLater: "以后再说", notifPrimerEnable: "开启提醒",
+    boostExpiryTitle: "你的置顶推广即将到期", boostExpiryBody: "\"{title}\" 大约 {hours} 小时后将回落排名。", boostExpiryRenewBtn: "续期(1个额度)",
     notifBlockedTip: "通知已被屏蔽。请在浏览器设置中开启通知，以免错过新工作。",
     notifDistanceLabel: "最大距离", notifDistanceHint: "只有在此范围内的工作机会才会通知您（需要开启定位）。",
     notifGpsNudgeTitle: "定位未开启", notifGpsNudgeBody: "开启定位后，下面的距离筛选才能真正生效。", notifGpsNudgeBtn: "开启",
@@ -3489,10 +3564,11 @@ async function addJob() {
         await db.ref('jobs/' + editingJobId).update(jobData);
         showToast(t('jobUpdated'), 'success');
       } else {
-        await db.ref('jobs').push(jobData);
+        const newRef = await db.ref('jobs').push(jobData);
         showToast(t('jobPublished'), 'success');
         bumpDailyStat('jobsPublished');
         triggerInstantNotify();
+        promptShareNewJob(newRef.key, jobData);
       }
       editingJobId = null;
       resetJobForm();
@@ -4565,6 +4641,44 @@ async function openMyJobs() {
   closeOverlay('accountPage');
   openSheet('jobsSheet');
   updateJobsList(myJobs);
+  checkBoostExpiry(myJobs);
+}
+
+// Prévient le propriétaire quand une de ses annonces boostées arrive à
+// échéance sous 24h, avec un bouton pour la renouveler en un tap (réutilise
+// useBoostCredit(), déjà utilisé pour un premier boost — prolonger revient
+// au même : nouvelle échéance à +7 jours, un crédit consommé). Un seul
+// rappel affiché à la fois — la plus proche de l'échéance — et seulement
+// si un crédit est disponible, sinon rien à proposer.
+async function checkBoostExpiry(myJobs) {
+  const now = Date.now();
+  const soon = myJobs
+    .filter(j => j.boosted && j.boostedUntil > now && (j.boostedUntil - now) < 24 * 60 * 60 * 1000)
+    .sort((a, b) => a.boostedUntil - b.boostedUntil)[0];
+  if (!soon) return;
+
+  try {
+    const snap = await db.ref('profiles/' + currentUser.uid + '/boostCredits').once('value');
+    const credits = snap.val() || 0;
+    if (credits <= 0) return;
+
+    const hoursLeft = Math.max(1, Math.round((soon.boostedUntil - now) / (60 * 60 * 1000)));
+    const banner = document.getElementById('boostExpiryBanner');
+    const body = document.getElementById('boostExpiryBody');
+    const renewBtn = document.getElementById('boostExpiryRenewBtn');
+    if (!banner || !body || !renewBtn) return;
+
+    body.textContent = t('boostExpiryBody').replace('{title}', soon.title).replace('{hours}', hoursLeft);
+    renewBtn.onclick = async () => { await useBoostCredit(soon.id); dismissBoostExpiryBanner(); };
+    banner.style.display = 'block';
+  } catch (e) {
+    console.warn('checkBoostExpiry error', e);
+  }
+}
+
+function dismissBoostExpiryBanner() {
+  const banner = document.getElementById('boostExpiryBanner');
+  if (banner) banner.style.display = 'none';
 }
 
 // ===== PRÉFÉRENCES DE NOTIFICATION PAR CATÉGORIE =====
@@ -6995,6 +7109,20 @@ window.popupWhatsAppClick = async function(jobId) {
     }
 }
 
+// Logique de partage WhatsApp, factorisée pour être appelable soit depuis le
+// popup de la carte (job déjà dans jobsById), soit juste après la
+// publication d'une annonce (jobData tenu en main, pas encore forcément
+// synchronisé dans jobsById à cet instant précis — voir promptShareNewJob).
+function shareJobViaWhatsApp(jobId, job) {
+    const link = getJobShareLink(jobId);
+    const displayContent = getJobDisplayContent(job);
+    const requirementsBlock = displayContent.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + displayContent.requirements : '';
+    const phonesText = job.phone2 ? (job.phone + t('waMsgOrConnector') + job.phone2) : (job.phone || '—');
+    const message = t('waMsgShareJob').replace('{title}', (displayContent.title || '').toUpperCase()).replace('{desc}', displayContent.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.landmark || 'Non spécifié').replace('{price}', job.price).replace('{phone}', phonesText).replace('{link}', link);
+    openWhatsAppReliably(null, null, message);
+    showToast(t('sharedOnWhatsapp'), 'success');
+}
+
 window.popupShareClick = function(jobId) {
     // Ouvert à tout le monde, connecté ou non — c'est le principal levier
     // de croissance virale de l'app.
@@ -7004,13 +7132,16 @@ window.popupShareClick = function(jobId) {
         alert(t('jobNotFoundAlert'));
         return;
     }
-    const link = getJobShareLink(jobId);
-    const displayContent = getJobDisplayContent(job);
-    const requirementsBlock = displayContent.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + displayContent.requirements : '';
-    const phonesText = job.phone2 ? (job.phone + t('waMsgOrConnector') + job.phone2) : (job.phone || '—');
-    const message = t('waMsgShareJob').replace('{title}', (displayContent.title || '').toUpperCase()).replace('{desc}', displayContent.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.landmark || 'Non spécifié').replace('{price}', job.price).replace('{phone}', phonesText).replace('{link}', link);
-    openWhatsAppReliably(null, null, message);
-    showToast(t('sharedOnWhatsapp'), 'success');
+    shareJobViaWhatsApp(jobId, job);
+}
+
+// Propose de partager l'annonce tout de suite après une publication réussie.
+function promptShareNewJob(jobId, job) {
+    const modal = document.getElementById('shareNewJobModal');
+    const btn = document.getElementById('shareNewJobBtn');
+    if (!modal || !btn) return;
+    btn.onclick = () => { modal.style.display = 'none'; shareJobViaWhatsApp(jobId, job); };
+    modal.style.display = 'flex';
 }
  
 // ===== SYSTÈME D'AVIS =====
@@ -7973,6 +8104,7 @@ function updateThemeToggleUI(theme) {
 
 document.addEventListener('DOMContentLoaded', () => {
   updateThemeToggleUI(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+  initOfflineDetection();
 
   const input = document.getElementById('jobSearchInput');
   if (input) {
