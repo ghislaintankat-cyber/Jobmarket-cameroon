@@ -11,7 +11,7 @@
 </script>
   <meta name="google-site-verification" content="0_-xcrADFwsu6oefUuQE1JTLLzyfl-ptmIqpmvDb7fo" />
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#0A0A0F"/>
 <meta name="description" content="JobMarket Cameroon - Trouvez des artisans et jobs proches de vous"/>
 <title>JobMarket Cameroon</title>
@@ -122,7 +122,7 @@
    sauf --gold qui bascule sur sa variante plus foncée (--gold-dim) : du
    texte doré clair sur fond blanc serait illisible. */
 :root[data-theme="light"] {
-  --gold: #C9A800;
+  --gold: #857000; /* contraste WCAG AA (~4.9:1) sur fond blanc, contre 2.3:1 avant */
   --dark: #FFFFFF;
   --dark2: #F5F5FA;
   --dark3: #ECECF3;
@@ -1113,7 +1113,7 @@ body{
   <div class="sheet-handle"></div>
   <div class="sheet-header">
     <div class="sheet-title" data-i18n="publishTitle">Publier un Job</div>
-    <button class="icon-btn" onclick="toggleJobForm()" data-i18n-title="tipClose" title="Fermer">
+    <button class="icon-btn" onclick="toggleJobForm()" data-i18n-title="tipClose" title="Fermer" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
@@ -1194,7 +1194,7 @@ body{
       <span data-i18n="jobsNearby">Jobs proches</span>
       <span class="badge badge-gold" id="jobCountBadge">0</span>
     </div>
-    <button class="icon-btn" onclick="closeSheet('jobsSheet')" data-i18n-title="tipClose" title="Fermer">
+    <button class="icon-btn" onclick="closeSheet('jobsSheet')" data-i18n-title="tipClose" title="Fermer" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
@@ -1215,7 +1215,7 @@ body{
 <!-- ===== ACCOUNT PAGE ===== -->
 <div class="overlay-page" id="accountPage">
   <div class="overlay-header">
-    <button class="back-btn" onclick="closeOverlay('accountPage')">
+    <button class="back-btn" onclick="closeOverlay('accountPage')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="overlay-title" data-i18n="myAccount">Mon Compte</div>
@@ -1240,7 +1240,7 @@ body{
         </div>
         <div class="form-group">
           <label class="form-label" data-i18n="fieldPassword">Mot de passe</label>
-          <input class="form-input" id="password" type="password" data-i18n-placeholder="phPassword" placeholder="Minimum 6 caracteres" required minlength="6" maxlength="100"/>
+          <input class="form-input" id="password" type="password" data-i18n-placeholder="phPassword" placeholder="Minimum 8 caracteres" required minlength="8" maxlength="100"/>
         </div>
         <button class="btn btn-primary" id="authMainBtn" onclick="signupEmail()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1306,7 +1306,7 @@ body{
 <!-- ===== NOTIFICATION PREFS ===== -->
 <div class="overlay-page" id="notifPrefsPage">
   <div class="overlay-header">
-    <button class="back-btn" onclick="closeOverlay('notifPrefsPage')">
+    <button class="back-btn" onclick="closeOverlay('notifPrefsPage')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="overlay-title" data-i18n="notifPrefsTitle">Notifications</div>
@@ -1322,7 +1322,7 @@ body{
  <!-- ===== ADMIN PANEL ===== -->
 <div class="overlay-page" id="adminPanel">
   <div class="overlay-header">
-    <button class="back-btn" onclick="closeOverlay('adminPanel')">
+    <button class="back-btn" onclick="closeOverlay('adminPanel')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="overlay-title" data-i18n="adminDashboard">Dashboard Admin</div>
@@ -1386,7 +1386,7 @@ body{
 <!-- ===== CHAT PAGE ===== -->
 <div class="overlay-page" id="chatPage">
   <div class="overlay-header">
-    <button class="back-btn" onclick="closeOverlay('chatPage')">
+    <button class="back-btn" onclick="closeOverlay('chatPage')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="overlay-title" data-i18n="chatPanelTitle">Assistant sécurisé</div>
@@ -1413,7 +1413,7 @@ body{
 <!-- ===== SIGNALEMENT D'UNE ANNONCE ===== -->
 <div class="overlay-page" id="reportModal">
   <div class="overlay-header">
-    <button class="back-btn" onclick="closeOverlay('reportModal')">
+    <button class="back-btn" onclick="closeOverlay('reportModal')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <div class="overlay-title" data-i18n="reportModalTitle">Signaler cette annonce</div>
@@ -1578,16 +1578,24 @@ function syncProfilesCache() {
     if (!initialLoadDone) return; // déjà traité par le chargement initial ci-dessus
     profilesCache[snap.key] = snap.val();
     if (allJobs.length) updateJobsList(allJobs);
+    if (typeof refreshAllPopupsLanguage === 'function') refreshAllPopupsLanguage();
   });
 
   profilesQuery.on('child_changed', snap => {
     profilesCache[snap.key] = snap.val();
     if (allJobs.length) updateJobsList(allJobs);
+    // Les popups de la carte (badge vérifié, étoiles) affichent aussi des
+    // données de profil — sans ceci, une note mise à jour juste après un
+    // avis (voir rating-sync.js) n'apparaissait qu'après avoir fermé puis
+    // rouvert le popup manuellement.
+    if (typeof refreshAllPopupsLanguage === 'function') refreshAllPopupsLanguage();
+    refreshOpenPreviewIfShowingProfile(snap.key);
   });
 
   profilesQuery.on('child_removed', snap => {
     delete profilesCache[snap.key];
     if (allJobs.length) updateJobsList(allJobs);
+    if (typeof refreshAllPopupsLanguage === 'function') refreshAllPopupsLanguage();
   });
 }
 let userMarker = null;
@@ -1750,6 +1758,8 @@ const I18N = {
     offlineBannerText: "Pas de connexion internet — certaines actions peuvent échouer",
     shareNewJobTitle: "Annonce publiée !", shareNewJobBody: "Partage-la maintenant sur WhatsApp pour toucher plus de monde dès les premières minutes.", shareNewJobBtn: "Partager sur WhatsApp",
     copyLinkBtn: "Copier le lien", linkCopied: "Lien copié !", copyLinkFailed: "Impossible de copier le lien",
+    markAsFilled: "Marquer comme pourvu", markAsOpenAgain: "Réactiver l'annonce", filledBadgeLabel: "Pourvu",
+    toastMarkedFilled: "Annonce marquée comme pourvue — elle n'apparaît plus publiquement.", toastMarkedOpenAgain: "Annonce réactivée — elle est de nouveau visible.",
     onbSkip: "Passer", onbNext: "Suivant", onbStart: "Commencer",
     onbTitle1: "Trouvez un pro près de chez vous", onbBody1: "Explorez la carte pour découvrir des artisans qualifiés autour de vous, avec leur note et leur distance.",
     onbTitle2: "Publiez votre besoin en quelques secondes", onbBody2: "Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.",
@@ -1793,7 +1803,7 @@ const I18N = {
     uploadSub: "JPG, PNG, WEBP — Max 5 images, 8 Mo chacune", publishNow: "Publier maintenant",
     jobsNearby: "Jobs proches", emptyTitle: "Aucun job trouve", emptySub: "Publiez le premier job dans cette zone",
     myAccount: "Mon Compte", userFallback: "Utilisateur", notConnected: "Non connecte", profileIncomplete: "Profil incomplet",
-    tabSignup: "Creer compte", tabLogin: "Connexion", fieldPassword: "Mot de passe", phPassword: "Minimum 6 caracteres",
+    tabSignup: "Creer compte", tabLogin: "Connexion", fieldPassword: "Mot de passe", phPassword: "Minimum 8 caracteres",
     createAccountBtn: "Creer mon compte", loginBtn: "Se connecter", forgotPassword: "Mot de passe oublié ?", orWord: "ou", continueGoogle: "Continuer avec Google",
     adminDashboard: "Dashboard Admin", secureChat: "Chat sécurisé", myListings: "Mes publications", myProProfile: "Mon Profil Pro",
     notifPrefsTitle: "Notifications", notifPrefsIntro: "Choisissez les catégories pour lesquelles vous voulez être notifié(e) des nouvelles offres. Décochez celles qui ne vous concernent pas.",
@@ -1945,6 +1955,7 @@ const I18N = {
     emailVerifiedTitle: "Email vérifié",
     verifiedBadgeLabel: "Vérifié",
     closeAriaLabel: "Fermer",
+    backAriaLabel: "Retour",
     faqAriaLabel: "Questions fréquentes",
     altSelfieSubmitted: "Selfie de vérification soumis",
     altIdSubmitted: "Pièce d'identité soumise",
@@ -1981,6 +1992,8 @@ const I18N = {
     offlineBannerText: "No internet connection — some actions may fail",
     shareNewJobTitle: "Listing published!", shareNewJobBody: "Share it now on WhatsApp to reach more people in the first few minutes.", shareNewJobBtn: "Share on WhatsApp",
     copyLinkBtn: "Copy link", linkCopied: "Link copied!", copyLinkFailed: "Couldn't copy the link",
+    markAsFilled: "Mark as filled", markAsOpenAgain: "Reopen listing", filledBadgeLabel: "Filled",
+    toastMarkedFilled: "Listing marked as filled — no longer shown publicly.", toastMarkedOpenAgain: "Listing reopened — visible again.",
     onbSkip: "Skip", onbNext: "Next", onbStart: "Get started",
     onbTitle1: "Find a pro near you", onbBody1: "Browse the map to discover qualified tradespeople around you, with their rating and distance.",
     onbTitle2: "Post your need in seconds", onbBody2: "Tap the + button to describe what you need. Nearby providers are notified instantly.",
@@ -2024,7 +2037,7 @@ const I18N = {
     uploadSub: "JPG, PNG, WEBP — Max 5 images, 8 MB each", publishNow: "Publish now",
     jobsNearby: "Nearby jobs", emptyTitle: "No jobs found", emptySub: "Post the first job in this area",
     myAccount: "My Account", userFallback: "User", notConnected: "Not logged in", profileIncomplete: "Incomplete profile",
-    tabSignup: "Sign up", tabLogin: "Log in", fieldPassword: "Password", phPassword: "Minimum 6 characters",
+    tabSignup: "Sign up", tabLogin: "Log in", fieldPassword: "Password", phPassword: "Minimum 8 characters",
     createAccountBtn: "Create my account", loginBtn: "Log in", forgotPassword: "Forgot password?", orWord: "or", continueGoogle: "Continue with Google",
     adminDashboard: "Admin Dashboard", secureChat: "Secure chat", myListings: "My listings", myProProfile: "My Pro Profile",
     notifPrefsTitle: "Notifications", notifPrefsIntro: "Choose which categories you want to be notified about for new listings. Uncheck the ones that don't concern you.",
@@ -2176,6 +2189,7 @@ const I18N = {
     emailVerifiedTitle: "Email verified",
     verifiedBadgeLabel: "Verified",
     closeAriaLabel: "Close",
+    backAriaLabel: "Back",
     faqAriaLabel: "Frequently asked questions",
     altSelfieSubmitted: "Verification selfie submitted",
     altIdSubmitted: "ID document submitted",
@@ -2212,6 +2226,8 @@ const I18N = {
     offlineBannerText: "Nessuna connessione internet — alcune azioni potrebbero non funzionare",
     shareNewJobTitle: "Annuncio pubblicato!", shareNewJobBody: "Condividilo subito su WhatsApp per raggiungere più persone nei primi minuti.", shareNewJobBtn: "Condividi su WhatsApp",
     copyLinkBtn: "Copia il link", linkCopied: "Link copiato!", copyLinkFailed: "Impossibile copiare il link",
+    markAsFilled: "Segna come coperto", markAsOpenAgain: "Riattiva annuncio", filledBadgeLabel: "Coperto",
+    toastMarkedFilled: "Annuncio segnato come coperto — non più visibile pubblicamente.", toastMarkedOpenAgain: "Annuncio riattivato — di nuovo visibile.",
     onbSkip: "Salta", onbNext: "Avanti", onbStart: "Inizia",
     onbTitle1: "Trova un professionista vicino a te", onbBody1: "Esplora la mappa per scoprire artigiani qualificati intorno a te, con valutazione e distanza.",
     onbTitle2: "Pubblica la tua richiesta in pochi secondi", onbBody2: "Tocca il pulsante + per descrivere ciò di cui hai bisogno. I professionisti vicini vengono avvisati subito.",
@@ -2255,7 +2271,7 @@ const I18N = {
     uploadSub: "JPG, PNG, WEBP — Max 5 immagini, 8 MB ciascuna", publishNow: "Pubblica ora",
     jobsNearby: "Lavori vicini", emptyTitle: "Nessun lavoro trovato", emptySub: "Pubblica il primo lavoro in questa zona",
     myAccount: "Il mio account", userFallback: "Utente", notConnected: "Non connesso", profileIncomplete: "Profilo incompleto",
-    tabSignup: "Crea account", tabLogin: "Accedi", fieldPassword: "Password", phPassword: "Minimo 6 caratteri",
+    tabSignup: "Crea account", tabLogin: "Accedi", fieldPassword: "Password", phPassword: "Minimo 8 caratteri",
     createAccountBtn: "Crea il mio account", loginBtn: "Accedi", forgotPassword: "Password dimenticata?", orWord: "oppure", continueGoogle: "Continua con Google",
     adminDashboard: "Pannello Admin", secureChat: "Chat sicura", myListings: "I miei annunci", myProProfile: "Il mio profilo Pro",
     notifPrefsTitle: "Notifiche", notifPrefsIntro: "Scegli le categorie per cui vuoi ricevere notifiche di nuovi annunci. Deseleziona quelle che non ti interessano.",
@@ -2407,6 +2423,7 @@ const I18N = {
     emailVerifiedTitle: "Email verificata",
     verifiedBadgeLabel: "Verificato",
     closeAriaLabel: "Chiudi",
+    backAriaLabel: "Indietro",
     faqAriaLabel: "Domande frequenti",
     altSelfieSubmitted: "Selfie di verifica inviato",
     altIdSubmitted: "Documento d'identità inviato",
@@ -2443,6 +2460,8 @@ const I18N = {
     offlineBannerText: "Keine Internetverbindung — einige Aktionen funktionieren möglicherweise nicht",
     shareNewJobTitle: "Anzeige veröffentlicht!", shareNewJobBody: "Teile sie jetzt auf WhatsApp, um in den ersten Minuten mehr Leute zu erreichen.", shareNewJobBtn: "Auf WhatsApp teilen",
     copyLinkBtn: "Link kopieren", linkCopied: "Link kopiert!", copyLinkFailed: "Link konnte nicht kopiert werden",
+    markAsFilled: "Als besetzt markieren", markAsOpenAgain: "Anzeige reaktivieren", filledBadgeLabel: "Besetzt",
+    toastMarkedFilled: "Anzeige als besetzt markiert — nicht mehr öffentlich sichtbar.", toastMarkedOpenAgain: "Anzeige reaktiviert — wieder sichtbar.",
     onbSkip: "Überspringen", onbNext: "Weiter", onbStart: "Loslegen",
     onbTitle1: "Finden Sie einen Profi in Ihrer Nähe", onbBody1: "Durchsuchen Sie die Karte, um qualifizierte Handwerker in Ihrer Nähe mit Bewertung und Entfernung zu entdecken.",
     onbTitle2: "Veröffentlichen Sie Ihren Bedarf in Sekunden", onbBody2: "Tippen Sie auf +, um zu beschreiben, was Sie brauchen. Anbieter in der Nähe werden sofort benachrichtigt.",
@@ -2486,7 +2505,7 @@ const I18N = {
     uploadSub: "JPG, PNG, WEBP — Max. 5 Bilder, je 8 MB", publishNow: "Jetzt veröffentlichen",
     jobsNearby: "Jobs in der Nähe", emptyTitle: "Keine Jobs gefunden", emptySub: "Veröffentlichen Sie den ersten Job in dieser Gegend",
     myAccount: "Mein Konto", userFallback: "Benutzer", notConnected: "Nicht angemeldet", profileIncomplete: "Profil unvollständig",
-    tabSignup: "Konto erstellen", tabLogin: "Anmelden", fieldPassword: "Passwort", phPassword: "Mindestens 6 Zeichen",
+    tabSignup: "Konto erstellen", tabLogin: "Anmelden", fieldPassword: "Passwort", phPassword: "Mindestens 8 Zeichen",
     createAccountBtn: "Konto erstellen", loginBtn: "Anmelden", forgotPassword: "Passwort vergessen?", orWord: "oder", continueGoogle: "Mit Google fortfahren",
     adminDashboard: "Admin-Bereich", secureChat: "Sicherer Chat", myListings: "Meine Anzeigen", myProProfile: "Mein Profi-Profil",
     notifPrefsTitle: "Benachrichtigungen", notifPrefsIntro: "Wählen Sie die Kategorien, für die Sie über neue Angebote benachrichtigt werden möchten. Deaktivieren Sie die, die Sie nicht betreffen.",
@@ -2638,6 +2657,7 @@ const I18N = {
     emailVerifiedTitle: "E-Mail verifiziert",
     verifiedBadgeLabel: "Verifiziert",
     closeAriaLabel: "Schließen",
+    backAriaLabel: "Zurück",
     faqAriaLabel: "Häufig gestellte Fragen",
     altSelfieSubmitted: "Verifizierungs-Selfie eingereicht",
     altIdSubmitted: "Ausweisdokument eingereicht",
@@ -2674,6 +2694,8 @@ const I18N = {
     offlineBannerText: "无网络连接 — 部分操作可能无法完成",
     shareNewJobTitle: "发布成功！", shareNewJobBody: "现在就分享到WhatsApp，在最初几分钟触达更多人。", shareNewJobBtn: "分享到WhatsApp",
     copyLinkBtn: "复制链接", linkCopied: "链接已复制！", copyLinkFailed: "无法复制链接",
+    markAsFilled: "标记为已完成", markAsOpenAgain: "重新开放", filledBadgeLabel: "已完成",
+    toastMarkedFilled: "已标记为完成——不再公开显示。", toastMarkedOpenAgain: "已重新开放——再次可见。",
     onbSkip: "跳过", onbNext: "下一步", onbStart: "开始使用",
     onbTitle1: "寻找您附近的专业人士", onbBody1: "浏览地图,发现您周围合格的工匠,查看他们的评分和距离。",
     onbTitle2: "几秒钟内发布您的需求", onbBody2: "点击 + 按钮描述您的需求,附近的服务商会立即收到通知。",
@@ -2717,7 +2739,7 @@ const I18N = {
     uploadSub: "JPG, PNG, WEBP — 最多5张图片,每张8MB", publishNow: "立即发布",
     jobsNearby: "附近的工作", emptyTitle: "未找到工作", emptySub: "在该区域发布第一份工作",
     myAccount: "我的账户", userFallback: "用户", notConnected: "未登录", profileIncomplete: "个人资料不完整",
-    tabSignup: "创建账户", tabLogin: "登录", fieldPassword: "密码", phPassword: "至少6个字符",
+    tabSignup: "创建账户", tabLogin: "登录", fieldPassword: "密码", phPassword: "至少8个字符",
     createAccountBtn: "创建我的账户", loginBtn: "登录", forgotPassword: "忘记密码?", orWord: "或", continueGoogle: "使用Google继续",
     adminDashboard: "管理员面板", secureChat: "安全聊天", myListings: "我的发布", myProProfile: "我的专业资料",
     notifPrefsTitle: "通知", notifPrefsIntro: "选择您希望收到新发布通知的类别。取消勾选与您无关的类别。",
@@ -2869,6 +2891,7 @@ const I18N = {
     emailVerifiedTitle: "邮箱已验证",
     verifiedBadgeLabel: "已认证",
     closeAriaLabel: "关闭",
+    backAriaLabel: "返回",
     faqAriaLabel: "常见问题",
     altSelfieSubmitted: "已提交验证自拍照",
     altIdSubmitted: "已提交身份证件",
@@ -2989,6 +3012,17 @@ const SHARE_PREVIEW_URL = 'https://jobmarket-share.ghislaintankat.workers.dev';
 // restera temporairement en retard d'un avis (elle se corrigera au
 // prochain avis soumis avec succès).
 const RATING_SYNC_URL = 'https://jobmarket-rating-sync.ghislaintankat.workers.dev';
+
+// URL du worker d'activation de boost (voir worker/activate-boost.js) : le
+// client ne peut plus écrire jobs/{id}/boosted ni boostedUntil lui-même
+// (voir database.rules.json — réservés aux admins) ni faire confiance à un
+// update() multi-chemins pour lier ça à la dépense d'un crédit, puisque les
+// règles Firebase valident chaque champ indépendamment. Ce worker vérifie
+// le vrai ID token de l'utilisateur, relit son solde de crédits réel, et
+// écrit boosted+boostedUntil+boostCredits ensemble avec des privilèges
+// admin — remplace à toi seul l'ancienne logique de useBoostCredit().
+// IMPORTANT : à remplacer par l'URL réelle une fois le worker déployé.
+const BOOST_ACTIVATE_URL = 'https://jobmarket-activate-boost.ghislaintankat.workers.dev';
 
 function syncOwnerRating(jobOwnerUid) {
   try {
@@ -4067,13 +4101,13 @@ function updateJobsList(jobs) {
 
   // On génère les cartes et on ajoute openJobPreview('${job.id}') au clic !
   list.innerHTML = jobs.map((job, i) => `
-    <div class="job-card" style="animation-delay:${i*0.04}s${(job.boosted && job.boostedUntil > Date.now()) ? ';border:1px solid var(--gold,#FFD700);' : ''}" onclick="focusJob(${job.lat},${job.lng}); openJobPreview('${job.id}')">
+    <div class="job-card" style="animation-delay:${i*0.04}s${(job.boosted && job.boostedUntil > Date.now()) ? ';border:1px solid var(--gold,#FFD700);' : ''}${job.status === 'filled' ? ';opacity:0.6;' : ''}" onclick="focusJob(${job.lat},${job.lng}); openJobPreview('${job.id}')">
       <div class="job-card-icon" style="background:${job.color || '#FFD700'}22;">
         <span style="font-size:11px;font-weight:800;color:${job.color || '#FFD700'};">${getCatIcon(job.icon)}</span>
       </div>
       <div class="job-card-body">
-        <div class="job-card-title">${(job.boosted && job.boostedUntil > Date.now()) ? '🚀 ' : ''}${savedJobIds.has(job.id) ? '🔖 ' : ''}${escapeHtml(job.title)}</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${escapeHtml(job.landmark) || getCatLabel(job.icon)}</div>
+        <div class="job-card-title">${job.status === 'filled' ? '✅ ' : ''}${(job.boosted && job.boostedUntil > Date.now()) ? '🚀 ' : ''}${savedJobIds.has(job.id) ? '🔖 ' : ''}${escapeHtml(job.title)}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${job.status === 'filled' ? t('filledBadgeLabel') + ' · ' : ''}${escapeHtml(job.landmark) || getCatLabel(job.icon)}</div>
         <div class="job-card-meta">
           <span class="job-card-price">${job.price}</span>
           <span style="color:var(--text-dim);font-size:11px;">XAF</span>
@@ -4156,7 +4190,8 @@ function applyFilters() {
       (job.title && job.title.toLowerCase().includes(searchLower)) ||
       (job.desc && job.desc.toLowerCase().includes(searchLower));
     const matchesRadius = currentRadiusKm == null || (userCoords && job.dist <= currentRadiusKm);
-    return matchesCategory && matchesSearch && matchesRadius;
+    const notFilled = job.status !== 'filled';
+    return matchesCategory && matchesSearch && matchesRadius && notFilled;
   });
 
   updateJobsList(filtered);
@@ -6269,6 +6304,11 @@ async function openJobPreview(jobId) {
     if (ownerActionsEl) ownerActionsEl.classList.toggle('hidden', !isOwner);
     if (whatsAppBtnEl) whatsAppBtnEl.classList.toggle('hidden', isOwner);
 
+    const toggleFilledLabelEl = document.getElementById('previewToggleFilledLabel');
+    if (toggleFilledLabelEl) {
+      toggleFilledLabelEl.textContent = job.status === 'filled' ? t('markAsOpenAgain') : t('markAsFilled');
+    }
+
     // Pas utile d'analyser sa propre annonce pour des signaux d'alerte, et on
     // réinitialise l'affichage à chaque ouverture pour ne pas montrer le
     // résultat d'une annonce précédente.
@@ -6388,6 +6428,29 @@ async function openJobPreview(jobId) {
     document.getElementById('jobPreviewDrawer').classList.add('open');
 }
 
+// Bascule le statut "pourvu" d'une annonce (réservé au propriétaire). Une
+// annonce pourvue disparaît de la carte/liste publiques (voir applyFilters,
+// filtre notFilled) mais reste visible dans "Mes publications" — on ne
+// supprime rien, juste un champ status, réversible en un tap si besoin
+// (ex: le prestataire trouvé s'est finalement désisté).
+async function toggleJobFilledFromPreview() {
+    const job = window.currentPreviewJob;
+    if (!job) return;
+    if (!currentUser || job.user !== currentUser.uid) {
+        showToast(t('toastCantEditOthers'), 'error');
+        return;
+    }
+    const nowFilled = job.status !== 'filled';
+    try {
+        await db.ref('jobs/' + job.id).update({ status: nowFilled ? 'filled' : null });
+        showToast(nowFilled ? t('toastMarkedFilled') : t('toastMarkedOpenAgain'), 'success');
+        closeJobPreview();
+    } catch (e) {
+        console.error('toggleJobFilledFromPreview error', e);
+        showToast(t('toastSendErrorRetry'), 'error');
+    }
+}
+
 // Pré-remplit le formulaire avec les données existantes pour modifier une annonce
 function editJobFromPreview() {
     const job = window.currentPreviewJob;
@@ -6455,6 +6518,25 @@ function closeJobPreview() {
         drawer.classList.remove('open');
     }
 }
+
+// Si la modale détaillée OU la fiche de profil est actuellement ouverte et
+// affiche précisément CE prestataire, on rafraîchit sa note/ses avis tout
+// de suite (sans attendre une fermeture/réouverture manuelle) — typiquement
+// juste après qu'un avis vient d'être laissé et que rating-sync.js a
+// recalculé la note côté serveur.
+function refreshOpenPreviewIfShowingProfile(uid) {
+  const drawer = document.getElementById('jobPreviewDrawer');
+  const job = window.currentPreviewJob;
+  if (drawer && drawer.classList.contains('open') && job && job.user === uid) {
+    renderOwnerReviews(job.user);
+  }
+
+  const profileSheet = document.getElementById('profileSheet');
+  if (profileSheet && profileSheet.classList.contains('open') && window.currentProfileSheetUid === uid) {
+    renderProfileBadgeAndRating(profilesCache[uid] || {});
+    renderOwnerReviews(uid, 'profileReviewsBox');
+  }
+}
  
  // Fonction pour ouvrir un panneau et charger les données de l'utilisateur
 // ==========================================
@@ -6494,6 +6576,7 @@ async function viewUserProfile(uid) {
     if (!sheet) return;
 
     sheet.classList.add('open');
+    window.currentProfileSheetUid = uid; // pour refreshOpenPreviewIfShowingProfile()
 
     try {
         const snapshot = await db.ref(`profiles/${uid}`).once('value');
@@ -6788,17 +6871,24 @@ async function useBoostCredit(jobId) {
         const credits = snap.val() || 0;
         if (credits <= 0) { showToast(t('toastNoCreditsAvailable'), 'error'); return; }
 
-        // Écriture ATOMIQUE : les deux changements (activer le boost ET
-        // dépenser le crédit) passent ensemble ou pas du tout. Avant, deux
-        // écritures séparées laissaient une fenêtre où quelqu'un pouvait en
-        // théorie déclencher le boost sans jamais faire aboutir la
-        // dépense du crédit — voir aussi la règle Firebase associée, qui
-        // vérifie indépendamment que le crédit a bien été décrémenté.
-        const updates = {};
-        updates['jobs/' + jobId + '/boosted'] = true;
-        updates['jobs/' + jobId + '/boostedUntil'] = Date.now() + 7 * 24 * 60 * 60 * 1000;
-        updates['profiles/' + user.uid + '/boostCredits'] = credits - 1;
-        await db.ref().update(updates);
+        // L'activation elle-même passe désormais par un worker serveur (voir
+        // worker/activate-boost.js) : lui seul peut lier de façon fiable
+        // l'écriture de jobs/{id}/boosted+boostedUntil à la dépense réelle
+        // d'un crédit, puisque les règles Firebase valident chaque champ
+        // indépendamment et ne peuvent pas garantir qu'un update() multi-
+        // chemins côté client a bien touché les deux à la fois. Le worker
+        // vérifie aussi que ce job appartient bien à l'utilisateur courant.
+        const idToken = await user.getIdToken();
+        const res = await fetch(BOOST_ACTIVATE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken, jobId })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+            if (data.error === 'no_credits') { showToast(t('toastNoCreditsAvailable'), 'error'); return; }
+            throw new Error(data.error || 'boost_failed');
+        }
 
         showToast(t('toastBoostedSeven'), 'success');
         bumpDailyStat('boostsUsed');
@@ -7661,7 +7751,7 @@ document.addEventListener('click', (e) => {
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
         <span class="drawer-badge" id="previewCategory">Catégorie</span>
-        <button class="close-drawer-btn" onclick="closeJobPreview()">&times;</button>
+        <button class="close-drawer-btn" onclick="closeJobPreview()" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">&times;</button>
     </div>
     
     <div class="drawer-body">
@@ -7704,6 +7794,10 @@ document.addEventListener('click', (e) => {
     
     <div class="drawer-footer">
         <div id="previewOwnerActions" class="hidden">
+            <button class="btn btn-ghost" id="previewToggleFilledBtn" onclick="toggleJobFilledFromPreview()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                <span id="previewToggleFilledLabel" data-i18n="markAsFilled">Marquer comme pourvu</span>
+            </button>
             <button class="btn btn-primary" onclick="editJobFromPreview()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 <span data-i18n="editListing">Modifier l'annonce</span>
@@ -8203,7 +8297,7 @@ document.addEventListener('click', (e) => {
         Changer photo
     </button>
 </div>
-        <button onclick="closeSheet('profileSheet')" class="sheet-close-btn">✕</button>
+        <button onclick="closeSheet('profileSheet')" class="sheet-close-btn" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">✕</button>
     </div>
     <div class="sheet-content" style="padding: 24px; flex: 1; overflow-y: auto;">
         <div class="profile-form-group">
