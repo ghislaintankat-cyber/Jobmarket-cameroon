@@ -4135,7 +4135,7 @@ function updateJobsList(jobs) {
         <span style="font-size:11px;font-weight:800;color:${job.color || '#FFD700'};">${getCatIcon(job.icon)}</span>
       </div>
       <div class="job-card-body">
-        <div class="job-card-title">${job.status === 'filled' ? '✅ ' : ''}${(job.boosted && job.boostedUntil > Date.now()) ? '🚀 ' : ''}${savedJobIds.has(job.id) ? '🔖 ' : ''}${escapeHtml(job.title)}</div>
+        <div class="job-card-title">${job.status === 'filled' ? '✅ ' : ''}${(job.boosted && job.boostedUntil > Date.now()) ? '🚀 ' : ''}${((profilesCache[job.user]||{}).isPro && ((profilesCache[job.user]||{}).proUntil||0) > Date.now()) ? '⭐ ' : ''}${savedJobIds.has(job.id) ? '🔖 ' : ''}${escapeHtml(job.title)}</div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${job.status === 'filled' ? t('filledBadgeLabel') + ' · ' : ''}${escapeHtml(job.landmark) || getCatLabel(job.icon)}</div>
         <div class="job-card-meta">
           <span class="job-card-price">${job.price}</span>
@@ -4150,15 +4150,21 @@ function updateJobsList(jobs) {
         ${(() => {
           const p = profilesCache[job.user] || {};
           let badge = '';
-          if (p.verified) {
-            badge = `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>`;
-          } else if (p.phoneVerified) {
-            badge = `<span title="${t('whatsappVerifiedTitle')}" style="font-size:11px;color:var(--green,#25D366);">📱</span>`;
-          } else if (p.emailVerified) {
-            badge = `<span title="${t('emailVerifiedTitle')}" style="font-size:11px;color:var(--text-dim);">✉️</span>`;
+          // Badge PRO doré (abonné actif) — affiché en priorité pour se démarquer
+          if (p.isPro && (p.proUntil || 0) > Date.now()) {
+            badge += `<span title="Artisan PRO" style="font-size:10px;font-weight:800;color:#0A0A0F;background:linear-gradient(135deg,#FFD700,#E6B800);padding:2px 6px;border-radius:8px;">PRO</span>`;
           }
+          if (p.verified) {
+            badge += `<svg class="job-card-verified" viewBox="0 0 24 24" fill="var(--blue)"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>`;
+          } else if (p.phoneVerified) {
+            badge += `<span title="${t('whatsappVerifiedTitle')}" style="font-size:11px;color:var(--green,#25D366);">📱</span>`;
+          } else if (p.emailVerified) {
+            badge += `<span title="${t('emailVerifiedTitle')}" style="font-size:11px;color:var(--text-dim);">✉️</span>`;
+          }
+          const avail = availabilityBadge(p);
+          const activity = avail ? '' : activityBadge(p); // évite d'empiler dispo + actif
           const rating = p.ratingCount ? `<span style="font-size:11px;color:#FFD700;font-weight:700;">★ ${p.ratingAvg.toFixed(1)}</span>` : '';
-          return badge + rating;
+          return badge + avail + activity + rating;
         })()}
       </div>
     </div>
@@ -6319,6 +6325,14 @@ async function openJobPreview(jobId) {
 
     window.currentPreviewJob = job;
 
+    // ===== STATISTIQUES : compter une vue pour le propriétaire de l'annonce =====
+    // (on ne compte pas si l'utilisateur regarde sa propre annonce)
+    try {
+        if (auth.currentUser && job.user && job.user !== auth.currentUser.uid) {
+            countProfileView(job.user);
+        }
+    } catch (_) {}
+
     const saveBtnEl = document.getElementById('previewSaveBtn');
     if (saveBtnEl) {
         saveBtnEl.setAttribute('data-save-btn', jobId);
@@ -6698,6 +6712,9 @@ async function openProfileSheet() {
 
         renderVerificationStatus(data, user);
         renderReferralBox(data, user);
+        renderPortfolio(data);
+        renderAvailability(data);
+        renderProStats(data);
 
         const verifBox = document.getElementById('verificationStatusBox');
         if (verifBox) verifBox.style.display = 'block';
@@ -7160,7 +7177,229 @@ async function saveProfile() {
         btn.disabled = false;
     }
 }
-  
+
+// ==========================================
+// PORTFOLIO PHOTOS (réalisations de l'artisan)
+// ==========================================
+
+// Affiche la galerie du portfolio dans le profil (appelée à l'ouverture du profil).
+function renderPortfolio(profile) {
+    const gallery = document.getElementById('portfolioGallery');
+    if (!gallery) return;
+    const photos = (profile && profile.portfolio) ? Object.entries(profile.portfolio) : [];
+    if (photos.length === 0) {
+        gallery.innerHTML = `<div style="font-size:12px;color:var(--text-dim,#777);">Aucune photo pour l'instant.</div>`;
+        return;
+    }
+    gallery.innerHTML = photos.map(([key, url]) => `
+        <div style="position:relative;width:90px;height:90px;border-radius:10px;overflow:hidden;border:1px solid var(--border,#333);">
+            <img src="${url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+            <button onclick="deletePortfolioPhoto('${key}')" title="Supprimer"
+                style="position:absolute;top:3px;right:3px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(192,57,57,0.9);color:#fff;font-size:12px;cursor:pointer;line-height:1;">✕</button>
+        </div>
+    `).join('');
+}
+
+// Upload d'une photo de réalisation vers Cloudinary puis Firebase (max 6).
+async function uploadPortfolioPhoto(event) {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) { showToast(t('mustBeLoggedIn'), 'error'); return; }
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type) || file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+        showToast(`Photo invalide (JPG/PNG/WEBP, max ${MAX_IMAGE_SIZE_MB} Mo).`, 'error');
+        return;
+    }
+
+    // Limite à 6 photos
+    try {
+        const snap = await db.ref('profiles/' + user.uid + '/portfolio').once('value');
+        const current = snap.val() || {};
+        if (Object.keys(current).length >= 6) {
+            showToast('Maximum 6 photos. Supprime-en une d\'abord.', 'error');
+            event.target.value = '';
+            return;
+        }
+    } catch (_) {}
+
+    showToast('Téléchargement de la photo...', 'info');
+    try {
+        const url = await uploadToCloudinary(file);
+        await db.ref('profiles/' + user.uid + '/portfolio').push(url);
+        const fresh = await db.ref('profiles/' + user.uid).once('value');
+        renderPortfolio(fresh.val() || {});
+        showToast('Photo ajoutée ! 📸', 'success');
+    } catch (e) {
+        console.error('Portfolio upload error', e);
+        showToast(t('photoUploadError'), 'error');
+    } finally {
+        event.target.value = '';
+    }
+}
+
+// Supprime une photo du portfolio.
+async function deletePortfolioPhoto(key) {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) return;
+    try {
+        await db.ref('profiles/' + user.uid + '/portfolio/' + key).remove();
+        const fresh = await db.ref('profiles/' + user.uid).once('value');
+        renderPortfolio(fresh.val() || {});
+        showToast('Photo supprimée.', 'info');
+    } catch (e) {
+        console.error('Portfolio delete error', e);
+        showToast(t('genericError'), 'error');
+    }
+}
+
+// ==========================================
+// DISPONIBILITÉ EN TEMPS RÉEL
+// ==========================================
+
+// Affiche l'état des boutons de disponibilité selon le profil.
+function renderAvailability(profile) {
+    const map = { now: 'availBtnNow', week: 'availBtnWeek', busy: 'availBtnBusy' };
+    const active = (profile && profile.availability) || '';
+    Object.entries(map).forEach(([val, id]) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        if (val === active) {
+            // bouton actif = rempli
+            const color = val === 'now' ? '#2EA067' : (val === 'week' ? '#E88A2A' : '#C03939');
+            btn.style.background = color;
+            btn.style.color = '#fff';
+        } else {
+            btn.style.background = 'none';
+            btn.style.color = val === 'now' ? '#2EA067' : (val === 'week' ? '#E88A2A' : '#C03939');
+        }
+    });
+}
+
+// Enregistre la disponibilité choisie.
+async function setAvailability(status) {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) { showToast(t('mustBeLoggedIn'), 'error'); return; }
+    try {
+        await db.ref('profiles/' + user.uid).update({
+            availability: status,
+            availabilityUpdated: Date.now()
+        });
+        renderAvailability({ availability: status });
+        const labels = { now: 'Disponible 🟢', week: 'Cette semaine 🟠', busy: 'Occupé 🔴' };
+        showToast('Statut mis à jour : ' + labels[status], 'success');
+    } catch (e) {
+        console.error('setAvailability error', e);
+        showToast(t('genericError'), 'error');
+    }
+}
+
+// Renvoie un petit badge HTML de disponibilité pour les cartes (ou '' si aucun/périmé).
+function availabilityBadge(profile) {
+    if (!profile || !profile.availability) return '';
+    // "Disponible aujourd'hui" expire après 24h pour rester fiable
+    if (profile.availability === 'now') {
+        const updated = profile.availabilityUpdated || 0;
+        if (Date.now() - updated > 24 * 60 * 60 * 1000) return '';
+        return `<span style="font-size:10px;font-weight:700;color:#2EA067;background:rgba(46,160,103,0.15);padding:2px 6px;border-radius:8px;">🟢 Dispo</span>`;
+    }
+    if (profile.availability === 'week') {
+        return `<span style="font-size:10px;font-weight:700;color:#E88A2A;background:rgba(232,138,42,0.15);padding:2px 6px;border-radius:8px;">🟠 Cette sem.</span>`;
+    }
+    return '';
+}
+
+// ==========================================
+// SCORE DE RÉACTIVITÉ / ACTIVITÉ RÉCENTE
+// ==========================================
+// Basé sur lastActiveAt (déjà suivi par l'app). Un artisan actif récemment
+// répond généralement plus vite : c'est un vrai signal de confiance, honnête,
+// exactement comme "Actif il y a X" sur les grandes applications.
+
+// Renvoie un badge court pour les cartes (ou '' si trop ancien / inconnu).
+function activityBadge(profile) {
+    if (!profile || !profile.lastActiveAt) return '';
+    const diff = Date.now() - profile.lastActiveAt;
+    const min = 60 * 1000, hour = 60 * min, day = 24 * hour;
+    if (diff < 15 * min) {
+        return `<span title="Actif à l'instant" style="font-size:10px;font-weight:700;color:#2EA067;background:rgba(46,160,103,0.15);padding:2px 6px;border-radius:8px;">⚡ Actif</span>`;
+    }
+    if (diff < 24 * hour) {
+        return `<span title="Actif aujourd'hui" style="font-size:10px;font-weight:700;color:#2D6CDF;background:rgba(45,108,223,0.12);padding:2px 6px;border-radius:8px;">🕐 Aujourd'hui</span>`;
+    }
+    return '';
+}
+
+// Texte détaillé de la dernière activité (pour le profil / la fiche détaillée).
+function lastActiveText(profile) {
+    if (!profile || !profile.lastActiveAt) return 'Activité inconnue';
+    const diff = Date.now() - profile.lastActiveAt;
+    const min = 60 * 1000, hour = 60 * min, day = 24 * hour;
+    if (diff < 5 * min) return '⚡ Actif à l\'instant';
+    if (diff < hour) return '🕐 Actif il y a ' + Math.round(diff / min) + ' min';
+    if (diff < day) return '🕐 Actif il y a ' + Math.round(diff / hour) + ' h';
+    if (diff < 7 * day) return '📅 Actif il y a ' + Math.round(diff / day) + ' j';
+    return '📅 Inactif depuis un moment';
+}
+
+// ==========================================
+// STATISTIQUES POUR LES ARTISANS PRO
+// ==========================================
+
+// Incrémente de façon atomique le compteur de vues d'un profil, par semaine.
+// Structure : profiles/{uid}/stats/views/{semaine}  et  .../viewsTotal
+function countProfileView(ownerUid) {
+    const week = getWeekKey();
+    const base = db.ref('profiles/' + ownerUid + '/stats');
+    // Compteur de la semaine courante
+    base.child('views/' + week).transaction(v => (v || 0) + 1).catch(() => {});
+    // Compteur total (à vie)
+    base.child('viewsTotal').transaction(v => (v || 0) + 1).catch(() => {});
+}
+
+// Renvoie une clé de semaine du type "2026-W33".
+function getWeekKey() {
+    const d = new Date();
+    const oneJan = new Date(d.getFullYear(), 0, 1);
+    const week = Math.ceil((((d - oneJan) / 86400000) + oneJan.getDay() + 1) / 7);
+    return d.getFullYear() + '-W' + week;
+}
+
+// Affiche le tableau de stats dans le profil.
+// Les stats détaillées sont réservées aux PRO (levier d'abonnement) ;
+// les non-PRO voient un aperçu flouté qui donne envie de passer Pro.
+function renderProStats(profile) {
+    const box = document.getElementById('proStatsBox');
+    if (!box) return;
+    const stats = (profile && profile.stats) || {};
+    const week = getWeekKey();
+    const viewsWeek = (stats.views && stats.views[week]) || 0;
+    const viewsTotal = stats.viewsTotal || 0;
+    const isPro = profile && profile.isPro && (profile.proUntil || 0) > Date.now();
+
+    if (isPro) {
+        box.innerHTML = `
+          <div style="font-weight:700;font-size:14px;color:var(--gold,#FFD700);margin-bottom:8px;">📊 Mes statistiques (PRO)</div>
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;text-align:center;padding:12px;background:rgba(255,215,0,0.08);border-radius:10px;">
+              <div style="font-size:22px;font-weight:800;color:var(--gold,#FFD700);">${viewsWeek}</div>
+              <div style="font-size:11px;color:var(--text-dim,#999);">Vues cette semaine</div>
+            </div>
+            <div style="flex:1;text-align:center;padding:12px;background:rgba(46,160,103,0.08);border-radius:10px;">
+              <div style="font-size:22px;font-weight:800;color:#2EA067;">${viewsTotal}</div>
+              <div style="font-size:11px;color:var(--text-dim,#999);">Vues au total</div>
+            </div>
+          </div>`;
+    } else {
+        box.innerHTML = `
+          <div style="font-weight:700;font-size:14px;color:var(--gold,#FFD700);margin-bottom:8px;">📊 Mes statistiques</div>
+          <div style="position:relative;padding:14px;background:rgba(255,255,255,0.04);border-radius:10px;text-align:center;">
+            <div style="filter:blur(4px);user-select:none;font-size:22px;font-weight:800;color:var(--gold,#FFD700);">•• vues cette semaine</div>
+            <div style="font-size:12px;color:var(--text-dim,#999);margin-top:8px;">🔒 Passe au compte <b>PRO</b> pour voir combien de clients regardent ton profil.</div>
+          </div>`;
+    }
+}
+
   // ==========================================
 // NOUVEAUX BOUTONS DU PANNEAU
 // ==========================================
@@ -8388,6 +8627,40 @@ document.addEventListener('click', (e) => {
             <!-- Rempli dynamiquement par renderVerificationStatus() -->
         </div>
         <div id="profileReviewsBox"></div>
+
+        <!-- ====== PORTFOLIO PHOTOS (réalisations de l'artisan) ====== -->
+        <div id="portfolioBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;">
+          <div style="font-weight:700; font-size:14px; color:var(--gold,#FFD700); margin-bottom:4px;">📸 Mes réalisations</div>
+          <div style="font-size:12px; color:var(--text-dim,#999); margin-bottom:10px;">Montre tes plus beaux travaux (jusqu'à 6 photos). Les clients font plus confiance à un artisan qui montre son travail.</div>
+          <div id="portfolioGallery" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;"></div>
+          <input type="file" id="portfolioInput" accept="image/*" style="display:none;" onchange="uploadPortfolioPhoto(event)">
+          <button type="button" onclick="document.getElementById('portfolioInput').click()"
+            style="width:100%; padding:10px; border:1px dashed var(--gold,#FFD700); border-radius:10px; background:none; color:var(--gold,#FFD700); font-weight:700; font-size:13px; cursor:pointer;">
+            ➕ Ajouter une photo
+          </button>
+        </div>
+        <!-- ====== FIN PORTFOLIO ====== -->
+
+        <!-- ====== DISPONIBILITÉ EN TEMPS RÉEL ====== -->
+        <div id="availabilityBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;">
+          <div style="font-weight:700; font-size:14px; color:var(--gold,#FFD700); margin-bottom:4px;">🕐 Ma disponibilité</div>
+          <div style="font-size:12px; color:var(--text-dim,#999); margin-bottom:10px;">Dis aux clients si tu es libre. Ça les encourage à te contacter tout de suite.</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" id="availBtnNow" onclick="setAvailability('now')"
+              style="flex:1; min-width:90px; padding:10px; border:1px solid #2EA067; border-radius:10px; background:none; color:#2EA067; font-weight:700; font-size:12.5px; cursor:pointer;">🟢 Disponible</button>
+            <button type="button" id="availBtnWeek" onclick="setAvailability('week')"
+              style="flex:1; min-width:90px; padding:10px; border:1px solid #E88A2A; border-radius:10px; background:none; color:#E88A2A; font-weight:700; font-size:12.5px; cursor:pointer;">🟠 Cette semaine</button>
+            <button type="button" id="availBtnBusy" onclick="setAvailability('busy')"
+              style="flex:1; min-width:90px; padding:10px; border:1px solid #C03939; border-radius:10px; background:none; color:#C03939; font-weight:700; font-size:12.5px; cursor:pointer;">🔴 Occupé</button>
+          </div>
+        </div>
+        <!-- ====== FIN DISPONIBILITÉ ====== -->
+
+        <!-- ====== STATISTIQUES (réservé PRO) ====== -->
+        <div id="proStatsBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;">
+          <!-- Rempli dynamiquement par renderProStats() -->
+        </div>
+        <!-- ====== FIN STATISTIQUES ====== -->
         <div id="referralBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
             <!-- Rempli dynamiquement par renderReferralBox() -->
         </div>
@@ -8521,6 +8794,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2bcc52669959892',t:'MTc4Njg0NDgzNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2bcc52669959892',t:'MTc4Njg0NDgzNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2c329d22f812fff',t:'MTc4NjkxMTg3NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
