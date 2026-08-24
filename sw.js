@@ -32,16 +32,25 @@ const messaging = firebase.messaging();
 // scripts/send*.js), mais CES boutons sont construits ici, dans le service
 // worker, qui ne connaît la langue du destinataire que si le serveur la
 // transmet explicitement dans le payload (voir data.lang plus bas).
+// "view" = libellé par défaut (job). "viewMessage"/"viewQuote" = libellés
+// spécifiques aux notifs de message / devis (voir data.type plus bas).
 const ACTION_I18N = {
-  fr: { view: '👀 Voir le job', dismiss: 'Fermer' },
-  en: { view: '👀 View job', dismiss: 'Dismiss' },
-  it: { view: '👀 Vedi lavoro', dismiss: 'Chiudi' },
-  de: { view: '👀 Job ansehen', dismiss: 'Schließen' },
-  zh: { view: '👀 查看工作', dismiss: '关闭' }
+  fr: { view: '👀 Voir le job', viewMessage: '💬 Voir le message', viewQuote: '💰 Voir le devis', dismiss: 'Fermer' },
+  en: { view: '👀 View job', viewMessage: '💬 View message', viewQuote: '💰 View quote', dismiss: 'Dismiss' },
+  it: { view: '👀 Vedi lavoro', viewMessage: '💬 Vedi messaggio', viewQuote: '💰 Vedi preventivo', dismiss: 'Chiudi' },
+  de: { view: '👀 Job ansehen', viewMessage: '💬 Nachricht ansehen', viewQuote: '💰 Angebot ansehen', dismiss: 'Schließen' },
+  zh: { view: '👀 查看工作', viewMessage: '💬 查看消息', viewQuote: '💰 查看报价', dismiss: '关闭' }
 };
 
+// Choisit le libellé du bouton "voir" selon le type de notification.
+function pickViewLabel(labels, type) {
+  if (type === 'message' || type === 'message-admin') return labels.viewMessage;
+  if (type === 'quote' || type === 'quote-admin') return labels.viewQuote;
+  return labels.view;
+}
+
 // Notifications reçues quand l'app est fermée ou en arrière-plan.
-// Le serveur (scripts/sendNotifications.js) envoie désormais un message
+// Le serveur (scripts/send*.js) envoie désormais un message
 // "data-only" (sans champ "notification") : c'est volontaire, car un
 // message contenant un champ "notification" peut être affiché
 // automatiquement par le navigateur EN PLUS de cet appel manuel à
@@ -50,65 +59,92 @@ messaging.onBackgroundMessage((payload) => {
   const data = payload.data || {};
   const title = data.title || 'JobMarket Cameroon';
   const actionLabels = ACTION_I18N[data.lang] || ACTION_I18N.fr;
+  const type = data.type || 'job';
+
+  // tag = identifiant unique du sujet : un retry serveur remplace la notif au
+  // lieu de l'empiler. Selon le type : par thread (message), par devis
+  // (quote), ou par job (défaut historique).
+  let tag;
+  if (type === 'message' || type === 'message-admin') {
+    tag = data.threadId ? 'thread-' + data.threadId : undefined;
+  } else if (type === 'quote' || type === 'quote-admin') {
+    tag = data.quoteId ? 'quote-' + data.quoteId : undefined;
+  } else {
+    tag = data.jobId ? 'job-' + data.jobId : undefined;
+  }
 
   const options = {
     body: data.body || '',
     icon: 'icon-192.png', // doit correspondre exactement à un fichier présent + référencé dans manifest.json
     badge: 'icon-192.png', // petite icône monochrome affichée dans la barre de notif Android
-    // Photo du job en aperçu si le serveur en fournit une (scripts/sendNotifications.js
-    // doit inclure data.image pour l'activer) — une notif avec image se remarque
-    // beaucoup plus dans le tiroir de notifications qu'un simple texte.
+    // Photo du job en aperçu si le serveur en fournit une (uniquement pour les
+    // notifs de job) — une notif avec image se remarque beaucoup plus.
     image: data.image || undefined,
-    // tag = jobId : si deux messages arrivent pour le même job (retry serveur),
-    // le second remplace le premier au lieu d'empiler un doublon. Des jobs
-    // différents gardent des tags différents et s'empilent normalement.
-    tag: data.jobId ? 'job-' + data.jobId : undefined,
+    tag,
     vibrate: [200, 100, 200],
     data,
     // Boutons d'action directement dans la notification : gagne un clic et
-    // accélère la mise en contact, ce qui donne un service qui a l'air "au
-    // point" comparé à une simple notif texte.
+    // accélère la mise en contact.
     actions: [
-      { action: 'view', title: actionLabels.view },
+      { action: 'view', title: pickViewLabel(actionLabels, type) },
       { action: 'dismiss', title: actionLabels.dismiss }
     ]
   };
 
   self.registration.showNotification(title, options).catch(() => {});
 
-  // Met à jour le badge sur l'icône de l'app (Chrome/Edge desktop, Android) :
-  // valeur approximative puisque le SW ne connaît pas le nombre exact de
-  // notifs non vues côté client, mais ça donne un signal visuel utile même
-  // app fermée.
+  // Met à jour le badge sur l'icône de l'app (Chrome/Edge desktop, Android).
   if ('setAppBadge' in self.navigator) {
     self.navigator.setAppBadge().catch(() => {});
   }
 });
 
-// Au clic sur la notification : direction l'annonce concernée. Si un onglet
-// de l'app est déjà ouvert, on le ramène au premier plan et on lui indique
-// par message quel job ouvrir (évite de recharger toute la page) ; sinon on
-// ouvre un nouvel onglet directement sur #job=<id>, que index.html sait déjà
+// Au clic sur la notification : direction le bon écran selon le TYPE de notif.
+//   - message  -> ouvre la conversation (#thread=<threadId>)
+//   - quote    -> ouvre l'annonce concernée (#job=<jobId>)  [le devis y est rattaché]
+//   - job (défaut) -> ouvre l'annonce (#job=<jobId>)  [comportement historique inchangé]
+// Si un onglet de l'app est déjà ouvert, on le ramène au premier plan et on
+// lui poste l'info (évite de recharger toute la page) ; sinon on ouvre un
+// nouvel onglet directement sur le bon hash, qu'index.html/app.js sait
 // interpréter au chargement.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  // Clic sur le bouton "Fermer" : rien de plus à faire, pas besoin d'ouvrir l'app.
+  // Clic sur le bouton "Fermer" : rien de plus à faire.
   if (event.action === 'dismiss') return;
 
-  const jobId = event.notification.data && event.notification.data.jobId;
-  const variant = event.notification.data && event.notification.data.variant;
+  const d = event.notification.data || {};
+  const type = d.type || 'job';
+  const jobId = d.jobId;
+  const threadId = d.threadId;
+  const variant = d.variant;
   const variantParam = variant ? '&variant=' + encodeURIComponent(variant) : '';
-  const targetUrl = self.registration.scope + (jobId ? '#job=' + jobId + '&src=push' + variantParam : '#src=push' + variantParam); // ex: https://.../JobMarket Cameroon/#job=xyz&src=push&variant=A
+
+  // Construit le hash de destination selon le type.
+  let hashPart;
+  if ((type === 'message' || type === 'message-admin') && threadId) {
+    hashPart = '#thread=' + encodeURIComponent(threadId) + '&src=push' + variantParam;
+  } else if (jobId) {
+    hashPart = '#job=' + jobId + '&src=push' + variantParam;
+  } else {
+    hashPart = '#src=push' + variantParam;
+  }
+  const targetUrl = self.registration.scope + hashPart;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url.startsWith(self.registration.scope) && 'focus' in client) {
-          // Toujours envoyé (même sans jobId, ex: le résumé de relance) pour
-          // que index.html puisse comptabiliser l'ouverture par variante.
+          // App déjà ouverte : on lui poste tout le contexte nécessaire pour
+          // ouvrir le bon écran sans recharger.
           if ('postMessage' in client) {
-            client.postMessage({ type: 'open-job', jobId: jobId || null, variant: variant || null });
+            client.postMessage({
+              type: 'open-notif',      // nouveau type générique
+              notifType: type,         // 'message' | 'quote' | 'job' | ...
+              jobId: jobId || null,
+              threadId: threadId || null,
+              variant: variant || null
+            });
           }
           return client.focus();
         }
@@ -122,7 +158,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
@@ -225,8 +261,6 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-
-  
 
   if (req.mode === 'navigate') {
     event.respondWith(
