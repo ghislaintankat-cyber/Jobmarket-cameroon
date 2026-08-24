@@ -1822,9 +1822,27 @@ async function applyPendingReferral(newUser) {
 // quelques secondes à arriver ; profilesCache la reflétera dès que prête,
 // sans que la personne ait besoin de recharger la page.
 if (new URLSearchParams(window.location.search).get('paid') === '1') {
-  setTimeout(() => showToast(t('toastPaymentPending'), 'info'), 500);
+  // Message de bienvenue après paiement : on remercie et on rassure.
+  // L'activation réelle (isPro/verified) arrive via le webhook serveur,
+  // en quelques secondes. On rafraîchit le profil un peu plus tard pour
+  // que la personne voie son nouveau statut sans recharger.
+  setTimeout(() => showToast('🎉 Merci ! Paiement reçu, ton compte s\'active dans quelques secondes...', 'success'), 500);
   const cleanUrl = window.location.pathname + window.location.hash;
   window.history.replaceState({}, '', cleanUrl);
+  // Rafraîchit le profil après 6s (le temps que le webhook active le compte)
+  setTimeout(() => {
+    try {
+      const u = auth.currentUser;
+      if (u && !u.isAnonymous && typeof openProfileSheet === 'function') {
+        db.ref('profiles/' + u.uid).once('value').then(snap => {
+          const p = snap.val() || {};
+          if (p.isPro || p.verified) {
+            showToast('✅ Ton compte est activé ! Merci de ta confiance. 🙏', 'success');
+          }
+        }).catch(() => {});
+      }
+    } catch (_) {}
+  }, 6000);
 }
 
 auth.onAuthStateChanged(user => {
@@ -5303,6 +5321,7 @@ async function openProfileSheet() {
         renderPortfolio(data);
         renderAvailability(data);
         renderProStats(data);
+        renderPaymentButtons(data);
 
         const verifBox = document.getElementById('verificationStatusBox');
         if (verifBox) verifBox.style.display = 'block';
@@ -5985,6 +6004,48 @@ function renderProStats(profile) {
             <div style="filter:blur(4px);user-select:none;font-size:22px;font-weight:800;color:var(--gold,#FFD700);">•• vues cette semaine</div>
             <div style="font-size:12px;color:var(--text-dim,#999);margin-top:8px;">🔒 Passe au compte <b>PRO</b> pour voir combien de clients regardent ton profil.</div>
           </div>`;
+    }
+}
+
+// ==========================================
+// ADAPTER LES BOUTONS DE PAIEMENT selon le statut
+// ==========================================
+// Évite qu'une personne DÉJÀ vérifiée (manuellement par l'admin ou par un
+// paiement précédent) repaie 500 FCFA pour rien. Idem pour le Pro actif.
+function renderPaymentButtons(profile) {
+    profile = profile || {};
+
+    // Bouton "Badge vérifié" : si déjà vérifié -> on remplace par un état "déjà vérifié"
+    const vBtn = document.getElementById('payVerifiedBtn');
+    if (vBtn) {
+        if (profile.verified) {
+            vBtn.textContent = '✅ Déjà vérifié';
+            vBtn.disabled = true;
+            vBtn.style.opacity = '0.6';
+            vBtn.style.cursor = 'default';
+            vBtn.onclick = null;
+        } else {
+            vBtn.textContent = '✅ Badge Identité vérifiée — 500 FCFA';
+            vBtn.disabled = false;
+            vBtn.style.opacity = '1';
+            vBtn.style.cursor = 'pointer';
+            vBtn.onclick = function () { startPayment('verified'); };
+        }
+    }
+
+    // Bouton "Devenir Pro" : si déjà Pro actif -> montre la date d'expiration
+    const pBtn = document.getElementById('payProBtn');
+    if (pBtn) {
+        if (profile.isPro && (profile.proUntil || 0) > Date.now()) {
+            const d = new Date(profile.proUntil);
+            const dateStr = d.toLocaleDateString('fr-FR');
+            pBtn.textContent = '⭐ PRO actif jusqu\'au ' + dateStr + ' (renouveler)';
+            // On garde le bouton cliquable : il peut renouveler / prolonger
+            pBtn.onclick = function () { startPayment('pro_month'); };
+        } else {
+            pBtn.textContent = 'Devenir Pro — 1 500 FCFA / mois';
+            pBtn.onclick = function () { startPayment('pro_month'); };
+        }
     }
 }
 
