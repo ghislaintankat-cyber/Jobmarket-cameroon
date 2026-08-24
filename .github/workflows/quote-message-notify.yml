@@ -1,0 +1,41 @@
+name: Notify Users of Quotes and Messages
+
+on:
+  schedule:
+    # Filet de sécurité (comme notify.yml) : le déclencheur PRINCIPAL est le
+    # relais Cloudflare Worker jobmarket-notify-trigger via repository_dispatch
+    # (event_type "new-quote" / "new-message"). Ce cron ne sert que si le
+    # relais est en panne ou si un devis/message est passé pendant une coupure.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: # déclenchement manuel possible
+  repository_dispatch:
+    # Les DEUX types pointent vers ce même workflow : le script traite de toute
+    # façon les devis ET les messages en attente à chaque exécution, donc peu
+    # importe lequel a déclenché le run.
+    types: [new-quote, new-message]
+
+concurrency:
+  group: notify-quotes-messages
+  cancel-in-progress: false # on met en file d'attente plutôt que d'annuler un envoi en cours
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run quote/message notification script
+        run: node scripts/sendQuoteMessageNotifications.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
