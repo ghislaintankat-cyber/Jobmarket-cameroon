@@ -1782,6 +1782,7 @@ function getReferralLink(uid) {
 let deepLinkJobId = null;
 let deepLinkFromPush = false; // vient d'un clic sur notif (voir sw.js, src=push) vs un lien WhatsApp partagé
 let deepLinkVariant = null; // variante A/B (ou "digest") de la notif cliquée, pour le suivi du taux d'ouverture
+let deepLinkThreadId = null; // conversation à ouvrir après connexion (clic sur une notif de message, app fermée)
 (function captureIncomingLinks() {
   try {
     const hash = window.location.hash || '';
@@ -1789,6 +1790,10 @@ let deepLinkVariant = null; // variante A/B (ou "digest") de la notif cliquée, 
     if (refMatch && refMatch[1]) localStorage.setItem('pendingReferralCode', refMatch[1]);
     const jobMatch = hash.match(/job=([a-zA-Z0-9_-]+)/);
     if (jobMatch && jobMatch[1]) deepLinkJobId = jobMatch[1];
+    // Lien profond vers une conversation (clic sur une notif de message quand
+    // l'app était fermée) : on mémorise le threadId, ouvert une fois connecté.
+    const threadMatch = hash.match(/thread=([^&]+)/);
+    if (threadMatch && threadMatch[1]) { try { deepLinkThreadId = decodeURIComponent(threadMatch[1]); } catch(e) { deepLinkThreadId = threadMatch[1]; } }
     if (/[#?&]src=push/.test(hash)) deepLinkFromPush = true;
     const variantMatch = hash.match(/variant=([a-zA-Z0-9_-]+)/);
     if (variantMatch && variantMatch[1]) deepLinkVariant = decodeURIComponent(variantMatch[1]);
@@ -1858,7 +1863,14 @@ auth.onAuthStateChanged(user => {
     setupPresence(user.uid);
     refreshAdminStatus(user.uid);
     syncSavedJobs(user.uid);
-    if (deepLinkFromPush && !deepLinkJobId) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; } // clic sur une notif sans job précis (ex: résumé de relance)
+    if (deepLinkFromPush && !deepLinkJobId && !deepLinkThreadId) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; } // clic sur une notif sans cible précise (ex: résumé de relance)
+    // Clic sur une notif de message alors que l'app était fermée : on ouvre la
+    // conversation maintenant que l'utilisateur est bien connecté.
+    if (deepLinkThreadId) {
+      const tId = deepLinkThreadId; deepLinkThreadId = null;
+      if (deepLinkFromPush) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; }
+      setTimeout(() => { try { openUserChatFromThreadId(tId); } catch(e) {} }, 800); // petit délai : laisse profilesCache se remplir pour afficher le nom
+    }
   } else {
     teardownPresence();
     refreshAdminStatus(null);
@@ -4455,16 +4467,71 @@ if ('serviceWorker' in navigator) {
   // sw.js nous poste le jobId concerné (voir notificationclick dans sw.js)
   // plutôt que de recharger toute la page pour ça.
   navigator.serviceWorker.addEventListener('message', (event) => {
-    if (!event.data || event.data.type !== 'open-job') return;
-    const jobId = event.data.jobId;
-    logNotificationOpened(event.data.variant); // ce message ne peut venir que d'un clic sur une notif (voir sw.js), donc toujours un "open" réel
-    if (!jobId) return; // ex: résumé de relance, rien de spécifique à ouvrir
-    if (typeof jobsById !== 'undefined' && jobsById[jobId]) {
-      openJobPreview(jobId);
-    } else {
-      deepLinkJobId = jobId; // les jobs ne sont pas encore chargés, le mécanisme existant (ligne ~2251) prendra le relais
+    if (!event.data) return;
+    const d = event.data;
+
+    // Ancien format (notif de job) : conservé pour compatibilité.
+    if (d.type === 'open-job') {
+      logNotificationOpened(d.variant);
+      const jobId = d.jobId;
+      if (!jobId) return;
+      if (typeof jobsById !== 'undefined' && jobsById[jobId]) {
+        openJobPreview(jobId);
+      } else {
+        deepLinkJobId = jobId; // les jobs ne sont pas encore chargés, le mécanisme existant prendra le relais
+      }
+      return;
+    }
+
+    // Nouveau format générique (job / quote / message) posté par sw.js.
+    if (d.type === 'open-notif') {
+      logNotificationOpened(d.variant); // ce message ne vient que d'un clic sur une notif
+      handleNotifOpen(d.notifType, d);
+      return;
     }
   });
+}
+
+// Aiguille l'ouverture selon le type de notification cliquée.
+//   - message / message-admin -> ouvre la conversation via son threadId
+//   - quote / quote-admin      -> ouvre l'annonce concernée (le devis y est lié)
+//   - job (défaut)             -> ouvre l'annonce
+function handleNotifOpen(notifType, d) {
+  d = d || {};
+  if ((notifType === 'message' || notifType === 'message-admin') && d.threadId) {
+    openUserChatFromThreadId(d.threadId);
+    return;
+  }
+  // quote / job / autre : on ouvre l'annonce si on a un jobId
+  const jobId = d.jobId;
+  if (!jobId) return;
+  if (typeof jobsById !== 'undefined' && jobsById[jobId]) {
+    openJobPreview(jobId);
+  } else {
+    deepLinkJobId = jobId;
+  }
+}
+
+// Ouvre la conversation in-app à partir d'un threadId.
+// Rappel du format (voir makeThreadId) : "<uidTrié1>_<uidTrié2>__<jobId|general>".
+// On en extrait l'AUTRE participant (peerUid) et le jobId pour rappeler
+// openUserChat() tel quel — c'est plus fiable que de deviner, car openUserChat
+// reconstruit lui-même le même threadId.
+function openUserChatFromThreadId(threadId) {
+  try {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) { showToast('Connecte-toi pour voir le message.', 'error'); return; }
+    const parts = String(threadId).split('__');
+    const uidPair = (parts[0] || '').split('_');
+    const jobId = parts[1] && parts[1] !== 'general' ? parts[1] : null;
+    // L'autre participant = celui des deux uid qui n'est pas moi.
+    const peerUid = uidPair.find(u => u && u !== user.uid);
+    if (!peerUid) { showToast('Conversation introuvable.', 'error'); return; }
+    const peerName = (typeof profilesCache !== 'undefined' && profilesCache[peerUid] && profilesCache[peerUid].name) || 'Utilisateur';
+    openUserChat(peerUid, jobId, peerName);
+  } catch (e) {
+    console.error('openUserChatFromThreadId error', e);
+  }
 }
 
 // Compteur d'ouvertures suite à une notification, par variante A/B (ou
@@ -6081,6 +6148,8 @@ async function sendQuoteRequest() {
             status: 'pending', timestamp: Date.now()
         });
         if (typeof bumpDailyStat === 'function') bumpDailyStat('quotesRequested');
+        // Prévient l'artisan instantanément qu'il a reçu une demande de devis
+        if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-quote');
         const link = (typeof getJobShareLink === 'function') ? getJobShareLink(job.id) : '';
         const msg = '💬 *DEMANDE DE DEVIS - JobMarket*\n\n*Annonce :* ' + (job.title || '') +
             '\n*Besoin :* ' + desc + (budget ? ('\n*Budget :* ' + budget) : '') +
@@ -6214,6 +6283,8 @@ async function sendUserChatMessage() {
             participants: { [user.uid]: true, [userChatPeerUid]: true },
             lastMessage: text.slice(0, 100), lastAt: Date.now()
         });
+        // Prévient le destinataire instantanément qu'il a reçu un nouveau message
+        if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-message');
     } catch (e) { console.error('sendUserChatMessage error', e); showToast(t('genericError'), 'error'); }
 }
 
