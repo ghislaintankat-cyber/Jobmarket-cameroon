@@ -142,7 +142,7 @@ function syncProfilesCache() {
 let userMarker = null;
 let accuracyCircle = null;
 let routeControl = null;
-let currentMapStyle = 'street';  // défaut = carte claire (voir streetLayer.addTo)
+let currentMapStyle = 'satellite';  // défaut = vue satellite (voir satelliteLayer.addTo)
 let currentAuthTab = 'signup';
 let editingJobId = null; // ID du job en cours de modification (null = mode "nouvelle publication")
 let profileLiveRef = null; // Référence Firebase du listener temps réel du profil ouvert (voir openProfileSheet/closeProfileSheetListener)
@@ -177,10 +177,9 @@ const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.
   keepBuffer: 6
 });
 
-// Carte affichée par défaut : la carte "rues" (streetLayer) est plus CLAIRE
-// et lisible que la vue satellite (grise/sombre). L'utilisateur peut toujours
-// basculer sur la vue satellite avec le bouton de calque de la carte.
-streetLayer.addTo(map);
+// Carte affichée par défaut : vue SATELLITE. L'utilisateur peut basculer
+// sur la vue "rues" (plus claire) avec le bouton de calque de la carte.
+satelliteLayer.addTo(map);
 const jobsLayer = L.featureGroup().addTo(map);
 
 // ===== SPLASH =====
