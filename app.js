@@ -142,7 +142,7 @@ function syncProfilesCache() {
 let userMarker = null;
 let accuracyCircle = null;
 let routeControl = null;
-let currentMapStyle = 'satellite';
+let currentMapStyle = 'street';  // défaut = carte claire (voir streetLayer.addTo)
 let currentAuthTab = 'signup';
 let editingJobId = null; // ID du job en cours de modification (null = mode "nouvelle publication")
 let profileLiveRef = null; // Référence Firebase du listener temps réel du profil ouvert (voir openProfileSheet/closeProfileSheetListener)
@@ -177,7 +177,10 @@ const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.
   keepBuffer: 6
 });
 
-satelliteLayer.addTo(map);
+// Carte affichée par défaut : la carte "rues" (streetLayer) est plus CLAIRE
+// et lisible que la vue satellite (grise/sombre). L'utilisateur peut toujours
+// basculer sur la vue satellite avec le bouton de calque de la carte.
+streetLayer.addTo(map);
 const jobsLayer = L.featureGroup().addTo(map);
 
 // ===== SPLASH =====
@@ -6945,6 +6948,12 @@ function toggleTheme() {
   }
   try { localStorage.setItem('jmc_theme', next); } catch (e) {}
   updateThemeToggleUI(next);
+
+  // Aligne aussi la barre de statut du téléphone/navigateur (balise
+  // theme-color) sur le nouveau thème — sans ça, elle restait toujours
+  // sombre même en thème clair, puisqu'elle est indépendante du CSS.
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeColorMeta) themeColorMeta.setAttribute('content', next === 'light' ? '#FFFFFF' : '#0A0A0F');
 }
 
 function updateThemeToggleUI(theme) {
