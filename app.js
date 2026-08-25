@@ -342,7 +342,7 @@ const I18N = {
     waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?",
     catMenage: "Menage", catJardinage: "Jardinage", catMecanique: "Mecanique", catInfo: "Informatique",
     tipLocate: "Ma position", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Style carte",
-    tipLang: "Langue", tipSearch: "Rechercher", tipNotifications: "Notifications", tipClose: "Fermer",
+    tipLang: "Langue", tipSearch: "Rechercher", tipNotifications: "Notifications", tipMessages: "Messages", tipClose: "Fermer",
     distanceLabel: "Distance", itinLabel: "Itineraire", calculating: "Calcul en cours...", cancelBtn: "Annuler",
     publishTitle: "Publier un Job", fieldCategory: "Categorie",
     optBtp: "BTP / Maconnerie", optElec: "Electricite", optPlomberie: "Plomberie", optMenage: "Menage / Nettoyage",
@@ -586,7 +586,7 @@ const I18N = {
     waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?",
     catMenage: "Cleaning", catJardinage: "Gardening", catMecanique: "Mechanics", catInfo: "IT",
     tipLocate: "My location", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Map style",
-    tipLang: "Language", tipSearch: "Search", tipNotifications: "Notifications", tipClose: "Close",
+    tipLang: "Language", tipSearch: "Search", tipNotifications: "Notifications", tipMessages: "Messages", tipClose: "Close",
     distanceLabel: "Distance", itinLabel: "Route", calculating: "Calculating...", cancelBtn: "Cancel",
     publishTitle: "Post a Job", fieldCategory: "Category",
     optBtp: "Construction / Masonry", optElec: "Electrical", optPlomberie: "Plumbing", optMenage: "Cleaning",
@@ -830,7 +830,7 @@ const I18N = {
     waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?",
     catMenage: "Pulizie", catJardinage: "Giardinaggio", catMecanique: "Meccanica", catInfo: "Informatica",
     tipLocate: "La mia posizione", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Stile mappa",
-    tipLang: "Lingua", tipSearch: "Cerca", tipNotifications: "Notifiche", tipClose: "Chiudi",
+    tipLang: "Lingua", tipSearch: "Cerca", tipNotifications: "Notifiche", tipMessages: "Messaggi", tipClose: "Chiudi",
     distanceLabel: "Distanza", itinLabel: "Itinerario", calculating: "Calcolo in corso...", cancelBtn: "Annulla",
     publishTitle: "Pubblica un lavoro", fieldCategory: "Categoria",
     optBtp: "Edilizia / Muratura", optElec: "Elettricità", optPlomberie: "Idraulica", optMenage: "Pulizie",
@@ -1074,7 +1074,7 @@ const I18N = {
     waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?",
     catMenage: "Reinigung", catJardinage: "Gartenarbeit", catMecanique: "Mechanik", catInfo: "IT",
     tipLocate: "Mein Standort", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Kartenstil",
-    tipLang: "Sprache", tipSearch: "Suchen", tipNotifications: "Benachrichtigungen", tipClose: "Schließen",
+    tipLang: "Sprache", tipSearch: "Suchen", tipNotifications: "Benachrichtigungen", tipMessages: "Nachrichten", tipClose: "Schließen",
     distanceLabel: "Entfernung", itinLabel: "Route", calculating: "Berechnung läuft...", cancelBtn: "Abbrechen",
     publishTitle: "Job veröffentlichen", fieldCategory: "Kategorie",
     optBtp: "Bau / Maurerarbeiten", optElec: "Elektrik", optPlomberie: "Sanitär", optMenage: "Reinigung",
@@ -1318,7 +1318,7 @@ const I18N = {
     waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?",
     catMenage: "清洁", catJardinage: "园艺", catMecanique: "机械", catInfo: "信息技术",
     tipLocate: "我的位置", tipZoomIn: "放大", tipZoomOut: "缩小", tipMapStyle: "地图样式",
-    tipLang: "语言", tipSearch: "搜索", tipNotifications: "通知", tipClose: "关闭",
+    tipLang: "语言", tipSearch: "搜索", tipNotifications: "通知", tipMessages: "消息", tipClose: "关闭",
     distanceLabel: "距离", itinLabel: "路线", calculating: "计算中...", cancelBtn: "取消",
     publishTitle: "发布工作", fieldCategory: "类别",
     optBtp: "建筑/泥瓦", optElec: "电工", optPlomberie: "水管工", optMenage: "清洁",
@@ -1863,6 +1863,7 @@ auth.onAuthStateChanged(user => {
     setupPresence(user.uid);
     refreshAdminStatus(user.uid);
     syncSavedJobs(user.uid);
+    startInboxBadgeWatch(user.uid); // badge de messages non-lus en temps réel
     if (deepLinkFromPush && !deepLinkJobId && !deepLinkThreadId) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; } // clic sur une notif sans cible précise (ex: résumé de relance)
     // Clic sur une notif de message alors que l'app était fermée : on ouvre la
     // conversation maintenant que l'utilisateur est bien connecté.
@@ -1875,6 +1876,7 @@ auth.onAuthStateChanged(user => {
     teardownPresence();
     refreshAdminStatus(null);
     savedJobIds = new Set();
+    stopInboxBadgeWatch();
   }
 });
 
@@ -6119,45 +6121,20 @@ function renderPaymentButtons(profile) {
 }
 
 // ==========================================
-// DEVIS RAPIDE (demande de prix dans l'app)
+// DEVIS (RETIRE) - remplace par la messagerie in-app
 // ==========================================
+// Le systeme de devis faisait doublon avec la messagerie : c'est deja la
+// personne qui a besoin d'aide qui publie le job, donc le travailleur
+// interesse n'a qu'a DISCUTER directement. Ces fonctions redirigent vers la
+// conversation, au cas ou un ancien bouton les appellerait encore.
 function openQuoteModal() {
-    const user = auth.currentUser;
-    if (!user || user.isAnonymous) { showToast('Connecte-toi pour demander un devis.', 'error'); return; }
-    const job = window.currentPreviewJob;
-    if (!job) return;
-    const d = document.getElementById('quoteDesc'); if (d) d.value = '';
-    const b = document.getElementById('quoteBudget'); if (b) b.value = '';
-    const m = document.getElementById('quoteModal'); if (m) m.style.display = 'flex';
+    if (typeof openUserChatFromPreview === 'function') openUserChatFromPreview();
 }
 function closeQuoteModal() {
     const m = document.getElementById('quoteModal'); if (m) m.style.display = 'none';
 }
-async function sendQuoteRequest() {
-    const user = auth.currentUser;
-    if (!user || user.isAnonymous) { showToast('Connecte-toi d\'abord.', 'error'); return; }
-    const job = window.currentPreviewJob;
-    if (!job) { closeQuoteModal(); return; }
-    const desc = (document.getElementById('quoteDesc').value || '').trim();
-    const budget = (document.getElementById('quoteBudget').value || '').trim();
-    if (desc.length < 5) { showToast('Décris ton besoin (au moins quelques mots).', 'error'); return; }
-    try {
-        await db.ref('quotes').push({
-            jobId: job.id, jobOwnerUid: job.user, requesterUid: user.uid,
-            description: desc.slice(0, 600), budget: budget.slice(0, 30),
-            status: 'pending', timestamp: Date.now()
-        });
-        if (typeof bumpDailyStat === 'function') bumpDailyStat('quotesRequested');
-        // Prévient l'artisan instantanément qu'il a reçu une demande de devis
-        if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-quote');
-        const link = (typeof getJobShareLink === 'function') ? getJobShareLink(job.id) : '';
-        const msg = '💬 *DEMANDE DE DEVIS - JobMarket*\n\n*Annonce :* ' + (job.title || '') +
-            '\n*Besoin :* ' + desc + (budget ? ('\n*Budget :* ' + budget) : '') +
-            '\n\nPeux-tu me donner un prix ? Merci.\n' + link;
-        if (typeof openWhatsAppReliably === 'function') openWhatsAppReliably(null, job.phone || null, msg);
-        closeQuoteModal();
-        showToast('Demande de devis envoyée ! 💬', 'success');
-    } catch (e) { console.error('sendQuoteRequest error', e); showToast(t('genericError'), 'error'); }
+function sendQuoteRequest() {
+    if (typeof openUserChatFromPreview === 'function') openUserChatFromPreview();
 }
 
 // ==========================================
@@ -6228,46 +6205,194 @@ function renderAchievements(profile) {
 }
 
 // ==========================================
-// CHAT SÉCURISÉ CLIENT ↔ ARTISAN (messagerie in-app)
+// MESSAGERIE IN-APP (style WhatsApp/Messenger)
 // ==========================================
-let userChatRef = null, userChatThreadId = null, userChatPeerUid = null;
+// Structure Firebase :
+//   chats/{threadId}/meta  -> participants{uid:true}, names{uid:name}, jobId,
+//                             jobTitle, lastMessage, lastAt, lastFrom,
+//                             unread{uid:count}, typing{uid:timestamp}
+//   chats/{threadId}/messages/{id} -> from, to, text, imageUrl, timestamp,
+//                                      readBy{uid:true}, _notified{uid:true}
+//
+// threadId = "<uidTrié1>_<uidTrié2>__<jobId|general>" (voir makeThreadId).
+
+let userChatRef = null, userChatThreadId = null, userChatPeerUid = null, userChatJobId = null;
+let userChatMetaRef = null, userChatTypingRef = null;
+let inboxRef = null;              // écoute globale de mes conversations (pour le badge)
+let userChatMsgIds = new Set();   // évite les doublons d'affichage
+let userChatLastDay = null;       // pour les séparateurs de date
+let typingTimeout = null, lastTypingSent = 0;
+
 function makeThreadId(uidA, uidB, jobId) {
     return [uidA, uidB].sort().join('_') + '__' + (jobId || 'general');
 }
+function initials(name) {
+    if (!name) return '?';
+    const p = String(name).trim().split(/\s+/);
+    return ((p[0] || '')[0] || '?').toUpperCase() + (p[1] ? (p[1][0] || '').toUpperCase() : '');
+}
+function formatChatTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+}
+function formatDaySep(ts) {
+    const d = new Date(ts), now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    const yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (sameDay) return "Aujourd'hui";
+    if (d.toDateString() === yest.toDateString()) return 'Hier';
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ---------- OUVERTURE D'UNE CONVERSATION ----------
 function openUserChatFromPreview() {
     const user = auth.currentUser;
     if (!user || user.isAnonymous) { showToast('Connecte-toi pour discuter.', 'error'); return; }
     const job = window.currentPreviewJob;
     if (!job || !job.user) return;
     if (job.user === user.uid) { showToast('C\'est ta propre annonce.', 'info'); return; }
-    openUserChat(job.user, job.id, (profilesCache[job.user] || {}).name || 'Artisan');
+    const name = (profilesCache[job.user] || {}).name || 'Utilisateur';
+    openUserChat(job.user, job.id, name, job.title);
 }
-function openUserChat(peerUid, jobId, peerName) {
+
+function openUserChat(peerUid, jobId, peerName, jobTitle) {
     const user = auth.currentUser;
     if (!user) return;
+    // On ferme d'abord toute conversation précédente pour ne pas cumuler les écoutes.
+    detachUserChatListeners();
+
     userChatPeerUid = peerUid;
+    userChatJobId = jobId || null;
     userChatThreadId = makeThreadId(user.uid, peerUid, jobId);
-    const nameEl = document.getElementById('userChatName'); if (nameEl) nameEl.textContent = peerName || 'Chat';
+    userChatMsgIds = new Set();
+    userChatLastDay = null;
+
+    if (!peerName) peerName = (profilesCache[peerUid] || {}).name || 'Utilisateur';
+
+    const nameEl = document.getElementById('userChatName'); if (nameEl) nameEl.textContent = peerName;
+    const avEl = document.getElementById('userChatAvatar'); if (avEl) avEl.textContent = initials(peerName);
     const msgs = document.getElementById('userChatMessages'); if (msgs) msgs.innerHTML = '';
+
+    // Bannière du job concerné (si la conversation est liée à une annonce)
+    const banner = document.getElementById('userChatJobBanner');
+    if (banner) {
+        if (jobTitle || (jobId && jobId !== 'general')) {
+            banner.textContent = '📋 ' + (jobTitle || 'Voir l\'annonce concernée');
+            banner.style.display = 'block';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    // Fermer l'inbox si elle était ouverte, afficher la conversation
+    const inbox = document.getElementById('messagesInbox'); if (inbox) inbox.style.display = 'none';
     const ov = document.getElementById('userChatOverlay'); if (ov) ov.style.display = 'flex';
-    if (userChatRef) userChatRef.off();
-    userChatRef = db.ref('chats/' + userChatThreadId + '/messages').limitToLast(100);
+
+    // Écoute des messages en temps réel
+    userChatRef = db.ref('chats/' + userChatThreadId + '/messages').limitToLast(200);
     userChatRef.on('child_added', snap => {
         const m = snap.val(); if (!m) return;
-        addUserChatBubble(m.text, m.from === user.uid);
+        if (userChatMsgIds.has(snap.key)) return;
+        userChatMsgIds.add(snap.key);
+        renderChatMessage(snap.key, m, m.from === user.uid);
+        // Si c'est un message reçu, on le marque comme lu tout de suite (conversation ouverte)
+        if (m.from !== user.uid) markThreadRead();
     });
+    // Écoute des mises à jour (accusé de lecture ✓✓) : quand l'autre lit mon message
+    userChatRef.on('child_changed', snap => {
+        const m = snap.val(); if (!m) return;
+        updateMessageTicks(snap.key, m, m.from === user.uid);
+    });
+
+    // Écoute "en train d'écrire..." de l'autre personne
+    userChatTypingRef = db.ref('chats/' + userChatThreadId + '/meta/typing/' + peerUid);
+    userChatTypingRef.on('value', snap => {
+        const ts = snap.val();
+        const active = ts && (Date.now() - ts < 4000);
+        const el = document.getElementById('userChatTyping');
+        if (el) el.style.display = active ? 'flex' : 'none';
+        const statusEl = document.getElementById('userChatStatus');
+        if (statusEl && active) { statusEl.textContent = 'en train d\'écrire…'; statusEl.classList.add('online'); }
+        else if (statusEl) { statusEl.textContent = '🔒 Messagerie sécurisée'; statusEl.classList.remove('online'); }
+    });
+
+    // Marque la conversation comme lue à l'ouverture
+    markThreadRead();
 }
-function closeUserChat() {
+
+function detachUserChatListeners() {
     if (userChatRef) { userChatRef.off(); userChatRef = null; }
+    if (userChatTypingRef) { userChatTypingRef.off(); userChatTypingRef = null; }
+}
+
+function closeUserChat() {
+    detachUserChatListeners();
+    // On efface notre indicateur "en train d'écrire" en partant
+    if (userChatThreadId && auth.currentUser) {
+        db.ref('chats/' + userChatThreadId + '/meta/typing/' + auth.currentUser.uid).remove().catch(() => {});
+    }
     const ov = document.getElementById('userChatOverlay'); if (ov) ov.style.display = 'none';
+    userChatThreadId = null; userChatPeerUid = null; userChatJobId = null;
 }
-function addUserChatBubble(text, mine) {
+
+function openJobFromChat() {
+    if (userChatJobId && userChatJobId !== 'general') {
+        const jid = userChatJobId;
+        closeUserChat();
+        if (typeof jobsById !== 'undefined' && jobsById[jid]) openJobPreview(jid);
+        else if (typeof openJobPreview === 'function') openJobPreview(jid);
+    }
+}
+
+// ---------- AFFICHAGE DES MESSAGES ----------
+function renderChatMessage(msgId, m, mine) {
     const c = document.getElementById('userChatMessages'); if (!c) return;
+
+    // Séparateur de date
+    const daySep = formatDaySep(m.timestamp || Date.now());
+    if (daySep !== userChatLastDay) {
+        userChatLastDay = daySep;
+        const sep = document.createElement('div');
+        sep.className = 'msg-day-sep';
+        sep.textContent = daySep;
+        c.appendChild(sep);
+    }
+
     const el = document.createElement('div');
-    el.className = 'chat-msg ' + (mine ? 'mine' : 'theirs');
-    el.textContent = text;
-    c.appendChild(el); c.scrollTop = c.scrollHeight;
+    el.className = 'msg-bubble ' + (mine ? 'mine' : 'theirs');
+    el.id = 'msg-' + msgId;
+
+    let inner = '';
+    if (m.imageUrl) {
+        inner += '<img src="' + escapeHtml(m.imageUrl) + '" onclick="window.open(this.src,\'_blank\')" alt="photo">';
+    }
+    if (m.text) {
+        inner += '<div>' + escapeHtml(m.text) + '</div>';
+    }
+    // Métadonnées : heure + accusé de lecture (seulement pour MES messages)
+    inner += '<div class="msg-meta"><span>' + formatChatTime(m.timestamp) + '</span>';
+    if (mine) {
+        const read = m.readBy && userChatPeerUid && m.readBy[userChatPeerUid];
+        inner += '<span class="msg-tick' + (read ? ' read' : '') + '">' + (read ? '✓✓' : '✓') + '</span>';
+    }
+    inner += '</div>';
+
+    el.innerHTML = inner;
+    c.appendChild(el);
+    c.scrollTop = c.scrollHeight;
 }
+
+function updateMessageTicks(msgId, m, mine) {
+    if (!mine) return;
+    const el = document.getElementById('msg-' + msgId); if (!el) return;
+    const tick = el.querySelector('.msg-tick'); if (!tick) return;
+    const read = m.readBy && userChatPeerUid && m.readBy[userChatPeerUid];
+    tick.textContent = read ? '✓✓' : '✓';
+    tick.classList.toggle('read', !!read);
+}
+
+// ---------- ENVOI ----------
 async function sendUserChatMessage() {
     const user = auth.currentUser;
     if (!user || !userChatThreadId) return;
@@ -6275,17 +6400,194 @@ async function sendUserChatMessage() {
     const text = (input.value || '').trim();
     if (!text) return;
     input.value = '';
+    await pushChatMessage({ text: text.slice(0, 800) });
+}
+
+async function sendUserChatImage(fileInput) {
+    const user = auth.currentUser;
+    if (!user || !userChatThreadId) return;
+    const file = fileInput.files && fileInput.files[0];
+    fileInput.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showToast('Choisis une image.', 'error'); return; }
+    showToast('Envoi de la photo…', 'info');
     try {
-        await db.ref('chats/' + userChatThreadId + '/messages').push({
-            from: user.uid, to: userChatPeerUid, text: text.slice(0, 800), timestamp: Date.now()
-        });
-        await db.ref('chats/' + userChatThreadId + '/meta').update({
+        const url = await uploadToCloudinary(file);
+        await pushChatMessage({ imageUrl: url });
+    } catch (e) {
+        console.error('sendUserChatImage error', e);
+        showToast('Échec de l\'envoi de la photo.', 'error');
+    }
+}
+
+async function pushChatMessage(payload) {
+    const user = auth.currentUser;
+    if (!user || !userChatThreadId || !userChatPeerUid) return;
+    try {
+        const msg = {
+            from: user.uid, to: userChatPeerUid,
+            timestamp: Date.now(),
+            readBy: { [user.uid]: true } // je l'ai forcément lu, c'est moi qui l'envoie
+        };
+        if (payload.text) msg.text = payload.text;
+        if (payload.imageUrl) msg.imageUrl = payload.imageUrl;
+
+        await db.ref('chats/' + userChatThreadId + '/messages').push(msg);
+
+        // Mise à jour du méta : dernier message, compteur non-lus du destinataire +1
+        const myName = (profilesCache[user.uid] || {}).name || 'Moi';
+        const peerName = (profilesCache[userChatPeerUid] || {}).name || 'Utilisateur';
+        const preview = payload.imageUrl ? '📷 Photo' : (payload.text || '').slice(0, 100);
+        const metaRef = db.ref('chats/' + userChatThreadId + '/meta');
+        await metaRef.update({
             participants: { [user.uid]: true, [userChatPeerUid]: true },
-            lastMessage: text.slice(0, 100), lastAt: Date.now()
+            names: { [user.uid]: myName, [userChatPeerUid]: peerName },
+            jobId: userChatJobId || 'general',
+            lastMessage: preview,
+            lastAt: Date.now(),
+            lastFrom: user.uid
         });
-        // Prévient le destinataire instantanément qu'il a reçu un nouveau message
+        // Incrémente le compteur de non-lus du destinataire (transaction = sûr)
+        await metaRef.child('unread/' + userChatPeerUid).transaction(c => (c || 0) + 1);
+        // J'efface mon propre "en train d'écrire"
+        metaRef.child('typing/' + user.uid).remove().catch(() => {});
+
+        // Prévient le destinataire instantanément
         if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-message');
-    } catch (e) { console.error('sendUserChatMessage error', e); showToast(t('genericError'), 'error'); }
+    } catch (e) {
+        console.error('pushChatMessage error', e);
+        showToast(t('genericError'), 'error');
+    }
+}
+
+// ---------- "EN TRAIN D'ÉCRIRE…" ----------
+function onUserChatTyping() {
+    const user = auth.currentUser;
+    if (!user || !userChatThreadId) return;
+    const now = Date.now();
+    // On n'écrit dans Firebase qu'au max toutes les 2s pour économiser
+    if (now - lastTypingSent > 2000) {
+        lastTypingSent = now;
+        db.ref('chats/' + userChatThreadId + '/meta/typing/' + user.uid).set(now).catch(() => {});
+    }
+    // Efface l'indicateur après 3s d'inactivité
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+        db.ref('chats/' + userChatThreadId + '/meta/typing/' + user.uid).remove().catch(() => {});
+    }, 3000);
+}
+
+// ---------- MARQUER COMME LU ----------
+async function markThreadRead() {
+    const user = auth.currentUser;
+    if (!user || !userChatThreadId) return;
+    try {
+        // Remet mon compteur de non-lus à 0
+        await db.ref('chats/' + userChatThreadId + '/meta/unread/' + user.uid).set(0);
+        // Marque les messages reçus non lus comme lus (readBy) -> déclenche le ✓✓ chez l'autre
+        const snap = await db.ref('chats/' + userChatThreadId + '/messages').limitToLast(50).once('value');
+        const updates = {};
+        snap.forEach(child => {
+            const m = child.val();
+            if (m && m.from !== user.uid && !(m.readBy && m.readBy[user.uid])) {
+                updates['chats/' + userChatThreadId + '/messages/' + child.key + '/readBy/' + user.uid] = true;
+            }
+        });
+        if (Object.keys(updates).length) await db.ref().update(updates);
+    } catch (e) { /* non critique */ }
+}
+
+// ---------- BOÎTE DE MESSAGES (INBOX) ----------
+function openMessagesInbox() {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) { showToast('Connecte-toi pour voir tes messages.', 'error'); return; }
+    const overlay = document.getElementById('messagesInbox'); if (overlay) overlay.style.display = 'flex';
+    renderInbox();
+}
+function closeMessagesInbox() {
+    const overlay = document.getElementById('messagesInbox'); if (overlay) overlay.style.display = 'none';
+}
+
+function renderInbox() {
+    const user = auth.currentUser; if (!user) return;
+    const list = document.getElementById('msgInboxList');
+    const empty = document.getElementById('msgInboxEmpty');
+    if (!list) return;
+
+    // On récupère toutes les conversations où je suis participant.
+    db.ref('chats').orderByChild('meta/lastAt').once('value').then(snap => {
+        const threads = [];
+        snap.forEach(child => {
+            const meta = (child.val() || {}).meta;
+            if (meta && meta.participants && meta.participants[user.uid]) {
+                threads.push({ id: child.key, meta });
+            }
+        });
+        // Tri : plus récent en premier
+        threads.sort((a, b) => (b.meta.lastAt || 0) - (a.meta.lastAt || 0));
+
+        // Vide la liste (sauf le bloc "empty")
+        Array.from(list.querySelectorAll('.msg-thread-item')).forEach(el => el.remove());
+
+        if (!threads.length) {
+            if (empty) empty.style.display = 'block';
+            return;
+        }
+        if (empty) empty.style.display = 'none';
+
+        threads.forEach(({ id, meta }) => {
+            // Trouve l'autre participant
+            const peerUid = Object.keys(meta.participants || {}).find(u => u !== user.uid);
+            const peerName = (meta.names && peerUid && meta.names[peerUid]) ||
+                             (peerUid && profilesCache[peerUid] && profilesCache[peerUid].name) || 'Utilisateur';
+            const unread = (meta.unread && meta.unread[user.uid]) || 0;
+            const last = meta.lastMessage || '';
+            const lastPrefix = (meta.lastFrom === user.uid) ? 'Toi : ' : '';
+
+            const item = document.createElement('div');
+            item.className = 'msg-thread-item';
+            item.onclick = () => openUserChat(peerUid, meta.jobId, peerName, meta.jobTitle);
+            item.innerHTML =
+                '<div class="msg-thread-avatar">' + escapeHtml(initials(peerName)) + '</div>' +
+                '<div class="msg-thread-mid">' +
+                    '<div class="msg-thread-name">' + escapeHtml(peerName) + '</div>' +
+                    '<div class="msg-thread-last">' + escapeHtml(lastPrefix + last) + '</div>' +
+                '</div>' +
+                '<div class="msg-thread-right">' +
+                    '<div class="msg-thread-time">' + formatChatTime(meta.lastAt) + '</div>' +
+                    (unread > 0 ? '<div class="msg-thread-unread">' + unread + '</div>' : '') +
+                '</div>';
+            list.appendChild(item);
+        });
+    }).catch(e => console.error('renderInbox error', e));
+}
+
+// ---------- BADGE GLOBAL DE NON-LUS ----------
+function startInboxBadgeWatch(uid) {
+    stopInboxBadgeWatch();
+    inboxRef = db.ref('chats');
+    inboxRef.on('value', snap => {
+        let total = 0;
+        snap.forEach(child => {
+            const meta = (child.val() || {}).meta;
+            if (meta && meta.participants && meta.participants[uid] && meta.unread) {
+                total += (meta.unread[uid] || 0);
+            }
+        });
+        const badge = document.getElementById('messagesBadge');
+        if (badge) {
+            if (total > 0) { badge.textContent = total > 99 ? '99+' : total; badge.style.display = 'flex'; }
+            else { badge.style.display = 'none'; }
+        }
+        // Si l'inbox est ouverte, on la rafraîchit
+        const inbox = document.getElementById('messagesInbox');
+        if (inbox && inbox.style.display !== 'none') renderInbox();
+    });
+}
+function stopInboxBadgeWatch() {
+    if (inboxRef) { inboxRef.off(); inboxRef = null; }
+    const badge = document.getElementById('messagesBadge');
+    if (badge) badge.style.display = 'none';
 }
 
   // ==========================================
