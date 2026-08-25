@@ -1,8 +1,11 @@
-// ===== Notifications DEVIS + MESSAGES in-app (JobMarket Cameroon) =====
+// ===== Notifications MESSAGES in-app (JobMarket Cameroon) =====
 //
-// Rôle : envoyer une notification push quand :
-//   - un artisan reçoit une DEMANDE DE DEVIS  (nœud Firebase "quotes")
-//   - un utilisateur reçoit un MESSAGE in-app  (nœud "chats/{threadId}/messages")
+// Rôle : envoyer une notification push quand un utilisateur reçoit un
+// MESSAGE in-app (nœud "chats/{threadId}/messages").
+//
+// NOTE : le système de "devis" a été retiré (il faisait doublon avec la
+// messagerie). Ce script ne gère donc plus que les messages. Le nom de
+// fichier est conservé pour ne pas casser le workflow qui l'appelle.
 //
 // Ce script est SÉPARÉ de scripts/sendNotifications.js (qui, lui, ne gère
 // QUE les nouveaux jobs). On ne touche donc pas au système jobs qui marche
@@ -164,83 +167,6 @@ function shouldMark(result) {
   return result === "sent" || result === "invalid" || result === "skipped";
 }
 
-// ============================ DEVIS ============================
-async function processQuotes(ctx) {
-  const { tokensMap, profilesMap, presenceMap, notifyPrefsMap, adminUids, now } = ctx;
-  const snap = await db.ref("quotes").once("value");
-  const quotes = snap.val() || {};
-  const updates = {};
-  let sent = 0;
-
-  // Cache titres de jobs (évite de relire le même job plusieurs fois)
-  const jobTitleCache = new Map();
-  async function jobTitle(jobId) {
-    if (!jobId) return "";
-    if (jobTitleCache.has(jobId)) return jobTitleCache.get(jobId);
-    const js = await db.ref(`jobs/${jobId}/title`).once("value");
-    const title = js.val() || "";
-    jobTitleCache.set(jobId, title);
-    return title;
-  }
-
-  for (const [quoteId, q] of Object.entries(quotes)) {
-    if (!q || typeof q !== "object") continue;
-    const ts = q.timestamp || 0;
-    if (now - ts > WINDOW_MS) continue; // trop ancien
-
-    const notified = q._notified || {};
-    const title = await jobTitle(q.jobId);
-
-    // ---- Destinataire principal : l'artisan propriétaire de l'annonce ----
-    const ownerUid = q.jobOwnerUid;
-    if (ownerUid && !notified[ownerUid]) {
-      let result;
-      if (isCurrentlyActive(ownerUid, presenceMap) || !wantsCategory(ownerUid, "quotes", notifyPrefsMap)) {
-        result = "skipped"; // vu en direct, ou notifs devis coupées
-      } else {
-        const lang = (profilesMap[ownerUid] && profilesMap[ownerUid].lang) || "fr";
-        const s = notifStrings(lang);
-        result = await pushToUid(ownerUid, tokensMap, {
-          type: "quote",
-          title: s.quoteTitle,
-          body: s.quoteBody(title, q.budget),
-          jobId: String(q.jobId || ""),
-          quoteId: String(quoteId),
-          lang
-        });
-      }
-      if (result === "sent") sent++;
-      if (shouldMark(result)) updates[`quotes/${quoteId}/_notified/${ownerUid}`] = true;
-    }
-
-    // ---- Admins (toi) ----
-    for (const adminUid of adminUids) {
-      if (adminUid === ownerUid) continue; // déjà notifié comme destinataire
-      if (notified[adminUid]) continue;
-      let result;
-      if (isCurrentlyActive(adminUid, presenceMap)) {
-        result = "skipped";
-      } else {
-        const lang = (profilesMap[adminUid] && profilesMap[adminUid].lang) || "fr";
-        const s = notifStrings(lang);
-        result = await pushToUid(adminUid, tokensMap, {
-          type: "quote-admin",
-          title: s.quoteAdminTitle,
-          body: s.quoteAdminBody(title),
-          jobId: String(q.jobId || ""),
-          quoteId: String(quoteId),
-          lang
-        });
-      }
-      if (result === "sent") sent++;
-      if (shouldMark(result)) updates[`quotes/${quoteId}/_notified/${adminUid}`] = true;
-    }
-  }
-
-  if (Object.keys(updates).length) await db.ref().update(updates);
-  return sent;
-}
-
 // ============================ MESSAGES ============================
 async function processMessages(ctx) {
   const { tokensMap, profilesMap, presenceMap, notifyPrefsMap, adminUids, now } = ctx;
@@ -311,6 +237,114 @@ async function processMessages(ctx) {
   return sent;
 }
 
+// ============================ RÉPARATION DES INBOXES ============================
+// Filet de sécurité côté SERVEUR : c'est normalement le client (app.js) qui
+// écrit l'entrée "conversation" de chaque utilisateur
+// (userInboxes/{uid}/threads/{threadId}) à l'envoi d'un message. Mais un
+// appareil qui tourne sur une VIEILLE version (cache PWA) envoie bien le
+// message dans "chats" SANS écrire l'entrée -> la liste "Messages" du
+// destinataire reste vide alors que les messages existent.
+//
+// Cette fonction scanne tous les threads et, pour chaque participant d'un
+// échange récent, recrée / met à jour l'entrée manquante (nom, dernier
+// message, heure, job) et incrémente le compteur "unread".
+//
+// Idempotence (rejouable à l'infini sans double-compte) :
+//   - le compteur unread n'incrémente que si le message est PLUS RÉCENT que
+//     entry.lastAt (l'entrée reflète déjà les messages >= lastAt) ;
+//   - un client de version récente a déjà écrit l'entrée (entry.lastAt >=
+//     timestamp du message) -> rien n'est recompté ;
+//   - un message déjà lu (readBy) n'est jamais compté.
+async function repairInboxes(ctx) {
+  const { profilesMap, now } = ctx;
+  const [chatsSnap, jobsSnap, inboxesSnap] = await Promise.all([
+    db.ref("chats").once("value"),
+    db.ref("jobs").once("value"),
+    db.ref("userInboxes").once("value")
+  ]);
+  const chats = chatsSnap.val() || {};
+  const jobs = jobsSnap.val() || {};
+  const inboxes = inboxesSnap.val() || {};
+  const updates = {};
+  let fixed = 0;
+
+  for (const [threadId, thread] of Object.entries(chats)) {
+    if (!thread || typeof thread !== "object" || !thread.messages) continue;
+    const meta = thread.meta && typeof thread.meta === "object" ? thread.meta : {};
+    const names = meta.names && typeof meta.names === "object" ? meta.names : {};
+    const jobId = meta.jobId || "general";
+    const jobTitle = meta.jobTitle || (jobId !== "general" && jobs[jobId] && jobs[jobId].title) || null;
+
+    // Participants : la liste du meta + tous les expéditaires/destinataires
+    // des messages récents (couvre les threads dont le meta est abîmé).
+    const participants = new Set();
+    if (meta.participants && typeof meta.participants === "object") {
+      Object.keys(meta.participants).forEach((u) => participants.add(u));
+    }
+    for (const m of Object.values(thread.messages)) {
+      if (!m || typeof m !== "object") continue;
+      if (now - (m.timestamp || 0) > WINDOW_MS) continue;
+      if (m.from) participants.add(m.from);
+      if (m.to) participants.add(m.to);
+    }
+    if (participants.size < 2) continue;
+
+    // Message le plus récent du thread (pour l'aperçu de l'entrée)
+    let latest = null;
+    for (const m of Object.values(thread.messages)) {
+      if (!m || typeof m !== "object" || !m.timestamp) continue;
+      if (!latest || m.timestamp > latest.timestamp) latest = m;
+    }
+    if (!latest) continue;
+
+    for (const uid of participants) {
+      const peerUid = [...participants].find((u) => u !== uid);
+      if (!peerUid) continue;
+      const peerName =
+        names[peerUid] || (profilesMap[peerUid] && profilesMap[peerUid].name) || "Utilisateur";
+
+      const entry =
+        inboxes[uid] && inboxes[uid].threads && inboxes[uid].threads[threadId]
+          ? inboxes[uid].threads[threadId]
+          : null;
+      const entryLastAt = (entry && entry.lastAt) || 0;
+
+      const patch = {};
+      // 1) Entrée manquante ou aperçu plus ancien que le dernier message
+      if (latest.timestamp > entryLastAt) {
+        patch.peerUid = peerUid;
+        patch.peerName = peerName;
+        patch.jobId = jobId;
+        if (jobTitle) patch.jobTitle = jobTitle;
+        patch.lastMessage = latest.imageUrl ? "📷 Photo" : (latest.text || "").slice(0, 100);
+        patch.lastAt = latest.timestamp;
+        patch.lastFrom = latest.from;
+      }
+      // 2) Messages non-lus de l'autre -> compteur unread (+1 chacun)
+      let unread = (entry && entry.unread) || 0;
+      for (const m of Object.values(thread.messages)) {
+        if (!m || typeof m !== "object") continue;
+        if (now - (m.timestamp || 0) > WINDOW_MS) continue;
+        if (!m.to || m.to !== uid) continue;
+        if (!m.from || m.from === uid) continue;
+        if (m.readBy && m.readBy[uid]) continue; // déjà lu
+        if ((m.timestamp || 0) > entryLastAt) unread++; // pas encore compté
+      }
+      if (unread !== (entry && entry.unread) || Object.keys(patch).length) {
+        patch.unread = unread;
+      }
+
+      if (Object.keys(patch).length) {
+        updates[`userInboxes/${uid}/threads/${threadId}`] = patch;
+        fixed++;
+      }
+    }
+  }
+
+  if (Object.keys(updates).length) await db.ref().update(updates);
+  return fixed;
+}
+
 // ============================ MAIN ============================
 async function run() {
   try {
@@ -322,18 +356,23 @@ async function run() {
       getAdminUids()
     ]);
 
+    const ctx = { tokensMap, profilesMap, presenceMap, notifyPrefsMap, adminUids, now: Date.now() };
+
+    // 1) Réparation des inboxs : toujours exécutée (même sans aucun token),
+    //    c'est le filet de sécurité de la liste "Messages".
+    const inboxesFixed = await repairInboxes(ctx);
+    console.log(`🔧 ${inboxesFixed} entrée(s) d'inbox créée(s)/réparée(s).`);
+
     console.log(`📱 ${tokensMap.size} token(s) enregistré(s), ${adminUids.length} admin(s).`);
     if (tokensMap.size === 0) {
-      console.log("Aucun token de notification, rien à envoyer.");
+      console.log("Aucun token de notification, rien à envoyer (inbox réparée quand même).");
       return;
     }
 
-    const ctx = { tokensMap, profilesMap, presenceMap, notifyPrefsMap, adminUids, now: Date.now() };
-
-    const quoteSent = await processQuotes(ctx);
+    // 2) Notifications push des messages
     const msgSent = await processMessages(ctx);
 
-    console.log(`✅ ${quoteSent} notif(s) devis + ${msgSent} notif(s) message envoyée(s).`);
+    console.log(`✅ ${msgSent} notif(s) message envoyée(s).`);
   } catch (err) {
     console.error("❌ Erreur globale:", err);
     process.exitCode = 1;
