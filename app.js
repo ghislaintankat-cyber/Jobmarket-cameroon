@@ -6440,6 +6440,22 @@ async function sendUserChatImage(fileInput) {
     }
 }
 
+// Petit retry (1 fois, après 400ms) pour les écritures de messagerie :
+// le réseau mobile est instable, et une écriture d'inbox ratée ne doit pas
+// faire échouer l'envoi pour de bon.
+async function writeWithRetry(fn, retries) {
+    retries = retries === undefined ? 1 : retries;
+    try {
+        await fn();
+    } catch (e) {
+        if (retries > 0) {
+            await new Promise(r => setTimeout(r, 400));
+            return writeWithRetry(fn, retries - 1);
+        }
+        throw e;
+    }
+}
+
 async function pushChatMessage(payload) {
     const user = auth.currentUser;
     if (!user || !userChatThreadId || !userChatPeerUid) return;
@@ -6470,44 +6486,60 @@ async function pushChatMessage(payload) {
         // écriture doit être terminée d'abord.
         await db.ref('chats/' + tid + '/meta/participants').update({ [user.uid]: true, [peerUid]: true });
 
-        // ÉTAPE 2 : UNE SEULE opération atomique = le message + le méta +
-        // les deux boîtes de réception. C'est la boîte de réception de
-        // chacun (userInboxes/{uid}/threads/{tid}) qui alimente l'inbox et
-        // le badge : l'aperçu de la conversation tel que le voit CET
-        // utilisateur. Personne n'a besoin (ni le droit) de lire tout
-        // /chats pour afficher sa liste de conversations.
-        const base = 'userInboxes/';
-        const updates = {};
-        updates['chats/' + tid + '/messages/' + msgId] = msg;
-        updates['chats/' + tid + '/meta/names/' + user.uid] = myName;
-        updates['chats/' + tid + '/meta/names/' + peerUid] = peerName;
-        updates['chats/' + tid + '/meta/jobId'] = userChatJobId || 'general';
-        if (jobTitle) updates['chats/' + tid + '/meta/jobTitle'] = String(jobTitle).slice(0, 120);
-        updates['chats/' + tid + '/meta/lastMessage'] = preview;
-        updates['chats/' + tid + '/meta/lastAt'] = now;
-        updates['chats/' + tid + '/meta/lastFrom'] = user.uid;
-        // Mon aperçu : l'autre participant est "peer", dernier message de moi.
-        // On ne touche pas à mon compteur "unread" (je suis en train
-        // d'écrire, ma conversation est donc vue).
-        updates[base + user.uid + '/threads/' + tid + '/peerUid'] = peerUid;
-        updates[base + user.uid + '/threads/' + tid + '/peerName'] = peerName;
-        updates[base + user.uid + '/threads/' + tid + '/jobId'] = userChatJobId || 'general';
-        updates[base + user.uid + '/threads/' + tid + '/jobTitle'] = jobTitle ? String(jobTitle).slice(0, 120) : null;
-        updates[base + user.uid + '/threads/' + tid + '/lastMessage'] = preview;
-        updates[base + user.uid + '/threads/' + tid + '/lastAt'] = now;
-        updates[base + user.uid + '/threads/' + tid + '/lastFrom'] = user.uid;
-        // Son aperçu : l'autre participant suis-moi. Pareil, on ne touche
-        // PAS à son compteur "unread" ici (il est incrémenté à l'étape 3).
-        updates[base + peerUid + '/threads/' + tid + '/peerUid'] = user.uid;
-        updates[base + peerUid + '/threads/' + tid + '/peerName'] = myName;
-        updates[base + peerUid + '/threads/' + tid + '/jobId'] = userChatJobId || 'general';
-        updates[base + peerUid + '/threads/' + tid + '/jobTitle'] = jobTitle ? String(jobTitle).slice(0, 120) : null;
-        updates[base + peerUid + '/threads/' + tid + '/lastMessage'] = preview;
-        updates[base + peerUid + '/threads/' + tid + '/lastAt'] = now;
-        updates[base + peerUid + '/threads/' + tid + '/lastFrom'] = user.uid;
-        await db.ref().update(updates);
+        // ÉTAPE 2a : le message (écriture directe au niveau du message).
+        // ⚠️ Piège Firebase n°1 : une update() est évaluée par les règles au
+        // niveau de la RÉFÉRENCE appelée. À la racine (db.ref().update())
+        // il n'y a aucune règle .write → l'écriture est TOUJOURS refusée
+        // (permission_denied) → c'est ce qui faisait perdre chaque message.
+        // Ici la référence chats/{threadId}/messages/{id} est couverte par
+        // la règle $threadId (participant) → autorisé.
+        await db.ref('chats/' + tid + '/messages/' + msgId).set(msg);
 
-        // ÉTAPE 3 : compteur de non-lus du DESTINATAIRE +1 (transaction =
+        // ÉTAPE 2b : le méta — update() à la référence chats/{threadId}/meta.
+        // ⚠️ Piège Firebase n°2 : on ne remplace JAMAIS le nœud "meta" tout
+        // entier (update({meta: {...}}) EFFACERAIT participants et typing,
+        // car une update() remplace chaque chemin listé dans son entier).
+        // Donc chaque champ de meta est mis à jour séparément.
+        const metaUpdate = {
+            names: { [user.uid]: myName, [peerUid]: peerName },
+            jobId: userChatJobId || 'general',
+            lastMessage: preview,
+            lastAt: now,
+            lastFrom: user.uid
+        };
+        if (jobTitle) metaUpdate.jobTitle = String(jobTitle).slice(0, 120);
+        await db.ref('chats/' + tid + '/meta').update(metaUpdate);
+
+        // ÉTAPE 3 : la boîte de réception du DESTINATAIRE
+        // (référence userInboxes/{destinataire}/threads/{threadId} —
+        // autorisée car je suis participant du thread). 1 retry au cas où.
+        // C'est cette écriture qui fait apparaître la conversation dans son
+        // inbox + son badge.
+        const peerEntry = {
+            peerUid: user.uid,
+            peerName: myName,
+            jobId: userChatJobId || 'general',
+            jobTitle: jobTitle ? String(jobTitle).slice(0, 120) : null,
+            lastMessage: preview,
+            lastAt: now,
+            lastFrom: user.uid
+        };
+        await writeWithRetry(() => db.ref('userInboxes/' + peerUid + '/threads/' + tid).update(peerEntry));
+
+        // ÉTAPE 4 : MA boîte de réception (même aperçu, de mon point de vue).
+        // On ne touche pas au compteur "unread" de l'un ou de l'autre ici.
+        const myEntry = {
+            peerUid: peerUid,
+            peerName: peerName,
+            jobId: userChatJobId || 'general',
+            jobTitle: jobTitle ? String(jobTitle).slice(0, 120) : null,
+            lastMessage: preview,
+            lastAt: now,
+            lastFrom: user.uid
+        };
+        await db.ref('userInboxes/' + user.uid + '/threads/' + tid).update(myEntry);
+
+        // ÉTAPE 5 : compteur de non-lus du DESTINATAIRE +1 (transaction =
         // sûr même si deux messages arrivent en même temps). C'est ce
         // compteur qui fait apparaître la bulle dans son inbox + le badge.
         await db.ref('userInboxes/' + peerUid + '/threads/' + tid + '/unread').transaction(c => (c || 0) + 1);
@@ -6553,10 +6585,12 @@ async function markThreadRead() {
         snap.forEach(child => {
             const m = child.val();
             if (m && m.from !== user.uid && !(m.readBy && m.readBy[user.uid])) {
-                updates['chats/' + userChatThreadId + '/messages/' + child.key + '/readBy/' + user.uid] = true;
+                updates[child.key] = { readBy: { [user.uid]: true } };
             }
         });
-        if (Object.keys(updates).length) await db.ref().update(updates);
+        // update() à la référence chats/{threadId}/messages — PAS à la racine
+        // (db.ref().update() est toujours refusé par les règles, voir pushChatMessage)
+        if (Object.keys(updates).length) await db.ref('chats/' + userChatThreadId + '/messages').update(updates);
     } catch (e) { /* non critique */ }
 }
 
@@ -6750,18 +6784,20 @@ async function recordJobContactOnce(job, uid) {
   const key = job.id + '_' + uid;
   const existing = await db.ref('job_contacts/' + key).once('value');
   if (existing.exists()) return false;
-  const updates = {};
-  updates['job_contacts/' + key] = {
+  // 3 écritures ciblées — PAS une update() à la racine (toujours refusée
+  // par les règles, voir pushChatMessage). L'ordre compte : les deux index
+  // vérifient dans leurs règles que job_contacts/{clé} existe déjà et
+  // appartient bien à l'utilisateur connecté.
+  await db.ref('job_contacts/' + key).set({
     jobId: job.id,
     jobOwnerUid: job.user,
     contactUid: uid,
     timestamp: Date.now(),
     reviewed: false, // passera à true quand un avis aura été laissé ou ignoré
     notifiedOwner: false // passera à true une fois le propriétaire notifié (voir scripts/sendContactNotifications.js)
-  };
-  updates['job_contacts_by_user/' + uid + '/' + key] = true;
-  updates['job_contacts_by_job/' + job.id + '/' + key] = true;
-  await db.ref().update(updates);
+  });
+  await db.ref('job_contacts_by_user/' + uid + '/' + key).set(true);
+  await db.ref('job_contacts_by_job/' + job.id + '/' + key).set(true);
   return true;
 }
 
