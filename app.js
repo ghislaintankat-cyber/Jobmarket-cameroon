@@ -4545,7 +4545,11 @@ function logNotificationOpened(variant) {
   const key = variant || 'unknown';
   try {
     const today = new Date().toISOString().slice(0, 10);
-    db.ref('notifStats/' + today + '/' + key + '/opened').transaction((current) => (current || 0) + 1);
+    // ServerValue.increment plutôt que transaction : une transaction exige
+    // le DROIT DE LIRE le nœud avant (or notifStats n'est lisible que par
+    // l'admin), donc elle échouait silencieusement pour tout user normal.
+    // L'incrément est fait CÔTÉ SERVEUR : atomique, aucune lecture requise.
+    db.ref('notifStats/' + today + '/' + key + '/opened').set(firebase.database.ServerValue.increment(1)).catch(() => {});
   } catch (e) { /* stat non critique, on ignore silencieusement */ }
 }
 
@@ -4564,7 +4568,12 @@ function logNotificationOpened(variant) {
 function bumpDailyStat(metric) {
   try {
     const today = new Date().toISOString().slice(0, 10);
-    db.ref('dailyStats/' + today + '/' + metric).transaction((current) => (current || 0) + 1);
+    // ServerValue.increment plutôt que transaction : une transaction exige
+    // le DROIT DE LIRE le nœud avant (or dailyStats n'est lisible que par
+    // l'admin), donc elle échouait silencieusement pour tout user normal —
+    // le dashboard admin ne se remplissait presque jamais. L'incrément
+    // serveur est atomique et ne nécessite aucune lecture.
+    db.ref('dailyStats/' + today + '/' + metric).set(firebase.database.ServerValue.increment(1)).catch(() => {});
   } catch (e) { /* stat non critique, on ignore silencieusement */ }
 }
 
