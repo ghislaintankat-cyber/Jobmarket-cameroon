@@ -6210,11 +6210,22 @@ function renderAchievements(profile) {
 // Structure Firebase :
 //   chats/{threadId}/meta  -> participants{uid:true}, names{uid:name}, jobId,
 //                             jobTitle, lastMessage, lastAt, lastFrom,
-//                             unread{uid:count}, typing{uid:timestamp}
+//                             typing{uid:timestamp}
 //   chats/{threadId}/messages/{id} -> from, to, text, imageUrl, timestamp,
 //                                      readBy{uid:true}, _notified{uid:true}
+//   userInboxes/{uid}/threads/{threadId} -> peerUid, peerName, jobId,
+//                             jobTitle, lastMessage, lastAt, lastFrom, unread
 //
 // threadId = "<uidTrié1>_<uidTrié2>__<jobId|general>" (voir makeThreadId).
+//
+// IMPORTANT — pourquoi "userInboxes" existe : les règles Firebase ne
+// permettent à chacun de lire QUE les conversations dont il est participant.
+// Lire tout /chats (pour construire la liste de l'inbox) est donc REFUSÉ
+// (permission_denied). Chaque utilisateur a donc sa propre "boîte de
+// réception" (userInboxes/{uid}/threads) : à chaque message, l'aperçu de la
+// conversation est copié/mis à jour dans les boîtes des deux participants.
+// L'inbox et le badge ne lisent QUE la boîte du user connecté — léger,
+// rapide, et 100% autorisé par les règles.
 
 let userChatRef = null, userChatThreadId = null, userChatPeerUid = null, userChatJobId = null;
 let userChatMetaRef = null, userChatTypingRef = null;
@@ -6423,34 +6434,77 @@ async function sendUserChatImage(fileInput) {
 async function pushChatMessage(payload) {
     const user = auth.currentUser;
     if (!user || !userChatThreadId || !userChatPeerUid) return;
+    const tid = userChatThreadId;
+    const peerUid = userChatPeerUid;
     try {
+        const msgId = db.ref('chats/' + tid + '/messages').push().key;
+        const now = Date.now();
+        const myName = String((profilesCache[user.uid] || {}).name || user.displayName || 'Utilisateur').slice(0, 60);
+        const peerName = String((profilesCache[peerUid] || {}).name || 'Utilisateur').slice(0, 60);
+        const preview = payload.imageUrl ? '📷 Photo' : (payload.text || '').slice(0, 100);
+        const jobTitle = (userChatJobId && jobsById[userChatJobId] && jobsById[userChatJobId].title)
+            || ((window.currentPreviewJob && window.currentPreviewJob.id === userChatJobId) ? window.currentPreviewJob.title : null);
+
         const msg = {
-            from: user.uid, to: userChatPeerUid,
-            timestamp: Date.now(),
+            from: user.uid, to: peerUid,
+            timestamp: now,
             readBy: { [user.uid]: true } // je l'ai forcément lu, c'est moi qui l'envoie
         };
         if (payload.text) msg.text = payload.text;
         if (payload.imageUrl) msg.imageUrl = payload.imageUrl;
 
-        await db.ref('chats/' + userChatThreadId + '/messages').push(msg);
+        // ÉTAPE 1 : garantir que le thread existe avec ses participants.
+        // C'est important AVANT l'étape 2 : la règle d'écriture des boîtes de
+        // réception vérifie "es-tu participant de ce thread ?" dans la base,
+        // or dans un update() multi-chemin les règles ne voient pas les
+        // autres chemins écrits dans le même appel — donc cette petite
+        // écriture doit être terminée d'abord.
+        await db.ref('chats/' + tid + '/meta/participants').update({ [user.uid]: true, [peerUid]: true });
 
-        // Mise à jour du méta : dernier message, compteur non-lus du destinataire +1
-        const myName = (profilesCache[user.uid] || {}).name || 'Moi';
-        const peerName = (profilesCache[userChatPeerUid] || {}).name || 'Utilisateur';
-        const preview = payload.imageUrl ? '📷 Photo' : (payload.text || '').slice(0, 100);
-        const metaRef = db.ref('chats/' + userChatThreadId + '/meta');
-        await metaRef.update({
-            participants: { [user.uid]: true, [userChatPeerUid]: true },
-            names: { [user.uid]: myName, [userChatPeerUid]: peerName },
-            jobId: userChatJobId || 'general',
-            lastMessage: preview,
-            lastAt: Date.now(),
-            lastFrom: user.uid
-        });
-        // Incrémente le compteur de non-lus du destinataire (transaction = sûr)
-        await metaRef.child('unread/' + userChatPeerUid).transaction(c => (c || 0) + 1);
+        // ÉTAPE 2 : UNE SEULE opération atomique = le message + le méta +
+        // les deux boîtes de réception. C'est la boîte de réception de
+        // chacun (userInboxes/{uid}/threads/{tid}) qui alimente l'inbox et
+        // le badge : l'aperçu de la conversation tel que le voit CET
+        // utilisateur. Personne n'a besoin (ni le droit) de lire tout
+        // /chats pour afficher sa liste de conversations.
+        const base = 'userInboxes/';
+        const updates = {};
+        updates['chats/' + tid + '/messages/' + msgId] = msg;
+        updates['chats/' + tid + '/meta/names/' + user.uid] = myName;
+        updates['chats/' + tid + '/meta/names/' + peerUid] = peerName;
+        updates['chats/' + tid + '/meta/jobId'] = userChatJobId || 'general';
+        if (jobTitle) updates['chats/' + tid + '/meta/jobTitle'] = String(jobTitle).slice(0, 120);
+        updates['chats/' + tid + '/meta/lastMessage'] = preview;
+        updates['chats/' + tid + '/meta/lastAt'] = now;
+        updates['chats/' + tid + '/meta/lastFrom'] = user.uid;
+        // Mon aperçu : l'autre participant est "peer", dernier message de moi.
+        // On ne touche pas à mon compteur "unread" (je suis en train
+        // d'écrire, ma conversation est donc vue).
+        updates[base + user.uid + '/threads/' + tid + '/peerUid'] = peerUid;
+        updates[base + user.uid + '/threads/' + tid + '/peerName'] = peerName;
+        updates[base + user.uid + '/threads/' + tid + '/jobId'] = userChatJobId || 'general';
+        updates[base + user.uid + '/threads/' + tid + '/jobTitle'] = jobTitle ? String(jobTitle).slice(0, 120) : null;
+        updates[base + user.uid + '/threads/' + tid + '/lastMessage'] = preview;
+        updates[base + user.uid + '/threads/' + tid + '/lastAt'] = now;
+        updates[base + user.uid + '/threads/' + tid + '/lastFrom'] = user.uid;
+        // Son aperçu : l'autre participant suis-moi. Pareil, on ne touche
+        // PAS à son compteur "unread" ici (il est incrémenté à l'étape 3).
+        updates[base + peerUid + '/threads/' + tid + '/peerUid'] = user.uid;
+        updates[base + peerUid + '/threads/' + tid + '/peerName'] = myName;
+        updates[base + peerUid + '/threads/' + tid + '/jobId'] = userChatJobId || 'general';
+        updates[base + peerUid + '/threads/' + tid + '/jobTitle'] = jobTitle ? String(jobTitle).slice(0, 120) : null;
+        updates[base + peerUid + '/threads/' + tid + '/lastMessage'] = preview;
+        updates[base + peerUid + '/threads/' + tid + '/lastAt'] = now;
+        updates[base + peerUid + '/threads/' + tid + '/lastFrom'] = user.uid;
+        await db.ref().update(updates);
+
+        // ÉTAPE 3 : compteur de non-lus du DESTINATAIRE +1 (transaction =
+        // sûr même si deux messages arrivent en même temps). C'est ce
+        // compteur qui fait apparaître la bulle dans son inbox + le badge.
+        await db.ref('userInboxes/' + peerUid + '/threads/' + tid + '/unread').transaction(c => (c || 0) + 1);
+
         // J'efface mon propre "en train d'écrire"
-        metaRef.child('typing/' + user.uid).remove().catch(() => {});
+        db.ref('chats/' + tid + '/meta/typing/' + user.uid).remove().catch(() => {});
 
         // Prévient le destinataire instantanément
         if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-message');
@@ -6482,8 +6536,8 @@ async function markThreadRead() {
     const user = auth.currentUser;
     if (!user || !userChatThreadId) return;
     try {
-        // Remet mon compteur de non-lus à 0
-        await db.ref('chats/' + userChatThreadId + '/meta/unread/' + user.uid).set(0);
+        // Remet mon compteur de non-lus à 0 (dans MA boîte de réception)
+        await db.ref('userInboxes/' + user.uid + '/threads/' + userChatThreadId + '/unread').set(0);
         // Marque les messages reçus non lus comme lus (readBy) -> déclenche le ✓✓ chez l'autre
         const snap = await db.ref('chats/' + userChatThreadId + '/messages').limitToLast(50).once('value');
         const updates = {};
@@ -6514,17 +6568,15 @@ function renderInbox() {
     const empty = document.getElementById('msgInboxEmpty');
     if (!list) return;
 
-    // On récupère toutes les conversations où je suis participant.
-    db.ref('chats').orderByChild('meta/lastAt').once('value').then(snap => {
+    // Mes conversations = MA boîte de réception uniquement
+    // (userInboxes/{monUid}/threads). On ne lit JAMAIS tout /chats :
+    // les règles l'interdisent (chaque conversation est privée) et ce
+    // serait inutilement lourd dès que l'app grandit.
+    db.ref('userInboxes/' + user.uid + '/threads').orderByChild('lastAt').limitToLast(50).once('value').then(snap => {
         const threads = [];
-        snap.forEach(child => {
-            const meta = (child.val() || {}).meta;
-            if (meta && meta.participants && meta.participants[user.uid]) {
-                threads.push({ id: child.key, meta });
-            }
-        });
+        snap.forEach(child => threads.push({ id: child.key, entry: child.val() || {} }));
         // Tri : plus récent en premier
-        threads.sort((a, b) => (b.meta.lastAt || 0) - (a.meta.lastAt || 0));
+        threads.sort((a, b) => (b.entry.lastAt || 0) - (a.entry.lastAt || 0));
 
         // Vide la liste (sauf le bloc "empty")
         Array.from(list.querySelectorAll('.msg-thread-item')).forEach(el => el.remove());
@@ -6535,18 +6587,18 @@ function renderInbox() {
         }
         if (empty) empty.style.display = 'none';
 
-        threads.forEach(({ id, meta }) => {
-            // Trouve l'autre participant
-            const peerUid = Object.keys(meta.participants || {}).find(u => u !== user.uid);
-            const peerName = (meta.names && peerUid && meta.names[peerUid]) ||
+        threads.forEach(({ entry }) => {
+            // L'autre participant est enregistré directement dans l'aperçu
+            const peerUid = entry.peerUid;
+            const peerName = entry.peerName ||
                              (peerUid && profilesCache[peerUid] && profilesCache[peerUid].name) || 'Utilisateur';
-            const unread = (meta.unread && meta.unread[user.uid]) || 0;
-            const last = meta.lastMessage || '';
-            const lastPrefix = (meta.lastFrom === user.uid) ? 'Toi : ' : '';
+            const unread = entry.unread || 0;
+            const last = entry.lastMessage || '';
+            const lastPrefix = (entry.lastFrom === user.uid) ? 'Toi : ' : '';
 
             const item = document.createElement('div');
             item.className = 'msg-thread-item';
-            item.onclick = () => openUserChat(peerUid, meta.jobId, peerName, meta.jobTitle);
+            item.onclick = () => openUserChat(peerUid, entry.jobId || 'general', peerName, entry.jobTitle);
             item.innerHTML =
                 '<div class="msg-thread-avatar">' + escapeHtml(initials(peerName)) + '</div>' +
                 '<div class="msg-thread-mid">' +
@@ -6554,7 +6606,7 @@ function renderInbox() {
                     '<div class="msg-thread-last">' + escapeHtml(lastPrefix + last) + '</div>' +
                 '</div>' +
                 '<div class="msg-thread-right">' +
-                    '<div class="msg-thread-time">' + formatChatTime(meta.lastAt) + '</div>' +
+                    '<div class="msg-thread-time">' + formatChatTime(entry.lastAt) + '</div>' +
                     (unread > 0 ? '<div class="msg-thread-unread">' + unread + '</div>' : '') +
                 '</div>';
             list.appendChild(item);
@@ -6565,14 +6617,14 @@ function renderInbox() {
 // ---------- BADGE GLOBAL DE NON-LUS ----------
 function startInboxBadgeWatch(uid) {
     stopInboxBadgeWatch();
-    inboxRef = db.ref('chats');
+    // Écoute UNIQUEMENT ma propre boîte de réception (quelques Ko) —
+    // avant, on écoutait tout /chats, ce que les règles refusaient et ce
+    // qui était très lourd pour la batterie et la connexion.
+    inboxRef = db.ref('userInboxes/' + uid + '/threads');
     inboxRef.on('value', snap => {
         let total = 0;
         snap.forEach(child => {
-            const meta = (child.val() || {}).meta;
-            if (meta && meta.participants && meta.participants[uid] && meta.unread) {
-                total += (meta.unread[uid] || 0);
-            }
+            total += ((child.val() || {}).unread) || 0;
         });
         const badge = document.getElementById('messagesBadge');
         if (badge) {
