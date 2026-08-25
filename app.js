@@ -6237,7 +6237,8 @@ function renderAchievements(profile) {
 // rapide, et 100% autorisé par les règles.
 
 let userChatRef = null, userChatThreadId = null, userChatPeerUid = null, userChatJobId = null;
-let userChatMetaRef = null, userChatTypingRef = null;
+let userChatMetaRef = null, userChatTypingRef = null, userChatPresenceRef = null;
+let replyingToMsg = null; // message à laquelle on répond (barre "répondre à")
 let inboxRef = null;              // écoute globale de mes conversations (pour le badge)
 let userChatMsgIds = new Set();   // évite les doublons d'affichage
 let userChatLastDay = null;       // pour les séparateurs de date
@@ -6255,6 +6256,17 @@ function formatChatTime(ts) {
     if (!ts) return '';
     const d = new Date(ts);
     return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+}
+// Format WhatsApp pour la liste des conversations : 14:32 (aujourd'hui),
+// "Hier", le jour de la semaine (moins de 7 jours), sinon la date complète.
+function formatInboxTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts), now = new Date();
+    if (d.toDateString() === now.toDateString()) return formatChatTime(ts);
+    const yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (d.toDateString() === yest.toDateString()) return 'Hier';
+    if ((now - d) / 86400000 < 7) return d.toLocaleDateString('fr-FR', { weekday: 'long' });
+    return d.toLocaleDateString('fr-FR');
 }
 function formatDaySep(ts) {
     const d = new Date(ts), now = new Date();
@@ -6313,15 +6325,27 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
     userChatRef = db.ref('chats/' + userChatThreadId + '/messages').limitToLast(200);
     userChatRef.on('child_added', snap => {
         const m = snap.val(); if (!m) return;
-        if (userChatMsgIds.has(snap.key)) return;
+        if (userChatMsgIds.has(snap.key)) return; // déjà affiché (envoi optimiste ou doublon)
         userChatMsgIds.add(snap.key);
+        if (m.deletedFor && m.deletedFor[user.uid]) return; // supprimé pour moi : invisible
         renderChatMessage(snap.key, m, m.from === user.uid);
         // Si c'est un message reçu, on le marque comme lu tout de suite (conversation ouverte)
         if (m.from !== user.uid) markThreadRead();
     });
-    // Écoute des mises à jour (accusé de lecture ✓✓) : quand l'autre lit mon message
+    // Écoute des mises à jour : accusé de lecture ✓✓, "supprimé pour moi",
+    // "supprimé pour tout le monde"
     userChatRef.on('child_changed', snap => {
         const m = snap.val(); if (!m) return;
+        if (m.deletedFor && m.deletedFor[user.uid]) {
+            const el = document.getElementById('msg-' + snap.key);
+            if (el) el.remove();
+            return;
+        }
+        if (m.deleted) {
+            const el = document.getElementById('msg-' + snap.key);
+            if (el) el.innerHTML = '<div style="font-style:italic;opacity:0.6;font-size:13px;">🚫 Message supprimé</div>';
+            return;
+        }
         updateMessageTicks(snap.key, m, m.from === user.uid);
     });
 
@@ -6333,9 +6357,20 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
         const el = document.getElementById('userChatTyping');
         if (el) el.style.display = active ? 'flex' : 'none';
         const statusEl = document.getElementById('userChatStatus');
-        if (statusEl && active) { statusEl.textContent = 'en train d\'écrire…'; statusEl.classList.add('online'); }
-        else if (statusEl) { statusEl.textContent = '🔒 Messagerie sécurisée'; statusEl.classList.remove('online'); }
+        if (!statusEl) return;
+        if (active) {
+            statusEl.textContent = 'en train d\'écrire…';
+            statusEl.classList.add('online');
+        } else {
+            // Pas en train d'écrire : on affiche le statut de présence réel
+            db.ref('presence/' + peerUid).once('value').then(s => renderPeerPresenceStatus(s.val()));
+        }
     });
+
+    // Statut de présence en direct : "🟢 en ligne" / "vu à l'instant"
+    // (le nœud presence/{uid} est déjà maintenu par writePresenceState)
+    userChatPresenceRef = db.ref('presence/' + peerUid);
+    userChatPresenceRef.on('value', snap => renderPeerPresenceStatus(snap.val()));
 
     // Marque la conversation comme lue à l'ouverture
     markThreadRead();
@@ -6344,6 +6379,25 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
 function detachUserChatListeners() {
     if (userChatRef) { userChatRef.off(); userChatRef = null; }
     if (userChatTypingRef) { userChatTypingRef.off(); userChatTypingRef = null; }
+    if (userChatPresenceRef) { userChatPresenceRef.off(); userChatPresenceRef = null; }
+}
+
+// Statut de l'autre personne dans l'en-tête du chat, d'après son nœud de
+// présence (maintenu en continu par writePresenceState) :
+// "🟢 en ligne" si au premier plan, "vu il y a X" sinon.
+function renderPeerPresenceStatus(presence) {
+    const statusEl = document.getElementById('userChatStatus');
+    if (!statusEl) return;
+    if (presence && presence.state === 'active') {
+        statusEl.textContent = '🟢 en ligne';
+        statusEl.classList.add('online');
+    } else if (presence && presence.lastChanged) {
+        statusEl.textContent = 'vu ' + timeAgo(presence.lastChanged);
+        statusEl.classList.remove('online');
+    } else {
+        statusEl.textContent = '🔒 Messagerie sécurisée';
+        statusEl.classList.remove('online');
+    }
 }
 
 function closeUserChat() {
@@ -6368,6 +6422,9 @@ function openJobFromChat() {
 // ---------- AFFICHAGE DES MESSAGES ----------
 function renderChatMessage(msgId, m, mine) {
     const c = document.getElementById('userChatMessages'); if (!c) return;
+    // "Supprimé pour moi" : ce message n'existe plus pour MOI (invisible,
+    // mais toujours présent chez l'autre — comme sur WhatsApp).
+    if (m.deletedFor && auth.currentUser && m.deletedFor[auth.currentUser.uid]) return;
 
     // Séparateur de date
     const daySep = formatDaySep(m.timestamp || Date.now());
@@ -6384,11 +6441,20 @@ function renderChatMessage(msgId, m, mine) {
     el.id = 'msg-' + msgId;
 
     let inner = '';
-    if (m.imageUrl) {
-        inner += '<img src="' + escapeHtml(m.imageUrl) + '" onclick="window.open(this.src,\'_blank\')" alt="photo">';
+    // Citation du message à laquelle on répond (si c'est une réponse)
+    if (m.replyTo) {
+        inner += `<div style="border-left:3px solid ${mine ? 'rgba(255,255,255,0.5)' : 'var(--gold,#FFD700)'};padding:4px 8px;margin-bottom:4px;font-size:12px;opacity:0.85;background:rgba(0,0,0,0.08);border-radius:6px;">
+            <div style="font-weight:700;">${escapeHtml(m.replyTo.fromName || '')}</div>
+            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.replyTo.text || '')}</div>
+        </div>`;
     }
-    if (m.text) {
-        inner += '<div>' + escapeHtml(m.text) + '</div>';
+    if (m.deleted) {
+        // "Supprimé pour tout le monde" : l'auteur a effacé le message
+        // (15 min après l'envoi) — les deux voient l'indication.
+        inner += '<div style="font-style:italic;opacity:0.6;font-size:13px;">🚫 Message supprimé</div>';
+    } else {
+        if (m.imageUrl) inner += '<img src="' + escapeHtml(m.imageUrl) + '" onclick="window.open(this.src,\'_blank\')" alt="photo">';
+        if (m.text) inner += '<div>' + escapeHtml(m.text) + '</div>';
     }
     // Métadonnées : heure + accusé de lecture (seulement pour MES messages)
     inner += '<div class="msg-meta"><span>' + formatChatTime(m.timestamp) + '</span>';
@@ -6401,7 +6467,91 @@ function renderChatMessage(msgId, m, mine) {
     el.innerHTML = inner;
     c.appendChild(el);
     c.scrollTop = c.scrollHeight;
+
+    // Appui long (450ms) sur un message → menu répondre/copier/supprimer
+    if (!m.deleted) attachMessageLongPress(el, msgId, m, mine);
 }
+
+function attachMessageLongPress(el, msgId, m, mine) {
+    let pressTimer = null;
+    const start = () => { pressTimer = setTimeout(() => { showMessageContextMenu(msgId, m, mine); vibrateDevice(30); }, 450); };
+    const cancel = () => clearTimeout(pressTimer);
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('touchend', cancel);
+    el.addEventListener('touchmove', cancel);
+    el.addEventListener('mousedown', start);
+    el.addEventListener('mouseup', cancel);
+    el.addEventListener('mouseleave', cancel);
+}
+
+// Menu contextuel des messages (feuille en bas d'écran, style WhatsApp)
+window.__ctxMenuMsg = null;
+function showMessageContextMenu(msgId, m, mine) {
+    closeMessageContextMenu();
+    // "Supprimer pour tout le monde" : seulement pour mes messages, et dans
+    // les 15 minutes (la règle Firebase impose la même limite côté base).
+    const canDeleteForEveryone = mine && (Date.now() - (m.timestamp || 0) < 15 * 60 * 1000);
+    const menu = document.createElement('div');
+    menu.id = 'msgContextMenu';
+    menu.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.35);display:flex;align-items:flex-end;';
+    menu.innerHTML = `
+      <div style="background:var(--surface,#1a1a1a);width:100%;border-radius:16px 16px 0 0;padding:10px 0;box-shadow:0 -4px 20px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
+        <div onclick="replyToFromMenu('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;">↩️ Répondre</div>
+        ${m.text ? `<div onclick="copyMessageText('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;">📋 Copier</div>` : ''}
+        <div onclick="deleteMessageForMe('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;color:var(--danger,#e74c3c);">🗑️ Supprimer pour moi</div>
+        ${canDeleteForEveryone ? `<div onclick="deleteMessageForEveryone('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;color:var(--danger,#e74c3c);">🗑️ Supprimer pour tout le monde</div>` : ''}
+        <div onclick="closeMessageContextMenu()" style="padding:14px 20px;font-size:15px;cursor:pointer;color:var(--text-dim,#999);">Annuler</div>
+      </div>`;
+    menu.onclick = closeMessageContextMenu;
+    document.body.appendChild(menu);
+    window.__ctxMenuMsg = { msgId, m };
+}
+function closeMessageContextMenu() {
+    const el = document.getElementById('msgContextMenu');
+    if (el) el.remove();
+}
+function replyToFromMenu(msgId) {
+    const ctx = window.__ctxMenuMsg;
+    closeMessageContextMenu();
+    if (!ctx) return;
+    setReplyTo(msgId, ctx.m.text, ctx.m.imageUrl, ctx.m.from);
+    const inp = document.getElementById('userChatInput');
+    if (inp) inp.focus();
+}
+function copyMessageText(msgId) {
+    const ctx = window.__ctxMenuMsg;
+    closeMessageContextMenu();
+    if (!ctx || !ctx.m.text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ctx.m.text).then(() => showToast('Copié', 'success')).catch(() => {});
+    }
+}
+// "Supprimer pour moi" : un flag uniquement sur MA copie du message
+// (règle Firebase : chacun ne peut poser que SON propre flag).
+async function deleteMessageForMe(msgId) {
+    closeMessageContextMenu();
+    const user = auth.currentUser;
+    if (!user || !userChatThreadId) return;
+    try {
+        await db.ref('chats/' + userChatThreadId + '/messages/' + msgId + '/deletedFor/' + user.uid).set(true);
+        const el = document.getElementById('msg-' + msgId);
+        if (el) el.remove();
+    } catch (e) { showToast('Erreur', 'error'); }
+}
+// "Supprimer pour tout le monde" : écriture SIMPLE au niveau du champ
+// "deleted" — c'est ce qui fait appliquer la règle Firebase "auteur du
+// message + 15 minutes" (une update() plus large passerait par la règle du
+// thread, trop permissive). Le contenu reste dans la base (comme sur
+// WhatsApp) mais l'affichage des deux côtés passe à "Message supprimé".
+async function deleteMessageForEveryone(msgId) {
+    closeMessageContextMenu();
+    if (!userChatThreadId) return;
+    if (!confirm('Supprimer ce message pour tout le monde ?')) return;
+    try {
+        await db.ref('chats/' + userChatThreadId + '/messages/' + msgId + '/deleted').set(true);
+    } catch (e) { showToast('Erreur', 'error'); }
+}
+
 
 function updateMessageTicks(msgId, m, mine) {
     if (!mine) return;
@@ -6413,6 +6563,28 @@ function updateMessageTicks(msgId, m, mine) {
 }
 
 // ---------- ENVOI ----------
+// ---------- BARRE "RÉPONDRE À" (citation d'un message) ----------
+function setReplyTo(msgId, text, imageUrl, fromUid) {
+    const user = auth.currentUser;
+    const nameEl = document.getElementById('userChatName');
+    const fromName = fromUid === (user && user.uid) ? 'Toi' : (nameEl ? nameEl.textContent : 'Utilisateur');
+    replyingToMsg = { id: msgId, text: text || (imageUrl ? '📷 Photo' : ''), fromName };
+    renderReplyBar();
+}
+function clearReplyTo() { replyingToMsg = null; renderReplyBar(); }
+function renderReplyBar() {
+    const bar = document.getElementById('userChatReplyBar');
+    if (!bar) return;
+    if (!replyingToMsg) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+    bar.style.display = 'flex';
+    bar.innerHTML = `
+      <div style="flex:1;min-width:0;border-left:3px solid var(--gold,#FFD700);padding-left:8px;">
+        <div style="font-size:12px;font-weight:700;color:var(--gold,#FFD700);">${escapeHtml(replyingToMsg.fromName)}</div>
+        <div style="font-size:12px;color:var(--text-dim,#999);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(replyingToMsg.text)}</div>
+      </div>
+      <button type="button" onclick="clearReplyTo()" style="background:none;border:none;color:var(--text-dim,#999);font-size:18px;cursor:pointer;padding:0 6px;">✕</button>`;
+}
+
 async function sendUserChatMessage() {
     const user = auth.currentUser;
     if (!user || !userChatThreadId) return;
@@ -6420,7 +6592,9 @@ async function sendUserChatMessage() {
     const text = (input.value || '').trim();
     if (!text) return;
     input.value = '';
-    await pushChatMessage({ text: text.slice(0, 800) });
+    const payload = { text: text.slice(0, 800) };
+    if (replyingToMsg) payload.replyTo = { id: replyingToMsg.id, text: replyingToMsg.text.slice(0, 300), fromName: replyingToMsg.fromName.slice(0, 60) };
+    await pushChatMessage(payload);
 }
 
 async function sendUserChatImage(fileInput) {
@@ -6456,50 +6630,51 @@ async function writeWithRetry(fn, retries) {
     }
 }
 
+// ---- ENVOI OPTIMISTE : le message apparaît IMMÉDIATEMENT au clic (comme
+// WhatsApp), puis l'accusé suit la progression : 🕐 (envoi en cours) →
+// ✓ (livré chez l'autre) → ✓✓ (lu) — ou ⚠️ (échec : toucher pour réessayer).
+let pendingMsgIds = new Set();
+let failedMessagePayloads = {};
+
 async function pushChatMessage(payload) {
     const user = auth.currentUser;
     if (!user || !userChatThreadId || !userChatPeerUid) return;
     const tid = userChatThreadId;
     const peerUid = userChatPeerUid;
+
+    const msgId = db.ref('chats/' + tid + '/messages').push().key;
+    const now = Date.now();
+
+    const optimisticMsg = { from: user.uid, to: peerUid, timestamp: now, readBy: { [user.uid]: true } };
+    if (payload.text) optimisticMsg.text = payload.text;
+    if (payload.imageUrl) optimisticMsg.imageUrl = payload.imageUrl;
+    if (payload.replyTo) optimisticMsg.replyTo = payload.replyTo;
+
+    // Affichage IMMÉDIAT, avant même que Firebase confirme quoi que ce soit —
+    // c'est ce qui donne la sensation de rapidité de WhatsApp au lieu d'un
+    // silence de 1-2s sur une connexion mobile instable.
+    userChatMsgIds.add(msgId);
+    pendingMsgIds.add(msgId);
+    renderChatMessage(msgId, optimisticMsg, true);
+    setMessageSendState(msgId, 'pending');
+    clearReplyTo();
+
     try {
-        const msgId = db.ref('chats/' + tid + '/messages').push().key;
-        const now = Date.now();
         const myName = String((profilesCache[user.uid] || {}).name || user.displayName || 'Utilisateur').slice(0, 60);
         const peerName = String((profilesCache[peerUid] || {}).name || 'Utilisateur').slice(0, 60);
         const preview = payload.imageUrl ? '📷 Photo' : (payload.text || '').slice(0, 100);
         const jobTitle = (userChatJobId && jobsById[userChatJobId] && jobsById[userChatJobId].title)
             || ((window.currentPreviewJob && window.currentPreviewJob.id === userChatJobId) ? window.currentPreviewJob.title : null);
 
-        const msg = {
-            from: user.uid, to: peerUid,
-            timestamp: now,
-            readBy: { [user.uid]: true } // je l'ai forcément lu, c'est moi qui l'envoie
-        };
-        if (payload.text) msg.text = payload.text;
-        if (payload.imageUrl) msg.imageUrl = payload.imageUrl;
-
         // ÉTAPE 1 : garantir que le thread existe avec ses participants.
-        // C'est important AVANT l'étape 2 : la règle d'écriture des boîtes de
-        // réception vérifie "es-tu participant de ce thread ?" dans la base,
-        // or dans un update() multi-chemin les règles ne voient pas les
-        // autres chemins écrits dans le même appel — donc cette petite
-        // écriture doit être terminée d'abord.
+        // (Les règles des boîtes de réception vérifient la participation
+        // dans la base : cette écriture doit précéder les suivantes.)
         await db.ref('chats/' + tid + '/meta/participants').update({ [user.uid]: true, [peerUid]: true });
 
-        // ÉTAPE 2a : le message (écriture directe au niveau du message).
-        // ⚠️ Piège Firebase n°1 : une update() est évaluée par les règles au
-        // niveau de la RÉFÉRENCE appelée. À la racine (db.ref().update())
-        // il n'y a aucune règle .write → l'écriture est TOUJOURS refusée
-        // (permission_denied) → c'est ce qui faisait perdre chaque message.
-        // Ici la référence chats/{threadId}/messages/{id} est couverte par
-        // la règle $threadId (participant) → autorisé.
-        await db.ref('chats/' + tid + '/messages/' + msgId).set(msg);
-
-        // ÉTAPE 2b : le méta — update() à la référence chats/{threadId}/meta.
-        // ⚠️ Piège Firebase n°2 : on ne remplace JAMAIS le nœud "meta" tout
-        // entier (update({meta: {...}}) EFFACERAIT participants et typing,
-        // car une update() remplace chaque chemin listé dans son entier).
-        // Donc chaque champ de meta est mis à jour séparément.
+        // ÉTAPE 2 : le message (écriture directe au niveau du message) + le
+        // méta (champ par champ — on ne remplace JAMAIS le nœud meta entier,
+        // sinon participants/typing seraient effacés).
+        await db.ref('chats/' + tid + '/messages/' + msgId).set(optimisticMsg);
         const metaUpdate = {
             names: { [user.uid]: myName, [peerUid]: peerName },
             jobId: userChatJobId || 'general',
@@ -6510,38 +6685,25 @@ async function pushChatMessage(payload) {
         if (jobTitle) metaUpdate.jobTitle = String(jobTitle).slice(0, 120);
         await db.ref('chats/' + tid + '/meta').update(metaUpdate);
 
-        // ÉTAPE 3 : la boîte de réception du DESTINATAIRE
-        // (référence userInboxes/{destinataire}/threads/{threadId} —
-        // autorisée car je suis participant du thread). 1 retry au cas où.
-        // C'est cette écriture qui fait apparaître la conversation dans son
-        // inbox + son badge.
+        // ÉTAPE 3 : la boîte de réception du DESTINATAIRE (1 retry au cas où).
         const peerEntry = {
-            peerUid: user.uid,
-            peerName: myName,
+            peerUid: user.uid, peerName: myName,
             jobId: userChatJobId || 'general',
             jobTitle: jobTitle ? String(jobTitle).slice(0, 120) : null,
-            lastMessage: preview,
-            lastAt: now,
-            lastFrom: user.uid
+            lastMessage: preview, lastAt: now, lastFrom: user.uid
         };
         await writeWithRetry(() => db.ref('userInboxes/' + peerUid + '/threads/' + tid).update(peerEntry));
 
         // ÉTAPE 4 : MA boîte de réception (même aperçu, de mon point de vue).
-        // On ne touche pas au compteur "unread" de l'un ou de l'autre ici.
         const myEntry = {
-            peerUid: peerUid,
-            peerName: peerName,
+            peerUid: peerUid, peerName: peerName,
             jobId: userChatJobId || 'general',
             jobTitle: jobTitle ? String(jobTitle).slice(0, 120) : null,
-            lastMessage: preview,
-            lastAt: now,
-            lastFrom: user.uid
+            lastMessage: preview, lastAt: now, lastFrom: user.uid
         };
         await db.ref('userInboxes/' + user.uid + '/threads/' + tid).update(myEntry);
 
-        // ÉTAPE 5 : compteur de non-lus du DESTINATAIRE +1 (transaction =
-        // sûr même si deux messages arrivent en même temps). C'est ce
-        // compteur qui fait apparaître la bulle dans son inbox + le badge.
+        // ÉTAPE 5 : compteur de non-lus du DESTINATAIRE +1 (transaction).
         await db.ref('userInboxes/' + peerUid + '/threads/' + tid + '/unread').transaction(c => (c || 0) + 1);
 
         // J'efface mon propre "en train d'écrire"
@@ -6549,13 +6711,49 @@ async function pushChatMessage(payload) {
 
         // Prévient le destinataire instantanément
         if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-message');
+
+        pendingMsgIds.delete(msgId);
+        setMessageSendState(msgId, 'sent');
     } catch (e) {
         console.error('pushChatMessage error', e);
-        // On affiche la vraie erreur (permission_denied, réseau...) plutôt
-        // qu'un message générique : ça permet de diagnostiquer en 5 secondes.
+        pendingMsgIds.delete(msgId);
+        failedMessagePayloads[msgId] = payload;
+        setMessageSendState(msgId, 'failed');
+        // La vraie erreur est affichée (permission_denied, réseau...) pour
+        // diagnostiquer en 5 secondes.
         showToast('Erreur envoi : ' + ((e && e.message) || 'réseau instable'), 'error');
     }
 }
+
+function setMessageSendState(msgId, state) {
+    const el = document.getElementById('msg-' + msgId);
+    if (!el) return;
+    const tick = el.querySelector('.msg-tick');
+    if (!tick) return;
+    if (state === 'pending') {
+        tick.textContent = '🕐';
+        tick.classList.remove('read');
+        tick.style.cursor = 'default';
+    } else if (state === 'sent') {
+        tick.textContent = '✓';
+    } else if (state === 'failed') {
+        tick.textContent = '⚠️';
+        tick.style.cursor = 'pointer';
+        tick.title = 'Échec — toucher pour réessayer';
+        tick.onclick = () => retryFailedMessage(msgId);
+    }
+}
+
+function retryFailedMessage(msgId) {
+    const payload = failedMessagePayloads[msgId];
+    if (!payload) return;
+    const el = document.getElementById('msg-' + msgId);
+    if (el) el.remove();
+    userChatMsgIds.delete(msgId);
+    delete failedMessagePayloads[msgId];
+    pushChatMessage(payload);
+}
+
 
 // ---------- "EN TRAIN D'ÉCRIRE…" ----------
 function onUserChatTyping() {
@@ -6642,7 +6840,9 @@ function renderInbox() {
             const lastPrefix = (entry.lastFrom === user.uid) ? 'Toi : ' : '';
 
             const item = document.createElement('div');
-            item.className = 'msg-thread-item';
+            // Les conversations avec non-lus sont mises en avant (gras +
+            // heure verte), exactement comme la liste de WhatsApp.
+            item.className = 'msg-thread-item' + (unread > 0 ? ' unread' : '');
             item.onclick = () => openUserChat(peerUid, entry.jobId || 'general', peerName, entry.jobTitle);
             item.innerHTML =
                 '<div class="msg-thread-avatar">' + escapeHtml(initials(peerName)) + '</div>' +
@@ -6651,7 +6851,7 @@ function renderInbox() {
                     '<div class="msg-thread-last">' + escapeHtml(lastPrefix + last) + '</div>' +
                 '</div>' +
                 '<div class="msg-thread-right">' +
-                    '<div class="msg-thread-time">' + formatChatTime(entry.lastAt) + '</div>' +
+                    '<div class="msg-thread-time">' + formatInboxTime(entry.lastAt) + '</div>' +
                     (unread > 0 ? '<div class="msg-thread-unread">' + unread + '</div>' : '') +
                 '</div>';
             list.appendChild(item);
