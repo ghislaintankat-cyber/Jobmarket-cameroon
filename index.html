@@ -1528,6 +1528,7 @@ body{
 
 <!-- ===== SCRIPTS ===== -->
 <script src="app.js?v=20260825a"></script>
+<script src="chat-upgrade.js?v=1"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2220,6 +2221,7 @@ function previewImage(event) {
   <div id="userChatTyping" class="msg-typing" style="display:none;">
     <span class="msg-typing-dot"></span><span class="msg-typing-dot"></span><span class="msg-typing-dot"></span>
   </div>
+  <div id="userChatReplyBar" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2,#1a1a2e);border-top:1px solid var(--border,#333);"></div>
   <div class="msg-input-row">
     <button onclick="document.getElementById('userChatImageInput').click()" class="msg-attach-btn" title="Envoyer une photo">📷</button>
     <input id="userChatImageInput" type="file" accept="image/*" style="display:none;" onchange="sendUserChatImage(this)">
