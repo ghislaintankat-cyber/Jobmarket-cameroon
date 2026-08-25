@@ -6551,7 +6551,9 @@ async function pushChatMessage(payload) {
         if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-message');
     } catch (e) {
         console.error('pushChatMessage error', e);
-        showToast(t('genericError'), 'error');
+        // On affiche la vraie erreur (permission_denied, réseau...) plutôt
+        // qu'un message générique : ça permet de diagnostiquer en 5 secondes.
+        showToast('Erreur envoi : ' + ((e && e.message) || 'réseau instable'), 'error');
     }
 }
 
