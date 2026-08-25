@@ -280,7 +280,8 @@ body{
 .msg-bubble{max-width:85%;padding:7px 9px 4px;border-radius:8px;font-size:14.5px;line-height:1.35;word-wrap:break-word;position:relative;box-shadow:0 1px 1px rgba(0,0,0,0.18);}
 .msg-bubble.mine{align-self:flex-end;background:#005c4b;color:#e9edef;border-bottom-right-radius:0;}
 .msg-bubble.theirs{align-self:flex-start;background:#202c33;color:#e9edef;border-bottom-left-radius:0;}
-.msg-bubble img{max-width:100%;border-radius:10px;margin-top:2px;display:block;cursor:pointer;}
+/* Photos en vignette (plus petites) : clic = agrandissement plein écran */
+.msg-bubble img{max-width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-top:2px;display:block;cursor:zoom-in;}
 .msg-meta{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:2px;font-size:11px;opacity:0.75;}
 .msg-tick{font-size:14px;line-height:1;}
 .msg-tick.read{color:#53bdeb;}
@@ -1546,7 +1547,7 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="app.js?v=20260825c"></script>
+<script src="app.js?v=20260825d"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2250,6 +2251,7 @@ function previewImage(event) {
 </div>
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30d71430f95e107',t:'MTc4NzY5MDc0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30ddc02ef5b8461',t:'MTc4NzY5NTExOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+</body>
 
 </html>
