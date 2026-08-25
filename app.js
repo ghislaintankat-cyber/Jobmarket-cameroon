@@ -6374,6 +6374,40 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
 
     // Marque la conversation comme lue à l'ouverture
     markThreadRead();
+
+    // Auto-réparation : si cette conversation n'est pas encore dans MA
+    // liste "Messages" (message envoyé par un appareil sur une vieille
+    // version, qui écrit le message mais pas l'entrée d'inbox), on la
+    // reconstruit à partir du meta du thread.
+    repairInboxEntryForCurrentChat().catch(() => {});
+}
+
+// Reconstruit l'entrée de MA conversation dans ma boîte de réception si
+// elle manque (ex. : le message a été envoyé par une vieille version de
+// l'app, qui écrit le message dans "chats" mais pas l'entrée d'inbox).
+// La réparation complète se fait aussi côté serveur (script de
+// notifications) — ici on rattrape instantanément ce qu'on ouvre.
+async function repairInboxEntryForCurrentChat() {
+    const user = auth.currentUser;
+    if (!user || !userChatThreadId) return;
+    try {
+        const mine = await db.ref('userInboxes/' + user.uid + '/threads/' + userChatThreadId).once('value');
+        if (mine.exists()) return;
+        const metaSnap = await db.ref('chats/' + userChatThreadId + '/meta').once('value');
+        const mv = metaSnap.val() || {};
+        await db.ref('userInboxes/' + user.uid + '/threads/' + userChatThreadId).update({
+            peerUid: userChatPeerUid,
+            peerName: (mv.names && mv.names[userChatPeerUid]) || (profilesCache[userChatPeerUid] && profilesCache[userChatPeerUid].name) || 'Utilisateur',
+            jobId: mv.jobId || (userChatJobId || 'general'),
+            jobTitle: mv.jobTitle || null,
+            lastMessage: mv.lastMessage || '',
+            lastAt: mv.lastAt || Date.now(),
+            lastFrom: mv.lastFrom || null
+        });
+        // Si la liste "Messages" est ouverte, on la rafraîchit
+        const inbox = document.getElementById('messagesInbox');
+        if (inbox && inbox.style.display !== 'none') renderInbox();
+    } catch (e) { /* non critique : la réparation serveur rattrapera */ }
 }
 
 function detachUserChatListeners() {
@@ -6880,11 +6914,14 @@ function renderInbox() {
     // (userInboxes/{monUid}/threads). On ne lit JAMAIS tout /chats :
     // les règles l'interdisent (chaque conversation est privée) et ce
     // serait inutilement lourd dès que l'app grandit.
-    db.ref('userInboxes/' + user.uid + '/threads').orderByChild('lastAt').limitToLast(50).once('value').then(snap => {
+    // Lecture SIMPLE (sans orderByChild) + tri côté client : ça fonctionne
+    // toujours, même si une entrée n'a pas encore son champ "lastAt".
+    db.ref('userInboxes/' + user.uid + '/threads').once('value').then(snap => {
         const threads = [];
         snap.forEach(child => threads.push({ id: child.key, entry: child.val() || {} }));
         // Tri : plus récent en premier
         threads.sort((a, b) => (b.entry.lastAt || 0) - (a.entry.lastAt || 0));
+        threads.splice(50); // au plus 50 affichées
 
         // Vide la liste (sauf le bloc "empty")
         Array.from(list.querySelectorAll('.msg-thread-item')).forEach(el => el.remove());
@@ -6901,8 +6938,11 @@ function renderInbox() {
             const peerName = entry.peerName ||
                              (peerUid && profilesCache[peerUid] && profilesCache[peerUid].name) || 'Utilisateur';
             const unread = entry.unread || 0;
-            const last = entry.lastMessage || '';
+            // Aperçu défensif : dernier message, sinon le titre du job,
+            // sinon "Conversation" — la ligne s'affiche TOUJOURS.
+            const last = entry.lastMessage || entry.jobTitle || 'Conversation';
             const lastPrefix = (entry.lastFrom === user.uid) ? 'Toi : ' : '';
+            const timeStr = entry.lastAt ? formatInboxTime(entry.lastAt) : '';
 
             const item = document.createElement('div');
             // Les conversations avec non-lus sont mises en avant (gras +
@@ -6916,7 +6956,7 @@ function renderInbox() {
                     '<div class="msg-thread-last">' + escapeHtml(lastPrefix + last) + '</div>' +
                 '</div>' +
                 '<div class="msg-thread-right">' +
-                    '<div class="msg-thread-time">' + formatInboxTime(entry.lastAt) + '</div>' +
+                    '<div class="msg-thread-time">' + timeStr + '</div>' +
                     (unread > 0 ? '<div class="msg-thread-unread">' + unread + '</div>' : '') +
                 '</div>';
             list.appendChild(item);
