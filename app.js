@@ -6453,7 +6453,9 @@ function renderChatMessage(msgId, m, mine) {
         // (15 min après l'envoi) — les deux voient l'indication.
         inner += '<div style="font-style:italic;opacity:0.6;font-size:13px;">🚫 Message supprimé</div>';
     } else {
-        if (m.imageUrl) inner += '<img src="' + escapeHtml(m.imageUrl) + '" onclick="window.open(this.src,\'_blank\')" alt="photo">';
+        // Photo en vignette : clic = agrandissement plein écran (lightbox),
+        // long appui sur le message = menu (enregistrer / supprimer).
+        if (m.imageUrl) inner += '<img src="' + escapeHtml(m.imageUrl) + '" onclick="openImageLightbox(this.src)" alt="photo">';
         if (m.text) inner += '<div>' + escapeHtml(m.text) + '</div>';
     }
     // Métadonnées : heure + accusé de lecture (seulement pour MES messages)
@@ -6470,6 +6472,68 @@ function renderChatMessage(msgId, m, mine) {
 
     // Appui long (450ms) sur un message → menu répondre/copier/supprimer
     if (!m.deleted) attachMessageLongPress(el, msgId, m, mine);
+}
+
+// ---------- PHOTO DU CHAT : VIGNETTE + AGRANDISSEMENT + ENREGISTRER ----------
+// Clic sur une photo → lightbox plein écran (comme WhatsApp). Le menu appui
+// long (ou le bouton 💾 de la lightbox) permet d'enregistrer l'image.
+function openImageLightbox(url) {
+    closeImageLightbox();
+    const ov = document.createElement('div');
+    ov.id = 'imgLightbox';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.94);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'photo';
+    img.style.cssText = 'max-width:94vw;max-height:84vh;object-fit:contain;border-radius:4px;';
+    img.addEventListener('click', (e) => e.stopPropagation());
+
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:absolute;top:12px;right:12px;display:flex;gap:10px;';
+    const mkBtn = (label, title, fn) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = label;
+        b.title = title;
+        b.style.cssText = 'width:46px;height:46px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:19px;cursor:pointer;';
+        b.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
+        return b;
+    };
+    bar.appendChild(mkBtn('💾', 'Enregistrer l\'image', () => downloadChatImage(url)));
+    bar.appendChild(mkBtn('✕', 'Fermer', closeImageLightbox));
+
+    ov.addEventListener('click', () => closeImageLightbox());
+    ov.appendChild(img);
+    ov.appendChild(bar);
+    document.body.appendChild(ov);
+}
+function closeImageLightbox() {
+    const el = document.getElementById('imgLightbox');
+    if (el) el.remove();
+}
+// Enregistre la photo sur l'appareil. Les URLs Cloudinary acceptent le
+// paramètre "dl" qui force le téléchargement au lieu de l'affichage.
+function downloadChatImage(url) {
+    try {
+        const dlUrl = url + (url.includes('?') ? '&' : '?') + 'dl=jobmarket-photo.jpg';
+        const a = document.createElement('a');
+        a.href = dlUrl;
+        a.download = 'jobmarket-photo.jpg';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    } catch (e) {
+        window.open(url, '_blank'); // repli : nouvel onglet (clic long -> enregistrer)
+    }
+}
+function downloadChatImageFromMenu() {
+    const ctx = window.__ctxMenuMsg;
+    closeMessageContextMenu();
+    if (!ctx || !ctx.m.imageUrl) return;
+    downloadChatImage(ctx.m.imageUrl);
 }
 
 function attachMessageLongPress(el, msgId, m, mine) {
@@ -6498,6 +6562,7 @@ function showMessageContextMenu(msgId, m, mine) {
       <div style="background:var(--surface,#1a1a1a);width:100%;border-radius:16px 16px 0 0;padding:10px 0;box-shadow:0 -4px 20px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
         <div onclick="replyToFromMenu('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;">↩️ Répondre</div>
         ${m.text ? `<div onclick="copyMessageText('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;">📋 Copier</div>` : ''}
+        ${m.imageUrl ? `<div onclick="downloadChatImageFromMenu()" style="padding:14px 20px;font-size:15px;cursor:pointer;">💾 Enregistrer l'image</div>` : ''}
         <div onclick="deleteMessageForMe('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;color:var(--danger,#e74c3c);">🗑️ Supprimer pour moi</div>
         ${canDeleteForEveryone ? `<div onclick="deleteMessageForEveryone('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;color:var(--danger,#e74c3c);">🗑️ Supprimer pour tout le monde</div>` : ''}
         <div onclick="closeMessageContextMenu()" style="padding:14px 20px;font-size:15px;cursor:pointer;color:var(--text-dim,#999);">Annuler</div>
