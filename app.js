@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260826f';
+const APP_BUILD = '20260826h';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -1902,6 +1902,17 @@ auth.onAuthStateChanged(user => {
     refreshAdminStatus(null);
     savedJobIds = new Set();
     stopInboxBadgeWatch();
+    // Visiteur sans session : tentative de connexion ANONYME (repli,
+    // best-effort) pour pouvoir sauvegarder des jobs sans créer de compte.
+    // Petite attente + re-vérification pour ne pas entrer en concurrence
+    // avec la restauration d'une session qui existe déjà (IndexedDB).
+    // Si l'option "Anonyme" est désactivée dans Firebase, l'échec est
+    // silencieux (plus d'erreur rouge dans la console).
+    if (!user) {
+      setTimeout(() => {
+        if (!auth.currentUser) auth.signInAnonymously().catch(() => {});
+      }, 600);
+    }
   }
 });
 
@@ -1984,7 +1995,10 @@ async function syncEmailVerifiedBadge(user) {
   }
 }
 
-try { auth.signInAnonymously().catch(console.error); } catch(e) {}
+// La connexion anonyme des visiteurs est gérée dans onAuthStateChanged
+// ci-dessus (avec garde anti-concurrence) — plus d'appel brutal au
+// chargement qui cassait la session ou polluait la console quand
+// l'option "Anonyme" est désactivée dans Firebase.
 
 function signupEmail() {
   const emailEl = document.getElementById('email');
@@ -6766,6 +6780,15 @@ async function pushChatMessage(payload) {
     const tid = userChatThreadId;
     const peerUid = userChatPeerUid;
 
+    // Index minimal "userThreads" : un simple booléen "cet utilisateur a
+    // cette conversation", écrit en PREMIER et de façon best-effort (ne
+    // bloque jamais l'envoi). C'est le filet de sécurité ultime : même si
+    // un jour l'écriture de l'aperçu (userInboxes) échoue en plein envoi,
+    // la liste "Messages" saura que la conversation existe et pourra la
+    // reconstruire depuis chats/{threadId}/meta (repairInboxFromThreadsIndex).
+    db.ref('userThreads/' + user.uid + '/' + tid).set(true).catch(() => {});
+    db.ref('userThreads/' + peerUid + '/' + tid).set(true).catch(() => {});
+
     const msgId = db.ref('chats/' + tid + '/messages').push().key;
     const now = Date.now();
 
@@ -6924,6 +6947,64 @@ function openMessagesInbox() {
     if (!user || user.isAnonymous) { showToast('Connecte-toi pour voir tes messages.', 'error'); return; }
     const overlay = document.getElementById('messagesInbox'); if (overlay) overlay.style.display = 'flex';
     renderInbox();
+    // Filet de sécurité : si l'index userThreads connaît des conversations
+    // absentes de userInboxes (aperçu non écrit, ex. réseau coupé en plein
+    // envoi), on les reconstruit depuis le meta du thread, puis on
+    // rafraîchit la liste.
+    repairInboxFromThreadsIndex(user.uid).catch(() => {});
+}
+
+// Filet de sécurité de la liste "Messages" : l'index userThreads (un
+// simple true par conversation, écrit à chaque envoi) sait quelles
+// conversations existent pour moi, même si l'aperçu dans userInboxes
+// n'a jamais été écrit. On reconstruit les entrées manquantes à partir
+// du meta du thread + le compteur de non-lus lu dans les messages.
+async function repairInboxFromThreadsIndex(uid) {
+    const idxSnap = await db.ref('userThreads/' + uid).once('value');
+    if (!idxSnap.exists()) return;
+    const inboxSnap = await db.ref('userInboxes/' + uid + '/threads').once('value');
+    const inbox = inboxSnap.val() || {};
+    let repaired = 0;
+    for (const tid of Object.keys(idxSnap.val() || {})) {
+        const entry = inbox[tid];
+        if (entry && entry.peerUid) continue; // entrée déjà complète
+        try {
+            const [metaSnap, msgSnap] = await Promise.all([
+                db.ref('chats/' + tid + '/meta').once('value'),
+                db.ref('chats/' + tid + '/messages').limitToLast(50).once('value')
+            ]);
+            const mv = metaSnap.val();
+            if (!mv) continue; // thread sans meta : rien à reconstruire
+            // L'autre participant = l'uid du thread qui n'est pas moi
+            // (même logique que openUserChatFromThreadId)
+            const uidPair = tid.split('__')[0].split('_');
+            const peerUid = uidPair.find(u => u && u !== uid);
+            if (!peerUid) continue;
+            // Non-lus : messages de l'autre pas encore marqués lus par moi
+            let unread = 0;
+            msgSnap.forEach(ch => {
+                const m = ch.val();
+                if (m && m.from === peerUid && !(m.readBy && m.readBy[uid])) unread++;
+            });
+            await db.ref('userInboxes/' + uid + '/threads/' + tid).update({
+                peerUid: peerUid,
+                peerName: (mv.names && mv.names[peerUid]) || (profilesCache[peerUid] && profilesCache[peerUid].name) || 'Utilisateur',
+                jobId: mv.jobId || (tid.split('__')[1] || 'general'),
+                jobTitle: mv.jobTitle || null,
+                lastMessage: mv.lastMessage || '',
+                lastAt: mv.lastAt || Date.now(),
+                lastFrom: mv.lastFrom || null,
+                unread: unread
+            });
+            repaired++;
+        } catch (e) {
+            console.warn('repairInboxFromThreadsIndex: échec pour', tid, e);
+        }
+    }
+    if (repaired > 0) {
+        const overlay = document.getElementById('messagesInbox');
+        if (overlay && overlay.style.display !== 'none') renderInbox();
+    }
 }
 function closeMessagesInbox() {
     const overlay = document.getElementById('messagesInbox'); if (overlay) overlay.style.display = 'none';
