@@ -6253,41 +6253,34 @@ function renderAchievements(profile) {
 }
 
 // ==========================================
-// MESSAGERIE IN-APP (style WhatsApp/Messenger)
-// ==========================================
-// Structure Firebase :
-//   chats/{threadId}/meta  -> participants{uid:true}, names{uid:name}, jobId,
-//                             jobTitle, lastMessage, lastAt, lastFrom,
-//                             typing{uid:timestamp}
-//   chats/{threadId}/messages/{id} -> from, to, text, imageUrl, timestamp,
-//                                      readBy{uid:true}, _notified{uid:true}
-//   userInboxes/{uid}/threads/{threadId} -> peerUid, peerName, jobId,
-//                             jobTitle, lastMessage, lastAt, lastFrom, unread
-//
-// threadId = "<uidTrié1>_<uidTrié2>__<jobId|general>" (voir makeThreadId).
-//
-// IMPORTANT — pourquoi "userInboxes" existe : les règles Firebase ne
-// permettent à chacun de lire QUE les conversations dont il est participant.
-// Lire tout /chats (pour construire la liste de l'inbox) est donc REFUSÉ
-// (permission_denied). Chaque utilisateur a donc sa propre "boîte de
-// réception" (userInboxes/{uid}/threads) : à chaque message, l'aperçu de la
-// conversation est copié/mis à jour dans les boîtes des deux participants.
-// L'inbox et le badge ne lisent QUE la boîte du user connecté — léger,
-// rapide, et 100% autorisé par les règles.
+// ============================================================
+// MESSAGERIE IN-APP — « CHAT SÉCURISÉ » (widget style WhatsApp)
+// ============================================================
+// L'interface est le widget « chat-widget.js » (objet global W), branché
+// ici sur Firebase :
+//   - Liste des conversations : userInboxes/{moi}/threads (temps réel)
+//   - Messages : chats/{threadId}/messages (temps réel, 200 derniers)
+//   - UNE conversation unique par personne : threadId = uidA_uidB triés,
+//     quel que soit le job (le job est mémorisé dans chats/.../meta et
+//     affiché en bannière) — recontacter la même personne CONTINUE la
+//     discussion au lieu de tout recommencer.
+//   - Envoi : participants → message → méta → boîtes de réception →
+//     non-lus (+ index userThreads, filet de sécurité)
+// Chaque écriture cible la référence du thread (jamais la racine) :
+// c'est ce que les règles Firebase autorisent.
 
-let userChatRef = null, userChatThreadId = null, userChatPeerUid = null, userChatJobId = null;
-let userChatMetaRef = null, userChatTypingRef = null, userChatPresenceRef = null;
-let replyingToMsg = null; // message à laquelle on répond (barre "répondre à")
-let inboxRef = null;              // écoute globale de mes conversations (pour le badge)
-let userChatMsgIds = new Set();   // évite les doublons d'affichage
-let userChatLastDay = null;       // pour les séparateurs de date
-let typingTimeout = null, lastTypingSent = 0;
+let chatThread = null;         // thread actuellement ouvert
+let chatMsgsRef = null, chatTypingPeerRef = null, chatPresenceRef = null;
+let inboxRef = null;           // écoute de ma boîte de réception (badge + liste)
+let chatOverlayOpen = false, chatWidgetReady = false;
+let lastInboxSnapshot = [];    // dernier snapshot de mes threads
+let pendingChatSend = null;    // envoi optimiste en attente de confirmation
+let pendingJobBar = null;      // job à afficher en bannière à l'ouverture
+let chatTypingTimeout = null, lastChatTypingSent = 0;
+let presenceCache = null, presenceCacheTs = 0;
 
-// Une seule conversation par PERSONNE (comme WhatsApp), quel que soit le
-// job : threadId = les deux uid triés, rien d'autre. Le job concerné est
-// mémorisé dans meta.jobId (bannière du chat) mais ne crée PLUS de nouvelle
-// discussion : recontacter la même personne pour un autre job CONTINUE la
-// conversation existante au lieu de tout recommencer.
+// threadId = les deux uid triés (une conversation par personne, comme
+// WhatsApp — le job ne change plus la conversation)
 function makeThreadId(uidA, uidB) {
     return [uidA, uidB].sort().join('_');
 }
@@ -6301,8 +6294,8 @@ function formatChatTime(ts) {
     const d = new Date(ts);
     return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
 }
-// Format WhatsApp pour la liste des conversations : 14:32 (aujourd'hui),
-// "Hier", le jour de la semaine (moins de 7 jours), sinon la date complète.
+// Format WhatsApp pour la liste : HH:MM (aujourd'hui), « Hier », jour de la
+// semaine (moins de 7 jours), sinon la date complète.
 function formatInboxTime(ts) {
     if (!ts) return '';
     const d = new Date(ts), now = new Date();
@@ -6321,7 +6314,278 @@ function formatDaySep(ts) {
     return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-// ---------- OUVERTURE D'UNE CONVERSATION ----------
+// L'autre participant d'un thread : son uid figure dans le threadId
+function peerUidOf(threadId) {
+    const me = auth.currentUser;
+    if (!me || !threadId) return null;
+    const pair = String(threadId).split('__')[0];
+    return pair.split('_').find(u => u && u !== me.uid) || null;
+}
+// Nom « live » depuis le cache des profils (sinon '' = on retombe sur le stocké)
+function livePeerName(peerUid) {
+    return (peerUid && profilesCache[peerUid] && profilesCache[peerUid].name) || '';
+}
+// Avatar : vraie photo de profil (redimensionnée Cloudinary) ou initiales
+function avatarSrcFor(name, imgUrl) {
+    if (imgUrl && typeof cloudinaryResize === 'function') return cloudinaryResize(imgUrl, 96, 96);
+    const init = initials(name || '?');
+    const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'><rect width='96' height='96' fill='#2D6CDF'/><text x='48' y='58' font-size='38' font-family='Arial,sans-serif' fill='#fff' text-anchor='middle'>" + init + "</text></svg>";
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+// data URL (fichier lu par le widget) -> File (pour l'upload Cloudinary)
+function dataURLtoFile(dataUrl, filename) {
+    const parts = dataUrl.split(',');
+    const mime = (parts[0].match(/:(.*?);/) || [null, 'image/jpeg'])[1];
+    const bin = atob(parts[1]);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new File([arr], filename || 'photo.jpg', { type: mime });
+}
+
+// ============================================================
+// OUVERTURE / FERMETURE DE L'ÉCRAN « MESSAGES »
+// ============================================================
+function openMessagesInbox() {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) { showToast('Connecte-toi pour voir tes messages.', 'error'); return; }
+    const ov = document.getElementById('chatWidgetOverlay');
+    if (ov) {
+        ov.style.display = 'flex';
+        // mon avatar dans l'en-tête de la sidebar
+        const myAv = document.getElementById('waMyAv');
+        if (myAv) myAv.src = avatarSrcFor(livePeerName(user.uid) || user.displayName || 'Moi', (profilesCache[user.uid] || {}).profileImage);
+    }
+    chatOverlayOpen = true;
+    if (!chatWidgetReady && window.W) {
+        chatWidgetReady = true;
+        W.init({ theme: (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark') });
+        patchChatWidgetForFirebase();
+        W.on('chatOpened', (cid) => onChatWidgetOpened(cid));
+        W.on('typing', onChatWidgetTyping);
+    }
+    if (window.W) W.setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+    // filets : reconstruit les entrées manquantes, puis affiche la liste
+    if (lastInboxSnapshot.length) {
+        repairInboxFromThreadsIndex(user.uid).then(() => syncChatWidgetConvs()).catch(() => syncChatWidgetConvs());
+    } else {
+        db.ref('userInboxes/' + user.uid + '/threads').once('value').then(s => {
+            lastInboxSnapshot = Object.entries(s.val() || {});
+            return repairInboxFromThreadsIndex(user.uid);
+        }).then(() => syncChatWidgetConvs()).catch(() => syncChatWidgetConvs());
+    }
+}
+
+function closeMessagesInbox() {
+    const ov = document.getElementById('chatWidgetOverlay');
+    if (ov) ov.style.display = 'none';
+    chatOverlayOpen = false;
+    detachChatListeners();
+    if (window.W && W.goBack) W.goBack();
+}
+function closeUserChat() {
+    // compatibilité : « fermer la conversation » = retour à la liste
+    if (window.W && W.goBack) W.goBack();
+}
+
+// ============================================================
+// LISTE DES CONVERSATIONS (contacts du widget, depuis userInboxes)
+// ============================================================
+function syncChatWidgetConvs() {
+    if (!window.W) return;
+    const me = auth.currentUser;
+    if (!me) return;
+    // Présence (en ligne / vu à…) : 1 lecture, cache 30 s
+    const useCache = presenceCache && (Date.now() - presenceCacheTs < 30000);
+    const doRender = (pres) => {
+        if (!chatOverlayOpen) return;
+        // Aperçus des conversations NON ouvertes (la conv ouverte est gérée
+        // par son propre listener temps réel)
+        lastInboxSnapshot.forEach(([tid, e]) => {
+            if (W.activeId === tid) return;
+            if (!e) { if (W.convs[tid]) delete W.convs[tid]; return; }
+            const fromMe = e.lastFrom === me.uid;
+            W.convs[tid] = [{
+                id: 'last_' + tid,
+                from: fromMe ? 'me' : 'them',
+                text: e.lastMessage || '',
+                _ts: e.lastAt || 0,
+                time: e.lastAt ? formatInboxTime(e.lastAt) : '',
+                date: e.lastAt ? formatDaySep(e.lastAt) : 'Aujourd\'hui',
+                unread: !fromMe && (e.unread || 0) > 0,
+                status: fromMe ? 'sent' : undefined
+            }];
+        });
+        W.setContacts(lastInboxSnapshot.map(([tid, e]) => {
+            e = e || {};
+            const peerUid = peerUidOf(tid) || e.peerUid;
+            const p = pres[peerUid] || {};
+            const prof = profilesCache[peerUid] || {};
+            const name = livePeerName(peerUid) || e.peerName || 'Utilisateur';
+            return {
+                id: tid,
+                name: name,
+                avatar: avatarSrcFor(name, prof.profileImage),
+                online: p.state === 'active',
+                lastSeen: p.lastChanged ? 'il y a ' + timeAgo(p.lastChanged) : '',
+                about: e.jobTitle || prof.jobTitle || ''
+            };
+        }).filter(c => c.id));
+    };
+    if (useCache) doRender(presenceCache);
+    else db.ref('presence').once('value').then(s => {
+        presenceCache = s.val() || {};
+        presenceCacheTs = Date.now();
+        doRender(presenceCache);
+    }).catch(() => doRender({}));
+}
+
+// ============================================================
+// OUVERTURE D'UNE CONVERSATION (branchement temps réel Firebase)
+// ============================================================
+function onChatWidgetOpened(cid) {
+    const user = auth.currentUser;
+    if (!user) return;
+    // Conversation au format ancien (« uidA_uidB__job ») : on la consolide
+    // dans la conversation unique du duo (« uidA_uidB ») — les anciens
+    // messages sont migrés par healLegacyThreadsForPair (idempotent).
+    if (String(cid).indexOf('__') !== -1) {
+        const pairId = String(cid).split('__')[0];
+        const pUid = peerUidOf(pairId);
+        if (window.W) {
+            // le contact au format nouveau doit exister dans le widget pour
+            // que openChat fonctionne
+            if (pUid && !W.contacts.some(c => c.id === pairId)) {
+                const nm = livePeerName(pUid) || 'Utilisateur';
+                W.contacts.push({ id: pairId, name: nm, avatar: avatarSrcFor(nm, (profilesCache[pUid] || {}).profileImage), online: false, lastSeen: '', about: '' });
+            }
+            W.openChat(pairId);
+        }
+        return;
+    }
+    const peerUid = peerUidOf(cid);
+    // Bannière « job » : job demandé à l'ouverture, sinon celle du thread
+    if (pendingJobBar) {
+        setJobBar(pendingJobBar.jobId, pendingJobBar.jobTitle);
+        pendingJobBar = null;
+    } else {
+        db.ref('chats/' + cid + '/meta').once('value').then(s => {
+            const m = s.val() || {};
+            if (chatThread === cid) setJobBar(m.jobId || null, m.jobTitle || null);
+        }).catch(() => {});
+    }
+    attachChatListeners(cid, peerUid);
+    // marque lu + réparation (entrée d'inbox, anciens threads) — dans l'ordre
+    markChatRead(cid);
+    healLegacyThreadsForPair(user, cid).then(() => repairInboxEntryForCurrentChat(cid)).catch(() => {});
+}
+
+function attachChatListeners(cid, peerUid) {
+    detachChatListeners();
+    const me = auth.currentUser;
+    if (!me) return;
+    chatThread = cid;
+    // Messages (lecture complète du dernier segment : gère ajouts,
+    // suppressions, réactions, accusés — le widget re-rend)
+    chatMsgsRef = db.ref('chats/' + cid + '/messages').limitToLast(200);
+    chatMsgsRef.on('value', (snap) => {
+        if (!chatOverlayOpen || !window.W || W.activeId !== cid) return;
+        const msgs = [];
+        snap.forEach(ch => {
+            const m = ch.val();
+            if (!m || m.deleted) return;
+            if (m.deletedFor && m.deletedFor[me.uid]) return;
+            msgs.push(mapWidgetMsg(ch.key, m, cid));
+        });
+        // Envoi optimiste pas encore confirmé par Firebase : on garde la
+        // bulle locale tant que le vrai message n'est pas arrivé
+        if (pendingChatSend && pendingChatSend.cid === cid) {
+            const window = pendingChatSend.dataImage ? 60000 : 6000;
+            const matched = msgs.some(m => m.from === 'me' && Math.abs((m._ts || 0) - pendingChatSend.ts) < window &&
+                ((pendingChatSend.text && m.text === pendingChatSend.text) || (pendingChatSend.dataImage && m.image)));
+            if (matched) pendingChatSend = null;
+            else msgs.push(pendingChatSend.tempMsg);
+        }
+        W.setMessages(cid, msgs);
+    });
+    if (peerUid) {
+        // « en train d'écrire… » de l'autre
+        chatTypingPeerRef = db.ref('chats/' + cid + '/meta/typing/' + peerUid);
+        chatTypingPeerRef.on('value', (snap) => {
+            if (!window.W || W.activeId !== cid) return;
+            const ts = snap.val();
+            if (ts && (Date.now() - ts) < 4000) W.showTyping(cid);
+            else W.hideTyping(cid);
+        });
+        // Présence : « en ligne » / « vu il y a … »
+        chatPresenceRef = db.ref('presence/' + peerUid);
+        chatPresenceRef.on('value', (snap) => {
+            if (!window.W) return;
+            const p = snap.val();
+            const c = W.contacts.find(c => c.id === cid);
+            if (c) {
+                c.online = !!(p && p.state === 'active');
+                c.lastSeen = p && p.lastChanged ? 'il y a ' + timeAgo(p.lastChanged) : '';
+                if (W.activeId === cid && W._updHead) W._updHead(c);
+            }
+        });
+    }
+}
+
+function detachChatListeners() {
+    if (chatMsgsRef) { chatMsgsRef.off(); chatMsgsRef = null; }
+    if (chatTypingPeerRef) { chatTypingPeerRef.off(); chatTypingPeerRef = null; }
+    if (chatPresenceRef) { chatPresenceRef.off(); chatPresenceRef = null; }
+    chatThread = null;
+}
+
+// Message Firebase -> objet message du widget
+function mapWidgetMsg(key, m, cid) {
+    const me = auth.currentUser;
+    const mine = m.from === me.uid;
+    const peerUid = peerUidOf(cid);
+    const read = m.readBy && peerUid && m.readBy[peerUid];
+    const out = {
+        id: key,
+        fbId: key,
+        from: mine ? 'me' : (m.from || 'them'),
+        _ts: m.timestamp || 0,
+        time: m.timestamp ? formatChatTime(m.timestamp) : '',
+        date: m.timestamp ? formatDaySep(m.timestamp) : 'Aujourd\'hui'
+    };
+    if (m.text) out.text = m.text;
+    if (m.imageUrl) out.image = m.imageUrl;
+    if (mine) out.status = read ? 'read' : 'sent';
+    if (!mine && !(m.readBy && m.readBy[me.uid])) out.unread = true;
+    if (m.replyTo && m.replyTo.id) out.replyTo = m.replyTo.id;
+    if (m.reactions && m.reactions.length) out.reactions = m.reactions;
+    if (m.edited) out.edited = true;
+    return out;
+}
+
+// Bannière « job » au-dessus des messages (cliquable -> ouvre l'annonce)
+function setJobBar(jobId, jobTitle) {
+    const bar = document.getElementById('waJobBar');
+    if (!bar) return;
+    if (jobId && jobId !== 'general') {
+        bar.textContent = '📋 ' + (jobTitle || 'Voir l\'annonce concernée');
+        bar.dataset.jobId = jobId;
+        bar.style.display = 'block';
+    } else {
+        bar.style.display = 'none';
+        bar.dataset.jobId = '';
+    }
+}
+function openJobFromChat() {
+    const bar = document.getElementById('waJobBar');
+    const jid = bar && bar.dataset.jobId;
+    if (!jid || jid === 'general') return;
+    if (typeof jobsById !== 'undefined' && jobsById[jid]) openJobPreview(jid);
+    else if (typeof openJobPreview === 'function') openJobPreview(jid);
+}
+
+// ============================================================
+// POINTS D'ENTRÉE (bouton job, notification, liste)
+// ============================================================
 function openUserChatFromPreview() {
     const user = auth.currentUser;
     if (!user || user.isAnonymous) { showToast('Connecte-toi pour discuter.', 'error'); return; }
@@ -6332,457 +6596,267 @@ function openUserChatFromPreview() {
     openUserChat(job.user, job.id, name, job.title);
 }
 
+// Point d'entrée unique : ouvre/CONTINUE la conversation avec peerUid
+// (thread unique par personne — le job fourni sert à la bannière/contexte)
 function openUserChat(peerUid, jobId, peerName, jobTitle) {
     const user = auth.currentUser;
-    if (!user) return;
-    // On ferme d'abord toute conversation précédente pour ne pas cumuler les écoutes.
-    detachUserChatListeners();
-
-    userChatPeerUid = peerUid;
-    userChatJobId = jobId || null;
-    // MÊME thread qu'avant avec cette personne (continuation de la
-    // conversation, quel que soit le job — comme sur WhatsApp)
-    userChatThreadId = makeThreadId(user.uid, peerUid);
-    userChatMsgIds = new Set();
-    userChatLastDay = null;
-
-    // Le nom du profil (live) prime sur le nom transmis : le profil peut
-    // avoir été complété après le début de la conversation
-    if ((profilesCache[peerUid] || {}).name) peerName = profilesCache[peerUid].name;
-    if (!peerName) peerName = 'Utilisateur';
-
-    const nameEl = document.getElementById('userChatName'); if (nameEl) nameEl.textContent = peerName;
-    // Avatar : la vraie photo de profil si elle existe, sinon les initiales
-    const avEl = document.getElementById('userChatAvatar');
-    if (avEl) {
-        const pImg = (profilesCache[peerUid] || {}).profileImage;
-        if (pImg) avEl.innerHTML = '<img src="' + escapeHtml(cloudinaryResize(pImg, 96, 96)) + '" alt="">';
-        else avEl.textContent = initials(peerName);
-    }
-    const msgs = document.getElementById('userChatMessages'); if (msgs) msgs.innerHTML = '';
-
-    // Bannière du job concerné (si la conversation est liée à une annonce)
-    const banner = document.getElementById('userChatJobBanner');
-    if (banner) {
-        if (jobTitle || (jobId && jobId !== 'general')) {
-            banner.textContent = '📋 ' + (jobTitle || 'Voir l\'annonce concernée');
-            banner.style.display = 'block';
-        } else {
-            banner.style.display = 'none';
-        }
-    }
-
-    // Ouvert depuis un job précis : on mémorise ce job comme contexte du
-    // thread (la bannière suit le dernier job discuté) — sans créer de
-    // nouvelle conversation.
+    if (!user || user.isAnonymous) { showToast('Connecte-toi pour discuter.', 'error'); return; }
+    const tid = makeThreadId(user.uid, peerUid);
+    pendingJobBar = { jobId: jobId || null, jobTitle: jobTitle || null };
+    // mémorise le job en contexte du thread (bannière pour la prochaine fois)
     if (jobId && jobId !== 'general') {
-        const jobMetaUpd = { jobId: jobId };
-        if (jobTitle) jobMetaUpd.jobTitle = String(jobTitle).slice(0, 120);
-        db.ref('chats/' + userChatThreadId + '/meta').update(jobMetaUpd).catch(() => {});
+        const upd = { jobId: jobId };
+        if (jobTitle) upd.jobTitle = String(jobTitle).slice(0, 120);
+        db.ref('chats/' + tid + '/meta').update(upd).catch(() => {});
     }
-
-    // Fermer l'inbox si elle était ouverte, afficher la conversation
-    const inbox = document.getElementById('messagesInbox'); if (inbox) inbox.style.display = 'none';
-    const ov = document.getElementById('userChatOverlay'); if (ov) ov.style.display = 'flex';
-
-    // Écoute des messages en temps réel
-    userChatRef = db.ref('chats/' + userChatThreadId + '/messages').limitToLast(200);
-    userChatRef.on('child_added', snap => {
-        const m = snap.val(); if (!m) return;
-        if (userChatMsgIds.has(snap.key)) return; // déjà affiché (envoi optimiste ou doublon)
-        userChatMsgIds.add(snap.key);
-        if (m.deletedFor && m.deletedFor[user.uid]) return; // supprimé pour moi : invisible
-        renderChatMessage(snap.key, m, m.from === user.uid);
-        // Si c'est un message reçu, on le marque comme lu tout de suite (conversation ouverte)
-        if (m.from !== user.uid) markThreadRead();
-    });
-    // Écoute des mises à jour : accusé de lecture ✓✓, "supprimé pour moi",
-    // "supprimé pour tout le monde"
-    userChatRef.on('child_changed', snap => {
-        const m = snap.val(); if (!m) return;
-        if (m.deletedFor && m.deletedFor[user.uid]) {
-            const el = document.getElementById('msg-' + snap.key);
-            if (el) el.remove();
-            return;
+    // assure que la conv figure dans ma boîte (même sans entrée encore)
+    if (!lastInboxSnapshot.some(([t]) => t === tid)) {
+        lastInboxSnapshot.push([tid, { peerUid: peerUid, peerName: peerName || 'Utilisateur', jobTitle: jobTitle || null }]);
+    }
+    openMessagesInbox();
+    if (window.W) {
+        const existing = W.contacts.find(c => c.id === tid);
+        if (!existing) {
+            const name = peerName || livePeerName(peerUid) || 'Utilisateur';
+            W.contacts.push({ id: tid, name: name, avatar: avatarSrcFor(name, (profilesCache[peerUid] || {}).profileImage), online: false, lastSeen: '', about: jobTitle || '' });
+            W.renderChats();
         }
-        if (m.deleted) {
-            const el = document.getElementById('msg-' + snap.key);
-            if (el) el.innerHTML = '<div style="font-style:italic;opacity:0.6;font-size:13px;">🚫 Message supprimé</div>';
-            return;
-        }
-        updateMessageTicks(snap.key, m, m.from === user.uid);
-    });
+        W.openChat(tid);
+    }
+}
 
-    // Écoute "en train d'écrire..." de l'autre personne
-    userChatTypingRef = db.ref('chats/' + userChatThreadId + '/meta/typing/' + peerUid);
-    userChatTypingRef.on('value', snap => {
-        const ts = snap.val();
-        const active = ts && (Date.now() - ts < 4000);
-        const el = document.getElementById('userChatTyping');
-        if (el) el.style.display = active ? 'flex' : 'none';
-        const statusEl = document.getElementById('userChatStatus');
-        if (!statusEl) return;
-        if (active) {
-            statusEl.textContent = 'en train d\'écrire…';
-            statusEl.classList.add('online');
+// ============================================================
+// ENVOI (widget -> Firebase) : optimiste + 6 écritures ciblées
+// ============================================================
+function patchChatWidgetForFirebase() {
+    if (!window.W || W.__patched) return;
+    W.__patched = true;
+    const origDeleteMessage = W.deleteMessage;
+    W.__origDelete = origDeleteMessage;
+
+    // ---- ENVOI : le widget appelle W.sendMessage(cid, data) ; on le branche
+    // sur Firebase. La bulle apparaît immédiatement (optimiste) puis le vrai
+    // message Firebase la remplace (listener temps réel). ----
+    W.sendMessage = function(cid, data) {
+        const me = auth.currentUser;
+        if (!me || !cid) return null;
+        data = data || {};
+        const tempMsg = {
+            id: 'tmp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+            from: 'me',
+            _ts: Date.now(),
+            time: formatChatTime(Date.now()),
+            date: 'Aujourd\'hui',
+            status: 'sent'
+        };
+        if (data.text) tempMsg.text = data.text;
+        if (data.image) tempMsg.image = data.image;
+        if (data.replyTo) {
+            const rm = (W.convs[cid] || []).find(x => x.id === data.replyTo);
+            if (rm) {
+                tempMsg.replyTo = rm.fbId || rm.id;
+                tempMsg.__reply = {
+                    id: rm.fbId || rm.id,
+                    text: (rm.text || (rm.image ? '📷 Photo' : '')).slice(0, 300),
+                    fromName: rm.from === 'me' ? 'Toi' : ((W.contacts.find(c => c.id === cid) || {}).name || 'Utilisateur')
+                };
+            }
+        }
+        W.addMessage(cid, tempMsg);
+        const isDataImage = !!(data.image && String(data.image).startsWith('data:'));
+        pendingChatSend = { cid: cid, ts: Date.now(), text: data.text || '', dataImage: isDataImage, tempMsg: tempMsg };
+        const clearPending = () => { if (pendingChatSend && pendingChatSend.tempMsg === tempMsg) pendingChatSend = null; };
+        setTimeout(clearPending, isDataImage ? 65000 : 10000);
+        if (isDataImage) {
+            sendChatPhotoToThread(cid, tempMsg, data.image, tempMsg.__reply || undefined, clearPending);
         } else {
-            // Pas en train d'écrire : on affiche le statut de présence réel
-            db.ref('presence/' + peerUid).once('value').then(s => renderPeerPresenceStatus(s.val()));
+            const payload = {};
+            if (data.text) payload.text = String(data.text).slice(0, 800);
+            if (data.image && !String(data.image).startsWith('data:')) payload.imageUrl = data.image; // transfert d'une image déjà hébergée
+            if (tempMsg.__reply) payload.replyTo = tempMsg.__reply;
+            sendChatMessageToThread(cid, payload, clearPending);
         }
-    });
-
-    // Statut de présence en direct : "🟢 en ligne" / "vu à l'instant"
-    // (le nœud presence/{uid} est déjà maintenu par writePresenceState)
-    userChatPresenceRef = db.ref('presence/' + peerUid);
-    userChatPresenceRef.on('value', snap => renderPeerPresenceStatus(snap.val()));
-
-    // À l'ouverture, dans cet ordre :
-    // 1) healLegacyThreadsForPair : récupère les messages encore dans les
-    //    anciens threads de ce duo (format "uidA_uidB__job") vers le thread
-    //    unique — la conversation ne peut plus paraître vide ;
-    // 2) markThreadRead : marque tout comme lu (APRÈS la copie, pour que
-    //    les messages récupérés soient marqués lus eux aussi) ;
-    // 3) repairInboxEntryForCurrentChat : reconstruit l'entrée d'inbox si
-    //    elle manque, pour que la conversation figure dans la liste.
-    healLegacyThreadsForPair(user, userChatThreadId)
-        .then(() => { markThreadRead(); return repairInboxEntryForCurrentChat(); })
-        .catch(() => {});
-}
-
-// Reconstruit l'entrée de MA conversation dans ma boîte de réception si
-// elle manque (ex. : le message a été envoyé par une vieille version de
-// l'app, qui écrit le message dans "chats" mais pas l'entrée d'inbox).
-// La réparation complète se fait aussi côté serveur (script de
-// notifications) — ici on rattrape instantanément ce qu'on ouvre.
-async function repairInboxEntryForCurrentChat() {
-    const user = auth.currentUser;
-    if (!user || !userChatThreadId) return;
-    try {
-        const mine = await db.ref('userInboxes/' + user.uid + '/threads/' + userChatThreadId).once('value');
-        if (mine.exists()) return;
-        const metaSnap = await db.ref('chats/' + userChatThreadId + '/meta').once('value');
-        const mv = metaSnap.val() || {};
-        await db.ref('userInboxes/' + user.uid + '/threads/' + userChatThreadId).update({
-            peerUid: userChatPeerUid,
-            peerName: (mv.names && mv.names[userChatPeerUid]) || (profilesCache[userChatPeerUid] && profilesCache[userChatPeerUid].name) || 'Utilisateur',
-            jobId: mv.jobId || (userChatJobId || 'general'),
-            jobTitle: mv.jobTitle || null,
-            lastMessage: mv.lastMessage || '',
-            lastAt: mv.lastAt || Date.now(),
-            lastFrom: mv.lastFrom || null
-        });
-        // Si la liste "Messages" est ouverte, on la rafraîchit
-        const inbox = document.getElementById('messagesInbox');
-        if (inbox && inbox.style.display !== 'none') renderInbox();
-    } catch (e) { /* non critique : la réparation serveur rattrapera */ }
-}
-
-function detachUserChatListeners() {
-    if (userChatRef) { userChatRef.off(); userChatRef = null; }
-    if (userChatTypingRef) { userChatTypingRef.off(); userChatTypingRef = null; }
-    if (userChatPresenceRef) { userChatPresenceRef.off(); userChatPresenceRef = null; }
-}
-
-// Statut de l'autre personne dans l'en-tête du chat, d'après son nœud de
-// présence (maintenu en continu par writePresenceState) :
-// "🟢 en ligne" si au premier plan, "vu il y a X" sinon.
-function renderPeerPresenceStatus(presence) {
-    const statusEl = document.getElementById('userChatStatus');
-    if (!statusEl) return;
-    if (presence && presence.state === 'active') {
-        statusEl.textContent = '🟢 en ligne';
-        statusEl.classList.add('online');
-    } else if (presence && presence.lastChanged) {
-        statusEl.textContent = 'vu ' + timeAgo(presence.lastChanged);
-        statusEl.classList.remove('online');
-    } else {
-        statusEl.textContent = '🔒 Messagerie sécurisée';
-        statusEl.classList.remove('online');
-    }
-}
-
-function closeUserChat() {
-    detachUserChatListeners();
-    // On efface notre indicateur "en train d'écrire" en partant
-    if (userChatThreadId && auth.currentUser) {
-        db.ref('chats/' + userChatThreadId + '/meta/typing/' + auth.currentUser.uid).remove().catch(() => {});
-    }
-    const ov = document.getElementById('userChatOverlay'); if (ov) ov.style.display = 'none';
-    userChatThreadId = null; userChatPeerUid = null; userChatJobId = null;
-}
-
-function openJobFromChat() {
-    if (userChatJobId && userChatJobId !== 'general') {
-        const jid = userChatJobId;
-        closeUserChat();
-        if (typeof jobsById !== 'undefined' && jobsById[jid]) openJobPreview(jid);
-        else if (typeof openJobPreview === 'function') openJobPreview(jid);
-    }
-}
-
-// ---------- AFFICHAGE DES MESSAGES ----------
-function renderChatMessage(msgId, m, mine) {
-    const c = document.getElementById('userChatMessages'); if (!c) return;
-    // "Supprimé pour moi" : ce message n'existe plus pour MOI (invisible,
-    // mais toujours présent chez l'autre — comme sur WhatsApp).
-    if (m.deletedFor && auth.currentUser && m.deletedFor[auth.currentUser.uid]) return;
-
-    // Séparateur de date
-    const daySep = formatDaySep(m.timestamp || Date.now());
-    if (daySep !== userChatLastDay) {
-        userChatLastDay = daySep;
-        const sep = document.createElement('div');
-        sep.className = 'msg-day-sep';
-        sep.textContent = daySep;
-        c.appendChild(sep);
-    }
-
-    const el = document.createElement('div');
-    el.className = 'msg-bubble ' + (mine ? 'mine' : 'theirs');
-    el.id = 'msg-' + msgId;
-
-    let inner = '';
-    // Citation du message à laquelle on répond (si c'est une réponse)
-    if (m.replyTo) {
-        inner += `<div style="border-left:3px solid ${mine ? 'rgba(255,255,255,0.5)' : 'var(--gold,#FFD700)'};padding:4px 8px;margin-bottom:4px;font-size:12px;opacity:0.85;background:rgba(0,0,0,0.08);border-radius:6px;">
-            <div style="font-weight:700;">${escapeHtml(m.replyTo.fromName || '')}</div>
-            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.replyTo.text || '')}</div>
-        </div>`;
-    }
-    if (m.deleted) {
-        // "Supprimé pour tout le monde" : l'auteur a effacé le message
-        // (15 min après l'envoi) — les deux voient l'indication.
-        inner += '<div style="font-style:italic;opacity:0.6;font-size:13px;">🚫 Message supprimé</div>';
-    } else {
-        // Photo en vignette : clic = agrandissement plein écran (lightbox),
-        // long appui sur le message = menu (enregistrer / supprimer).
-        if (m.imageUrl) inner += '<img src="' + escapeHtml(m.imageUrl) + '" onclick="openImageLightbox(this.src)" alt="photo">';
-        if (m.text) inner += '<div>' + escapeHtml(m.text) + '</div>';
-    }
-    // Métadonnées : heure + accusé de lecture (seulement pour MES messages)
-    inner += '<div class="msg-meta"><span>' + formatChatTime(m.timestamp) + '</span>';
-    if (mine) {
-        const read = m.readBy && userChatPeerUid && m.readBy[userChatPeerUid];
-        inner += '<span class="msg-tick' + (read ? ' read' : '') + '">' + (read ? '✓✓' : '✓') + '</span>';
-    }
-    inner += '</div>';
-
-    el.innerHTML = inner;
-    c.appendChild(el);
-    c.scrollTop = c.scrollHeight;
-
-    // Appui long (450ms) sur un message → menu répondre/copier/supprimer
-    if (!m.deleted) attachMessageLongPress(el, msgId, m, mine);
-}
-
-// ---------- PHOTO DU CHAT : VIGNETTE + AGRANDISSEMENT + ENREGISTRER ----------
-// Clic sur une photo → lightbox plein écran (comme WhatsApp). Le menu appui
-// long (ou le bouton 💾 de la lightbox) permet d'enregistrer l'image.
-function openImageLightbox(url) {
-    closeImageLightbox();
-    const ov = document.createElement('div');
-    ov.id = 'imgLightbox';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.94);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
-
-    const img = document.createElement('img');
-    img.src = url;
-    img.alt = 'photo';
-    img.style.cssText = 'max-width:94vw;max-height:84vh;object-fit:contain;border-radius:4px;';
-    img.addEventListener('click', (e) => e.stopPropagation());
-
-    const bar = document.createElement('div');
-    bar.style.cssText = 'position:absolute;top:12px;right:12px;display:flex;gap:10px;';
-    const mkBtn = (label, title, fn) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = label;
-        b.title = title;
-        b.style.cssText = 'width:46px;height:46px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:19px;cursor:pointer;';
-        b.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
-        return b;
+        return tempMsg;
     };
-    bar.appendChild(mkBtn('💾', 'Enregistrer l\'image', () => downloadChatImage(url)));
-    bar.appendChild(mkBtn('✕', 'Fermer', closeImageLightbox));
 
-    ov.addEventListener('click', () => closeImageLightbox());
-    ov.appendChild(img);
-    ov.appendChild(bar);
-    document.body.appendChild(ov);
+    // ---- MODIFIER un message : aussi dans Firebase (champ text) ----
+    const origEditMessage = W.editMessage;
+    W.editMessage = function(cid, mid, newText) {
+        origEditMessage.call(this, cid, mid, newText);
+        const m = (this.convs[cid] || []).find(x => x.id === mid);
+        const fid = m && m.fbId;
+        if (fid) {
+            db.ref('chats/' + cid + '/messages/' + fid + '/text').set(String(newText || '').slice(0, 800))
+                .then(() => { if (m) m.edited = true; })
+                .catch(() => {});
+        }
+    };
+
+    // ---- SUPPRIMER : « pour moi » (deletedFor) ou « pour tout le monde »
+    // (deleted, auteur seulement, 15 minutes — la règle Firebase l'applique) ----
+    W.deleteMessage = function(cid, mid) {
+        const me = auth.currentUser;
+        const m = (this.convs[cid] || []).find(x => x.id === mid);
+        const fid = m && m.fbId;
+        let forEveryone = false;
+        if (m && fid && m.from === 'me' && (Date.now() - (m._ts || 0)) < 15 * 60 * 1000) {
+            forEveryone = confirm('Supprimer ce message pour TOUT LE MONDE ?\n\nOK     = pour tout le monde\nAnnuler = seulement pour moi');
+        }
+        origDeleteMessage.call(this, cid, mid);
+        if (!me || !fid) return; // message optimiste jamais envoyé : rien à écrire
+        const ref = db.ref('chats/' + cid + '/messages/' + fid);
+        if (forEveryone && m && m.from === 'me') ref.child('deleted').set(true).catch(() => {});
+        else ref.child('deletedFor/' + me.uid).set(true).catch(() => {});
+    };
+
+    // ---- Lightbox : bouton « Enregistrer » la photo ----
+    const origOpenLB = W.openLB;
+    W.openLB = function(src) {
+        origOpenLB.call(this, src);
+        const lb = document.getElementById('waLB');
+        let b = document.getElementById('waLBSave');
+        if (lb && !b) {
+            b = document.createElement('button');
+            b.id = 'waLBSave';
+            b.textContent = '💾 Enregistrer';
+            b.style.cssText = 'position:absolute;bottom:18px;right:18px;background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:24px;padding:10px 18px;font-size:14px;cursor:pointer;';
+            lb.appendChild(b);
+        }
+        if (b) b.onclick = (e) => { e.stopPropagation(); downloadChatImage(src); };
+    };
+
+    // ---- Photos : images uniquement, contrôle de taille ----
+    W.onFile = function(inp) {
+        const f = inp.files && inp.files[0];
+        inp.value = '';
+        if (!f || !this.activeId) return;
+        if (!f.type || !f.type.startsWith('image/')) { if (typeof showToast === 'function') showToast('Images uniquement (JPG, PNG, WEBP, GIF).', 'error'); return; }
+        if (f.size > 8 * 1024 * 1024) { if (typeof showToast === 'function') showToast('Photo trop lourde (max 8 Mo).', 'error'); return; }
+        const r = new FileReader();
+        r.onload = (e) => this.sendMessage(this.activeId, { image: e.target.result });
+        r.readAsDataURL(f);
+    };
+
+    // ---- Transfert d'un message vers une autre conversation ----
+    W._doFwd = function(cid) {
+        const src = this._fwdMsg;
+        const toCid = cid;
+        this.closeFwd();
+        if (!src || !toCid || toCid === this.activeId) return;
+        const data = {};
+        if (src.text) data.text = src.text;
+        if (src.image) data.image = src.image;
+        this.sendMessage(toCid, data);
+    };
+
+    // ---- Bouton envoyer : texte uniquement (pas d'enregistrement vocal) ----
+    W.onSendBtn = function() {
+        const t = document.getElementById('waTxt');
+        if (t && t.value.trim()) this._send();
+    };
+
+    // ---- Thème : le widget pose data-theme sur #wa, nos CSS le lisent sur
+    // l'overlay parent -> on le met des deux côtés (clair/suivi de l'app) ----
+    const origSetTheme = W.setTheme;
+    W.setTheme = function(t) {
+        const ov = document.getElementById('chatWidgetOverlay');
+        if (ov) ov.setAttribute('data-theme', t);
+        origSetTheme.call(this, t);
+    };
 }
-function closeImageLightbox() {
-    const el = document.getElementById('imgLightbox');
-    if (el) el.remove();
-}
-// Enregistre la photo sur l'appareil. Les URLs Cloudinary acceptent le
-// paramètre "dl" qui force le téléchargement au lieu de l'affichage.
-function downloadChatImage(url) {
+
+// Écriture Firebase de l'envoi : 6 étapes ciblées (aucune à la racine)
+async function sendChatMessageToThread(threadId, payload, onDone) {
+    const me = auth.currentUser;
+    if (!me) return;
+    const peerUid = peerUidOf(threadId);
+    if (!peerUid) return;
     try {
-        const dlUrl = url + (url.includes('?') ? '&' : '?') + 'dl=jobmarket-photo.jpg';
-        const a = document.createElement('a');
-        a.href = dlUrl;
-        a.download = 'jobmarket-photo.jpg';
-        a.target = '_blank';
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        const msgId = db.ref('chats/' + threadId + '/messages').push().key;
+        const now = Date.now();
+        const myName = String((profilesCache[me.uid] || {}).name || me.displayName || 'Utilisateur').slice(0, 60);
+        const peerName = String((profilesCache[peerUid] || {}).name || 'Utilisateur').slice(0, 60);
+        const preview = payload.imageUrl ? '📷 Photo' : (payload.text || '').slice(0, 100);
+        const msg = { from: me.uid, to: peerUid, timestamp: now, readBy: { [me.uid]: true } };
+        if (payload.text) msg.text = payload.text;
+        if (payload.imageUrl) msg.imageUrl = payload.imageUrl;
+        if (payload.replyTo) msg.replyTo = payload.replyTo;
+
+        // 0) index userThreads (filet de sécurité des conversations)
+        db.ref('userThreads/' + me.uid + '/' + threadId).set(true).catch(() => {});
+        db.ref('userThreads/' + peerUid + '/' + threadId).set(true).catch(() => {});
+        // 1) participants (nécessaire pour les écritures d'inbox)
+        await db.ref('chats/' + threadId + '/meta/participants').update({ [me.uid]: true, [peerUid]: true });
+        // 2) le message
+        await db.ref('chats/' + threadId + '/messages/' + msgId).set(msg);
+        // 3) le méta (fusion : participants/typing/job préservés)
+        const metaUpd = {
+            names: { [me.uid]: myName, [peerUid]: peerName },
+            lastMessage: preview,
+            lastAt: now,
+            lastFrom: me.uid
+        };
+        await db.ref('chats/' + threadId + '/meta').update(metaUpd);
+        // 4) boîte de réception du DESTINATAIRE (aperçu de la conversation)
+        await writeWithRetry(() => db.ref('userInboxes/' + peerUid + '/threads/' + threadId).update({
+            peerUid: me.uid, peerName: myName,
+            lastMessage: preview, lastAt: now, lastFrom: me.uid
+        }));
+        // 5) MA boîte de réception
+        await db.ref('userInboxes/' + me.uid + '/threads/' + threadId).update({
+            peerUid: peerUid, peerName: peerName,
+            lastMessage: preview, lastAt: now, lastFrom: me.uid
+        });
+        // 6) non-lus du DESTINATAIRE +1
+        await db.ref('userInboxes/' + peerUid + '/threads/' + threadId + '/unread').transaction(c => (c || 0) + 1);
+
+        // nettoyage du « en train d'écrire » + notification instantanée
+        db.ref('chats/' + threadId + '/meta/typing/' + me.uid).remove().catch(() => {});
+        if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-message');
+        if (onDone) onDone();
     } catch (e) {
-        window.open(url, '_blank'); // repli : nouvel onglet (clic long -> enregistrer)
+        console.error('sendChatMessageToThread error', e);
+        // l'envoi a échoué : on retire la bulle optimiste
+        if (window.W && pendingChatSend) {
+            try { W.__origDelete ? W.__origDelete.call(W, threadId, pendingChatSend.tempMsg.id) : W.deleteMessage(threadId, pendingChatSend.tempMsg.id); } catch (e2) {}
+        }
+        if (onDone) onDone();
+        showToast('Erreur envoi : ' + ((e && e.message) || 'réseau instable'), 'error');
     }
 }
-function downloadChatImageFromMenu() {
-    const ctx = window.__ctxMenuMsg;
-    closeMessageContextMenu();
-    if (!ctx || !ctx.m.imageUrl) return;
-    downloadChatImage(ctx.m.imageUrl);
-}
 
-function attachMessageLongPress(el, msgId, m, mine) {
-    let pressTimer = null;
-    const start = () => { pressTimer = setTimeout(() => { showMessageContextMenu(msgId, m, mine); vibrateDevice(30); }, 450); };
-    const cancel = () => clearTimeout(pressTimer);
-    el.addEventListener('touchstart', start, { passive: true });
-    el.addEventListener('touchend', cancel);
-    el.addEventListener('touchmove', cancel);
-    el.addEventListener('mousedown', start);
-    el.addEventListener('mouseup', cancel);
-    el.addEventListener('mouseleave', cancel);
-}
-
-// Menu contextuel des messages (feuille en bas d'écran, style WhatsApp)
-window.__ctxMenuMsg = null;
-function showMessageContextMenu(msgId, m, mine) {
-    closeMessageContextMenu();
-    // "Supprimer pour tout le monde" : seulement pour mes messages, et dans
-    // les 15 minutes (la règle Firebase impose la même limite côté base).
-    const canDeleteForEveryone = mine && (Date.now() - (m.timestamp || 0) < 15 * 60 * 1000);
-    const menu = document.createElement('div');
-    menu.id = 'msgContextMenu';
-    menu.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.35);display:flex;align-items:flex-end;';
-    menu.innerHTML = `
-      <div style="background:var(--surface,#1a1a1a);width:100%;border-radius:16px 16px 0 0;padding:10px 0;box-shadow:0 -4px 20px rgba(0,0,0,0.3);" onclick="event.stopPropagation()">
-        <div onclick="replyToFromMenu('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;">↩️ Répondre</div>
-        ${m.text ? `<div onclick="copyMessageText('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;">📋 Copier</div>` : ''}
-        ${m.imageUrl ? `<div onclick="downloadChatImageFromMenu()" style="padding:14px 20px;font-size:15px;cursor:pointer;">💾 Enregistrer l'image</div>` : ''}
-        <div onclick="deleteMessageForMe('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;color:var(--danger,#e74c3c);">🗑️ Supprimer pour moi</div>
-        ${canDeleteForEveryone ? `<div onclick="deleteMessageForEveryone('${msgId}')" style="padding:14px 20px;font-size:15px;cursor:pointer;color:var(--danger,#e74c3c);">🗑️ Supprimer pour tout le monde</div>` : ''}
-        <div onclick="closeMessageContextMenu()" style="padding:14px 20px;font-size:15px;cursor:pointer;color:var(--text-dim,#999);">Annuler</div>
-      </div>`;
-    menu.onclick = closeMessageContextMenu;
-    document.body.appendChild(menu);
-    window.__ctxMenuMsg = { msgId, m };
-}
-function closeMessageContextMenu() {
-    const el = document.getElementById('msgContextMenu');
-    if (el) el.remove();
-}
-function replyToFromMenu(msgId) {
-    const ctx = window.__ctxMenuMsg;
-    closeMessageContextMenu();
-    if (!ctx) return;
-    setReplyTo(msgId, ctx.m.text, ctx.m.imageUrl, ctx.m.from);
-    const inp = document.getElementById('userChatInput');
-    if (inp) inp.focus();
-}
-function copyMessageText(msgId) {
-    const ctx = window.__ctxMenuMsg;
-    closeMessageContextMenu();
-    if (!ctx || !ctx.m.text) return;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(ctx.m.text).then(() => showToast('Copié', 'success')).catch(() => {});
-    }
-}
-// "Supprimer pour moi" : un flag uniquement sur MA copie du message
-// (règle Firebase : chacun ne peut poser que SON propre flag).
-async function deleteMessageForMe(msgId) {
-    closeMessageContextMenu();
-    const user = auth.currentUser;
-    if (!user || !userChatThreadId) return;
+// Envoi d'une photo venue du widget (data URL) : compression éventuelle,
+// upload Cloudinary, puis écriture Firebase avec l'URL finale.
+async function sendChatPhotoToThread(threadId, tempMsg, dataUrl, replyTo, onDone) {
     try {
-        await db.ref('chats/' + userChatThreadId + '/messages/' + msgId + '/deletedFor/' + user.uid).set(true);
-        const el = document.getElementById('msg-' + msgId);
-        if (el) el.remove();
-    } catch (e) { showToast('Erreur', 'error'); }
-}
-// "Supprimer pour tout le monde" : écriture SIMPLE au niveau du champ
-// "deleted" — c'est ce qui fait appliquer la règle Firebase "auteur du
-// message + 15 minutes" (une update() plus large passerait par la règle du
-// thread, trop permissive). Le contenu reste dans la base (comme sur
-// WhatsApp) mais l'affichage des deux côtés passe à "Message supprimé".
-async function deleteMessageForEveryone(msgId) {
-    closeMessageContextMenu();
-    if (!userChatThreadId) return;
-    if (!confirm('Supprimer ce message pour tout le monde ?')) return;
-    try {
-        await db.ref('chats/' + userChatThreadId + '/messages/' + msgId + '/deleted').set(true);
-    } catch (e) { showToast('Erreur', 'error'); }
-}
-
-
-function updateMessageTicks(msgId, m, mine) {
-    if (!mine) return;
-    const el = document.getElementById('msg-' + msgId); if (!el) return;
-    const tick = el.querySelector('.msg-tick'); if (!tick) return;
-    const read = m.readBy && userChatPeerUid && m.readBy[userChatPeerUid];
-    tick.textContent = read ? '✓✓' : '✓';
-    tick.classList.toggle('read', !!read);
-}
-
-// ---------- ENVOI ----------
-// ---------- BARRE "RÉPONDRE À" (citation d'un message) ----------
-function setReplyTo(msgId, text, imageUrl, fromUid) {
-    const user = auth.currentUser;
-    const nameEl = document.getElementById('userChatName');
-    const fromName = fromUid === (user && user.uid) ? 'Toi' : (nameEl ? nameEl.textContent : 'Utilisateur');
-    replyingToMsg = { id: msgId, text: text || (imageUrl ? '📷 Photo' : ''), fromName };
-    renderReplyBar();
-}
-function clearReplyTo() { replyingToMsg = null; renderReplyBar(); }
-function renderReplyBar() {
-    const bar = document.getElementById('userChatReplyBar');
-    if (!bar) return;
-    if (!replyingToMsg) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
-    bar.style.display = 'flex';
-    bar.innerHTML = `
-      <div style="flex:1;min-width:0;border-left:3px solid var(--gold,#FFD700);padding-left:8px;">
-        <div style="font-size:12px;font-weight:700;color:var(--gold,#FFD700);">${escapeHtml(replyingToMsg.fromName)}</div>
-        <div style="font-size:12px;color:var(--text-dim,#999);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(replyingToMsg.text)}</div>
-      </div>
-      <button type="button" onclick="clearReplyTo()" style="background:none;border:none;color:var(--text-dim,#999);font-size:18px;cursor:pointer;padding:0 6px;">✕</button>`;
-}
-
-async function sendUserChatMessage() {
-    const user = auth.currentUser;
-    if (!user || !userChatThreadId) return;
-    const input = document.getElementById('userChatInput');
-    const text = (input.value || '').trim();
-    if (!text) return;
-    input.value = '';
-    const payload = { text: text.slice(0, 800) };
-    if (replyingToMsg) payload.replyTo = { id: replyingToMsg.id, text: replyingToMsg.text.slice(0, 300), fromName: replyingToMsg.fromName.slice(0, 60) };
-    await pushChatMessage(payload);
-}
-
-async function sendUserChatImage(fileInput) {
-    const user = auth.currentUser;
-    if (!user || !userChatThreadId) return;
-    const file = fileInput.files && fileInput.files[0];
-    fileInput.value = '';
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { showToast('Choisis une image.', 'error'); return; }
-    showToast('Envoi de la photo…', 'info');
-    try {
-        const url = await uploadToCloudinary(file);
-        await pushChatMessage({ imageUrl: url });
+        const file = dataURLtoFile(dataUrl);
+        let uploadFile = file;
+        if (window.CompressorJS && file.size > 1024 * 1024) {
+            try {
+                uploadFile = await new Promise((res, rej) => {
+                    new window.CompressorJS(file, { quality: 0.8, success: res, error: rej });
+                });
+            } catch (e) { uploadFile = file; }
+        }
+        const url = await uploadToCloudinary(uploadFile);
+        // la bulle optimiste (data:URL locale) passe à l'URL Cloudinary
+        if (window.W) {
+            const conv = W.convs[threadId] || [];
+            const m = conv.find(x => x.id === tempMsg.id);
+            if (m) { m.image = url; if (W.activeId === threadId && W.renderMsgs) W.renderMsgs(); }
+        }
+        await sendChatMessageToThread(threadId, { imageUrl: url, replyTo: replyTo || undefined }, onDone);
     } catch (e) {
-        console.error('sendUserChatImage error', e);
-        showToast('Échec de l\'envoi de la photo.', 'error');
+        console.error('sendChatPhotoToThread error', e);
+        if (window.W && pendingChatSend) {
+            try { W.__origDelete ? W.__origDelete.call(W, threadId, pendingChatSend.tempMsg.id) : W.deleteMessage(threadId, pendingChatSend.tempMsg.id); } catch (e2) {}
+        }
+        if (onDone) onDone();
+        showToast('Erreur envoi de la photo : ' + ((e && e.message) || 'réseau instable'), 'error');
     }
 }
 
-// Petit retry (1 fois, après 400ms) pour les écritures de messagerie :
-// le réseau mobile est instable, et une écriture d'inbox ratée ne doit pas
-// faire échouer l'envoi pour de bon.
+// Petit retry (1 fois, après 400 ms) pour les écritures d'inbox
 async function writeWithRetry(fn, retries) {
     retries = retries === undefined ? 1 : retries;
     try {
@@ -6796,209 +6870,117 @@ async function writeWithRetry(fn, retries) {
     }
 }
 
-// ---- ENVOI OPTIMISTE : le message apparaît IMMÉDIATEMENT au clic (comme
-// WhatsApp), puis l'accusé suit la progression : 🕐 (envoi en cours) →
-// ✓ (livré chez l'autre) → ✓✓ (lu) — ou ⚠️ (échec : toucher pour réessayer).
-let pendingMsgIds = new Set();
-let failedMessagePayloads = {};
-
-async function pushChatMessage(payload) {
+// « En train d'écrire… » : le widget émet l'événement « typing » à la frappe
+function onChatWidgetTyping() {
     const user = auth.currentUser;
-    if (!user || !userChatThreadId || !userChatPeerUid) return;
-    const tid = userChatThreadId;
-    const peerUid = userChatPeerUid;
-
-    // Index minimal "userThreads" : un simple booléen "cet utilisateur a
-    // cette conversation", écrit en PREMIER et de façon best-effort (ne
-    // bloque jamais l'envoi). C'est le filet de sécurité ultime : même si
-    // un jour l'écriture de l'aperçu (userInboxes) échoue en plein envoi,
-    // la liste "Messages" saura que la conversation existe et pourra la
-    // reconstruire depuis chats/{threadId}/meta (repairInboxFromThreadsIndex).
-    db.ref('userThreads/' + user.uid + '/' + tid).set(true).catch(() => {});
-    db.ref('userThreads/' + peerUid + '/' + tid).set(true).catch(() => {});
-
-    const msgId = db.ref('chats/' + tid + '/messages').push().key;
+    const cid = window.W && W.activeId;
+    if (!user || !cid) return;
     const now = Date.now();
-
-    const optimisticMsg = { from: user.uid, to: peerUid, timestamp: now, readBy: { [user.uid]: true } };
-    if (payload.text) optimisticMsg.text = payload.text;
-    if (payload.imageUrl) optimisticMsg.imageUrl = payload.imageUrl;
-    if (payload.replyTo) optimisticMsg.replyTo = payload.replyTo;
-
-    // Affichage IMMÉDIAT, avant même que Firebase confirme quoi que ce soit —
-    // c'est ce qui donne la sensation de rapidité de WhatsApp au lieu d'un
-    // silence de 1-2s sur une connexion mobile instable.
-    userChatMsgIds.add(msgId);
-    pendingMsgIds.add(msgId);
-    renderChatMessage(msgId, optimisticMsg, true);
-    setMessageSendState(msgId, 'pending');
-    clearReplyTo();
-
-    try {
-        const myName = String((profilesCache[user.uid] || {}).name || user.displayName || 'Utilisateur').slice(0, 60);
-        const peerName = String((profilesCache[peerUid] || {}).name || 'Utilisateur').slice(0, 60);
-        const preview = payload.imageUrl ? '📷 Photo' : (payload.text || '').slice(0, 100);
-        const jobTitle = (userChatJobId && jobsById[userChatJobId] && jobsById[userChatJobId].title)
-            || ((window.currentPreviewJob && window.currentPreviewJob.id === userChatJobId) ? window.currentPreviewJob.title : null);
-
-        // ÉTAPE 1 : garantir que le thread existe avec ses participants.
-        // (Les règles des boîtes de réception vérifient la participation
-        // dans la base : cette écriture doit précéder les suivantes.)
-        await db.ref('chats/' + tid + '/meta/participants').update({ [user.uid]: true, [peerUid]: true });
-
-        // ÉTAPE 2 : le message (écriture directe au niveau du message) + le
-        // méta (champ par champ — on ne remplace JAMAIS le nœud meta entier,
-        // sinon participants/typing seraient effacés).
-        await db.ref('chats/' + tid + '/messages/' + msgId).set(optimisticMsg);
-        const metaUpdate = {
-            names: { [user.uid]: myName, [peerUid]: peerName },
-            jobId: userChatJobId || 'general',
-            lastMessage: preview,
-            lastAt: now,
-            lastFrom: user.uid
-        };
-        if (jobTitle) metaUpdate.jobTitle = String(jobTitle).slice(0, 120);
-        await db.ref('chats/' + tid + '/meta').update(metaUpdate);
-
-        // ÉTAPE 3 : la boîte de réception du DESTINATAIRE (1 retry au cas où).
-        const peerEntry = {
-            peerUid: user.uid, peerName: myName,
-            jobId: userChatJobId || 'general',
-            jobTitle: jobTitle ? String(jobTitle).slice(0, 120) : null,
-            lastMessage: preview, lastAt: now, lastFrom: user.uid
-        };
-        await writeWithRetry(() => db.ref('userInboxes/' + peerUid + '/threads/' + tid).update(peerEntry));
-
-        // ÉTAPE 4 : MA boîte de réception (même aperçu, de mon point de vue).
-        const myEntry = {
-            peerUid: peerUid, peerName: peerName,
-            jobId: userChatJobId || 'general',
-            jobTitle: jobTitle ? String(jobTitle).slice(0, 120) : null,
-            lastMessage: preview, lastAt: now, lastFrom: user.uid
-        };
-        await db.ref('userInboxes/' + user.uid + '/threads/' + tid).update(myEntry);
-
-        // ÉTAPE 5 : compteur de non-lus du DESTINATAIRE +1 (transaction).
-        await db.ref('userInboxes/' + peerUid + '/threads/' + tid + '/unread').transaction(c => (c || 0) + 1);
-
-        // J'efface mon propre "en train d'écrire"
-        db.ref('chats/' + tid + '/meta/typing/' + user.uid).remove().catch(() => {});
-
-        // Prévient le destinataire instantanément
-        if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-message');
-
-        pendingMsgIds.delete(msgId);
-        setMessageSendState(msgId, 'sent');
-    } catch (e) {
-        console.error('pushChatMessage error', e);
-        pendingMsgIds.delete(msgId);
-        failedMessagePayloads[msgId] = payload;
-        setMessageSendState(msgId, 'failed');
-        // La vraie erreur est affichée (permission_denied, réseau...) pour
-        // diagnostiquer en 5 secondes.
-        showToast('Erreur envoi : ' + ((e && e.message) || 'réseau instable'), 'error');
+    if (now - lastChatTypingSent > 2000) {
+        lastChatTypingSent = now;
+        db.ref('chats/' + cid + '/meta/typing/' + user.uid).set(now).catch(() => {});
     }
-}
-
-function setMessageSendState(msgId, state) {
-    const el = document.getElementById('msg-' + msgId);
-    if (!el) return;
-    const tick = el.querySelector('.msg-tick');
-    if (!tick) return;
-    if (state === 'pending') {
-        tick.textContent = '🕐';
-        tick.classList.remove('read');
-        tick.style.cursor = 'default';
-    } else if (state === 'sent') {
-        tick.textContent = '✓';
-    } else if (state === 'failed') {
-        tick.textContent = '⚠️';
-        tick.style.cursor = 'pointer';
-        tick.title = 'Échec — toucher pour réessayer';
-        tick.onclick = () => retryFailedMessage(msgId);
-    }
-}
-
-function retryFailedMessage(msgId) {
-    const payload = failedMessagePayloads[msgId];
-    if (!payload) return;
-    const el = document.getElementById('msg-' + msgId);
-    if (el) el.remove();
-    userChatMsgIds.delete(msgId);
-    delete failedMessagePayloads[msgId];
-    pushChatMessage(payload);
-}
-
-
-// ---------- "EN TRAIN D'ÉCRIRE…" ----------
-function onUserChatTyping() {
-    const user = auth.currentUser;
-    if (!user || !userChatThreadId) return;
-    const now = Date.now();
-    // On n'écrit dans Firebase qu'au max toutes les 2s pour économiser
-    if (now - lastTypingSent > 2000) {
-        lastTypingSent = now;
-        db.ref('chats/' + userChatThreadId + '/meta/typing/' + user.uid).set(now).catch(() => {});
-    }
-    // Efface l'indicateur après 3s d'inactivité
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-        db.ref('chats/' + userChatThreadId + '/meta/typing/' + user.uid).remove().catch(() => {});
+    clearTimeout(chatTypingTimeout);
+    chatTypingTimeout = setTimeout(() => {
+        db.ref('chats/' + cid + '/meta/typing/' + user.uid).remove().catch(() => {});
     }, 3000);
 }
 
-// ---------- MARQUER COMME LU ----------
-async function markThreadRead() {
+// ============================================================
+// MARQUER COMME LU (badge + accusés ✓✓)
+// ============================================================
+async function markChatRead(threadId) {
     const user = auth.currentUser;
-    if (!user || !userChatThreadId) return;
+    if (!user || !threadId) return;
     try {
-        // Remet mon compteur de non-lus à 0 (dans MA boîte de réception)
-        await db.ref('userInboxes/' + user.uid + '/threads/' + userChatThreadId + '/unread').set(0);
-        // Marque les messages reçus non lus comme lus (readBy) -> déclenche le ✓✓ chez l'autre
-        const snap = await db.ref('chats/' + userChatThreadId + '/messages').limitToLast(50).once('value');
+        // mon compteur de non-lus -> 0
+        await db.ref('userInboxes/' + user.uid + '/threads/' + threadId + '/unread').set(0);
+        // messages reçus non lus -> readBy (déclenche le ✓✓ chez l'autre)
+        const snap = await db.ref('chats/' + threadId + '/messages').limitToLast(50).once('value');
         const updates = {};
-        snap.forEach(child => {
-            const m = child.val();
+        snap.forEach(ch => {
+            const m = ch.val();
             if (m && m.from !== user.uid && !(m.readBy && m.readBy[user.uid])) {
-                updates[child.key] = { readBy: { [user.uid]: true } };
+                updates[ch.key] = { readBy: { [user.uid]: true } };
             }
         });
-        // update() à la référence chats/{threadId}/messages — PAS à la racine
-        // (db.ref().update() est toujours refusé par les règles, voir pushChatMessage)
-        if (Object.keys(updates).length) await db.ref('chats/' + userChatThreadId + '/messages').update(updates);
+        if (Object.keys(updates).length) await db.ref('chats/' + threadId + '/messages').update(updates);
     } catch (e) { /* non critique */ }
 }
 
-// ---------- BOÎTE DE MESSAGES (INBOX) ----------
-function openMessagesInbox() {
-    const user = auth.currentUser;
-    if (!user || user.isAnonymous) { showToast('Connecte-toi pour voir tes messages.', 'error'); return; }
-    const overlay = document.getElementById('messagesInbox'); if (overlay) overlay.style.display = 'flex';
-    // Indique TOUJOURS le compte affiché : la messagerie est par compte —
-    // avec plusieurs comptes (tests, famille...), on voit immédiatement
-    // de quelle boîte on regarde les conversations.
-    const subEl = overlay && overlay.querySelector('.msg-inbox-sub');
-    if (subEl) subEl.textContent = '🔒 ' + (user.email || 'compte ' + String(user.uid).slice(0, 8));
-    renderInbox();
-    // Filet de sécurité : si l'index userThreads connaît des conversations
-    // absentes de userInboxes (aperçu non écrit, ex. réseau coupé en plein
-    // envoi), on les reconstruit depuis le meta du thread, puis on
-    // rafraîchit la liste.
-    repairInboxFromThreadsIndex(user.uid).catch(() => {});
+// ============================================================
+// ÉCOUTE DE MA BOÎTE DE RÉCEPTION (badge topbar + liste du widget)
+// ============================================================
+function startInboxBadgeWatch(uid) {
+    stopInboxBadgeWatch();
+    // Écoute UNIQUEMENT ma propre boîte de réception (quelques Ko) —
+    // jamais tout /chats (refusé par les règles + très lourd).
+    inboxRef = db.ref('userInboxes/' + uid + '/threads');
+    inboxRef.on('value', (snap) => {
+        const data = snap.val() || {};
+        const entries = Object.entries(data);
+        lastInboxSnapshot = entries;
+        // Badge topbar : somme des non-lus
+        let total = 0;
+        entries.forEach(([k, e]) => total += (e && e.unread) || 0);
+        const badge = document.getElementById('messagesBadge');
+        if (badge) {
+            if (total > 0) { badge.textContent = total > 99 ? '99+' : total; badge.style.display = 'flex'; }
+            else badge.style.display = 'none';
+        }
+        // Si l'écran Messages est ouvert, la liste suit en direct
+        if (chatOverlayOpen) syncChatWidgetConvs();
+    });
+}
+function stopInboxBadgeWatch() {
+    if (inboxRef) { inboxRef.off(); inboxRef = null; }
+    const badge = document.getElementById('messagesBadge');
+    if (badge) badge.style.display = 'none';
 }
 
-// Filet de sécurité côté CLIENT : avant le passage à "une conversation par
-// personne", les threads contenaient le job ("uidA_uidB__job"). Si des
-// messages de ce duo sont encore dans un ancien thread et que la migration
-// serveur n'a pas encore tourné (cron/relais en panne, message trop récent),
-// on copie ici les messages manquants dans le thread du duo, au moment où la
-// conversation est ouverte. La conversation ne peut donc JAMAIS paraître
-// vide alors que des messages existent. Idempotent : les messages déjà
-// présents ne sont jamais recopiés (même clé = même message).
+// ============================================================
+// FILETS DE SÉCURITÉ (réparations automatiques)
+// ============================================================
+// Répare l'entrée d'inbox de LA conversation ouverte si elle manque
+// (ex. : message envoyé par une ancienne version qui ne l'écrivait pas)
+async function repairInboxEntryForCurrentChat(threadId) {
+    const user = auth.currentUser;
+    if (!user || !threadId) return;
+    try {
+        const mine = await db.ref('userInboxes/' + user.uid + '/threads/' + threadId).once('value');
+        if (mine.exists()) return;
+        const metaSnap = await db.ref('chats/' + threadId + '/meta').once('value');
+        const mv = metaSnap.val() || {};
+        const peerUid = peerUidOf(threadId);
+        if (!peerUid) return;
+        await db.ref('userInboxes/' + user.uid + '/threads/' + threadId).update({
+            peerUid: peerUid,
+            peerName: (mv.names && mv.names[peerUid]) || livePeerName(peerUid) || 'Utilisateur',
+            lastMessage: mv.lastMessage || '',
+            lastAt: mv.lastAt || Date.now(),
+            lastFrom: mv.lastFrom || null
+        });
+    } catch (e) { /* non critique : la réparation serveur rattrapera */ }
+}
+
+// Filet client : avant le passage à « une conversation par personne », les
+// threads contenaient le job (« uidA_uidB__job »). Si des messages de ce duo
+// sont encore dans un ancien thread et que la migration serveur n'a pas
+// encore tourné, on copie ici les messages manquants dans le thread du duo,
+// à l'ouverture de la conversation. Idempotent (même clé = même message).
 async function healLegacyThreadsForPair(user, pairId) {
     try {
+        // Threads au format ancien (« pairId__job ») : ceux listés dans
+        // l'index userThreads ET ceux encore visibles dans ma boîte de
+        // réception (anciennes conversations, avant l'index).
         const idx = await db.ref('userThreads/' + user.uid).once('value');
-        const legacyKeys = Object.keys(idx.val() || {}).filter(k => k !== pairId && k.startsWith(pairId + '__'));
+        const idxKeys = Object.keys(idx.val() || {});
+        let inboxKeys = lastInboxSnapshot.map(([t]) => t);
+        if (!inboxKeys.length) {
+            const inSnap = await db.ref('userInboxes/' + user.uid + '/threads').once('value');
+            inboxKeys = Object.keys(inSnap.val() || {});
+        }
+        const legacyKeys = [...new Set(idxKeys.concat(inboxKeys))].filter(k => k !== pairId && k.startsWith(pairId + '__'));
         if (!legacyKeys.length) return;
 
         const targetMsgsSnap = await db.ref('chats/' + pairId + '/messages').once('value');
@@ -7008,18 +6990,19 @@ async function healLegacyThreadsForPair(user, pairId) {
 
         const updates = { messages: {}, meta: {} };
         let targetIsEmpty = !Object.keys(targetMsgs).length;
+        const migratedKeys = [];
 
         for (const k of legacyKeys) {
             const t = (await db.ref('chats/' + k).once('value')).val();
-            if (!t || typeof t !== 'object') continue; // déjà migré/supprimé côté serveur
+            if (!t || typeof t !== 'object') continue; // déjà migré/supprimé
+            migratedKeys.push(k);
             const meta = t.meta || {};
             const msgs = t.messages || {};
-            for (const [mid, m] of Object.entries(msgs)) {
-                if (m && !targetMsgs[mid]) updates.messages[mid] = m;
+            for (const mid of Object.keys(msgs)) {
+                if (msgs[mid] && !targetMsgs[mid]) updates.messages[mid] = msgs[mid];
             }
             if (targetIsEmpty && Object.keys(meta).length) {
-                // Le thread du duo est vide : on recopie aussi le contexte
-                // (participants, noms, job, aperçu) pour que tout soit propre
+                // thread du duo vide : on recopie aussi le contexte
                 const participantsUpd = {}, namesUpd = {};
                 Object.keys(meta.participants || {}).forEach(p => {
                     if (!tMeta.participants || !tMeta.participants[p]) participantsUpd[p] = true;
@@ -7038,169 +7021,95 @@ async function healLegacyThreadsForPair(user, pairId) {
         }
 
         if (!Object.keys(updates.messages).length && !Object.keys(updates.meta).length) return;
-        // Écriture à la référence chats/{pairId} (autorisée : je suis dans le
-        // threadId — règle $threadId.contains(auth.uid)). Les messages
-        // copiés s'affichent en direct grâce au listener déjà actif.
         const write = {};
         if (Object.keys(updates.messages).length) write.messages = updates.messages;
         if (Object.keys(updates.meta).length) write.meta = updates.meta;
+        // référence chats/{pairId} : autorisée (je suis dans le threadId)
         await db.ref('chats/' + pairId).update(write);
+
+        // La conversation unique du duo doit figurer dans ma boîte de
+        // réception (si elle n'existait pas, les messages venaient du thread
+        // ancien qui vient d'être migré).
+        if (migratedKeys.length) {
+            const finalMetaSnap = await db.ref('chats/' + pairId + '/meta').once('value');
+            const fm = finalMetaSnap.val() || {};
+            const pairInboxSnap = await db.ref('userInboxes/' + user.uid + '/threads/' + pairId).once('value');
+            if (!pairInboxSnap.exists()) {
+                const pUid = peerUidOf(pairId);
+                if (pUid) {
+                    await db.ref('userInboxes/' + user.uid + '/threads/' + pairId).update({
+                        peerUid: pUid,
+                        peerName: (fm.names && fm.names[pUid]) || livePeerName(pUid) || 'Utilisateur',
+                        jobId: fm.jobId || 'general',
+                        jobTitle: fm.jobTitle || null,
+                        lastMessage: fm.lastMessage || '',
+                        lastAt: fm.lastAt || Date.now(),
+                        lastFrom: fm.lastFrom || null
+                    });
+                }
+            }
+            // Nettoyage : les threads anciens ont servi à migrer, on les
+            // retire (messages déjà recopiés) + leurs entrées d'inbox au
+            // format ancien (sinon double ligne pour la même personne).
+            for (const k of migratedKeys) {
+                db.ref('userInboxes/' + user.uid + '/threads/' + k).set(null).catch(() => {});
+                db.ref('userThreads/' + user.uid + '/' + k).set(null).catch(() => {});
+                db.ref('chats/' + k).set(null).catch(() => {});
+            }
+        }
     } catch (e) {
         console.warn('healLegacyThreadsForPair:', e);
     }
 }
 
-// Filet de sécurité de la liste "Messages" : l'index userThreads (un
-// simple true par conversation, écrit à chaque envoi) sait quelles
-// conversations existent pour moi, même si l'aperçu dans userInboxes
-// n'a jamais été écrit. On reconstruit les entrées manquantes à partir
-// du meta du thread + le compteur de non-lus lu dans les messages.
+// Filet de la LISTE : l'index userThreads sait quelles conversations
+// existent pour moi même si leur entrée d'inbox a été perdue. Reconstruit
+// les entrées manquantes (appelé à l'ouverture de l'écran Messages).
 async function repairInboxFromThreadsIndex(uid) {
-    const idxSnap = await db.ref('userThreads/' + uid).once('value');
-    if (!idxSnap.exists()) return;
-    const inboxSnap = await db.ref('userInboxes/' + uid + '/threads').once('value');
-    const inbox = inboxSnap.val() || {};
-    let repaired = 0;
-    for (const tid of Object.keys(idxSnap.val() || {})) {
-        const entry = inbox[tid];
-        if (entry && entry.peerUid) continue; // entrée déjà complète
-        try {
-            const [metaSnap, msgSnap] = await Promise.all([
-                db.ref('chats/' + tid + '/meta').once('value'),
-                db.ref('chats/' + tid + '/messages').limitToLast(50).once('value')
-            ]);
-            const mv = metaSnap.val();
-            if (!mv) continue; // thread sans meta : rien à reconstruire
-            // L'autre participant = l'uid du thread qui n'est pas moi
-            // (même logique que openUserChatFromThreadId)
-            const uidPair = tid.split('__')[0].split('_');
-            const peerUid = uidPair.find(u => u && u !== uid);
-            if (!peerUid) continue;
-            // Non-lus : messages de l'autre pas encore marqués lus par moi
-            let unread = 0;
-            msgSnap.forEach(ch => {
-                const m = ch.val();
-                if (m && m.from === peerUid && !(m.readBy && m.readBy[uid])) unread++;
-            });
-            await db.ref('userInboxes/' + uid + '/threads/' + tid).update({
-                peerUid: peerUid,
-                peerName: (mv.names && mv.names[peerUid]) || (profilesCache[peerUid] && profilesCache[peerUid].name) || 'Utilisateur',
-                jobId: mv.jobId || (tid.split('__')[1] || 'general'),
-                jobTitle: mv.jobTitle || null,
-                lastMessage: mv.lastMessage || '',
-                lastAt: mv.lastAt || Date.now(),
-                lastFrom: mv.lastFrom || null,
-                unread: unread
-            });
-            repaired++;
-        } catch (e) {
-            console.warn('repairInboxFromThreadsIndex: échec pour', tid, e);
+    try {
+        const idx = await db.ref('userThreads/' + uid).once('value');
+        const idxThreads = Object.keys(idx.val() || {});
+        if (!idxThreads.length) return;
+        const inboxSnap = await db.ref('userInboxes/' + uid + '/threads').once('value');
+        const inbox = inboxSnap.val() || {};
+        for (const tid of idxThreads) {
+            if (inbox[tid] && inbox[tid].peerUid) continue;
+            try {
+                const metaSnap = await db.ref('chats/' + tid + '/meta').once('value');
+                const mv = metaSnap.val() || {};
+                if (!mv.participants || !Object.keys(mv.participants).length) continue;
+                const peerUid = peerUidOf(tid);
+                if (!peerUid) continue;
+                await db.ref('userInboxes/' + uid + '/threads/' + tid).update({
+                    peerUid: peerUid,
+                    peerName: (mv.names && mv.names[peerUid]) || livePeerName(peerUid) || 'Utilisateur',
+                    lastMessage: mv.lastMessage || '',
+                    lastAt: mv.lastAt || Date.now(),
+                    lastFrom: mv.lastFrom || null
+                });
+                const i = lastInboxSnapshot.findIndex(([t]) => t === tid);
+                if (i >= 0) lastInboxSnapshot[i] = [tid, { peerUid: peerUid, peerName: (mv.names && mv.names[peerUid]) || livePeerName(peerUid) || 'Utilisateur', lastMessage: mv.lastMessage || '', lastAt: mv.lastAt || Date.now(), lastFrom: mv.lastFrom || null }];
+                else lastInboxSnapshot.push([tid, { peerUid: peerUid, peerName: (mv.names && mv.names[peerUid]) || livePeerName(peerUid) || 'Utilisateur', lastMessage: mv.lastMessage || '', lastAt: mv.lastAt || Date.now(), lastFrom: mv.lastFrom || null }]);
+            } catch (e) { /* une entrée ne bloque pas les autres */ }
         }
+    } catch (e) { /* non critique */ }
+}
+
+// Enregistre la photo sur l'appareil (paramètre « dl » de Cloudinary)
+function downloadChatImage(url) {
+    try {
+        const dlUrl = url + (url.includes('?') ? '&' : '?') + 'dl=jobmarket-photo.jpg';
+        const a = document.createElement('a');
+        a.href = dlUrl;
+        a.download = 'jobmarket-photo.jpg';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    } catch (e) {
+        window.open(url, '_blank');
     }
-    if (repaired > 0) {
-        const overlay = document.getElementById('messagesInbox');
-        if (overlay && overlay.style.display !== 'none') renderInbox();
-    }
-}
-function closeMessagesInbox() {
-    const overlay = document.getElementById('messagesInbox'); if (overlay) overlay.style.display = 'none';
-}
-
-function renderInbox() {
-    const user = auth.currentUser; if (!user) return;
-    const list = document.getElementById('msgInboxList');
-    const empty = document.getElementById('msgInboxEmpty');
-    if (!list) return;
-
-    // Mes conversations = MA boîte de réception uniquement
-    // (userInboxes/{monUid}/threads). On ne lit JAMAIS tout /chats :
-    // les règles l'interdisent (chaque conversation est privée) et ce
-    // serait inutilement lourd dès que l'app grandit.
-    // Lecture SIMPLE (sans orderByChild) + tri côté client : ça fonctionne
-    // toujours, même si une entrée n'a pas encore son champ "lastAt".
-    db.ref('userInboxes/' + user.uid + '/threads').once('value').then(snap => {
-        const threads = [];
-        snap.forEach(child => threads.push({ id: child.key, entry: child.val() || {} }));
-        // Tri : plus récent en premier
-        threads.sort((a, b) => (b.entry.lastAt || 0) - (a.entry.lastAt || 0));
-        threads.splice(50); // au plus 50 affichées
-
-        // Vide la liste (sauf le bloc "empty")
-        Array.from(list.querySelectorAll('.msg-thread-item')).forEach(el => el.remove());
-
-        if (!threads.length) {
-            if (empty) empty.style.display = 'block';
-            return;
-        }
-        if (empty) empty.style.display = 'none';
-
-        threads.forEach(({ entry }) => {
-            // L'autre participant est enregistré directement dans l'aperçu
-            const peerUid = entry.peerUid;
-            // Nom "live" : le profil a peut-être gagné un nom (ou une photo)
-            // APRÈS les premiers messages — l'aperçu stocké disait alors
-            // "Utilisateur". On affiche TOUJOURS le nom du profil quand il
-            // existe, et le nom stocké sinon.
-            const liveName = peerUid && profilesCache[peerUid] && profilesCache[peerUid].name;
-            const peerName = liveName || entry.peerName || 'Utilisateur';
-            const unread = entry.unread || 0;
-            // Aperçu défensif : dernier message, sinon le titre du job,
-            // sinon "Conversation" — la ligne s'affiche TOUJOURS.
-            const last = entry.lastMessage || entry.jobTitle || 'Conversation';
-            const lastPrefix = (entry.lastFrom === user.uid) ? 'Toi : ' : '';
-            const timeStr = entry.lastAt ? formatInboxTime(entry.lastAt) : '';
-
-            const item = document.createElement('div');
-            // Les conversations avec non-lus sont mises en avant (gras +
-            // heure verte), exactement comme la liste de WhatsApp.
-            item.className = 'msg-thread-item' + (unread > 0 ? ' unread' : '');
-            item.onclick = () => openUserChat(peerUid, entry.jobId || 'general', peerName, entry.jobTitle);
-            // Avatar : vraie photo de profil si elle existe, sinon initiales
-            const pImg = (profilesCache[peerUid] || {}).profileImage;
-            const avatarHtml = pImg
-                ? '<img src="' + escapeHtml(cloudinaryResize(pImg, 96, 96)) + '" alt="">'
-                : escapeHtml(initials(peerName));
-            item.innerHTML =
-                '<div class="msg-thread-avatar">' + avatarHtml + '</div>' +
-                '<div class="msg-thread-mid">' +
-                    '<div class="msg-thread-name">' + escapeHtml(peerName) + '</div>' +
-                    '<div class="msg-thread-last">' + escapeHtml(lastPrefix + last) + '</div>' +
-                '</div>' +
-                '<div class="msg-thread-right">' +
-                    '<div class="msg-thread-time">' + timeStr + '</div>' +
-                    (unread > 0 ? '<div class="msg-thread-unread">' + unread + '</div>' : '') +
-                '</div>';
-            list.appendChild(item);
-        });
-    }).catch(e => console.error('renderInbox error', e));
-}
-
-// ---------- BADGE GLOBAL DE NON-LUS ----------
-function startInboxBadgeWatch(uid) {
-    stopInboxBadgeWatch();
-    // Écoute UNIQUEMENT ma propre boîte de réception (quelques Ko) —
-    // avant, on écoutait tout /chats, ce que les règles refusaient et ce
-    // qui était très lourd pour la batterie et la connexion.
-    inboxRef = db.ref('userInboxes/' + uid + '/threads');
-    inboxRef.on('value', snap => {
-        let total = 0;
-        snap.forEach(child => {
-            total += ((child.val() || {}).unread) || 0;
-        });
-        const badge = document.getElementById('messagesBadge');
-        if (badge) {
-            if (total > 0) { badge.textContent = total > 99 ? '99+' : total; badge.style.display = 'flex'; }
-            else { badge.style.display = 'none'; }
-        }
-        // Si l'inbox est ouverte, on la rafraîchit
-        const inbox = document.getElementById('messagesInbox');
-        if (inbox && inbox.style.display !== 'none') renderInbox();
-    });
-}
-function stopInboxBadgeWatch() {
-    if (inboxRef) { inboxRef.off(); inboxRef = null; }
-    const badge = document.getElementById('messagesBadge');
-    if (badge) badge.style.display = 'none';
 }
 
   // ==========================================
