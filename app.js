@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260826j';
+const APP_BUILD = '20260826k';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -6436,14 +6436,17 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
     userChatPresenceRef = db.ref('presence/' + peerUid);
     userChatPresenceRef.on('value', snap => renderPeerPresenceStatus(snap.val()));
 
-    // Marque la conversation comme lue à l'ouverture
-    markThreadRead();
-
-    // Auto-réparation : si cette conversation n'est pas encore dans MA
-    // liste "Messages" (message envoyé par un appareil sur une vieille
-    // version, qui écrit le message mais pas l'entrée d'inbox), on la
-    // reconstruit à partir du meta du thread.
-    repairInboxEntryForCurrentChat().catch(() => {});
+    // À l'ouverture, dans cet ordre :
+    // 1) healLegacyThreadsForPair : récupère les messages encore dans les
+    //    anciens threads de ce duo (format "uidA_uidB__job") vers le thread
+    //    unique — la conversation ne peut plus paraître vide ;
+    // 2) markThreadRead : marque tout comme lu (APRÈS la copie, pour que
+    //    les messages récupérés soient marqués lus eux aussi) ;
+    // 3) repairInboxEntryForCurrentChat : reconstruit l'entrée d'inbox si
+    //    elle manque, pour que la conversation figure dans la liste.
+    healLegacyThreadsForPair(user, userChatThreadId)
+        .then(() => { markThreadRead(); return repairInboxEntryForCurrentChat(); })
+        .catch(() => {});
 }
 
 // Reconstruit l'entrée de MA conversation dans ma boîte de réception si
@@ -6971,12 +6974,80 @@ function openMessagesInbox() {
     const user = auth.currentUser;
     if (!user || user.isAnonymous) { showToast('Connecte-toi pour voir tes messages.', 'error'); return; }
     const overlay = document.getElementById('messagesInbox'); if (overlay) overlay.style.display = 'flex';
+    // Indique TOUJOURS le compte affiché : la messagerie est par compte —
+    // avec plusieurs comptes (tests, famille...), on voit immédiatement
+    // de quelle boîte on regarde les conversations.
+    const subEl = overlay && overlay.querySelector('.msg-inbox-sub');
+    if (subEl) subEl.textContent = '🔒 ' + (user.email || 'compte ' + String(user.uid).slice(0, 8));
     renderInbox();
     // Filet de sécurité : si l'index userThreads connaît des conversations
     // absentes de userInboxes (aperçu non écrit, ex. réseau coupé en plein
     // envoi), on les reconstruit depuis le meta du thread, puis on
     // rafraîchit la liste.
     repairInboxFromThreadsIndex(user.uid).catch(() => {});
+}
+
+// Filet de sécurité côté CLIENT : avant le passage à "une conversation par
+// personne", les threads contenaient le job ("uidA_uidB__job"). Si des
+// messages de ce duo sont encore dans un ancien thread et que la migration
+// serveur n'a pas encore tourné (cron/relais en panne, message trop récent),
+// on copie ici les messages manquants dans le thread du duo, au moment où la
+// conversation est ouverte. La conversation ne peut donc JAMAIS paraître
+// vide alors que des messages existent. Idempotent : les messages déjà
+// présents ne sont jamais recopiés (même clé = même message).
+async function healLegacyThreadsForPair(user, pairId) {
+    try {
+        const idx = await db.ref('userThreads/' + user.uid).once('value');
+        const legacyKeys = Object.keys(idx.val() || {}).filter(k => k !== pairId && k.startsWith(pairId + '__'));
+        if (!legacyKeys.length) return;
+
+        const targetMsgsSnap = await db.ref('chats/' + pairId + '/messages').once('value');
+        const targetMsgs = (targetMsgsSnap.val() && typeof targetMsgsSnap.val() === 'object') ? targetMsgsSnap.val() : {};
+        const tMetaSnap = await db.ref('chats/' + pairId + '/meta').once('value');
+        const tMeta = (tMetaSnap.val() && typeof tMetaSnap.val() === 'object') ? tMetaSnap.val() : {};
+
+        const updates = { messages: {}, meta: {} };
+        let targetIsEmpty = !Object.keys(targetMsgs).length;
+
+        for (const k of legacyKeys) {
+            const t = (await db.ref('chats/' + k).once('value')).val();
+            if (!t || typeof t !== 'object') continue; // déjà migré/supprimé côté serveur
+            const meta = t.meta || {};
+            const msgs = t.messages || {};
+            for (const [mid, m] of Object.entries(msgs)) {
+                if (m && !targetMsgs[mid]) updates.messages[mid] = m;
+            }
+            if (targetIsEmpty && Object.keys(meta).length) {
+                // Le thread du duo est vide : on recopie aussi le contexte
+                // (participants, noms, job, aperçu) pour que tout soit propre
+                const participantsUpd = {}, namesUpd = {};
+                Object.keys(meta.participants || {}).forEach(p => {
+                    if (!tMeta.participants || !tMeta.participants[p]) participantsUpd[p] = true;
+                    if (meta.names && meta.names[p] && (!tMeta.names || !tMeta.names[p])) namesUpd[p] = meta.names[p];
+                });
+                if (Object.keys(participantsUpd).length) updates.meta.participants = participantsUpd;
+                if (Object.keys(namesUpd).length) updates.meta.names = namesUpd;
+                if (!tMeta.jobId && meta.jobId) updates.meta.jobId = meta.jobId;
+                if (!tMeta.jobTitle && meta.jobTitle) updates.meta.jobTitle = meta.jobTitle;
+                if (!tMeta.lastAt && meta.lastAt) {
+                    updates.meta.lastAt = meta.lastAt;
+                    if (meta.lastMessage) updates.meta.lastMessage = meta.lastMessage;
+                    if (meta.lastFrom) updates.meta.lastFrom = meta.lastFrom;
+                }
+            }
+        }
+
+        if (!Object.keys(updates.messages).length && !Object.keys(updates.meta).length) return;
+        // Écriture à la référence chats/{pairId} (autorisée : je suis dans le
+        // threadId — règle $threadId.contains(auth.uid)). Les messages
+        // copiés s'affichent en direct grâce au listener déjà actif.
+        const write = {};
+        if (Object.keys(updates.messages).length) write.messages = updates.messages;
+        if (Object.keys(updates.meta).length) write.meta = updates.meta;
+        await db.ref('chats/' + pairId).update(write);
+    } catch (e) {
+        console.warn('healLegacyThreadsForPair:', e);
+    }
 }
 
 // Filet de sécurité de la liste "Messages" : l'index userThreads (un
