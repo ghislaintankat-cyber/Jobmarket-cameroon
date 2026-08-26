@@ -4,6 +4,31 @@
 // index.html, sans aucune modification. Charge via une balise script src=app.js
 // ============================================================
 
+// ===== CONTRÔLE DE VERSION AUTOMATIQUE =====
+// index.html est TOUJOURS rechargé depuis le réseau (service worker
+// network-first), alors qu'app.js peut rester en cache dans le téléphone.
+// Si les deux versions ne correspondent plus, on affiche un écran
+// "Nouvelle version — Recharger" plutôt que de faire tourner en silence
+// une app obsolète (c'était la source des bugs "rien ne marche" sur les
+// appareils avec l'ancienne version en mémoire).
+// ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
+// l'attribut data-app-build de <html> dans index.html + le ?v= du script.
+const APP_BUILD = '20260826f';
+(function checkAppBuild() {
+    try {
+        const htmlBuild = document.documentElement.getAttribute('data-app-build');
+        if (htmlBuild && htmlBuild !== APP_BUILD) {
+            const b = document.createElement('div');
+            b.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#0A0A0F;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;font-family:sans-serif;';
+            b.innerHTML = '<div style="font-size:44px;">🔄</div>' +
+                '<div style="font-size:19px;font-weight:800;">Nouvelle version disponible</div>' +
+                '<div style="font-size:14px;opacity:.75;">Cette page tourne sur une version obsolète du code.<br/>Recharge pour récupérer les corrections.</div>' +
+                '<button onclick="location.reload()" style="margin-top:8px;background:#2D6CDF;color:#fff;border:none;padding:14px 30px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">Recharger l\'app</button>';
+            document.body.appendChild(b);
+        }
+    } catch (e) { /* silencieux : jamais bloquant */ }
+})();
+
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
   apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
