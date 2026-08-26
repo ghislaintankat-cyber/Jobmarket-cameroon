@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260826h';
+const APP_BUILD = '20260826i';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -6283,8 +6283,13 @@ let userChatMsgIds = new Set();   // évite les doublons d'affichage
 let userChatLastDay = null;       // pour les séparateurs de date
 let typingTimeout = null, lastTypingSent = 0;
 
-function makeThreadId(uidA, uidB, jobId) {
-    return [uidA, uidB].sort().join('_') + '__' + (jobId || 'general');
+// Une seule conversation par PERSONNE (comme WhatsApp), quel que soit le
+// job : threadId = les deux uid triés, rien d'autre. Le job concerné est
+// mémorisé dans meta.jobId (bannière du chat) mais ne crée PLUS de nouvelle
+// discussion : recontacter la même personne pour un autre job CONTINUE la
+// conversation existante au lieu de tout recommencer.
+function makeThreadId(uidA, uidB) {
+    return [uidA, uidB].sort().join('_');
 }
 function initials(name) {
     if (!name) return '?';
@@ -6335,14 +6340,22 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
 
     userChatPeerUid = peerUid;
     userChatJobId = jobId || null;
-    userChatThreadId = makeThreadId(user.uid, peerUid, jobId);
+    // MÊME thread qu'avant avec cette personne (continuation de la
+    // conversation, quel que soit le job — comme sur WhatsApp)
+    userChatThreadId = makeThreadId(user.uid, peerUid);
     userChatMsgIds = new Set();
     userChatLastDay = null;
 
     if (!peerName) peerName = (profilesCache[peerUid] || {}).name || 'Utilisateur';
 
     const nameEl = document.getElementById('userChatName'); if (nameEl) nameEl.textContent = peerName;
-    const avEl = document.getElementById('userChatAvatar'); if (avEl) avEl.textContent = initials(peerName);
+    // Avatar : la vraie photo de profil si elle existe, sinon les initiales
+    const avEl = document.getElementById('userChatAvatar');
+    if (avEl) {
+        const pImg = (profilesCache[peerUid] || {}).profileImage;
+        if (pImg) avEl.innerHTML = '<img src="' + escapeHtml(cloudinaryResize(pImg, 96, 96)) + '" alt="">';
+        else avEl.textContent = initials(peerName);
+    }
     const msgs = document.getElementById('userChatMessages'); if (msgs) msgs.innerHTML = '';
 
     // Bannière du job concerné (si la conversation est liée à une annonce)
@@ -6354,6 +6367,15 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
         } else {
             banner.style.display = 'none';
         }
+    }
+
+    // Ouvert depuis un job précis : on mémorise ce job comme contexte du
+    // thread (la bannière suit le dernier job discuté) — sans créer de
+    // nouvelle conversation.
+    if (jobId && jobId !== 'general') {
+        const jobMetaUpd = { jobId: jobId };
+        if (jobTitle) jobMetaUpd.jobTitle = String(jobTitle).slice(0, 120);
+        db.ref('chats/' + userChatThreadId + '/meta').update(jobMetaUpd).catch(() => {});
     }
 
     // Fermer l'inbox si elle était ouverte, afficher la conversation
@@ -7055,8 +7077,13 @@ function renderInbox() {
             // heure verte), exactement comme la liste de WhatsApp.
             item.className = 'msg-thread-item' + (unread > 0 ? ' unread' : '');
             item.onclick = () => openUserChat(peerUid, entry.jobId || 'general', peerName, entry.jobTitle);
+            // Avatar : vraie photo de profil si elle existe, sinon initiales
+            const pImg = (profilesCache[peerUid] || {}).profileImage;
+            const avatarHtml = pImg
+                ? '<img src="' + escapeHtml(cloudinaryResize(pImg, 96, 96)) + '" alt="">'
+                : escapeHtml(initials(peerName));
             item.innerHTML =
-                '<div class="msg-thread-avatar">' + escapeHtml(initials(peerName)) + '</div>' +
+                '<div class="msg-thread-avatar">' + avatarHtml + '</div>' +
                 '<div class="msg-thread-mid">' +
                     '<div class="msg-thread-name">' + escapeHtml(peerName) + '</div>' +
                     '<div class="msg-thread-last">' + escapeHtml(lastPrefix + last) + '</div>' +
