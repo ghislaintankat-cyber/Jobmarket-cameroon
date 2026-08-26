@@ -237,6 +237,127 @@ async function processMessages(ctx) {
   return sent;
 }
 
+// ============================ MIGRATION "UNE CONVERSATION PAR PERSONNE" ============================
+// Avant la version actuelle, le threadId contenait le job :
+//   "uidA_uidB__jobId"
+// Conséquence : recontacter la même personne pour UN AUTRE JOB créait une
+// NOUVELLE conversation au lieu de continuer la discussion.
+// Nouveau format : "uidA_uidB" (une conversation unique par personne, comme
+// WhatsApp). Cette fonction migre automatiquement les anciens threads :
+//   1. copie leurs messages dans le nouveau thread du duo (sans doublon) ;
+//   2. fusionne le meta (participants, names, job contextuel, dernier message) ;
+//   3. met à jour les inboxs des deux participants (entrée unique, non-lus
+//      additionnés, anciennes entrées supprimées) ;
+//   4. met à jour l'index userThreads ;
+//   5. supprime l'ancien thread.
+// IDEMPOTENTE : un thread déjà migré n'existe plus au format ancien, il ne
+// sera donc jamais traité deux fois. Sans coût tant qu'il n'y a plus
+// d'anciens threads (un simple scan des clés).
+async function migrateLegacyThreads() {
+  const chatsSnap = await db.ref("chats").once("value");
+  const chats = chatsSnap.val() || {};
+  let migrated = 0;
+
+  for (const threadId of Object.keys(chats)) {
+    if (!threadId.includes("__")) continue; // déjà au format nouveau
+    const thread = chats[threadId];
+    if (!thread || typeof thread !== "object") continue;
+    const pairId = threadId.split("__")[0];
+    if (!pairId) continue;
+    const meta = thread.meta && typeof thread.meta === "object" ? thread.meta : {};
+    const messages = thread.messages && typeof thread.messages === "object" ? thread.messages : {};
+
+    // Participants de ce thread (meta + expéditaires/destinataires des messages)
+    const participants = new Set(Object.keys(meta.participants || {}));
+    Object.values(messages).forEach((m) => {
+      if (m && m.from) participants.add(m.from);
+      if (m && m.to) participants.add(m.to);
+    });
+    if (participants.size < 2) continue;
+
+    // Dernier message de l'ancien thread
+    let latest = null;
+    Object.values(messages).forEach((m) => {
+      if (m && m.timestamp && (!latest || m.timestamp > latest.timestamp)) latest = m;
+    });
+
+    const targetMeta = (await db.ref(`chats/${pairId}/meta`).once("value")).val();
+    const targetMetaObj = targetMeta && typeof targetMeta === "object" ? targetMeta : {};
+    const targetMsgs = (await db.ref(`chats/${pairId}/messages`).once("value")).val();
+    const targetMsgsObj = targetMsgs && typeof targetMsgs === "object" ? targetMsgs : {};
+
+    const updates = {};
+
+    // 1) Copie des messages absents du nouveau thread (le _notified et le
+    //    readBy voyagent avec le message : pas de re-notification, pas de
+    //    ré-ouverture des non-lus)
+    for (const [msgId, m] of Object.entries(messages)) {
+      if (m && !targetMsgsObj[msgId]) updates[`chats/${pairId}/messages/${msgId}`] = m;
+    }
+
+    // 2) Fusion du meta : participants/names si le nouveau thread est vide,
+    //    job contextuel s'il n'en a pas encore
+    if (!Object.keys(targetMetaObj.participants || {}).length) {
+      for (const p of participants) {
+        updates[`chats/${pairId}/meta/participants/${p}`] = true;
+        if (meta.names && meta.names[p]) updates[`chats/${pairId}/meta/names/${p}`] = meta.names[p];
+      }
+    }
+    if (!targetMetaObj.jobId && meta.jobId) updates[`chats/${pairId}/meta/jobId`] = meta.jobId;
+    if (!targetMetaObj.jobTitle && meta.jobTitle) updates[`chats/${pairId}/meta/jobTitle`] = meta.jobTitle;
+
+    // 3) Aperçu du nouveau thread : seulement si l'ancien est PLUS RÉCENT
+    if (latest && (!targetMetaObj.lastAt || latest.timestamp > targetMetaObj.lastAt)) {
+      updates[`chats/${pairId}/meta/lastMessage`] = latest.imageUrl ? "📷 Photo" : (latest.text || "").slice(0, 100);
+      updates[`chats/${pairId}/meta/lastAt`] = latest.timestamp;
+      updates[`chats/${pairId}/meta/lastFrom`] = latest.from;
+    }
+
+    // 4) Inboxs + index des deux participants
+    const inboxes = (await db.ref("userInboxes").once("value")).val() || {};
+    for (const p of participants) {
+      const peerOf = [...participants].find((x) => x !== p);
+      const oldEntry = inboxes[p] && inboxes[p].threads && inboxes[p].threads[threadId];
+      const newEntry = inboxes[p] && inboxes[p].threads && inboxes[p].threads[pairId];
+      const oldUnread = (oldEntry && oldEntry.unread) || 0;
+
+      // ancienne entrée supprimée, conversation unique sur le pairId
+      updates[`userInboxes/${p}/threads/${threadId}`] = null;
+      if (latest && (!newEntry || !newEntry.lastAt || latest.timestamp > newEntry.lastAt)) {
+        updates[`userInboxes/${p}/threads/${pairId}`] = {
+          peerUid: peerOf,
+          peerName: (meta.names && meta.names[peerOf]) || "Utilisateur",
+          jobId: meta.jobId || "general",
+          jobTitle: meta.jobTitle || null,
+          lastMessage: latest.imageUrl ? "📷 Photo" : (latest.text || "").slice(0, 100),
+          lastAt: latest.timestamp,
+          lastFrom: latest.from,
+          // non-lus : les non-lus de l'ancienne entrée s'ajoutent (les
+          // ensembles de messages sont disjoints) ; si une entrée récente
+          // existe déjà et est plus récente que l'ancien, on la garde telle
+          // quelle (son compteur fait foi)
+          unread: newEntry && newEntry.lastAt && newEntry.lastAt >= latest.timestamp
+            ? newEntry.unread || 0
+            : ((newEntry && newEntry.unread) || 0) + oldUnread
+        };
+      }
+
+      const threadsIdx = (await db.ref(`userThreads/${p}`).once("value")).val();
+      if (threadsIdx && threadsIdx[threadId]) {
+        updates[`userThreads/${p}/${threadId}`] = null;
+        updates[`userThreads/${p}/${pairId}`] = true;
+      }
+    }
+
+    if (Object.keys(updates).length) await db.ref().update(updates);
+
+    // 5) Suppression de l'ancien thread (messages déjà copiés à l'étape 1)
+    await db.ref(`chats/${threadId}`).remove();
+    migrated++;
+  }
+  return migrated;
+}
+
 // ============================ RÉPARATION DES INBOXES ============================
 // Filet de sécurité côté SERVEUR : c'est normalement le client (app.js) qui
 // écrit l'entrée "conversation" de chaque utilisateur
@@ -357,6 +478,11 @@ async function run() {
     ]);
 
     const ctx = { tokensMap, profilesMap, presenceMap, notifyPrefsMap, adminUids, now: Date.now() };
+
+    // 0) Migration "une conversation par personne" (idempotente : ne coûte
+    //    qu'un scan de clés quand il n'y a plus d'anciens threads)
+    const legacyMigrated = await migrateLegacyThreads();
+    if (legacyMigrated > 0) console.log(`🔀 ${legacyMigrated} ancien(s) thread(s) migré(s) vers une conversation unique par personne.`);
 
     // 1) Réparation des inboxs : toujours exécutée (même sans aucun token),
     //    c'est le filet de sécurité de la liste "Messages".
