@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260826i';
+const APP_BUILD = '20260826j';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -6346,7 +6346,10 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
     userChatMsgIds = new Set();
     userChatLastDay = null;
 
-    if (!peerName) peerName = (profilesCache[peerUid] || {}).name || 'Utilisateur';
+    // Le nom du profil (live) prime sur le nom transmis : le profil peut
+    // avoir été complété après le début de la conversation
+    if ((profilesCache[peerUid] || {}).name) peerName = profilesCache[peerUid].name;
+    if (!peerName) peerName = 'Utilisateur';
 
     const nameEl = document.getElementById('userChatName'); if (nameEl) nameEl.textContent = peerName;
     // Avatar : la vraie photo de profil si elle existe, sinon les initiales
@@ -7063,8 +7066,12 @@ function renderInbox() {
         threads.forEach(({ entry }) => {
             // L'autre participant est enregistré directement dans l'aperçu
             const peerUid = entry.peerUid;
-            const peerName = entry.peerName ||
-                             (peerUid && profilesCache[peerUid] && profilesCache[peerUid].name) || 'Utilisateur';
+            // Nom "live" : le profil a peut-être gagné un nom (ou une photo)
+            // APRÈS les premiers messages — l'aperçu stocké disait alors
+            // "Utilisateur". On affiche TOUJOURS le nom du profil quand il
+            // existe, et le nom stocké sinon.
+            const liveName = peerUid && profilesCache[peerUid] && profilesCache[peerUid].name;
+            const peerName = liveName || entry.peerName || 'Utilisateur';
             const unread = entry.unread || 0;
             // Aperçu défensif : dernier message, sinon le titre du job,
             // sinon "Conversation" — la ligne s'affiche TOUJOURS.
