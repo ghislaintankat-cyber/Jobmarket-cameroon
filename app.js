@@ -2559,9 +2559,9 @@ const JOBS_LIMIT = 500;
 function buildJobPopupHtml(job, jobId) {
   return `
       <div style="min-width:240px;font-family:'DM Sans',sans-serif;">
-        <div data-map-popup-title style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${job.title}</div>
+        <div data-map-popup-title style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${escapeHtml(job.title)}</div>
         <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
-          <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${job.price} XAF</span>
+          <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${escapeHtml(job.price)} XAF</span>
           <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
         </div>
         ${(() => {
@@ -2577,10 +2577,10 @@ function buildJobPopupHtml(job, jobId) {
           const rating = p.ratingCount ? `<span style="font-size:12px;color:#FFD700;font-weight:700;">★ ${p.ratingAvg.toFixed(1)} (${p.ratingCount})</span>` : '';
           return (badge || rating) ? `<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;">${badge}${rating}</div>` : '';
         })()}
-        ${job.landmark ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${job.landmark}</div>` : ''}
-        ${job.desc ? `<div data-map-popup-desc class="popup-desc-clamp" style="font-size:13px;margin-bottom:4px;line-height:1.5;">${job.desc}</div>${job.desc.length > 100 ? `<button type="button" onclick="toggleDescClamp(this)" class="popup-desc-toggle" style="background:none;border:none;color:var(--accent,#25D366);font-size:12px;font-weight:700;cursor:pointer;padding:0 0 10px 0;">${t('showMoreText')}</button>` : ''}` : ''}
-        ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${job.requirements.replace(/\n/g, '<br>')}</div>` : ''}
-        ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${cloudinaryResize(img, 500, 300)}" loading="lazy" alt="${t('altJobPhoto')}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
+        ${job.landmark ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${escapeHtml(job.landmark)}</div>` : ''}
+        ${job.desc ? `<div data-map-popup-desc class="popup-desc-clamp" style="font-size:13px;margin-bottom:4px;line-height:1.5;">${escapeHtml(job.desc)}</div>${job.desc.length > 100 ? `<button type="button" onclick="toggleDescClamp(this)" class="popup-desc-toggle" style="background:none;border:none;color:var(--accent,#25D366);font-size:12px;font-weight:700;cursor:pointer;padding:0 0 10px 0;">${t('showMoreText')}</button>` : ''}` : ''}
+        ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${escapeHtml(job.requirements).replace(/\n/g, '<br>')}</div>` : ''}
+        ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${escapeHtml(cloudinaryResize(img, 500, 300))}" loading="lazy" alt="${t('altJobPhoto')}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
         <div data-map-popup-translation-notice style="display:none;margin:6px 0;font-size:11px;color:var(--text-dim);"></div>
         <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
@@ -2794,7 +2794,7 @@ function updateJobsList(jobs) {
         <div class="job-card-title">${job.status === 'filled' ? '✅ ' : ''}${(job.boosted && job.boostedUntil > Date.now()) ? '🚀 ' : ''}${((profilesCache[job.user]||{}).isPro && ((profilesCache[job.user]||{}).proUntil||0) > Date.now()) ? '⭐ ' : ''}${savedJobIds.has(job.id) ? '🔖 ' : ''}${escapeHtml(job.title)}</div>
         <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${job.status === 'filled' ? t('filledBadgeLabel') + ' · ' : ''}${escapeHtml(job.landmark) || getCatLabel(job.icon)}</div>
         <div class="job-card-meta">
-          <span class="job-card-price">${job.price}</span>
+          <span class="job-card-price">${escapeHtml(job.price)}</span>
           <span style="color:var(--text-dim);font-size:11px;">XAF</span>
         </div>
       </div>
@@ -6888,10 +6888,10 @@ async function sendChatPhotoToThread(threadId, tempMsg, dataUrl, replyTo, onDone
     try {
         const file = dataURLtoFile(dataUrl);
         let uploadFile = file;
-        if (window.CompressorJS && file.size > 1024 * 1024) {
+        if (window.Compressor && file.size > 1024 * 1024) {
             try {
                 uploadFile = await new Promise((res, rej) => {
-                    new window.CompressorJS(file, { quality: 0.8, success: res, error: rej });
+                    new window.Compressor(file, { quality: 0.8, success: res, error: rej });
                 });
             } catch (e) { uploadFile = file; }
         }
@@ -7388,19 +7388,6 @@ async function contactViaWhatsAppFromPreview() {
         if (waWindow) waWindow.close();
         showToast(t('whatsappOpenError'), 'error');
     }
-}
-
-function shareJobViaWhatsApp() {
-    // Volontairement ouvert à tout le monde, connecté ou non : c'est le
-    // principal levier de croissance virale de l'app, aucune barrière ici.
-    const job = window.currentPreviewJob;
-    if (!job) return;
-    const link = getJobShareLink(job.id);
-    const displayContent = getJobDisplayContent(job);
-    const requirementsBlock = displayContent.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + displayContent.requirements : '';
-    const phonesText = job.phone2 ? (job.phone + t('waMsgOrConnector') + job.phone2) : (job.phone || '—');
-    const message = t('waMsgShareJob').replace('{title}', (displayContent.title || '').toUpperCase()).replace('{desc}', displayContent.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.landmark || 'Non spécifié').replace('{price}', job.price).replace('{phone}', phonesText).replace('{link}', link);
-    openWhatsAppReliably(null, null, message);
 }
 
 function drawRouteFromPreview() {
