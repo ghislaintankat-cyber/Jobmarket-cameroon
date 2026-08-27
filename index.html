@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260826l">
+<html lang="fr" data-app-build="20260827a">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -76,6 +76,8 @@
 
 <!-- PWA Manifest inline -->
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
@@ -495,6 +497,15 @@ body{
 .wa-reply-prev-name{font-size:13px;font-weight:600;color:var(--pri-dark)}
 .wa-reply-prev-text{font-size:13px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px}
 .wa-reply-prev-close{background:0 0;border:0;color:var(--text-secondary);cursor:pointer;padding:4px;font-size:20px;line-height:1}
+
+/* Quick replies (réponses rapides contextuelles) */
+.wa-quick{display:none;padding:0 12px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;z-index:2;background:var(--bg-panel)}
+.wa-quick::-webkit-scrollbar{display:none}
+.wa-quick.active{display:block}
+.wa-quick-row{display:flex;gap:6px;width:max-content;padding:2px}
+.wa-quick-chip{background:var(--bg-input);border:1px solid var(--border);color:var(--pri);font-size:13px;font-weight:600;padding:7px 12px;border-radius:16px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:background .1s,transform .1s;font-family:inherit}
+.wa-quick-chip:hover{background:var(--bg-hover)}
+.wa-quick-chip:active{transform:scale(.96)}
 
 /* Recording */
 .wa-rec{display:none;align-items:center;gap:12px;flex:1;background:var(--bg-input);border-radius:var(--radius);padding:8px 16px}
@@ -1871,7 +1882,7 @@ body{
 
 <!-- ===== SCRIPTS ===== -->
 <script src="chat-widget.js"></script>
-<script src="app.js?v=20260826l"></script>
+<script src="app.js?v=20260827a"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2605,6 +2616,11 @@ function previewImage(event) {
     <div class="wa-reply-prev" id="waReplyPrev">
       <div><div class="wa-reply-prev-name" id="waReplyName"></div><div class="wa-reply-prev-text" id="waReplyText"></div></div>
       <button class="wa-reply-prev-close" onclick="W.cancelReply()">&times;</button>
+    </div>
+
+    <!-- Quick replies (réponses rapides contextuelles) -->
+    <div class="wa-quick" id="waQuickReplies">
+      <div class="wa-quick-row" id="waQuickRow"></div>
     </div>
 
     <!-- Input -->
