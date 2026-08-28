@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260827i">
+<html lang="fr" data-app-build="20260827j">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1885,8 +1885,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260827i"></script>
-<script src="app.js?v=20260827i"></script>
+<script src="chat-widget.js?v=20260827j"></script>
+<script src="app.js?v=20260827j"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2645,6 +2645,13 @@ function previewImage(event) {
       <button class="wa-icon-btn" title="Joindre" data-i18n-title="chatAttachTitle" onclick="W.toggleAttach()" id="waAttachBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></button>
       <div class="wa-txt-wrap" id="waTxtWrap"><textarea class="wa-txt" id="waTxt" placeholder="Écris ton message…" data-i18n-placeholder="chatMsgPh" rows="1" oninput="W.autoResize(this)" onkeydown="W.onKey(event)"></textarea></div>
       <button class="wa-icon-btn wa-send" title="Envoyer" data-i18n-title="chatSendTitle" onclick="W.onSendBtn()" id="waSendBtn"><svg viewBox="0 0 24 24" fill="currentColor" id="waSendIco"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg><svg viewBox="0 0 24 24" fill="currentColor" id="waMicIco" style="display:none"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.41 2.72 6.23 6 6.72V22h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg></button>
+      <!-- Barre d'enregistrement vocale (comme WhatsApp) : annuler / minuteur / envoyer -->
+      <div class="wa-rec" id="waRec">
+        <button class="wa-icon-btn" title="Annuler" data-i18n-title="cancelBtn" onclick="W.cancelRec()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        <span class="wa-rec-dot"></span>
+        <span class="wa-rec-time" id="waRecTime">0:00</span>
+        <button class="wa-icon-btn wa-send" title="Envoyer" data-i18n-title="chatSendTitle" onclick="W.stopRec()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      </div>
     </div>
 
     <!-- Emoji picker -->

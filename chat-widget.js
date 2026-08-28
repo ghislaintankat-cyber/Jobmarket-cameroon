@@ -202,7 +202,7 @@ const W={
       if(m.replyTo){const rm=ms.find(x=>x.id===m.replyTo);if(rm){const rn=rm.from==='me'?T('you'):((this.contacts.find(c=>c.id===rm.from)||{name:T('unknown')}).name);h+=`<div class="wa-quote" onclick="W.scrollToMsg('${m.replyTo}')"><div class="wa-quote-name">${esc(rn)}</div><div class="wa-quote-text">${rm.text?esc(rm.text):rm.image?'📷 '+T('photo'):rm.voice?'🎤 '+T('voice'):'📎 '+T('file')}</div></div>`}}
       if(m.poll){h+=this._renderPoll(m)}
       if(m.image)h+=`<div class="wa-img" onclick="W.openLB('${m.image}')"><img src="${m.image}" alt="" loading="lazy"></div>`;
-      if(m.voice)h+=`<div class="wa-voice"><button class="wa-voice-play" onclick="W.toggleVoice(this)">${SVG.play}</button><div class="wa-wave">${genWave()}</div><span class="wa-voice-dur">${m.voice.duration||'0:12'}</span></div>`;
+      if(m.voice)h+=`<div class="wa-voice" data-url="${esc(m.voice.url||'')}"><button class="wa-voice-play" onclick="W.toggleVoice(this)">${SVG.play}</button><div class="wa-wave">${genWave()}</div><span class="wa-voice-dur">${m.voice.duration||'0:00'}</span></div>`;
       if(m.file)h+=`<div class="wa-file" onclick="W.emit('openFile',{msgId:'${m.id}',contactId:'${this.activeId}'})"><div class="wa-file-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="wa-file-name">${esc(m.file.name)}</div><div class="wa-file-size">${m.file.size||''}</div></div></div>`;
       if(m.linkPreview)h+=`<div class="wa-linkprev" onclick="window.open('${m.linkPreview.url}','_blank')"><div class="wa-linkprev-body"><div class="wa-linkprev-title">${esc(m.linkPreview.title||'')}</div><div class="wa-linkprev-desc">${esc(m.linkPreview.description||'')}</div><div class="wa-linkprev-url">${esc(m.linkPreview.url||'')}</div></div></div>`;
       if(m.text)h+=`<div class="wa-text">${linkify(esc(m.text))}</div>`;
@@ -330,7 +330,27 @@ const W={
   stopRec(){clearInterval(this.recT);const d=`${Math.floor(this.recS/60)}:${(this.recS%60).toString().padStart(2,'0')}`;this._resetRec();if(this.activeId)this.sendMessage(this.activeId,{voice:{duration:d}});this.emit('recordingStopped',{contactId:this.activeId,duration:d})},
   cancelRec(){clearInterval(this.recT);this._resetRec()},
   _resetRec(){this.rec=false;$('waTxtWrap').style.display='flex';$('waRec').classList.remove('active');$('waEmojiBtn').style.display='flex';$('waAttachBtn').style.display='flex';$('waSendBtn').style.display='flex';this._updSend()},
-  toggleVoice(btn){const p=btn.dataset.p==='1';btn.innerHTML=p?SVG.play:SVG.pause;btn.dataset.p=p?'0':'1'},
+  // Lecture réelle du message vocal (1 seul à la fois, comme WhatsApp)
+  toggleVoice(btn){
+    const wrap=btn.closest?btn.closest('.wa-voice'):null;
+    const url=wrap?wrap.dataset.url:'';
+    if(!url)return;
+    // déjà en lecture → pause
+    if(this._voiceBtn===btn){
+      if(this._voiceAudio)this._voiceAudio.pause();
+      btn.innerHTML=SVG.play;btn.dataset.p='0';this._voiceBtn=null;return;
+    }
+    // sinon → stopper la lecture en cours et lancer celle-ci
+    if(this._voiceBtn){this._voiceBtn.innerHTML=SVG.play;this._voiceBtn.dataset.p='0';}
+    if(this._voiceAudio){this._voiceAudio.pause();this._voiceAudio=null;}
+    const a=new Audio(url);
+    this._voiceAudio=a;this._voiceBtn=btn;
+    const self=this;
+    a.onended=()=>{if(self._voiceBtn===btn){btn.innerHTML=SVG.play;btn.dataset.p='0';}if(self._voiceBtn===btn)self._voiceBtn=null;if(self._voiceAudio===a)self._voiceAudio=null;};
+    a.onerror=()=>{if(self._voiceBtn===btn){btn.innerHTML=SVG.play;btn.dataset.p='0';}if(self._voiceBtn===btn)self._voiceBtn=null;if(self._voiceAudio===a)self._voiceAudio=null;};
+    a.play().catch(()=>{});
+    btn.innerHTML=SVG.pause;btn.dataset.p='1';
+  },
 
   // Lightbox
   openLB(src){$('waLBImg').src=src;$('waLB').classList.add('active')},

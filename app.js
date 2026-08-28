@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260827i';
+const APP_BUILD = '20260827j';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -377,7 +377,11 @@ const I18N = {
     waMsgShareJob: "🔊 *NOUVELLE OFFRE D'EMPLOI*\n\n*{title}*\n{desc}{requirements}\n\n💰 Rémunération : {price}\n📍 Lieu : {location}\n📞 Contact : {phone}\n\nPlus de détails ici : {link}",
     waMsgRequirementsLabel: "📋 *Exigences :*",
     waMsgOrConnector: " ou ",
-    waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?", chatFirstMsgJob: "Bonjour, je vous contacte depuis JobMarket pour : « {jobTitle} ». Est-ce toujours disponible ?", chatPinnedTitle: "Épinglés", chatCloseTitle: "Fermer", chatSearchPh: "Rechercher…", chatTabAll: "Toutes", chatTabUnread: "Non lues", chatEmptyTitle: "Chat sécurisé", chatEmptyBody: "Tes conversations apparaissent ici. Ouvre une annonce puis « Chat sécurisé » pour démarrer — la discussion continue d'une annonce à l'autre.", keyEnter: "Entrée = Envoyer", keyShiftEnter: "Maj+Entrée = Saut de ligne", keyEsc: "Échap = Fermer", keyCtrlF: "Ctrl+F = Rechercher", chatSearchTitle: "Rechercher", chatMsgSearchPh: "Rechercher dans la conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Joindre", chatSendTitle: "Envoyer", chatMsgPh: "Écris ton message…", chatPhotosAtt: "Photos", chatDropText: "Dépose une image ici", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 Mo", chatContactInfo: "Infos du contact", chatStarAction: "Épingler", chatAboutLabel: "À propos", chatMediaSection: "Médias, liens et documents", chatFwdTitle: "Transférer le message à…", chatPollTitle: "Créer un sondage", chatPollQPh: "Pose une question…", chatPollAddOpt: "+ Ajouter une option", chatPollSend: "Envoyer le sondage", lockNotice: "Messages sécurisés — cette conversation reste entre vous deux.", newMsgs: "Nouveaux messages",
+    waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?", chatFirstMsgJob: "Bonjour, je vous contacte depuis JobMarket pour : « {jobTitle} ». Est-ce toujours disponible ?", chatPinnedTitle: "Épinglés", chatCloseTitle: "Fermer", chatSearchPh: "Rechercher…", chatTabAll: "Toutes", chatTabUnread: "Non lues", chatEmptyTitle: "Chat sécurisé", chatEmptyBody: "Tes conversations apparaissent ici. Ouvre une annonce puis « Chat sécurisé » pour démarrer — la discussion continue d'une annonce à l'autre.", keyEnter: "Entrée = Envoyer", keyShiftEnter: "Maj+Entrée = Saut de ligne", keyEsc: "Échap = Fermer", keyCtrlF: "Ctrl+F = Rechercher", chatSearchTitle: "Rechercher", chatMsgSearchPh: "Rechercher dans la conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Joindre", chatSendTitle: "Envoyer", chatMsgPh: "Écris ton message…", chatPhotosAtt: "Photos", chatDropText: "Dépose une image ici", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 Mo", chatContactInfo: "Infos du contact", chatStarAction: "Épingler", chatAboutLabel: "À propos", chatMediaSection: "Médias, liens et documents", chatFwdTitle: "Transférer le message à…", chatPollTitle: "Créer un sondage", chatPollQPh: "Pose une question…", chatPollAddOpt: "+ Ajouter une option", chatPollSend: "Envoyer le sondage", lockNotice: "Messages sécurisés — cette conversation reste entre vous deux.",
+    voiceMicError: "Impossible d'accéder au micro. Vérifie les autorisations du navigateur.",
+    voiceTooShort: "Enregistrement trop court.",
+    voiceUploadError: "L'envoi du message vocal a échoué (audio non autorisé ?). Le message texte reste disponible.",
+ newMsgs: "Nouveaux messages",
     catMenage: "Menage", catJardinage: "Jardinage", catMecanique: "Mecanique", catInfo: "Informatique",
     tipLocate: "Ma position", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Style carte",
     tipLang: "Langue", tipSearch: "Rechercher", tipNotifications: "Notifications", tipMessages: "Messages", tipClose: "Fermer",
@@ -621,7 +625,11 @@ const I18N = {
     waMsgShareJob: "🔊 *NEW JOB OPENING*\n\n*{title}*\n{desc}{requirements}\n\n💰 Pay: {price}\n📍 Location: {location}\n📞 Contact: {phone}\n\nMore details here: {link}",
     waMsgRequirementsLabel: "📋 *Requirements:*",
     waMsgOrConnector: " or ",
-    waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?", chatFirstMsgJob: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\". Is this still available?", chatPinnedTitle: "Starred", chatCloseTitle: "Close", chatSearchPh: "Search…", chatTabAll: "All", chatTabUnread: "Unread", chatEmptyTitle: "Secure chat", chatEmptyBody: "Your conversations appear here. Open a listing then “Secure chat” to start — the discussion continues from one listing to the next.", keyEnter: "Enter = Send", keyShiftEnter: "Shift+Enter = New line", keyEsc: "Esc = Close", keyCtrlF: "Ctrl+F = Search", chatSearchTitle: "Search", chatMsgSearchPh: "Search in conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Attach", chatSendTitle: "Send", chatMsgPh: "Type a message…", chatPhotosAtt: "Photos", chatDropText: "Drop an image here", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Contact info", chatStarAction: "Star", chatAboutLabel: "About", chatMediaSection: "Media, links and docs", chatFwdTitle: "Forward message to…", chatPollTitle: "Create a poll", chatPollQPh: "Ask a question…", chatPollAddOpt: "+ Add option", chatPollSend: "Send Poll", lockNotice: "Secured messages — this conversation stays between you two.", newMsgs: "New messages",
+    waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?", chatFirstMsgJob: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\". Is this still available?", chatPinnedTitle: "Starred", chatCloseTitle: "Close", chatSearchPh: "Search…", chatTabAll: "All", chatTabUnread: "Unread", chatEmptyTitle: "Secure chat", chatEmptyBody: "Your conversations appear here. Open a listing then “Secure chat” to start — the discussion continues from one listing to the next.", keyEnter: "Enter = Send", keyShiftEnter: "Shift+Enter = New line", keyEsc: "Esc = Close", keyCtrlF: "Ctrl+F = Search", chatSearchTitle: "Search", chatMsgSearchPh: "Search in conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Attach", chatSendTitle: "Send", chatMsgPh: "Type a message…", chatPhotosAtt: "Photos", chatDropText: "Drop an image here", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Contact info", chatStarAction: "Star", chatAboutLabel: "About", chatMediaSection: "Media, links and docs", chatFwdTitle: "Forward message to…", chatPollTitle: "Create a poll", chatPollQPh: "Ask a question…", chatPollAddOpt: "+ Add option", chatPollSend: "Send Poll", lockNotice: "Secured messages — this conversation stays between you two.",
+    voiceMicError: "Can't access the microphone. Check your browser permissions.",
+    voiceTooShort: "Recording too short.",
+    voiceUploadError: "Failed to send the voice message (audio not allowed?). Text messages still work.",
+ newMsgs: "New messages",
     catMenage: "Cleaning", catJardinage: "Gardening", catMecanique: "Mechanics", catInfo: "IT",
     tipLocate: "My location", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Map style",
     tipLang: "Language", tipSearch: "Search", tipNotifications: "Notifications", tipMessages: "Messages", tipClose: "Close",
@@ -865,7 +873,11 @@ const I18N = {
     waMsgShareJob: "🔊 *NUOVA OFFERTA DI LAVORO*\n\n*{title}*\n{desc}{requirements}\n\n💰 Compenso: {price}\n📍 Luogo: {location}\n📞 Contatto: {phone}\n\nMaggiori dettagli qui: {link}",
     waMsgRequirementsLabel: "📋 *Requisiti:*",
     waMsgOrConnector: " o ",
-    waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?", chatFirstMsgJob: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\". È ancora disponibile?", chatPinnedTitle: "Preferiti", chatCloseTitle: "Chiudi", chatSearchPh: "Cerca…", chatTabAll: "Tutte", chatTabUnread: "Non lette", chatEmptyTitle: "Chat sicura", chatEmptyBody: "Le tue conversazioni compaiono qui. Apri un annuncio poi « Chat sicura » per iniziare — la discussione continua da un annuncio all'altro.", keyEnter: "Invio = Invia", keyShiftEnter: "Maj+Invio = A capo", keyEsc: "Esc = Chiudi", keyCtrlF: "Ctrl+F = Cerca", chatSearchTitle: "Cerca", chatMsgSearchPh: "Cerca nella conversazione…", chatEmojiTitle: "Emoji", chatAttachTitle: "Allega", chatSendTitle: "Invia", chatMsgPh: "Scrivi un messaggio…", chatPhotosAtt: "Foto", chatDropText: "Rilascia un'immagine qui", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Info contatto", chatStarAction: "Preferisci", chatAboutLabel: "Info", chatMediaSection: "Media, link e documenti", chatFwdTitle: "Inoltra il messaggio a…", chatPollTitle: "Crea un sondaggio", chatPollQPh: "Fai una domanda…", chatPollAddOpt: "+ Aggiungi opzione", chatPollSend: "Invia sondaggio", lockNotice: "Messaggi protetti — questa conversazione resta tra voi due.", newMsgs: "Nuovi messaggi",
+    waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?", chatFirstMsgJob: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\". È ancora disponibile?", chatPinnedTitle: "Preferiti", chatCloseTitle: "Chiudi", chatSearchPh: "Cerca…", chatTabAll: "Tutte", chatTabUnread: "Non lette", chatEmptyTitle: "Chat sicura", chatEmptyBody: "Le tue conversazioni compaiono qui. Apri un annuncio poi « Chat sicura » per iniziare — la discussione continua da un annuncio all'altro.", keyEnter: "Invio = Invia", keyShiftEnter: "Maj+Invio = A capo", keyEsc: "Esc = Chiudi", keyCtrlF: "Ctrl+F = Cerca", chatSearchTitle: "Cerca", chatMsgSearchPh: "Cerca nella conversazione…", chatEmojiTitle: "Emoji", chatAttachTitle: "Allega", chatSendTitle: "Invia", chatMsgPh: "Scrivi un messaggio…", chatPhotosAtt: "Foto", chatDropText: "Rilascia un'immagine qui", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Info contatto", chatStarAction: "Preferisci", chatAboutLabel: "Info", chatMediaSection: "Media, link e documenti", chatFwdTitle: "Inoltra il messaggio a…", chatPollTitle: "Crea un sondaggio", chatPollQPh: "Fai una domanda…", chatPollAddOpt: "+ Aggiungi opzione", chatPollSend: "Invia sondaggio", lockNotice: "Messaggi protetti — questa conversazione resta tra voi due.",
+    voiceMicError: "Impossibile accedere al microfono. Controlla i permessi del browser.",
+    voiceTooShort: "Registrazione troppo breve.",
+    voiceUploadError: "Invio del messaggio vocale non riuscito (audio non autorizzato?). I messaggi testuali funzionano ancora.",
+ newMsgs: "Nuovi messaggi",
     catMenage: "Pulizie", catJardinage: "Giardinaggio", catMecanique: "Meccanica", catInfo: "Informatica",
     tipLocate: "La mia posizione", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Stile mappa",
     tipLang: "Lingua", tipSearch: "Cerca", tipNotifications: "Notifiche", tipMessages: "Messaggi", tipClose: "Chiudi",
@@ -1109,7 +1121,11 @@ const I18N = {
     waMsgShareJob: "🔊 *NEUES STELLENANGEBOT*\n\n*{title}*\n{desc}{requirements}\n\n💰 Vergütung: {price}\n📍 Ort: {location}\n📞 Kontakt: {phone}\n\nMehr Details hier: {link}",
     waMsgRequirementsLabel: "📋 *Anforderungen:*",
     waMsgOrConnector: " oder ",
-    waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?", chatFirstMsgJob: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\". Ist das noch verfügbar?", chatPinnedTitle: "Gestartet", chatCloseTitle: "Schließen", chatSearchPh: "Suchen…", chatTabAll: "Alle", chatTabUnread: "Ungelesen", chatEmptyTitle: "Sicherer Chat", chatEmptyBody: "Deine Gespräche erscheinen hier. Öffne eine Anzeige und dann « Sicherer Chat », um zu starten — die Unterhaltung geht von Anzeige zu Anzeige weiter.", keyEnter: "Enter = Senden", keyShiftEnter: "Strg+Enter = Zeilenumbruch", keyEsc: "Esc = Schließen", keyCtrlF: "Strg+F = Suchen", chatSearchTitle: "Suchen", chatMsgSearchPh: "Im Gespräch suchen…", chatEmojiTitle: "Emoji", chatAttachTitle: "Anhängen", chatSendTitle: "Senden", chatMsgPh: "Nachricht eingeben…", chatPhotosAtt: "Fotos", chatDropText: "Bild hier ablegen", chatDropSub: "JPG, PNG, WEBP, GIF — max. 8 MB", chatContactInfo: "Kontaktinfo", chatStarAction: "Markieren", chatAboutLabel: "Info", chatMediaSection: "Medien, Links und Dokumente", chatFwdTitle: "Nachricht weiterleiten an…", chatPollTitle: "Umfrage erstellen", chatPollQPh: "Stelle eine Frage…", chatPollAddOpt: "+ Option hinzufügen", chatPollSend: "Umfrage senden", lockNotice: "Geschützte Nachrichten — diese Unterhaltung bleibt zwischen euch beiden.", newMsgs: "Neue Nachrichten",
+    waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?", chatFirstMsgJob: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\". Ist das noch verfügbar?", chatPinnedTitle: "Gestartet", chatCloseTitle: "Schließen", chatSearchPh: "Suchen…", chatTabAll: "Alle", chatTabUnread: "Ungelesen", chatEmptyTitle: "Sicherer Chat", chatEmptyBody: "Deine Gespräche erscheinen hier. Öffne eine Anzeige und dann « Sicherer Chat », um zu starten — die Unterhaltung geht von Anzeige zu Anzeige weiter.", keyEnter: "Enter = Senden", keyShiftEnter: "Strg+Enter = Zeilenumbruch", keyEsc: "Esc = Schließen", keyCtrlF: "Strg+F = Suchen", chatSearchTitle: "Suchen", chatMsgSearchPh: "Im Gespräch suchen…", chatEmojiTitle: "Emoji", chatAttachTitle: "Anhängen", chatSendTitle: "Senden", chatMsgPh: "Nachricht eingeben…", chatPhotosAtt: "Fotos", chatDropText: "Bild hier ablegen", chatDropSub: "JPG, PNG, WEBP, GIF — max. 8 MB", chatContactInfo: "Kontaktinfo", chatStarAction: "Markieren", chatAboutLabel: "Info", chatMediaSection: "Medien, Links und Dokumente", chatFwdTitle: "Nachricht weiterleiten an…", chatPollTitle: "Umfrage erstellen", chatPollQPh: "Stelle eine Frage…", chatPollAddOpt: "+ Option hinzufügen", chatPollSend: "Umfrage senden", lockNotice: "Geschützte Nachrichten — diese Unterhaltung bleibt zwischen euch beiden.",
+    voiceMicError: "Kein Zugriff auf das Mikrofon. Browser-Berechtigungen prüfen.",
+    voiceTooShort: "Aufnahme zu kurz.",
+    voiceUploadError: "Sprachnachricht konnte nicht gesendet werden (Audio nicht erlaubt?). Textnachrichten funktionieren weiterhin.",
+ newMsgs: "Neue Nachrichten",
     catMenage: "Reinigung", catJardinage: "Gartenarbeit", catMecanique: "Mechanik", catInfo: "IT",
     tipLocate: "Mein Standort", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Kartenstil",
     tipLang: "Sprache", tipSearch: "Suchen", tipNotifications: "Benachrichtigungen", tipMessages: "Nachrichten", tipClose: "Schließen",
@@ -1353,7 +1369,11 @@ const I18N = {
     waMsgShareJob: "🔊 *新工作机会*\n\n*{title}*\n{desc}{requirements}\n\n💰 报酬：{price} XAF\n📍 地点：{location}\n📞 联系方式：{phone}\n\n详情请点击：{link}",
     waMsgRequirementsLabel: "📋 *要求：*",
     waMsgOrConnector: " 或 ",
-    waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?", chatFirstMsgJob: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。请问这个还可以预约吗?", chatPinnedTitle: "已加星", chatCloseTitle: "关闭", chatSearchPh: "搜索…", chatTabAll: "全部", chatTabUnread: "未读", chatEmptyTitle: "安全聊天", chatEmptyBody: "你的对话会显示在这里。打开一个公告，然后点击「安全聊天」开始——对话会跨公告继续。", keyEnter: "回车 = 发送", keyShiftEnter: "Shift+回车 = 换行", keyEsc: "Esc = 关闭", keyCtrlF: "Ctrl+F = 搜索", chatSearchTitle: "搜索", chatMsgSearchPh: "在对话中搜索…", chatEmojiTitle: "表情", chatAttachTitle: "附加", chatSendTitle: "发送", chatMsgPh: "输入消息…", chatPhotosAtt: "照片", chatDropText: "将图片拖放到这里", chatDropSub: "JPG、PNG、WEBP、GIF — 最大 8 MB", chatContactInfo: "联系信息", chatStarAction: "加星", chatAboutLabel: "关于", chatMediaSection: "媒体、链接和文档", chatFwdTitle: "转发消息给…", chatPollTitle: "创建投票", chatPollQPh: "提个问题…", chatPollAddOpt: "+ 添加选项", chatPollSend: "发送投票", lockNotice: "消息已加密 — 此对话仅你们双方可见。", newMsgs: "新消息",
+    waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?", chatFirstMsgJob: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。请问这个还可以预约吗?", chatPinnedTitle: "已加星", chatCloseTitle: "关闭", chatSearchPh: "搜索…", chatTabAll: "全部", chatTabUnread: "未读", chatEmptyTitle: "安全聊天", chatEmptyBody: "你的对话会显示在这里。打开一个公告，然后点击「安全聊天」开始——对话会跨公告继续。", keyEnter: "回车 = 发送", keyShiftEnter: "Shift+回车 = 换行", keyEsc: "Esc = 关闭", keyCtrlF: "Ctrl+F = 搜索", chatSearchTitle: "搜索", chatMsgSearchPh: "在对话中搜索…", chatEmojiTitle: "表情", chatAttachTitle: "附加", chatSendTitle: "发送", chatMsgPh: "输入消息…", chatPhotosAtt: "照片", chatDropText: "将图片拖放到这里", chatDropSub: "JPG、PNG、WEBP、GIF — 最大 8 MB", chatContactInfo: "联系信息", chatStarAction: "加星", chatAboutLabel: "关于", chatMediaSection: "媒体、链接和文档", chatFwdTitle: "转发消息给…", chatPollTitle: "创建投票", chatPollQPh: "提个问题…", chatPollAddOpt: "+ 添加选项", chatPollSend: "发送投票", lockNotice: "消息已加密 — 此对话仅你们双方可见。",
+    voiceMicError: "无法访问麦克风。请检查浏览器权限。",
+    voiceTooShort: "录音太短。",
+    voiceUploadError: "语音消息发送失败（音频未授权？）。文本消息仍可使用。",
+ newMsgs: "新消息",
     catMenage: "清洁", catJardinage: "园艺", catMecanique: "机械", catInfo: "信息技术",
     tipLocate: "我的位置", tipZoomIn: "放大", tipZoomOut: "缩小", tipMapStyle: "地图样式",
     tipLang: "语言", tipSearch: "搜索", tipNotifications: "通知", tipMessages: "消息", tipClose: "关闭",
@@ -6333,6 +6353,78 @@ let chatTypingTimeout = null, lastChatTypingSent = 0;
 let presenceCache = null, presenceCacheTs = 0;
 let lastVibTs = 0; // timestamp du dernier message reçu ayant fait vibrer (anti-boucle)
 
+// ===== MESSAGES VOCAUX (comme WhatsApp) — gate de sécurité =====
+// Activés uniquement si MediaRecorder est disponible. Tout échec (micro
+// refusé, upload audio refusé par le preset Cloudinary) retombe sur un
+// toast + retour au texte : le chemin d'envoi TEXTE n'est jamais affecté.
+let voiceRecorder = null, voiceChunks = [], voiceStartTs = 0, voiceMaxTimer = null, voiceBusy = false, voiceW = null;
+const VOICE_MAX_MS = 60000; // 60 s max (arrêt automatique)
+
+function voiceDurLabel(secs) {
+  secs = Math.max(0, Math.round(secs || 0));
+  return Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+}
+
+// Upload audio vers Cloudinary (endpoint auto/ : détecte le type).
+// Si le preset n'autorise pas l'audio, l'erreur remonte au caller (toast).
+async function uploadVoiceToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file, file.name);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, { method: 'POST', body: formData });
+  const data = await res.json().catch(() => ({}));
+  if (!data.secure_url) throw new Error((data.error && data.error.message) || 'upload échoué');
+  return data.secure_url;
+}
+
+async function startVoiceRecording(w) {
+  if (voiceBusy) return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    voiceBusy = true;
+    voiceW = w;
+    if (!w.activeId) { stream.getTracks().forEach(tr => tr.stop()); voiceBusy = false; return; }
+    const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(mt => { try { return MediaRecorder.isTypeSupported(mt); } catch (e) { return false; } }) || '';
+    voiceRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    voiceChunks = [];
+    voiceRecorder.ondataavailable = (e) => { if (e.data && e.data.size) voiceChunks.push(e.data); };
+    voiceRecorder.start(250);
+    voiceStartTs = Date.now();
+    w.startRec(); // UI du widget (barre + minuteur)
+    voiceMaxTimer = setTimeout(() => stopVoiceRecording(voiceW, true), VOICE_MAX_MS);
+  } catch (e) {
+    voiceBusy = false;
+    showToast(t('voiceMicError'), 'error');
+  }
+}
+
+function stopVoiceRecording(w, send) {
+  const rec = voiceRecorder;
+  voiceRecorder = null;
+  if (voiceMaxTimer) { clearTimeout(voiceMaxTimer); voiceMaxTimer = null; }
+  if (!rec) { voiceBusy = false; return; }
+  const stopTracks = () => { try { if (rec.stream) rec.stream.getTracks().forEach(tr => tr.stop()); } catch (e) {} };
+  rec.onstop = async () => {
+    stopTracks();
+    try { if (w && w._resetRec) w._resetRec(); } catch (e) {}
+    if (!send) { voiceBusy = false; return; }
+    const secs = Math.max(1, Math.round((Date.now() - voiceStartTs) / 1000));
+    const blob = new Blob(voiceChunks, { type: rec.mimeType || 'audio/webm' });
+    voiceChunks = [];
+    if (blob.size < 2000) { voiceBusy = false; showToast(t('voiceTooShort'), 'error'); return; }
+    try {
+      const url = await uploadVoiceToCloudinary(new File([blob], 'voice.' + (String(blob.type).includes('mp4') ? 'm4a' : 'webm'), { type: blob.type || 'audio/webm' }));
+      const w2 = voiceW;
+      if (w2 && w2.activeId) w2.sendMessage(w2.activeId, { audioUrl: url, duration: secs });
+    } catch (e) {
+      console.warn('voice upload failed', e);
+      showToast(t('voiceUploadError'), 'error');
+    }
+    voiceBusy = false;
+  };
+  try { rec.stop(); } catch (e) { voiceBusy = false; stopTracks(); try { if (w && w._resetRec) w._resetRec(); } catch (e2) {} }
+}
+
 // threadId = les deux uid triés (une conversation par personne, comme
 // WhatsApp — le job ne change plus la conversation)
 function makeThreadId(uidA, uidB) {
@@ -6623,6 +6715,7 @@ function mapWidgetMsg(key, m, cid) {
     };
     if (m.text) out.text = m.text;
     if (m.imageUrl) out.image = m.imageUrl;
+    if (m.audioUrl) out.voice = { url: m.audioUrl, duration: voiceDurLabel(m.duration) };
     if (mine) out.status = read ? 'read' : 'sent';
     if (!mine && !(m.readBy && m.readBy[me.uid])) out.unread = true;
     if (m.replyTo && m.replyTo.id) out.replyTo = m.replyTo.id;
@@ -6822,6 +6915,7 @@ function patchChatWidgetForFirebase() {
         };
         if (data.text) tempMsg.text = data.text;
         if (data.image) tempMsg.image = data.image;
+        if (data.audioUrl) tempMsg.voice = { url: data.audioUrl, duration: voiceDurLabel(data.duration) };
         if (data.replyTo) {
             const rm = (W.convs[cid] || []).find(x => x.id === data.replyTo);
             if (rm) {
@@ -6844,6 +6938,7 @@ function patchChatWidgetForFirebase() {
             const payload = {};
             if (data.text) payload.text = String(data.text).slice(0, 800);
             if (data.image && !String(data.image).startsWith('data:')) payload.imageUrl = data.image; // transfert d'une image déjà hébergée
+            if (data.audioUrl) { payload.audioUrl = data.audioUrl; payload.duration = Math.max(1, Math.round(data.duration || 0)); }
             if (tempMsg.__reply) payload.replyTo = tempMsg.__reply;
             sendChatMessageToThread(cid, payload, clearPending);
         }
@@ -6934,20 +7029,32 @@ function patchChatWidgetForFirebase() {
         this.sendMessage(toCid, data);
     };
 
-    // ---- Bouton envoyer : texte uniquement (pas d'enregistrement vocal —
-    // le preset Cloudinary n'accepte que des images : voir LIRE_MOI, section
-    // « Messages vocaux »). On force l'icône « envoyer » en permanence pour
-    // ne jamais afficher un micro inactif. ----
+    // ---- Bouton envoyer : TEXTE si le champ a du texte, MICRO si le champ
+    // est vide (comme WhatsApp). Le micro n'apparaît que si MediaRecorder est
+    // disponible ; sinon icône envoyer permanente (pas de micro mort).
+    // Toute la mécanique vocale est dans startVoiceRecording/stopVoiceRecording
+    // (gated : tout échec retombe sur un toast, le texte n'est jamais touché).
+    const voiceSupported = typeof window.MediaRecorder !== 'undefined'
+      && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     W.onSendBtn = function() {
         const t = document.getElementById('waTxt');
-        if (t && t.value.trim()) this._send();
+        if (t && t.value.trim()) { this._send(); return; }
+        if (voiceSupported) startVoiceRecording(this);
     };
+    // stopRec/cancelRec du widget remplacés par la vraie mécanique (l'UI
+    // d'origine est conservée via startRec/_resetRec)
+    W.stopRec = function() { stopVoiceRecording(this, true); };
+    W.cancelRec = function() { stopVoiceRecording(this, false); };
     const origUpdSend = W._updSend;
     W._updSend = function() {
       origUpdSend.call(this);
-      // ensuite : on masque le micro (inactif) et on force l'icône envoyer
-      try { const mic = document.getElementById('waMicIco'); if (mic) mic.style.display = 'none'; } catch (e) {}
-      try { const send = document.getElementById('waSendIco'); if (send) send.style.display = 'block'; } catch (e) {}
+      const mic = document.getElementById('waMicIco');
+      const send = document.getElementById('waSendIco');
+      if (mic && send) {
+        const hasText = (() => { const t = document.getElementById('waTxt'); return !!(t && t.value.trim()); })();
+        if (voiceSupported) { mic.style.display = hasText ? 'none' : 'block'; send.style.display = hasText ? 'block' : 'none'; }
+        else { mic.style.display = 'none'; send.style.display = 'block'; }
+      }
     };
 
     // ---- Thème : le widget pose data-theme sur #wa, nos CSS le lisent sur
