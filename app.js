@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260827e';
+const APP_BUILD = '20260827h';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -356,11 +356,11 @@ const I18N = {
     onbTitle2: "Publiez votre besoin en quelques secondes", onbBody2: "Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.",
     onbTitle3: "Contactez en toute confiance", onbBody3: "Consultez les avis et les badges vérifiés, puis échangez directement via le chat sécurisé de l'app.",
     emptyZoneSub: "Publiez le premier job dans cette zone", adminNoDocWarning: "⚠️ Aucun document envoyé dans l'app — vérifier via WhatsApp", noNewJobsYet: "Aucun nouveau job pour l'instant",
-    positionSelectedLabel: "📍 Position sélectionnée", loadingWhatsappContacts: "Chargement des contacts WhatsApp...", interestedPeopleTitle: "Personnes intéressées",
+    positionSelectedLabel: "📍 Position sélectionnée", loadingWhatsappContacts: "Chargement des contacts...", interestedPeopleTitle: "Personnes intéressées",
     noContactYet: "Personne ne vous a encore contacté pour ce besoin.", yourWhatsappNumberLabel: "Ton numéro WhatsApp", whatsappNumberHint: "C'est sur ce numéro que tu recevras ton code de vérification à 7 chiffres.",
     idPhotoHint: "📄 Photo de ta pièce d'identité (CNI, passeport...)", tapToAddPhoto: "Toucher pour ajouter la photo", selfieHint: "🤳 Selfie de toi tenant la même pièce à côté de ton visage",
     tapToAddSelfie: "Toucher pour ajouter le selfie", noReviewsYet: "Pas encore d'avis pour ce prestataire.", loadingReviews: "Chargement des avis...",
-    reviewsLoadError: "Erreur de chargement des avis.", contactBeforeReview: "Contactez ce prestataire par WhatsApp pour pouvoir laisser un avis ensuite.", alreadyReviewed: "✓ Vous avez déjà laissé un avis pour cet échange.",
+    reviewsLoadError: "Erreur de chargement des avis.", contactBeforeReview: "Contactez ce prestataire dans le chat pour pouvoir laisser un avis ensuite.", alreadyReviewed: "✓ Vous avez déjà laissé un avis pour cet échange.",
     reviewModalTitle: "Comment ça s'est passé ?", prefSaveError: "Préférence non enregistrée (réseau instable ?), réessayez.", welcomeBack: "Bon retour !",
     welcomeUser: "Bienvenue {name}", someUploadsFailed: "{n} photo(s) n'ont pas pu être envoyée(s) (réseau instable ?), le reste de l'annonce est publié quand même.", rejectedWrongType: "{n} fichier(s) ignoré(s) : format non supporté (JPG, PNG, WEBP ou GIF uniquement)",
     rejectedTooBig: "{n} photo(s) ignorée(s) : plus de {mb} Mo", noWhatsappManualCode: "Aucun numéro WhatsApp enregistré pour ce profil. Code à transmettre manuellement : {code}", myPublicationsCount: "Vous avez {n} publication(s)",
@@ -377,7 +377,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NOUVELLE OFFRE D'EMPLOI*\n\n*{title}*\n{desc}{requirements}\n\n💰 Rémunération : {price}\n📍 Lieu : {location}\n📞 Contact : {phone}\n\nPlus de détails ici : {link}",
     waMsgRequirementsLabel: "📋 *Exigences :*",
     waMsgOrConnector: " ou ",
-    waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?", chatFirstMsgJob: "Bonjour, je vous contacte depuis JobMarket pour : « {jobTitle} ». Est-ce toujours disponible ?",
+    waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?", chatFirstMsgJob: "Bonjour, je vous contacte depuis JobMarket pour : « {jobTitle} ». Est-ce toujours disponible ?", chatPinnedTitle: "Épinglés", chatCloseTitle: "Fermer", chatSearchPh: "Rechercher…", chatTabAll: "Toutes", chatTabUnread: "Non lues", chatEmptyTitle: "Chat sécurisé", chatEmptyBody: "Tes conversations apparaissent ici. Ouvre une annonce puis « Chat sécurisé » pour démarrer — la discussion continue d'une annonce à l'autre.", keyEnter: "Entrée = Envoyer", keyShiftEnter: "Maj+Entrée = Saut de ligne", keyEsc: "Échap = Fermer", keyCtrlF: "Ctrl+F = Rechercher", chatSearchTitle: "Rechercher", chatMsgSearchPh: "Rechercher dans la conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Joindre", chatSendTitle: "Envoyer", chatMsgPh: "Écris ton message…", chatPhotosAtt: "Photos", chatDropText: "Dépose une image ici", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 Mo", chatContactInfo: "Infos du contact", chatStarAction: "Épingler", chatAboutLabel: "À propos", chatMediaSection: "Médias, liens et documents", chatFwdTitle: "Transférer le message à…", chatPollTitle: "Créer un sondage", chatPollQPh: "Pose une question…", chatPollAddOpt: "+ Ajouter une option", chatPollSend: "Envoyer le sondage", lockNotice: "Messages sécurisés — cette conversation reste entre vous deux.", newMsgs: "Nouveaux messages",
     catMenage: "Menage", catJardinage: "Jardinage", catMecanique: "Mecanique", catInfo: "Informatique",
     tipLocate: "Ma position", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Style carte",
     tipLang: "Langue", tipSearch: "Rechercher", tipNotifications: "Notifications", tipMessages: "Messages", tipClose: "Fermer",
@@ -428,7 +428,7 @@ const I18N = {
     chatSafetyNotice: "Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d'identité dans le chat.",
     chatInputPlaceholder: "Votre message...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Jobs total", adminStatUsers: "Utilisateurs",
-    adminStatToday: "Publiés aujourd'hui", adminStatCountry: "Pays actif", adminStatNotifOpenRate: "Taux d'ouverture notifs (7j)", adminStatContactsWeek: "Contacts WhatsApp (7j)", adminStatReviewsWeek: "Avis laissés (7j)", adminStatSignupsWeek: "Inscriptions (7j)", adminStatBoostsWeek: "Boosts utilisés (7j)", adminStatSearchesWeek: "Recherches (7j)",
+    adminStatToday: "Publiés aujourd'hui", adminStatCountry: "Pays actif", adminStatNotifOpenRate: "Taux d'ouverture notifs (7j)", adminStatContactsWeek: "Contacts (7j)", adminStatReviewsWeek: "Avis laissés (7j)", adminStatSignupsWeek: "Inscriptions (7j)", adminStatBoostsWeek: "Boosts utilisés (7j)", adminStatSearchesWeek: "Recherches (7j)",
     adminVerificationsTitle: "Vérifications en attente", adminAllJobsTitle: "Tous les jobs",
     adminLoading: "Chargement...", adminNoPending: "Aucune demande en attente.",
     reportLink: "Signaler cette annonce", reportModalTitle: "Signaler cette annonce",
@@ -528,7 +528,7 @@ const I18N = {
     reviewsNoneYet: "Pas encore d'avis pour ce prestataire.",
     reviewsCountWord: "avis",
     reviewsLoading: "Chargement des avis...",
-    reviewsContactFirst: "Contactez ce prestataire par WhatsApp pour pouvoir laisser un avis ensuite.",
+    reviewsContactFirst: "Contactez ce prestataire dans le chat pour pouvoir laisser un avis ensuite.",
     reviewsAlreadyDone: "✓ Vous avez déjà laissé un avis pour cet échange.",
     reviewsProviderFallback: "ce prestataire",
     reviewsLeaveBtn: "⭐ Laisser un avis",
@@ -600,11 +600,11 @@ const I18N = {
     onbTitle2: "Post your need in seconds", onbBody2: "Tap the + button to describe what you need. Nearby providers are notified instantly.",
     onbTitle3: "Reach out with confidence", onbBody3: "Check reviews and verified badges, then chat directly through the app's secure chat.",
     emptyZoneSub: "Post the first job in this area", adminNoDocWarning: "⚠️ No document sent in the app — verify via WhatsApp", noNewJobsYet: "No new jobs for now",
-    positionSelectedLabel: "📍 Position selected", loadingWhatsappContacts: "Loading WhatsApp contacts...", interestedPeopleTitle: "Interested people",
+    positionSelectedLabel: "📍 Position selected", loadingWhatsappContacts: "Loading contacts...", interestedPeopleTitle: "Interested people",
     noContactYet: "No one has contacted you about this request yet.", yourWhatsappNumberLabel: "Your WhatsApp number", whatsappNumberHint: "You'll receive your 7-digit verification code on this number.",
     idPhotoHint: "📄 Photo of your ID (national ID card, passport...)", tapToAddPhoto: "Tap to add the photo", selfieHint: "🤳 Selfie of you holding the same document next to your face",
     tapToAddSelfie: "Tap to add the selfie", noReviewsYet: "No reviews yet for this provider.", loadingReviews: "Loading reviews...",
-    reviewsLoadError: "Error loading reviews.", contactBeforeReview: "Contact this provider via WhatsApp so you can leave a review afterwards.", alreadyReviewed: "✓ You have already left a review for this exchange.",
+    reviewsLoadError: "Error loading reviews.", contactBeforeReview: "Contact this provider in the chat so you can leave a review afterwards.", alreadyReviewed: "✓ You have already left a review for this exchange.",
     reviewModalTitle: "How did it go?", prefSaveError: "Preference not saved (unstable network?), please try again.", welcomeBack: "Welcome back!",
     welcomeUser: "Welcome {name}", someUploadsFailed: "{n} photo(s) could not be uploaded (unstable network?), the rest of the listing was published anyway.", rejectedWrongType: "{n} file(s) ignored: unsupported format (JPG, PNG, WEBP or GIF only)",
     rejectedTooBig: "{n} photo(s) ignored: over {mb} MB", noWhatsappManualCode: "No WhatsApp number saved for this profile. Code to share manually: {code}", myPublicationsCount: "You have {n} listing(s)",
@@ -621,7 +621,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NEW JOB OPENING*\n\n*{title}*\n{desc}{requirements}\n\n💰 Pay: {price}\n📍 Location: {location}\n📞 Contact: {phone}\n\nMore details here: {link}",
     waMsgRequirementsLabel: "📋 *Requirements:*",
     waMsgOrConnector: " or ",
-    waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?", chatFirstMsgJob: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\". Is this still available?",
+    waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?", chatFirstMsgJob: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\". Is this still available?", chatPinnedTitle: "Starred", chatCloseTitle: "Close", chatSearchPh: "Search…", chatTabAll: "All", chatTabUnread: "Unread", chatEmptyTitle: "Secure chat", chatEmptyBody: "Your conversations appear here. Open a listing then “Secure chat” to start — the discussion continues from one listing to the next.", keyEnter: "Enter = Send", keyShiftEnter: "Shift+Enter = New line", keyEsc: "Esc = Close", keyCtrlF: "Ctrl+F = Search", chatSearchTitle: "Search", chatMsgSearchPh: "Search in conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Attach", chatSendTitle: "Send", chatMsgPh: "Type a message…", chatPhotosAtt: "Photos", chatDropText: "Drop an image here", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Contact info", chatStarAction: "Star", chatAboutLabel: "About", chatMediaSection: "Media, links and docs", chatFwdTitle: "Forward message to…", chatPollTitle: "Create a poll", chatPollQPh: "Ask a question…", chatPollAddOpt: "+ Add option", chatPollSend: "Send Poll", lockNotice: "Secured messages — this conversation stays between you two.", newMsgs: "New messages",
     catMenage: "Cleaning", catJardinage: "Gardening", catMecanique: "Mechanics", catInfo: "IT",
     tipLocate: "My location", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Map style",
     tipLang: "Language", tipSearch: "Search", tipNotifications: "Notifications", tipMessages: "Messages", tipClose: "Close",
@@ -672,7 +672,7 @@ const I18N = {
     chatSafetyNotice: "No AI key, no message sent to an external model. Never share a password, SMS code, bank card or ID document in the chat.",
     chatInputPlaceholder: "Your message...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Total jobs", adminStatUsers: "Users",
-    adminStatToday: "Posted today", adminStatCountry: "Active country", adminStatNotifOpenRate: "Notif open rate (7d)", adminStatContactsWeek: "WhatsApp contacts (7d)", adminStatReviewsWeek: "Reviews left (7d)", adminStatSignupsWeek: "Signups (7d)", adminStatBoostsWeek: "Boosts used (7d)", adminStatSearchesWeek: "Searches (7d)",
+    adminStatToday: "Posted today", adminStatCountry: "Active country", adminStatNotifOpenRate: "Notif open rate (7d)", adminStatContactsWeek: "Contacts (7d)", adminStatReviewsWeek: "Reviews left (7d)", adminStatSignupsWeek: "Signups (7d)", adminStatBoostsWeek: "Boosts used (7d)", adminStatSearchesWeek: "Searches (7d)",
     adminVerificationsTitle: "Pending verifications", adminAllJobsTitle: "All jobs",
     adminLoading: "Loading...", adminNoPending: "No pending requests.",
     reportLink: "Report this listing", reportModalTitle: "Report this listing",
@@ -772,7 +772,7 @@ const I18N = {
     reviewsNoneYet: "No reviews yet for this provider.",
     reviewsCountWord: "reviews",
     reviewsLoading: "Loading reviews...",
-    reviewsContactFirst: "Contact this provider via WhatsApp to be able to leave a review afterwards.",
+    reviewsContactFirst: "Contact this provider in the chat to be able to leave a review afterwards.",
     reviewsAlreadyDone: "✓ You have already left a review for this exchange.",
     reviewsProviderFallback: "this provider",
     reviewsLeaveBtn: "⭐ Leave a review",
@@ -844,11 +844,11 @@ const I18N = {
     onbTitle2: "Pubblica la tua richiesta in pochi secondi", onbBody2: "Tocca il pulsante + per descrivere ciò di cui hai bisogno. I professionisti vicini vengono avvisati subito.",
     onbTitle3: "Contatta con fiducia", onbBody3: "Consulta le recensioni e i badge verificati, poi chatta direttamente tramite la chat sicura dell'app.",
     emptyZoneSub: "Pubblica il primo lavoro in questa zona", adminNoDocWarning: "⚠️ Nessun documento inviato nell'app — verificare via WhatsApp", noNewJobsYet: "Nessun nuovo lavoro al momento",
-    positionSelectedLabel: "📍 Posizione selezionata", loadingWhatsappContacts: "Caricamento contatti WhatsApp...", interestedPeopleTitle: "Persone interessate",
+    positionSelectedLabel: "📍 Posizione selezionata", loadingWhatsappContacts: "Caricamento contatti...", interestedPeopleTitle: "Persone interessate",
     noContactYet: "Nessuno ti ha ancora contattato per questa richiesta.", yourWhatsappNumberLabel: "Il tuo numero WhatsApp", whatsappNumberHint: "Riceverai il tuo codice di verifica a 7 cifre su questo numero.",
     idPhotoHint: "📄 Foto del tuo documento d'identità (CI, passaporto...)", tapToAddPhoto: "Tocca per aggiungere la foto", selfieHint: "🤳 Selfie con lo stesso documento tenuto vicino al viso",
     tapToAddSelfie: "Tocca per aggiungere il selfie", noReviewsYet: "Ancora nessuna recensione per questo prestatore.", loadingReviews: "Caricamento recensioni...",
-    reviewsLoadError: "Errore nel caricamento delle recensioni.", contactBeforeReview: "Contatta questo prestatore via WhatsApp per poter lasciare una recensione in seguito.", alreadyReviewed: "✓ Hai già lasciato una recensione per questo scambio.",
+    reviewsLoadError: "Errore nel caricamento delle recensioni.", contactBeforeReview: "Contatta questo prestatore nella chat per poter lasciare una recensione in seguito.", alreadyReviewed: "✓ Hai già lasciato una recensione per questo scambio.",
     reviewModalTitle: "Com'è andata?", prefSaveError: "Preferenza non salvata (rete instabile?), riprova.", welcomeBack: "Bentornato!",
     welcomeUser: "Benvenuto {name}", someUploadsFailed: "{n} foto non sono state caricate (rete instabile?), il resto dell'annuncio è stato comunque pubblicato.", rejectedWrongType: "{n} file ignorati: formato non supportato (solo JPG, PNG, WEBP o GIF)",
     rejectedTooBig: "{n} foto ignorate: oltre {mb} MB", noWhatsappManualCode: "Nessun numero WhatsApp registrato per questo profilo. Codice da comunicare manualmente: {code}", myPublicationsCount: "Hai {n} annuncio/i",
@@ -865,7 +865,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NUOVA OFFERTA DI LAVORO*\n\n*{title}*\n{desc}{requirements}\n\n💰 Compenso: {price}\n📍 Luogo: {location}\n📞 Contatto: {phone}\n\nMaggiori dettagli qui: {link}",
     waMsgRequirementsLabel: "📋 *Requisiti:*",
     waMsgOrConnector: " o ",
-    waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?", chatFirstMsgJob: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\". È ancora disponibile?",
+    waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?", chatFirstMsgJob: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\". È ancora disponibile?", chatPinnedTitle: "Preferiti", chatCloseTitle: "Chiudi", chatSearchPh: "Cerca…", chatTabAll: "Tutte", chatTabUnread: "Non lette", chatEmptyTitle: "Chat sicura", chatEmptyBody: "Le tue conversazioni compaiono qui. Apri un annuncio poi « Chat sicura » per iniziare — la discussione continua da un annuncio all'altro.", keyEnter: "Invio = Invia", keyShiftEnter: "Maj+Invio = A capo", keyEsc: "Esc = Chiudi", keyCtrlF: "Ctrl+F = Cerca", chatSearchTitle: "Cerca", chatMsgSearchPh: "Cerca nella conversazione…", chatEmojiTitle: "Emoji", chatAttachTitle: "Allega", chatSendTitle: "Invia", chatMsgPh: "Scrivi un messaggio…", chatPhotosAtt: "Foto", chatDropText: "Rilascia un'immagine qui", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Info contatto", chatStarAction: "Preferisci", chatAboutLabel: "Info", chatMediaSection: "Media, link e documenti", chatFwdTitle: "Inoltra il messaggio a…", chatPollTitle: "Crea un sondaggio", chatPollQPh: "Fai una domanda…", chatPollAddOpt: "+ Aggiungi opzione", chatPollSend: "Invia sondaggio", lockNotice: "Messaggi protetti — questa conversazione resta tra voi due.", newMsgs: "Nuovi messaggi",
     catMenage: "Pulizie", catJardinage: "Giardinaggio", catMecanique: "Meccanica", catInfo: "Informatica",
     tipLocate: "La mia posizione", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Stile mappa",
     tipLang: "Lingua", tipSearch: "Cerca", tipNotifications: "Notifiche", tipMessages: "Messaggi", tipClose: "Chiudi",
@@ -916,7 +916,7 @@ const I18N = {
     chatSafetyNotice: "Nessuna chiave IA, nessun messaggio inviato a un modello esterno. Non condividere mai password, codici SMS, carte bancarie o documenti d'identità in chat.",
     chatInputPlaceholder: "Il tuo messaggio...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Lavori totali", adminStatUsers: "Utenti",
-    adminStatToday: "Pubblicati oggi", adminStatCountry: "Paese attivo", adminStatNotifOpenRate: "Tasso apertura notifiche (7g)", adminStatContactsWeek: "Contatti WhatsApp (7g)", adminStatReviewsWeek: "Recensioni lasciate (7g)", adminStatSignupsWeek: "Iscrizioni (7g)", adminStatBoostsWeek: "Boost utilizzati (7g)", adminStatSearchesWeek: "Ricerche (7g)",
+    adminStatToday: "Pubblicati oggi", adminStatCountry: "Paese attivo", adminStatNotifOpenRate: "Tasso apertura notifiche (7g)", adminStatContactsWeek: "Contatti (7g)", adminStatReviewsWeek: "Recensioni lasciate (7g)", adminStatSignupsWeek: "Iscrizioni (7g)", adminStatBoostsWeek: "Boost utilizzati (7g)", adminStatSearchesWeek: "Ricerche (7g)",
     adminVerificationsTitle: "Verifiche in attesa", adminAllJobsTitle: "Tutti i lavori",
     adminLoading: "Caricamento...", adminNoPending: "Nessuna richiesta in attesa.",
     reportLink: "Segnala questo annuncio", reportModalTitle: "Segnala questo annuncio",
@@ -1016,7 +1016,7 @@ const I18N = {
     reviewsNoneYet: "Nessuna recensione per questo prestatore.",
     reviewsCountWord: "recensioni",
     reviewsLoading: "Caricamento recensioni...",
-    reviewsContactFirst: "Contatta questo prestatore su WhatsApp per poter lasciare una recensione in seguito.",
+    reviewsContactFirst: "Contatta questo prestatore nella chat per poter lasciare una recensione in seguito.",
     reviewsAlreadyDone: "✓ Hai già lasciato una recensione per questo scambio.",
     reviewsProviderFallback: "questo prestatore",
     reviewsLeaveBtn: "⭐ Lascia una recensione",
@@ -1088,11 +1088,11 @@ const I18N = {
     onbTitle2: "Veröffentlichen Sie Ihren Bedarf in Sekunden", onbBody2: "Tippen Sie auf +, um zu beschreiben, was Sie brauchen. Anbieter in der Nähe werden sofort benachrichtigt.",
     onbTitle3: "Kontaktieren Sie mit Vertrauen", onbBody3: "Prüfen Sie Bewertungen und verifizierte Badges und chatten Sie dann direkt über den sicheren Chat der App.",
     emptyZoneSub: "Veröffentlichen Sie den ersten Auftrag in dieser Gegend", adminNoDocWarning: "⚠️ Kein Dokument in der App gesendet — über WhatsApp überprüfen", noNewJobsYet: "Momentan keine neuen Aufträge",
-    positionSelectedLabel: "📍 Position ausgewählt", loadingWhatsappContacts: "WhatsApp-Kontakte werden geladen...", interestedPeopleTitle: "Interessierte Personen",
+    positionSelectedLabel: "📍 Position ausgewählt", loadingWhatsappContacts: "Kontakte werden geladen...", interestedPeopleTitle: "Interessierte Personen",
     noContactYet: "Bisher hat Sie niemand zu dieser Anfrage kontaktiert.", yourWhatsappNumberLabel: "Ihre WhatsApp-Nummer", whatsappNumberHint: "Sie erhalten Ihren 7-stelligen Bestätigungscode auf dieser Nummer.",
     idPhotoHint: "📄 Foto Ihres Ausweisdokuments (Personalausweis, Reisepass...)", tapToAddPhoto: "Tippen, um das Foto hinzuzufügen", selfieHint: "🤳 Selfie von Ihnen mit demselben Dokument neben Ihrem Gesicht",
     tapToAddSelfie: "Tippen, um das Selfie hinzuzufügen", noReviewsYet: "Noch keine Bewertungen für diesen Anbieter.", loadingReviews: "Bewertungen werden geladen...",
-    reviewsLoadError: "Fehler beim Laden der Bewertungen.", contactBeforeReview: "Kontaktieren Sie diesen Anbieter über WhatsApp, um danach eine Bewertung abgeben zu können.", alreadyReviewed: "✓ Sie haben für diesen Austausch bereits eine Bewertung abgegeben.",
+    reviewsLoadError: "Fehler beim Laden der Bewertungen.", contactBeforeReview: "Kontaktieren Sie diesen Anbieter in der Chat-Unterhaltung, um danach eine Bewertung abgeben zu können.", alreadyReviewed: "✓ Sie haben für diesen Austausch bereits eine Bewertung abgegeben.",
     reviewModalTitle: "Wie ist es gelaufen?", prefSaveError: "Einstellung nicht gespeichert (instabile Verbindung?), bitte erneut versuchen.", welcomeBack: "Willkommen zurück!",
     welcomeUser: "Willkommen {name}", someUploadsFailed: "{n} Foto(s) konnten nicht hochgeladen werden (instabile Verbindung?), der Rest der Anzeige wurde trotzdem veröffentlicht.", rejectedWrongType: "{n} Datei(en) übersprungen: nicht unterstütztes Format (nur JPG, PNG, WEBP oder GIF)",
     rejectedTooBig: "{n} Foto(s) übersprungen: über {mb} MB", noWhatsappManualCode: "Keine WhatsApp-Nummer für dieses Profil gespeichert. Code manuell mitteilen: {code}", myPublicationsCount: "Sie haben {n} Anzeige(n)",
@@ -1109,7 +1109,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NEUES STELLENANGEBOT*\n\n*{title}*\n{desc}{requirements}\n\n💰 Vergütung: {price}\n📍 Ort: {location}\n📞 Kontakt: {phone}\n\nMehr Details hier: {link}",
     waMsgRequirementsLabel: "📋 *Anforderungen:*",
     waMsgOrConnector: " oder ",
-    waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?", chatFirstMsgJob: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\". Ist das noch verfügbar?",
+    waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?", chatFirstMsgJob: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\". Ist das noch verfügbar?", chatPinnedTitle: "Gestartet", chatCloseTitle: "Schließen", chatSearchPh: "Suchen…", chatTabAll: "Alle", chatTabUnread: "Ungelesen", chatEmptyTitle: "Sicherer Chat", chatEmptyBody: "Deine Gespräche erscheinen hier. Öffne eine Anzeige und dann « Sicherer Chat », um zu starten — die Unterhaltung geht von Anzeige zu Anzeige weiter.", keyEnter: "Enter = Senden", keyShiftEnter: "Strg+Enter = Zeilenumbruch", keyEsc: "Esc = Schließen", keyCtrlF: "Strg+F = Suchen", chatSearchTitle: "Suchen", chatMsgSearchPh: "Im Gespräch suchen…", chatEmojiTitle: "Emoji", chatAttachTitle: "Anhängen", chatSendTitle: "Senden", chatMsgPh: "Nachricht eingeben…", chatPhotosAtt: "Fotos", chatDropText: "Bild hier ablegen", chatDropSub: "JPG, PNG, WEBP, GIF — max. 8 MB", chatContactInfo: "Kontaktinfo", chatStarAction: "Markieren", chatAboutLabel: "Info", chatMediaSection: "Medien, Links und Dokumente", chatFwdTitle: "Nachricht weiterleiten an…", chatPollTitle: "Umfrage erstellen", chatPollQPh: "Stelle eine Frage…", chatPollAddOpt: "+ Option hinzufügen", chatPollSend: "Umfrage senden", lockNotice: "Geschützte Nachrichten — diese Unterhaltung bleibt zwischen euch beiden.", newMsgs: "Neue Nachrichten",
     catMenage: "Reinigung", catJardinage: "Gartenarbeit", catMecanique: "Mechanik", catInfo: "IT",
     tipLocate: "Mein Standort", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Kartenstil",
     tipLang: "Sprache", tipSearch: "Suchen", tipNotifications: "Benachrichtigungen", tipMessages: "Nachrichten", tipClose: "Schließen",
@@ -1160,7 +1160,7 @@ const I18N = {
     chatSafetyNotice: "Kein KI-Schlüssel, keine Nachricht wird an ein externes Modell gesendet. Teilen Sie im Chat niemals Passwörter, SMS-Codes, Bankkarten oder Ausweisdokumente.",
     chatInputPlaceholder: "Ihre Nachricht...",
     adminBadge: "ADMIN", adminStatJobsTotal: "Jobs gesamt", adminStatUsers: "Benutzer",
-    adminStatToday: "Heute veröffentlicht", adminStatCountry: "Aktives Land", adminStatNotifOpenRate: "Öffnungsrate Benachrichtigungen (7T)", adminStatContactsWeek: "WhatsApp-Kontakte (7T)", adminStatReviewsWeek: "Abgegebene Bewertungen (7T)", adminStatSignupsWeek: "Anmeldungen (7T)", adminStatBoostsWeek: "Genutzte Boosts (7T)", adminStatSearchesWeek: "Suchanfragen (7T)",
+    adminStatToday: "Heute veröffentlicht", adminStatCountry: "Aktives Land", adminStatNotifOpenRate: "Öffnungsrate Benachrichtigungen (7T)", adminStatContactsWeek: "Kontakte (7T)", adminStatReviewsWeek: "Abgegebene Bewertungen (7T)", adminStatSignupsWeek: "Anmeldungen (7T)", adminStatBoostsWeek: "Genutzte Boosts (7T)", adminStatSearchesWeek: "Suchanfragen (7T)",
     adminVerificationsTitle: "Ausstehende Verifizierungen", adminAllJobsTitle: "Alle Jobs",
     adminLoading: "Wird geladen...", adminNoPending: "Keine ausstehenden Anfragen.",
     reportLink: "Diese Anzeige melden", reportModalTitle: "Diese Anzeige melden",
@@ -1260,7 +1260,7 @@ const I18N = {
     reviewsNoneYet: "Noch keine Bewertungen für diesen Anbieter.",
     reviewsCountWord: "Bewertungen",
     reviewsLoading: "Bewertungen werden geladen...",
-    reviewsContactFirst: "Kontaktieren Sie diesen Anbieter über WhatsApp, um später eine Bewertung abgeben zu können.",
+    reviewsContactFirst: "Kontaktieren Sie diesen Anbieter in der Chat-Unterhaltung, um später eine Bewertung abgeben zu können.",
     reviewsAlreadyDone: "✓ Sie haben bereits eine Bewertung für diesen Austausch abgegeben.",
     reviewsProviderFallback: "diesen Anbieter",
     reviewsLeaveBtn: "⭐ Bewertung abgeben",
@@ -1332,11 +1332,11 @@ const I18N = {
     onbTitle2: "几秒钟内发布您的需求", onbBody2: "点击 + 按钮描述您的需求,附近的服务商会立即收到通知。",
     onbTitle3: "放心联系", onbBody3: "查看评价和认证徽章,然后通过应用内的安全聊天直接交流。",
     emptyZoneSub: "成为此区域首个发布工作的人", adminNoDocWarning: "⚠️ 应用内未上传任何文件 — 请通过WhatsApp核实", noNewJobsYet: "暂无新的工作机会",
-    positionSelectedLabel: "📍 已选定位置", loadingWhatsappContacts: "正在加载WhatsApp联系人...", interestedPeopleTitle: "感兴趣的人",
+    positionSelectedLabel: "📍 已选定位置", loadingWhatsappContacts: "正在加载联系人...", interestedPeopleTitle: "感兴趣的人",
     noContactYet: "目前还没有人就此需求联系您。", yourWhatsappNumberLabel: "您的WhatsApp号码", whatsappNumberHint: "您将在此号码上收到7位数验证码。",
     idPhotoHint: "📄 身份证件照片(身份证、护照等)", tapToAddPhoto: "点击添加照片", selfieHint: "🤳 手持同一证件贴近面部的自拍照",
     tapToAddSelfie: "点击添加自拍照", noReviewsYet: "该服务者暂无评价。", loadingReviews: "正在加载评价...",
-    reviewsLoadError: "评价加载出错。", contactBeforeReview: "请先通过WhatsApp联系该服务者,之后才能留下评价。", alreadyReviewed: "✓ 您已针对此次交流留下评价。",
+    reviewsLoadError: "评价加载出错。", contactBeforeReview: "请先在聊天中联系该服务者,之后才能留下评价。", alreadyReviewed: "✓ 您已针对此次交流留下评价。",
     reviewModalTitle: "体验如何?", prefSaveError: "偏好设置未保存(网络不稳定?),请重试。", welcomeBack: "欢迎回来!",
     welcomeUser: "欢迎 {name}", someUploadsFailed: "{n}张照片上传失败(网络不稳定?),但信息的其余部分已成功发布。", rejectedWrongType: "已忽略{n}个文件:格式不支持(仅支持JPG、PNG、WEBP或GIF)",
     rejectedTooBig: "已忽略{n}张照片:超过{mb} MB", noWhatsappManualCode: "该资料未保存WhatsApp号码。请手动告知验证码:{code}", myPublicationsCount: "您有{n}条发布信息",
@@ -1353,7 +1353,7 @@ const I18N = {
     waMsgShareJob: "🔊 *新工作机会*\n\n*{title}*\n{desc}{requirements}\n\n💰 报酬：{price} XAF\n📍 地点：{location}\n📞 联系方式：{phone}\n\n详情请点击：{link}",
     waMsgRequirementsLabel: "📋 *要求：*",
     waMsgOrConnector: " 或 ",
-    waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?", chatFirstMsgJob: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。请问这个还可以预约吗?",
+    waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?", chatFirstMsgJob: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。请问这个还可以预约吗?", chatPinnedTitle: "已加星", chatCloseTitle: "关闭", chatSearchPh: "搜索…", chatTabAll: "全部", chatTabUnread: "未读", chatEmptyTitle: "安全聊天", chatEmptyBody: "你的对话会显示在这里。打开一个公告，然后点击「安全聊天」开始——对话会跨公告继续。", keyEnter: "回车 = 发送", keyShiftEnter: "Shift+回车 = 换行", keyEsc: "Esc = 关闭", keyCtrlF: "Ctrl+F = 搜索", chatSearchTitle: "搜索", chatMsgSearchPh: "在对话中搜索…", chatEmojiTitle: "表情", chatAttachTitle: "附加", chatSendTitle: "发送", chatMsgPh: "输入消息…", chatPhotosAtt: "照片", chatDropText: "将图片拖放到这里", chatDropSub: "JPG、PNG、WEBP、GIF — 最大 8 MB", chatContactInfo: "联系信息", chatStarAction: "加星", chatAboutLabel: "关于", chatMediaSection: "媒体、链接和文档", chatFwdTitle: "转发消息给…", chatPollTitle: "创建投票", chatPollQPh: "提个问题…", chatPollAddOpt: "+ 添加选项", chatPollSend: "发送投票", lockNotice: "消息已加密 — 此对话仅你们双方可见。", newMsgs: "新消息",
     catMenage: "清洁", catJardinage: "园艺", catMecanique: "机械", catInfo: "信息技术",
     tipLocate: "我的位置", tipZoomIn: "放大", tipZoomOut: "缩小", tipMapStyle: "地图样式",
     tipLang: "语言", tipSearch: "搜索", tipNotifications: "通知", tipMessages: "消息", tipClose: "关闭",
@@ -1404,7 +1404,7 @@ const I18N = {
     chatSafetyNotice: "没有AI密钥,不会向外部模型发送任何消息。切勿在聊天中分享密码、短信验证码、银行卡或身份证件。",
     chatInputPlaceholder: "您的消息...",
     adminBadge: "管理员", adminStatJobsTotal: "工作总数", adminStatUsers: "用户",
-    adminStatToday: "今日发布", adminStatCountry: "活跃国家", adminStatNotifOpenRate: "通知打开率（7天）", adminStatContactsWeek: "WhatsApp联系（7天）", adminStatReviewsWeek: "已留评价（7天）", adminStatSignupsWeek: "注册数（7天）", adminStatBoostsWeek: "已用推广（7天）", adminStatSearchesWeek: "搜索次数（7天）",
+    adminStatToday: "今日发布", adminStatCountry: "活跃国家", adminStatNotifOpenRate: "通知打开率（7天）", adminStatContactsWeek: "联系（7天）", adminStatReviewsWeek: "已留评价（7天）", adminStatSignupsWeek: "注册数（7天）", adminStatBoostsWeek: "已用推广（7天）", adminStatSearchesWeek: "搜索次数（7天）",
     adminVerificationsTitle: "待处理的验证", adminAllJobsTitle: "所有工作",
     adminLoading: "加载中...", adminNoPending: "没有待处理的申请。",
     reportLink: "举报此招聘信息", reportModalTitle: "举报此招聘信息",
@@ -1504,7 +1504,7 @@ const I18N = {
     reviewsNoneYet: "该服务商暂无评价。",
     reviewsCountWord: "条评价",
     reviewsLoading: "正在加载评价...",
-    reviewsContactFirst: "请通过WhatsApp联系该服务商，之后才能留下评价。",
+    reviewsContactFirst: "请在聊天中联系该服务商，之后才能留下评价。",
     reviewsAlreadyDone: "✓ 您已经为此次交流留下过评价。",
     reviewsProviderFallback: "该服务商",
     reviewsLeaveBtn: "⭐ 留下评价",
@@ -1603,7 +1603,8 @@ function widgetI18nFor(lang) {
     editBanner: L.editBanner, noResults: L.noResults, emojiPh: L.emojiSearchPh, option: L.optionN,
     reply: L.ctxReply, react: L.ctxReact, edit: L.ctxEdit, copy: L.ctxCopy, forward: L.ctxForward,
     star: L.ctxStar, unstar: L.ctxUnstar, pin: L.ctxPin, unpin: L.ctxUnpin, del: L.ctxDelete,
-    noStarred: L.noStarred, nStarred: L.nStarred, about: L.profileAbout, noMedia: L.noMedia, votes: L.votes, download: L.downloadBtn
+    noStarred: L.noStarred, nStarred: L.nStarred, about: L.profileAbout, noMedia: L.noMedia, votes: L.votes, download: L.downloadBtn,
+    lockNotice: L.lockNotice, newMsgs: L.newMsgs
   };
 }
 
@@ -6330,6 +6331,7 @@ let pendingChatSend = null;    // envoi optimiste en attente de confirmation
 let pendingJobBar = null;      // job à afficher en bannière à l'ouverture
 let chatTypingTimeout = null, lastChatTypingSent = 0;
 let presenceCache = null, presenceCacheTs = 0;
+let lastVibTs = 0; // timestamp du dernier message reçu ayant fait vibrer (anti-boucle)
 
 // threadId = les deux uid triés (une conversation par personne, comme
 // WhatsApp — le job ne change plus la conversation)
@@ -6498,6 +6500,13 @@ function syncChatWidgetConvs() {
 function onChatWidgetOpened(cid) {
     const user = auth.currentUser;
     if (!user) return;
+    // « Nouveaux messages » (chip vert, comme WhatsApp) : seulement si la
+    // conv avait des non-lus à l'ouverture (les non-lus étant marqués lus
+    // juste après, on pose le drapeau AVANT).
+    if (window.W) {
+      const e = lastInboxSnapshot.find(([t]) => t === cid);
+      W._newMsgsSep = !!(e && (e.unread || 0) > 0);
+    }
     // Conversation au format ancien (« uidA_uidB__job ») : on la consolide
     // dans la conversation unique du duo (« uidA_uidB ») — les anciens
     // messages sont migrés par healLegacyThreadsForPair (idempotent).
@@ -6538,6 +6547,7 @@ function attachChatListeners(cid, peerUid) {
     const me = auth.currentUser;
     if (!me) return;
     chatThread = cid;
+    lastVibTs = Date.now(); // ne vibrer que pour les messages arrivés APRÈS l'ouverture
     // Messages (lecture complète du dernier segment : gère ajouts,
     // suppressions, réactions, accusés — le widget re-rend)
     chatMsgsRef = db.ref('chats/' + cid + '/messages').limitToLast(200);
@@ -6559,6 +6569,11 @@ function attachChatListeners(cid, peerUid) {
             if (matched) pendingChatSend = null;
             else msgs.push(pendingChatSend.tempMsg);
         }
+        // Vibration à la réception (Android, comme WhatsApp) : seulement pour
+        // un message de l'autre parti ARRIVÉ pendant que la conv est ouverte.
+        let lastOtherTs = 0;
+        for (const m of msgs) if (m.from !== 'me' && (m._ts || 0) > lastOtherTs) lastOtherTs = m._ts;
+        if (lastOtherTs > lastVibTs) { lastVibTs = lastOtherTs; vibrateDevice(30); }
         W.setMessages(cid, msgs);
     });
     if (peerUid) {
@@ -6774,6 +6789,8 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
           if (input && !input.value && (W.convs[tid] || []).length === 0) {
             input.value = t('chatFirstMsgJob').replace('{jobTitle}', String(jobTitle).slice(0, 80));
             if (W.autoResize) W.autoResize(input);
+            // clavier prêt (mobile) : l'utilisateur corrige si besoin et envoie en 1 tap
+            setTimeout(() => { try { input.focus(); } catch (e) {} }, 300);
           }
         }
     }
@@ -6903,10 +6920,20 @@ function patchChatWidgetForFirebase() {
         this.sendMessage(toCid, data);
     };
 
-    // ---- Bouton envoyer : texte uniquement (pas d'enregistrement vocal) ----
+    // ---- Bouton envoyer : texte uniquement (pas d'enregistrement vocal —
+    // le preset Cloudinary n'accepte que des images : voir LIRE_MOI, section
+    // « Messages vocaux »). On force l'icône « envoyer » en permanence pour
+    // ne jamais afficher un micro inactif. ----
     W.onSendBtn = function() {
         const t = document.getElementById('waTxt');
         if (t && t.value.trim()) this._send();
+    };
+    const origUpdSend = W._updSend;
+    W._updSend = function() {
+      origUpdSend.call(this);
+      // ensuite : on masque le micro (inactif) et on force l'icône envoyer
+      try { const mic = document.getElementById('waMicIco'); if (mic) mic.style.display = 'none'; } catch (e) {}
+      try { const send = document.getElementById('waSendIco'); if (send) send.style.display = 'block'; } catch (e) {}
     };
 
     // ---- Thème : le widget pose data-theme sur #wa, nos CSS le lisent sur

@@ -35,7 +35,7 @@ const FALLBACK={
   noResults:"0 résultat(s)",emojiPh:"Rechercher…",option:"Option {x}",reply:"Répondre",react:"Réagir",edit:"Modifier",
   copy:"Copier",forward:"Transférer",star:"Étoiler",unstar:"Retirer l'étoile",pin:"Épingler",unpin:"Désépingler",del:"Supprimer",
   noStarred:"Aucun message étoilé",nStarred:"{x} message(s) étoilé(s)",about:"Salut 👋 Je suis sur JobMarket.",
-  noMedia:"Aucun média partagé",votes:"vote",download:"Enregistrer"
+  noMedia:"Aucun média partagé",votes:"vote",download:"Enregistrer",lockNotice:"Messages sécurisés — cette conversation reste entre vous deux.",newMsgs:"Nouveaux messages"
 };
 function T(k,x){let v=LANG[k]!==undefined?LANG[k]:FALLBACK[k];if(v===undefined)v=k;if(x!==undefined&&typeof v==='string')v=v.split('{x}').join(String(x));return v}
 
@@ -173,6 +173,12 @@ const W={
 
   renderMsgs(){
     const el=$('waMsgs'),ms=this.convs[this.activeId]||[];let h='',lastDate='',lastFrom='';
+    // Conversation vide : bandeau de confiance en tête (comme la notice de
+    // chiffrement de WhatsApp) — rassure au tout premier message.
+    if (ms.length === 0) h += `<div class="wa-sys"><span>🔒 ${T('lockNotice')}</span></div>`;
+    // Séparateur « Nouveaux messages » (chip vert, comme WhatsApp) : posé par
+    // app.js à l'ouverture d'une conv qui avait des non-lus.
+    if (this._newMsgsSep && ms.length) h += `<div class="wa-sys"><span class="wa-newmsg">${T('newMsgs')}</span></div>`;
     const contact=this.contacts.find(c=>c.id===this.activeId);
     const isGroup=contact?.isGroup;
     ms.forEach((m,i)=>{
@@ -413,6 +419,29 @@ const W={
     });
     // Toast click
     $('waToast').addEventListener('click',()=>{const name=$('waToastName').textContent;const c=this.contacts.find(c=>c.name===name);if(c)this.openChat(c.id)});
+
+    // Long-appui (mobile) = menu contextuel du message (comme WhatsApp).
+    // 500 ms sans mouvement → menu ; tout glissement > 12 px l'annule
+    // (ça reste un chat fluide, pas un écran verrouillé).
+    let lpTimer=null,lpMid=null,lpStart=null;
+    const cancelLP=()=>{if(lpTimer){clearTimeout(lpTimer);lpTimer=null}};
+    main.addEventListener('touchstart',e=>{
+      const row=e.target&&e.target.closest?e.target.closest('.wa-mrow'):null;
+      if(!row||!this.activeId){cancelLP();lpMid=null;return}
+      lpMid=row.getAttribute('data-mid');
+      lpStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
+      cancelLP();
+      lpTimer=setTimeout(()=>{
+        lpTimer=null;const mid=lpMid;lpMid=null;
+        if(mid&&this.convs[this.activeId])this.ctxMsg({preventDefault:()=>{},clientX:lpStart?lpStart.x:0,clientY:lpStart?lpStart.y:0},mid);
+      },500);
+    },{passive:true});
+    main.addEventListener('touchmove',e=>{
+      if(!lpTimer||!lpStart)return;
+      if(Math.hypot(e.touches[0].clientX-lpStart.x,e.touches[0].clientY-lpStart.y)>12)cancelLP();
+    },{passive:true});
+    main.addEventListener('touchend',cancelLP);
+    main.addEventListener('touchcancel',cancelLP);
   },
 };
 
