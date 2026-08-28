@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260827a">
+<html lang="fr" data-app-build="20260827c">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1486,7 +1486,10 @@ body{
 
 <!-- ===== SEARCH PANEL (recherche par nom + filtre par rayon) ===== -->
 <div class="search-panel" id="searchPanel">
-  <input type="text" class="search-input" id="jobSearchInput" data-i18n-placeholder="searchJobPlaceholder" placeholder="Rechercher un job (ex: plombier, menage...)">
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input type="text" class="search-input" id="jobSearchInput" data-i18n-placeholder="searchJobPlaceholder" placeholder="Rechercher un job (ex: plombier, menage...)">
+    <button type="button" class="search-close-btn" onclick="toggleSearchPanel()" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">✕</button>
+  </div>
   <div class="filter-chips" id="radiusFilters">
     <button type="button" class="filter-chip active" data-radius="0">Tout</button>
     <button type="button" class="filter-chip" data-radius="0.5">500 m</button>
@@ -1881,8 +1884,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js"></script>
-<script src="app.js?v=20260827a"></script>
+<script src="chat-widget.js?v=20260827c"></script>
+<script src="app.js?v=20260827c"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -1945,11 +1948,11 @@ body{
                 <span data-i18n="deleteListing">Supprimer l'annonce</span>
             </button>
         </div>
-        <button class="btn" id="previewChatBtn" onclick="openUserChatFromPreview()" style="background:none;border:1px solid var(--blue,#2D6CDF);color:var(--blue,#2D6CDF);">
-            <span style="font-size:16px;">🔒</span> Chat sécurisé
+        <button class="btn btn-green" id="previewChatBtn" onclick="openUserChatFromPreview()">
+            <span style="font-size:16px;">🔒</span> <span data-i18n="secureChat">Chat sécurisé</span>
         </button>
-        <button class="btn btn-green" id="previewWhatsAppBtn" onclick="contactViaWhatsAppFromPreview()">
-            <span style="font-size:18px;">📞</span> WhatsApp
+        <button class="btn" id="previewWhatsAppBtn" onclick="contactViaWhatsAppFromPreview()" style="background:none;border:1px solid #25D366;color:#25D366;">
+            <span style="font-size:16px;">📞</span> WhatsApp
         </button>
         <button class="btn btn-blue" onclick="shareJobViaWhatsApp()">
             <span style="font-size:16px;">🔗</span> <span data-i18n="shareWhatsApp">Partager sur WhatsApp</span>
@@ -2131,6 +2134,21 @@ body{
   gap: 10px;
   animation: slide-down 0.3s var(--ease);
 }
+.search-close-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 12px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.search-close-btn:active { transform: scale(.94); }
 @keyframes slide-down {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }

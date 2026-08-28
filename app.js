@@ -13,17 +13,29 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260827a';
+const APP_BUILD = '20260827c';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
         if (htmlBuild && htmlBuild !== APP_BUILD) {
             const b = document.createElement('div');
             b.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#0A0A0F;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;font-family:sans-serif;';
+            // Cet écran s'affiche AVANT que I18N ne soit chargé (tête de
+            // fichier) : dictionnaire local minimal, langue du navigateur.
+            const VF = {
+                fr: ['Nouvelle version disponible', "Cette page tourne sur une version obsolète du code.<br/>Recharge pour récupérer les corrections.", "Recharger l'app"],
+                en: ['New version available', 'This page is running an outdated version of the code.<br/>Reload to get the fixes.', 'Reload the app'],
+                it: ['Nuova versione disponibile', 'Questa pagina usa una versione obsoleta del codice.<br/>Ricarica per ricevere le correzioni.', 'Ricarica l\'app'],
+                de: ['Neue Version verfügbar', 'Diese Seite nutzt eine veraltete Code-Version.<br/>Neu laden, um die Korrekturen zu erhalten.', 'App neu laden'],
+                zh: ['有新版本可用', '此页面正在运行旧版本代码。<br/>请重新加载以获取修复。', '重新加载应用']
+            };
+            // Langue : celle choisie dans l'app (mémorisée), sinon celle du navigateur
+            let savedLang = null; try { savedLang = localStorage.getItem('appLang'); } catch (e) {}
+            const V = VF[(savedLang || (navigator.language || 'fr')).slice(0, 2)] || VF.fr;
             b.innerHTML = '<div style="font-size:44px;">🔄</div>' +
-                '<div style="font-size:19px;font-weight:800;">Nouvelle version disponible</div>' +
-                '<div style="font-size:14px;opacity:.75;">Cette page tourne sur une version obsolète du code.<br/>Recharge pour récupérer les corrections.</div>' +
-                '<button onclick="location.reload()" style="margin-top:8px;background:#2D6CDF;color:#fff;border:none;padding:14px 30px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">Recharger l\'app</button>';
+                '<div style="font-size:19px;font-weight:800;">' + V[0] + '</div>' +
+                '<div style="font-size:14px;opacity:.75;">' + V[1] + '</div>' +
+                '<button onclick="location.reload()" style="margin-top:8px;background:#2D6CDF;color:#fff;border:none;padding:14px 30px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">' + V[2] + '</button>';
             document.body.appendChild(b);
         }
     } catch (e) { /* silencieux : jamais bloquant */ }
@@ -355,13 +367,13 @@ const I18N = {
     positionSavedFill: "Position enregistrée ! Remplissez le formulaire de job.", photoUploadError: "Erreur lors de l'envoi de la photo (réseau instable ?), réessayez.", whatsappOpenError: "Erreur lors de l'ouverture de WhatsApp. Réessayez.",
     chooseRatingFirst: "Choisissez une note avant d'envoyer", reviewSendError: "Erreur lors de l'envoi de l'avis", mustBeLoggedIn: "Vous devez être connecté.",
     fillNameAndJob: "Veuillez renseigner votre nom/société et votre métier/spécialité.", profileSavedSuccess: "Profil Pro enregistré avec succès !", genericError: "Une erreur est survenue.",
-    mustBeLoggedInWhatsapp: "Vous devez être connecté pour écrire sur WhatsApp.", mustCompleteProfileContact: "Vous devez compléter votre profil (nom/société et métier/spécialité) pour contacter cette personne.", phoneUnavailable: "Numéro de téléphone indisponible.",
+    mustBeLoggedInWhatsapp: "Vous devez être connecté pour écrire sur WhatsApp.", itsOwnJob: "C'est ta propre annonce.", itsOwnJobShort: "C'est ta propre annonce.", paymentReceived: "🎉 Merci ! Paiement reçu, ton compte s'active dans quelques secondes...", accountActivated: "✅ Ton compte est activé ! Merci de ta confiance. 🙏", confirmDeleteListing: "Supprimer définitivement cette annonce ?", verifying: "Vérification...", uploading: "Téléchargement...", saving: "Enregistrement en cours...", sendingPhotos: "Envoi des photos...", alreadyVerified: "✅ Déjà vérifié", proActiveUntil: "⭐ PRO actif jusqu'au {x} (renouveler)", freeLabel: "Gratuit", activeShort: "Actif",  versionTitle: "Nouvelle version disponible", versionBody: "Cette page tourne sur une version obsolète du code. Recharge pour récupérer les corrections.", versionBtn: "Recharger l'app", typing: "en train d'écrire…", online: "en ligne", lastSeen: "vu {x}", photoMsg: "Photo", voiceMsg: "Voice", fileMsg: "Fichier", editedTag: "modifié", today: "Aujourd'hui", yesterday: "Hier", youTag: "Toi", unknownName: "Inconnu", editBanner: "Modification du message", noResults: "0 résultat(s)", emojiSearchPh: "Rechercher…", optionN: "Option {x}", ctxReply: "Répondre", ctxReact: "Réagir", ctxEdit: "Modifier", ctxCopy: "Copier", ctxForward: "Transférer", ctxStar: "Étoiler", ctxUnstar: "Retirer l'étoile", ctxPin: "Épingler", ctxUnpin: "Désépingler", ctxDelete: "Supprimer", noStarred: "Aucun message étoilé", nStarred: "{x} message(s) étoilé(s)", profileAbout: "Salut 👋 Je suis sur JobMarket.", noMedia: "Aucun média partagé", votes: "vote", downloadBtn: "Enregistrer", sendErrorPrefix: "Erreur envoi : ", deleteAllConfirm: "Supprimer ce message pour TOUT LE MONDE ?\n\nOK     = pour tout le monde\nAnnuler = seulement pour moi", imagesOnly: "Images uniquement (JPG, PNG, WEBP, GIF).", photoTooBig: "Photo trop lourde (max 8 Mo).", photoAdded: "Photo ajoutée ! 📸", photoDeleted: "Photo supprimée.", maxPhotos: "Maximum 6 photos. Supprime-en une d'abord.", photoUploading: "Téléchargement de la photo...", statusUpdated: "Statut mis à jour : ", availNowFull: "Disponible 🟢", availWeekFull: "Cette semaine 🟠", availBusyFull: "Occupé 🔴", myLabel: "Moi", availNowBadge: "🟢 Dispo", availWeekBadge: "🟠 Cette sem.", activeNow: "⚡ Actif à l'instant", activeAgoMin: "🕐 Actif il y a {x} min", activeAgoH: "🕐 Actif il y a {x} h", activeAgoD: "📅 Actif il y a {x} j", inactiveAgo: "📅 Inactif depuis un moment", activeUnknown: "Activité inconnue", timeAgoNow: "à l'instant", timeAgoMin: "il y a {x} min", timeAgoH: "il y a {x} h", timeAgoD: "il y a {x} j", qrAvailable: "Je suis disponible", qrPrice: "C'est combien ?", qrWhen: "Quand tu commences ?", qrOnWay: "Je suis en route", qrGo: "D'accord, on part", qrThanks: "Merci beaucoup", qrHello: "Bonjour", qrAgree: "D'accord", qrCall: "Je t'appelle",  mustCompleteProfileContact: "Vous devez compléter votre profil (nom/société et métier/spécialité) pour contacter cette personne.", phoneUnavailable: "Numéro de téléphone indisponible.",
     cannotComputeRoute: "Impossible de calculer l'itinéraire sans votre position.",
     notifTitle: "Nouveaux jobs", publishBtn: "Publier",
     catAll: "Tous", catBtp: "BTP", catElec: "Electricite", catPlomberie: "Plomberie",
     navMap: "Carte", navList: "Liste", navSearch: "Chercher", navAccount: "Compte",
     waMsgReferral: "Rejoins-moi sur JobMarket Cameroon pour trouver ou proposer des services près de chez toi : {link}",
-    waMsgShareJob: "🔊 *NOUVELLE OFFRE D'EMPLOI*\n\n*{title}*\n{desc}{requirements}\n\n💰 Rémunération : {price} XAF\n📍 Lieu : {location}\n📞 Contact : {phone}\n\nPlus de détails ici : {link}",
+    waMsgShareJob: "🔊 *NOUVELLE OFFRE D'EMPLOI*\n\n*{title}*\n{desc}{requirements}\n\n💰 Rémunération : {price}\n📍 Lieu : {location}\n📞 Contact : {phone}\n\nPlus de détails ici : {link}",
     waMsgRequirementsLabel: "📋 *Exigences :*",
     waMsgOrConnector: " ou ",
     waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?",
@@ -599,13 +611,13 @@ const I18N = {
     positionSavedFill: "Position saved! Fill in the job form.", photoUploadError: "Error uploading the photo (unstable network?), please try again.", whatsappOpenError: "Error opening WhatsApp. Please try again.",
     chooseRatingFirst: "Choose a rating before sending", reviewSendError: "Error sending the review", mustBeLoggedIn: "You must be logged in.",
     fillNameAndJob: "Please fill in your name/company and your trade/specialty.", profileSavedSuccess: "Pro Profile saved successfully!", genericError: "An error occurred.",
-    mustBeLoggedInWhatsapp: "You must be logged in to message on WhatsApp.", mustCompleteProfileContact: "You must complete your profile (name/company and trade/specialty) to contact this person.", phoneUnavailable: "Phone number unavailable.",
+    mustBeLoggedInWhatsapp: "You must be logged in to message on WhatsApp.", itsOwnJob: "This is your own listing.", itsOwnJobShort: "This is your own listing.", paymentReceived: "🎉 Thanks! Payment received, your account activates in a few seconds...", accountActivated: "✅ Your account is active! Thank you for your trust. 🙏", confirmDeleteListing: "Permanently delete this listing?", verifying: "Verifying...", uploading: "Uploading...", saving: "Saving...", sendingPhotos: "Sending photos...", alreadyVerified: "✅ Already verified", proActiveUntil: "⭐ PRO active until {x} (renew)", freeLabel: "Free", activeShort: "Active",  versionTitle: "New version available", versionBody: "This page is running an outdated version of the code. Reload to get the fixes.", versionBtn: "Reload the app", typing: "typing…", online: "online", lastSeen: "last seen {x}", photoMsg: "Photo", voiceMsg: "Voice", fileMsg: "File", editedTag: "edited", today: "Today", yesterday: "Yesterday", youTag: "You", unknownName: "Unknown", editBanner: "Editing message", noResults: "0 results", emojiSearchPh: "Search…", optionN: "Option {x}", ctxReply: "Reply", ctxReact: "React", ctxEdit: "Edit", ctxCopy: "Copy", ctxForward: "Forward", ctxStar: "Star", ctxUnstar: "Unstar", ctxPin: "Pin", ctxUnpin: "Unpin", ctxDelete: "Delete", noStarred: "No starred messages", nStarred: "{x} starred message(s)", profileAbout: "Hi 👋 I'm on JobMarket.", noMedia: "No shared media yet", votes: "vote(s)", downloadBtn: "Save", sendErrorPrefix: "Send error: ", deleteAllConfirm: "Delete this message for EVERYONE?\n\nOK     = for everyone\nCancel = for me only", imagesOnly: "Images only (JPG, PNG, WEBP, GIF).", photoTooBig: "Photo too large (max 8 MB).", photoAdded: "Photo added! 📸", photoDeleted: "Photo deleted.", maxPhotos: "Maximum 6 photos. Delete one first.", photoUploading: "Uploading photo...", statusUpdated: "Status updated: ", availNowFull: "Available 🟢", availWeekFull: "This week 🟠", availBusyFull: "Busy 🔴", myLabel: "Me", availNowBadge: "🟢 Avail.", availWeekBadge: "🟠 This week", activeNow: "⚡ Active just now", activeAgoMin: "🕐 Active {x} min ago", activeAgoH: "🕐 Active {x} h ago", activeAgoD: "📅 Active {x} d ago", inactiveAgo: "📅 Inactive for a while", activeUnknown: "Unknown activity", timeAgoNow: "just now", timeAgoMin: "{x} min ago", timeAgoH: "{x} h ago", timeAgoD: "{x} d ago", qrAvailable: "I'm available", qrPrice: "How much is it?", qrWhen: "When are you starting?", qrOnWay: "I'm on my way", qrGo: "OK, let's go", qrThanks: "Thank you very much", qrHello: "Hello", qrAgree: "OK", qrCall: "I'll call you",  mustCompleteProfileContact: "You must complete your profile (name/company and trade/specialty) to contact this person.", phoneUnavailable: "Phone number unavailable.",
     cannotComputeRoute: "Cannot calculate the route without your position.",
     notifTitle: "New jobs", publishBtn: "Post",
     catAll: "All", catBtp: "Construction", catElec: "Electrical", catPlomberie: "Plumbing",
     navMap: "Map", navList: "List", navSearch: "Search", navAccount: "Account",
     waMsgReferral: "Join me on JobMarket Cameroon to find or offer services near you: {link}",
-    waMsgShareJob: "🔊 *NEW JOB OPENING*\n\n*{title}*\n{desc}{requirements}\n\n💰 Pay: {price} XAF\n📍 Location: {location}\n📞 Contact: {phone}\n\nMore details here: {link}",
+    waMsgShareJob: "🔊 *NEW JOB OPENING*\n\n*{title}*\n{desc}{requirements}\n\n💰 Pay: {price}\n📍 Location: {location}\n📞 Contact: {phone}\n\nMore details here: {link}",
     waMsgRequirementsLabel: "📋 *Requirements:*",
     waMsgOrConnector: " or ",
     waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?",
@@ -843,13 +855,13 @@ const I18N = {
     positionSavedFill: "Posizione salvata! Compila il modulo del lavoro.", photoUploadError: "Errore durante l'invio della foto (rete instabile?), riprova.", whatsappOpenError: "Errore durante l'apertura di WhatsApp. Riprova.",
     chooseRatingFirst: "Scegli una valutazione prima di inviare", reviewSendError: "Errore durante l'invio della recensione", mustBeLoggedIn: "Devi essere connesso.",
     fillNameAndJob: "Inserisci il tuo nome/azienda e la tua professione/specialità.", profileSavedSuccess: "Profilo Pro salvato con successo!", genericError: "Si è verificato un errore.",
-    mustBeLoggedInWhatsapp: "Devi essere connesso per scrivere su WhatsApp.", mustCompleteProfileContact: "Devi completare il tuo profilo (nome/azienda e professione/specialità) per contattare questa persona.", phoneUnavailable: "Numero di telefono non disponibile.",
+    mustBeLoggedInWhatsapp: "Devi essere connesso per scrivere su WhatsApp.", itsOwnJob: "È il tuo stesso annuncio.", itsOwnJobShort: "È il tuo annuncio.", paymentReceived: "🎉 Grazie! Pagamento ricevuto, il tuo account si attiva in pochi secondi...", accountActivated: "✅ Il tuo account è attivo! Grazie per la fiducia. 🙏", confirmDeleteListing: "Eliminare definitivamente questo annuncio?", verifying: "Verifica in corso...", uploading: "Caricamento...", saving: "Salvataggio in corso...", sendingPhotos: "Invio delle foto...", alreadyVerified: "✅ Già verificato", proActiveUntil: "⭐ PRO attivo fino al {x} (rinnova)", freeLabel: "Gratuito", activeShort: "Attivo",  versionTitle: "Nuova versione disponibile", versionBody: "Questa pagina usa una versione obsoleta del codice. Ricarica per ricevere le correzioni.", versionBtn: "Ricarica l'app", typing: "sta scrivendo…", online: "online", lastSeen: "visto {x}", photoMsg: "Foto", voiceMsg: "Vocale", fileMsg: "File", editedTag: "modificato", today: "Oggi", yesterday: "Ieri", youTag: "Tu", unknownName: "Sconosciuto", editBanner: "Modifica del messaggio", noResults: "0 risultati", emojiSearchPh: "Cerca…", optionN: "Opzione {x}", ctxReply: "Rispondi", ctxReact: "Reagisci", ctxEdit: "Modifica", ctxCopy: "Copia", ctxForward: "Inoltra", ctxStar: "Preferisci", ctxUnstar: "Rimuovi preferito", ctxPin: "Fissa", ctxUnpin: "Sblocca", ctxDelete: "Elimina", noStarred: "Nessun messaggio preferito", nStarred: "{x} messaggio(i) preferito(i)", profileAbout: "Ciao 👋 Sono su JobMarket.", noMedia: "Nessun media condiviso", votes: "voto", downloadBtn: "Salva", sendErrorPrefix: "Errore di invio: ", deleteAllConfirm: "Eliminare questo messaggio per TUTTI?\n\nOK     = per tutti\nAnnulla = solo per me", imagesOnly: "Solo immagini (JPG, PNG, WEBP, GIF).", photoTooBig: "Foto troppo pesante (max 8 MB).", photoAdded: "Foto aggiunta! 📸", photoDeleted: "Foto eliminata.", maxPhotos: "Massimo 6 foto. Prima eliminarne una.", photoUploading: "Caricamento della foto...", statusUpdated: "Stato aggiornato: ", availNowFull: "Disponibile 🟢", availWeekFull: "Questa settimana 🟠", availBusyFull: "Occupato 🔴", myLabel: "Io", availNowBadge: "🟢 Disp.", availWeekBadge: "🟠 Q. settimana", activeNow: "⚡ Attivo adesso", activeAgoMin: "🕐 Attivo {x} min fa", activeAgoH: "🕐 Attivo {x} h fa", activeAgoD: "📅 Attivo {x} g fa", inactiveAgo: "📅 Inattivo da un po'", activeUnknown: "Attività sconosciuta", timeAgoNow: "adesso", timeAgoMin: "{x} min fa", timeAgoH: "{x} h fa", timeAgoD: "{x} g fa", qrAvailable: "Sono disponibile", qrPrice: "Quanto costa?", qrWhen: "Quando inizi?", qrOnWay: "Sono in arrivo", qrGo: "Ok, si parte", qrThanks: "Grazie mille", qrHello: "Ciao", qrAgree: "Ok", qrCall: "Ti chiamo",  mustCompleteProfileContact: "Devi completare il tuo profilo (nome/azienda e professione/specialità) per contattare questa persona.", phoneUnavailable: "Numero di telefono non disponibile.",
     cannotComputeRoute: "Impossibile calcolare l'itinerario senza la tua posizione.",
     notifTitle: "Nuovi lavori", publishBtn: "Pubblica",
     catAll: "Tutti", catBtp: "Edilizia", catElec: "Elettricità", catPlomberie: "Idraulica",
     navMap: "Mappa", navList: "Lista", navSearch: "Cerca", navAccount: "Account",
     waMsgReferral: "Unisciti a me su JobMarket Cameroon per trovare o offrire servizi vicino a te: {link}",
-    waMsgShareJob: "🔊 *NUOVA OFFERTA DI LAVORO*\n\n*{title}*\n{desc}{requirements}\n\n💰 Compenso: {price} XAF\n📍 Luogo: {location}\n📞 Contatto: {phone}\n\nMaggiori dettagli qui: {link}",
+    waMsgShareJob: "🔊 *NUOVA OFFERTA DI LAVORO*\n\n*{title}*\n{desc}{requirements}\n\n💰 Compenso: {price}\n📍 Luogo: {location}\n📞 Contatto: {phone}\n\nMaggiori dettagli qui: {link}",
     waMsgRequirementsLabel: "📋 *Requisiti:*",
     waMsgOrConnector: " o ",
     waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?",
@@ -1087,13 +1099,13 @@ const I18N = {
     positionSavedFill: "Position gespeichert! Füllen Sie das Auftragsformular aus.", photoUploadError: "Fehler beim Hochladen des Fotos (instabile Verbindung?), bitte erneut versuchen.", whatsappOpenError: "Fehler beim Öffnen von WhatsApp. Bitte erneut versuchen.",
     chooseRatingFirst: "Wählen Sie eine Bewertung, bevor Sie senden", reviewSendError: "Fehler beim Senden der Bewertung", mustBeLoggedIn: "Sie müssen angemeldet sein.",
     fillNameAndJob: "Bitte geben Sie Ihren Namen/Firma und Ihren Beruf/Ihre Spezialität ein.", profileSavedSuccess: "Profi-Profil erfolgreich gespeichert!", genericError: "Ein Fehler ist aufgetreten.",
-    mustBeLoggedInWhatsapp: "Sie müssen angemeldet sein, um über WhatsApp zu schreiben.", mustCompleteProfileContact: "Sie müssen Ihr Profil (Name/Firma und Beruf/Spezialität) vervollständigen, um diese Person zu kontaktieren.", phoneUnavailable: "Telefonnummer nicht verfügbar.",
+    mustBeLoggedInWhatsapp: "Sie müssen angemeldet sein, um über WhatsApp zu schreiben.", itsOwnJob: "Das ist deine eigene Anzeige.", itsOwnJobShort: "Deine Anzeige.", paymentReceived: "🎉 Danke! Zahlung erhalten, dein Konto wird in wenigen Sekunden aktiviert...", accountActivated: "✅ Dein Konto ist aktiv! Danke für dein Vertrauen. 🙏", confirmDeleteListing: "Diese Anzeige endgültig löschen?", verifying: "Wird verifiziert...", uploading: "Wird hochgeladen...", saving: "Wird gespeichert...", sendingPhotos: "Fotos werden gesendet...", alreadyVerified: "✅ Bereits verifiziert", proActiveUntil: "⭐ PRO aktiv bis {x} (verlängern)", freeLabel: "Gratis", activeShort: "Aktiv",  versionTitle: "Neue Version verfügbar", versionBody: "Diese Seite nutzt eine veraltete Code-Version. Neu laden, um die Korrekturen zu erhalten.", versionBtn: "App neu laden", typing: "schreibt…", online: "online", lastSeen: "zuletzt gesehen {x}", photoMsg: "Foto", voiceMsg: "Sprachnachricht", fileMsg: "Datei", editedTag: "bearbeitet", today: "Heute", yesterday: "Gestern", youTag: "Du", unknownName: "Unbekannt", editBanner: "Nachricht bearbeiten", noResults: "0 Ergebnisse", emojiSearchPh: "Suchen…", optionN: "Option {x}", ctxReply: "Antworten", ctxReact: "Reagieren", ctxEdit: "Bearbeiten", ctxCopy: "Kopieren", ctxForward: "Weiterleiten", ctxStar: "Markieren", ctxUnstar: "Markierung entfernen", ctxPin: "Anheften", ctxUnpin: "Lösen", ctxDelete: "Löschen", noStarred: "Keine markierten Nachrichten", nStarred: "{x} markierte Nachricht(en)", profileAbout: "Hallo 👋 Ich bin bei JobMarket.", noMedia: "Noch keine gemeinsamen Medien", votes: "Stimme", downloadBtn: "Speichern", sendErrorPrefix: "Sendefehler: ", deleteAllConfirm: "Diese Nachricht für ALLE löschen?\n\nOK     = für alle\nAbbrechen = nur für mich", imagesOnly: "Nur Bilder (JPG, PNG, WEBP, GIF).", photoTooBig: "Foto zu groß (max. 8 MB).", photoAdded: "Foto hinzugefügt! 📸", photoDeleted: "Foto gelöscht.", maxPhotos: "Maximal 6 Fotos. Zuerst eines löschen.", photoUploading: "Foto wird hochgeladen...", statusUpdated: "Status aktualisiert: ", availNowFull: "Verfügbar 🟢", availWeekFull: "Diese Woche 🟠", availBusyFull: "Beschäftigt 🔴", myLabel: "Ich", availNowBadge: "🟢 Verfügbar", availWeekBadge: "🟠 Diese Woche", activeNow: "⚡ Gerade aktiv", activeAgoMin: "🕐 Vor {x} Min. aktiv", activeAgoH: "🕐 Vor {x} Std. aktiv", activeAgoD: "📅 Vor {x} Tg. aktiv", inactiveAgo: "📅 Seit längerer Zeit inaktiv", activeUnknown: "Unbekannte Aktivität", timeAgoNow: "gerade eben", timeAgoMin: "vor {x} Min.", timeAgoH: "vor {x} Std.", timeAgoD: "vor {x} Tg.", qrAvailable: "Ich bin verfügbar", qrPrice: "Wie viel kostet es?", qrWhen: "Wann beginnst du?", qrOnWay: "Ich bin unterwegs", qrGo: "Ok, los geht's", qrThanks: "Vielen Dank", qrHello: "Hallo", qrAgree: "OK", qrCall: "Ich rufe dich an",  mustCompleteProfileContact: "Sie müssen Ihr Profil (Name/Firma und Beruf/Spezialität) vervollständigen, um diese Person zu kontaktieren.", phoneUnavailable: "Telefonnummer nicht verfügbar.",
     cannotComputeRoute: "Route kann ohne Ihren Standort nicht berechnet werden.",
     notifTitle: "Neue Jobs", publishBtn: "Veröffentlichen",
     catAll: "Alle", catBtp: "Bau", catElec: "Elektrik", catPlomberie: "Sanitär",
     navMap: "Karte", navList: "Liste", navSearch: "Suchen", navAccount: "Konto",
     waMsgReferral: "Begleite mich auf JobMarket Cameroon, um Dienstleistungen in deiner Nähe zu finden oder anzubieten: {link}",
-    waMsgShareJob: "🔊 *NEUES STELLENANGEBOT*\n\n*{title}*\n{desc}{requirements}\n\n💰 Vergütung: {price} XAF\n📍 Ort: {location}\n📞 Kontakt: {phone}\n\nMehr Details hier: {link}",
+    waMsgShareJob: "🔊 *NEUES STELLENANGEBOT*\n\n*{title}*\n{desc}{requirements}\n\n💰 Vergütung: {price}\n📍 Ort: {location}\n📞 Kontakt: {phone}\n\nMehr Details hier: {link}",
     waMsgRequirementsLabel: "📋 *Anforderungen:*",
     waMsgOrConnector: " oder ",
     waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?",
@@ -1331,7 +1343,7 @@ const I18N = {
     positionSavedFill: "位置已保存!请填写工作表单。", photoUploadError: "照片上传出错(网络不稳定?),请重试。", whatsappOpenError: "打开WhatsApp时出错,请重试。",
     chooseRatingFirst: "请先选择评分再发送", reviewSendError: "评价发送失败", mustBeLoggedIn: "您必须先登录。",
     fillNameAndJob: "请填写您的姓名/公司名称及职业/专长。", profileSavedSuccess: "专业资料保存成功!", genericError: "发生了错误。",
-    mustBeLoggedInWhatsapp: "您必须先登录才能在WhatsApp上发送消息。", mustCompleteProfileContact: "您必须先完善资料(姓名/公司名称及职业/专长)才能联系此人。", phoneUnavailable: "电话号码不可用。",
+    mustBeLoggedInWhatsapp: "您必须先登录才能在WhatsApp上发送消息。", itsOwnJob: "这是你自己发布的公告。", itsOwnJobShort: "这是你的公告。", paymentReceived: "🎉 谢谢！已收到付款，你的账户将在几秒内激活...", accountActivated: "✅ 你的账户已激活！感谢你的信任。🙏", confirmDeleteListing: "确定永久删除此公告？", verifying: "正在验证...", uploading: "正在上传...", saving: "正在保存...", sendingPhotos: "正在发送照片...", alreadyVerified: "✅ 已验证", proActiveUntil: "⭐ PRO 有效期至 {x}（续期）", freeLabel: "免费", activeShort: "活跃",  versionTitle: "有新版本可用", versionBody: "此页面正在运行旧版本代码。请重新加载以获取修复。", versionBtn: "重新加载应用", typing: "正在输入…", online: "在线", lastSeen: "最后在线 {x}", photoMsg: "照片", voiceMsg: "语音", fileMsg: "文件", editedTag: "已编辑", today: "今天", yesterday: "昨天", youTag: "你", unknownName: "未知", editBanner: "正在编辑消息", noResults: "0 个结果", emojiSearchPh: "搜索…", optionN: "选项 {x}", ctxReply: "回复", ctxReact: "表情回应", ctxEdit: "编辑", ctxCopy: "复制", ctxForward: "转发", ctxStar: "加星", ctxUnstar: "取消星标", ctxPin: "置顶", ctxUnpin: "取消置顶", ctxDelete: "删除", noStarred: "暂无星标消息", nStarred: "{x} 条星标消息", profileAbout: "你好👋 我在JobMarket。", noMedia: "暂无共享媒体", votes: "票", downloadBtn: "下载", sendErrorPrefix: "发送错误：", deleteAllConfirm: "将此消息对所有人删除？\n\n确定     = 对所有人\n取消 = 仅对我", imagesOnly: "仅支持图片（JPG、PNG、WEBP、GIF）。", photoTooBig: "照片太大（最大 8 MB）。", photoAdded: "已添加照片！📸", photoDeleted: "照片已删除。", maxPhotos: "最多 6 张照片，请先删除一张。", photoUploading: "正在上传照片...", statusUpdated: "状态已更新：", availNowFull: "有空 🟢", availWeekFull: "本周 🟠", availBusyFull: "忙碌 🔴", myLabel: "我", availNowBadge: "🟢 有空", availWeekBadge: "🟠 本周", activeNow: "⚡ 刚刚活跃", activeAgoMin: "🕐 {x} 分钟前活跃", activeAgoH: "🕐 {x} 小时前活跃", activeAgoD: "📅 {x} 天前活跃", inactiveAgo: "📅 已有一段时间未活跃", activeUnknown: "活动状态未知", timeAgoNow: "刚刚", timeAgoMin: "{x} 分钟前", timeAgoH: "{x} 小时前", timeAgoD: "{x} 天前", qrAvailable: "我有空", qrPrice: "多少钱？", qrWhen: "你什么时候开始？", qrOnWay: "我在路上", qrGo: "好的，出发", qrThanks: "非常感谢", qrHello: "你好", qrAgree: "好的", qrCall: "我打电话给你",  mustCompleteProfileContact: "您必须先完善资料(姓名/公司名称及职业/专长)才能联系此人。", phoneUnavailable: "电话号码不可用。",
     cannotComputeRoute: "没有您的位置信息,无法计算路线。",
     notifTitle: "新工作", publishBtn: "发布",
     catAll: "全部", catBtp: "建筑", catElec: "电工", catPlomberie: "水管",
@@ -1523,6 +1535,8 @@ const I18N = {
 };
 
 let currentLang = localStorage.getItem('appLang') || (navigator.language && navigator.language.startsWith('en') ? 'en' : 'fr');
+// Locale associée à chaque langue (formatage des dates)
+const LANG_LOCALE = { fr: 'fr-FR', en: 'en-GB', it: 'it-IT', de: 'de-DE', zh: 'zh-CN' };
 
 function t(key) {
   return (I18N[currentLang] && I18N[currentLang][key]) || (I18N.fr && I18N.fr[key]) || key;
@@ -1574,6 +1588,22 @@ function setLanguage(lang) {
   // (Leaflet ne les reconstruit pas automatiquement) — sans ceci, une
   // annonce déjà affichée restait figée dans l'ancienne langue.
   if (typeof refreshAllPopupsLanguage === 'function') refreshAllPopupsLanguage();
+  // Widget « Chat sécurisé » : mêmes traductions que le reste de l'app
+  if (window.W && W.setLang) W.setLang(widgetI18nFor(lang));
+}
+
+// Dictionnaire du widget « Chat sécurisé » (chat-widget.js) — construit
+// depuis I18N pour ne jamais dupliquer une traduction.
+function widgetI18nFor(lang) {
+  const L = I18N[lang] || I18N.fr;
+  return {
+    typing: L.typing, online: L.online, lastSeen: L.lastSeen, photo: L.photoMsg, voice: L.voiceMsg, file: L.fileMsg,
+    edited: L.editedTag, today: L.today, yesterday: L.yesterday, you: L.youTag, unknown: L.unknownName,
+    editBanner: L.editBanner, noResults: L.noResults, emojiPh: L.emojiSearchPh, option: L.optionN,
+    reply: L.ctxReply, react: L.ctxReact, edit: L.ctxEdit, copy: L.ctxCopy, forward: L.ctxForward,
+    star: L.ctxStar, unstar: L.ctxUnstar, pin: L.ctxPin, unpin: L.ctxUnpin, del: L.ctxDelete,
+    noStarred: L.noStarred, nStarred: L.nStarred, about: L.profileAbout, noMedia: L.noMedia, votes: L.votes, download: L.downloadBtn
+  };
 }
 
 // Ferme les panneaux Paramètres/Notifications si on clique ailleurs sur la page
@@ -1858,7 +1888,7 @@ if (new URLSearchParams(window.location.search).get('paid') === '1') {
   // L'activation réelle (isPro/verified) arrive via le webhook serveur,
   // en quelques secondes. On rafraîchit le profil un peu plus tard pour
   // que la personne voie son nouveau statut sans recharger.
-  setTimeout(() => showToast('🎉 Merci ! Paiement reçu, ton compte s\'active dans quelques secondes...', 'success'), 500);
+  setTimeout(() => showToast(t('paymentReceived'), 'success'), 500);
   const cleanUrl = window.location.pathname + window.location.hash;
   window.history.replaceState({}, '', cleanUrl);
   // Rafraîchit le profil après 6s (le temps que le webhook active le compte)
@@ -1869,7 +1899,7 @@ if (new URLSearchParams(window.location.search).get('paid') === '1') {
         db.ref('profiles/' + u.uid).once('value').then(snap => {
           const p = snap.val() || {};
           if (p.isPro || p.verified) {
-            showToast('✅ Ton compte est activé ! Merci de ta confiance. 🙏', 'success');
+            showToast(t('accountActivated'), 'success');
           }
         }).catch(() => {});
       }
@@ -2561,7 +2591,7 @@ function buildJobPopupHtml(job, jobId) {
       <div style="min-width:240px;font-family:'DM Sans',sans-serif;">
         <div data-map-popup-title style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px;margin-bottom:6px;">${escapeHtml(job.title)}</div>
         <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
-          <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${escapeHtml(job.price)} XAF</span>
+          <span style="background:rgba(37,211,102,0.15);color:#25D366;padding:4px 10px;border-radius:12px;font-weight:700;font-size:13px;">${priceLabel(job)}</span>
           <span style="background:rgba(255,215,0,0.12);color:#FFD700;padding:4px 10px;border-radius:12px;font-size:12px;">${getCatLabel(job.icon)}</span>
         </div>
         ${(() => {
@@ -2577,12 +2607,16 @@ function buildJobPopupHtml(job, jobId) {
           const rating = p.ratingCount ? `<span style="font-size:12px;color:#FFD700;font-weight:700;">★ ${p.ratingAvg.toFixed(1)} (${p.ratingCount})</span>` : '';
           return (badge || rating) ? `<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;">${badge}${rating}</div>` : '';
         })()}
-        ${job.landmark ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${escapeHtml(job.landmark)}</div>` : ''}
+        ${cleanLandmark(job.landmark) ? `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${escapeHtml(cleanLandmark(job.landmark))}</div>` : ''}
         ${job.desc ? `<div data-map-popup-desc class="popup-desc-clamp" style="font-size:13px;margin-bottom:4px;line-height:1.5;">${escapeHtml(job.desc)}</div>${job.desc.length > 100 ? `<button type="button" onclick="toggleDescClamp(this)" class="popup-desc-toggle" style="background:none;border:none;color:var(--accent,#25D366);font-size:12px;font-weight:700;cursor:pointer;padding:0 0 10px 0;">${t('showMoreText')}</button>` : ''}` : ''}
         ${job.requirements ? `<div style="font-size:12px;margin-bottom:10px;line-height:1.5;background:rgba(255,215,0,0.08);border-radius:10px;padding:8px 10px;"><strong>📋 ${t('requirementsLabel')}</strong><br>${escapeHtml(job.requirements).replace(/\n/g, '<br>')}</div>` : ''}
         ${job.images?.length ? job.images.slice(0,2).map(img => `<img src="${escapeHtml(cloudinaryResize(img, 500, 300))}" loading="lazy" alt="${t('altJobPhoto')}" style="width:100%;margin-bottom:6px;border-radius:10px;max-height:120px;object-fit:cover;">`).join('') : ''}
         <div data-map-popup-translation-notice style="display:none;margin:6px 0;font-size:11px;color:var(--text-dim);"></div>
-        <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
+        <button onclick="openChatFromMapPopup('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          ${t('secureChat')}
+        </button>
+        <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:none;border:1px solid #25D366;color:#25D366;padding:10px;text-align:center;border-radius:12px;margin-top:6px;width:100%;cursor:pointer;font-weight:700;font-size:13px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
           WhatsApp
         </button>
@@ -2792,10 +2826,10 @@ function updateJobsList(jobs) {
       </div>
       <div class="job-card-body">
         <div class="job-card-title">${job.status === 'filled' ? '✅ ' : ''}${(job.boosted && job.boostedUntil > Date.now()) ? '🚀 ' : ''}${((profilesCache[job.user]||{}).isPro && ((profilesCache[job.user]||{}).proUntil||0) > Date.now()) ? '⭐ ' : ''}${savedJobIds.has(job.id) ? '🔖 ' : ''}${escapeHtml(job.title)}</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${job.status === 'filled' ? t('filledBadgeLabel') + ' · ' : ''}${escapeHtml(job.landmark) || getCatLabel(job.icon)}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">${job.status === 'filled' ? t('filledBadgeLabel') + ' · ' : ''}${escapeHtml(cleanLandmark(job.landmark)) || getCatLabel(job.icon)}</div>
         <div class="job-card-meta">
-          <span class="job-card-price">${escapeHtml(job.price)}</span>
-          <span style="color:var(--text-dim);font-size:11px;">XAF</span>
+          <span class="job-card-price">${isFreePrice(job) ? t('freeLabel') : escapeHtml(job.price)}</span>
+          ${isFreePrice(job) ? '' : '<span style="color:var(--text-dim);font-size:11px;">XAF</span>'}
         </div>
       </div>
       <div class="job-card-right">
@@ -4886,11 +4920,11 @@ function getLastSeenNotifTime() {
 
 function timeAgo(timestamp) {
   const diffMin = Math.floor((Date.now() - timestamp) / 60000);
-  if (diffMin < 1) return "à l'instant";
-  if (diffMin < 60) return `il y a ${diffMin} min`;
+  if (diffMin < 1) return t('timeAgoNow');
+  if (diffMin < 60) return t('timeAgoMin').replace('{x}', diffMin);
   const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `il y a ${diffH} h`;
-  return `il y a ${Math.floor(diffH / 24)} j`;
+  if (diffH < 24) return t('timeAgoH').replace('{x}', diffH);
+  return t('timeAgoD').replace('{x}', Math.floor(diffH / 24));
 }
 
 // Badge sur l'icône de l'app (barre des tâches / écran d'accueil PWA) —
@@ -5087,7 +5121,7 @@ async function openJobPreview(jobId) {
     document.getElementById('previewTitle').innerText = job.title || 'Titre non spécifié';
 
     const priceBadge = document.getElementById('previewPriceBadge');
-    if (priceBadge) priceBadge.innerText = (job.price ? job.price : '0') + ' XAF';
+    if (priceBadge) priceBadge.innerText = priceLabel(job);
 
     const catBadge = document.getElementById('previewCategoryBadge');
     if (catBadge) catBadge.innerText = (typeof getCatLabel === 'function') ? getCatLabel(job.icon) : 'Général';
@@ -5264,7 +5298,7 @@ async function deleteJobFromPreview() {
         showToast(t('toastCantDeleteOthers'), 'error');
         return;
     }
-    if (!confirm('Supprimer définitivement cette annonce ?')) return;
+    if (!confirm(t('confirmDeleteListing'))) return;
     try {
         await db.ref('jobs/' + job.id).remove();
         showToast(t('toastListingDeleted'), 'success');
@@ -5285,6 +5319,29 @@ function closeJobPreview() {
         drawer.classList.remove('open');
     }
 }
+
+// Ferme les panneaux latéraux (fiche annonce, fiche profil) quand on clique
+// n'importe OÙ en dehors d'eux — exactement comme les popups de la carte
+// qui se ferment quand on clique sur la carte. Phase capture : on vérifie
+// AVANT les handlers des éléments que le clic ne va pas OPENIR un panneau
+// (carte de job, bouton d'un popup, bouton « Artisan du mois »...) ; sinon
+// on refermerait le panneau qu'on vient d'ouvrir.
+document.addEventListener('click', (e) => {
+    try {
+        const target = e.target;
+        if (!target || !target.closest) return;
+        const drawer = document.getElementById('jobPreviewDrawer');
+        const sheet = document.getElementById('profileSheet');
+        const drawerOpen = !!(drawer && drawer.classList.contains('open'));
+        const sheetOpen = !!(sheet && sheet.classList.contains('open'));
+        if (!drawerOpen && !sheetOpen) return;
+        if (drawerOpen && drawer.contains(target)) return; // clic DANS le panneau
+        if (sheetOpen && sheet.contains(target)) return;
+        if (target.closest('.job-card, [onclick*="openJobPreview"], [onclick*="openPublicProfile"], [onclick*="viewUserProfile"], [onclick*="openChatFromMapPopup"], [onclick*="openUserChat"], [onclick*="openProfileSheet"], .onb-slide, #jobPreviewDrawer, #profileSheet')) return; // clic qui OUVRE
+        if (drawerOpen) closeJobPreview();
+        if (sheetOpen) closeSheet('profileSheet');
+    } catch (_) { /* jamais bloquant */ }
+}, true);
 
 // Si la modale détaillée OU la fiche de profil est actuellement ouverte et
 // affiche précisément CE prestataire, on rafraîchit sa note/ses avis tout
@@ -5493,7 +5550,7 @@ function renderVerificationStatus(profile, user) {
                 ✅ Demande acceptée ! Entre le code à 7 chiffres reçu sur WhatsApp pour finaliser ta vérification.
             </div>
             <div style="display:flex;gap:6px;">
-                <input id="verifyCodeInput" type="text" inputmode="numeric" maxlength="7" data-i18n-placeholder="verifyCodePlaceholder" placeholder="Code à 7 chiffres" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:10px 12px;border-radius:8px;font-size:16px;letter-spacing:2px;">
+                <input id="verifyCodeInput" type="text" inputmode="numeric" maxlength="7" data-i18n-placeholder="verifyCodePlaceholder" placeholder="${t('verifyCodePlaceholder')}" style="flex:1;min-width:0;background:rgba(255,255,255,0.05);border:1px solid var(--border,#333);color:var(--text,#fff);padding:10px 12px;border-radius:8px;font-size:16px;letter-spacing:2px;">
                 <button type="button" id="confirmVerificationCodeBtn" onclick="confirmVerificationCode()" style="background:var(--gold,#FFD700);border:none;color:#111;padding:10px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Valider le code</button>
             </div>`;
         return;
@@ -5726,7 +5783,7 @@ async function requestVerification() {
 
     const btn = document.getElementById('requestVerificationBtn');
     const originalBtnText = btn ? btn.innerText : '';
-    if (btn) { btn.disabled = true; btn.innerText = 'Envoi des photos...'; }
+    if (btn) { btn.disabled = true; btn.innerText = t('sendingPhotos'); }
 
     // Ouvert tout de suite, dans le même clic : l'envoi des photos peut prendre
     // plusieurs secondes, et le navigateur bloquerait sinon l'ouverture de WhatsApp
@@ -5780,7 +5837,7 @@ async function confirmVerificationCode() {
 
     const btn = document.getElementById('confirmVerificationCodeBtn');
     const originalBtnText = btn ? btn.innerText : '';
-    if (btn) { btn.disabled = true; btn.innerText = 'Vérification...'; }
+    if (btn) { btn.disabled = true; btn.innerText = t('verifying'); }
 
     try {
         const snap = await db.ref('profiles/' + user.uid).once('value');
@@ -5844,11 +5901,11 @@ async function saveProfile() {
     if (fileInput && fileInput.files && fileInput.files[0]) {
         const profileFile = fileInput.files[0];
         if (!ALLOWED_IMAGE_TYPES.includes(profileFile.type) || profileFile.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
-            alert(`Photo invalide : formats acceptés JPG, PNG, WEBP, GIF — taille max ${MAX_IMAGE_SIZE_MB} Mo.`);
+            alert(t('invalidPhotoFormat').replace('{mb}', MAX_IMAGE_SIZE_MB));
             btn.disabled = false;
             return;
         }
-        btn.innerText = "Téléchargement...";
+        btn.innerText = t('uploading');
         try {
             profileImageUrl = await uploadToCloudinary(profileFile);
         } catch(e) {
@@ -5867,7 +5924,7 @@ async function saveProfile() {
         return;
     }
 
-    btn.innerText = "Enregistrement en cours...";
+    btn.innerText = t('saving');
 
     try {
         const updateData = {
@@ -5943,19 +6000,19 @@ async function uploadPortfolioPhoto(event) {
         const snap = await db.ref('profiles/' + user.uid + '/portfolio').once('value');
         const current = snap.val() || {};
         if (Object.keys(current).length >= 6) {
-            showToast('Maximum 6 photos. Supprime-en une d\'abord.', 'error');
+            showToast(t('maxPhotos'), 'error');
             event.target.value = '';
             return;
         }
     } catch (_) {}
 
-    showToast('Téléchargement de la photo...', 'info');
+    showToast(t('photoUploading'), 'info');
     try {
         const url = await uploadToCloudinary(file);
         await db.ref('profiles/' + user.uid + '/portfolio').push(url);
         const fresh = await db.ref('profiles/' + user.uid).once('value');
         renderPortfolio(fresh.val() || {});
-        showToast('Photo ajoutée ! 📸', 'success');
+        showToast(t('photoAdded'), 'success');
     } catch (e) {
         console.error('Portfolio upload error', e);
         showToast(t('photoUploadError'), 'error');
@@ -5972,7 +6029,7 @@ async function deletePortfolioPhoto(key) {
         await db.ref('profiles/' + user.uid + '/portfolio/' + key).remove();
         const fresh = await db.ref('profiles/' + user.uid).once('value');
         renderPortfolio(fresh.val() || {});
-        showToast('Photo supprimée.', 'info');
+        showToast(t('photoDeleted'), 'info');
     } catch (e) {
         console.error('Portfolio delete error', e);
         showToast(t('genericError'), 'error');
@@ -6012,8 +6069,8 @@ async function setAvailability(status) {
             availabilityUpdated: Date.now()
         });
         renderAvailability({ availability: status });
-        const labels = { now: 'Disponible 🟢', week: 'Cette semaine 🟠', busy: 'Occupé 🔴' };
-        showToast('Statut mis à jour : ' + labels[status], 'success');
+        const labels = { now: t('availNowFull'), week: t('availWeekFull'), busy: t('availBusyFull') };
+        showToast(t('statusUpdated') + labels[status], 'success');
     } catch (e) {
         console.error('setAvailability error', e);
         showToast(t('genericError'), 'error');
@@ -6027,10 +6084,10 @@ function availabilityBadge(profile) {
     if (profile.availability === 'now') {
         const updated = profile.availabilityUpdated || 0;
         if (Date.now() - updated > 24 * 60 * 60 * 1000) return '';
-        return `<span style="font-size:10px;font-weight:700;color:#2EA067;background:rgba(46,160,103,0.15);padding:2px 6px;border-radius:8px;">🟢 Dispo</span>`;
+        return `<span style="font-size:10px;font-weight:700;color:#2EA067;background:rgba(46,160,103,0.15);padding:2px 6px;border-radius:8px;">${t('availNowBadge')}</span>`;
     }
     if (profile.availability === 'week') {
-        return `<span style="font-size:10px;font-weight:700;color:#E88A2A;background:rgba(232,138,42,0.15);padding:2px 6px;border-radius:8px;">🟠 Cette sem.</span>`;
+        return `<span style="font-size:10px;font-weight:700;color:#E88A2A;background:rgba(232,138,42,0.15);padding:2px 6px;border-radius:8px;">${t('availWeekBadge')}</span>`;
     }
     return '';
 }
@@ -6048,7 +6105,7 @@ function activityBadge(profile) {
     const diff = Date.now() - profile.lastActiveAt;
     const min = 60 * 1000, hour = 60 * min, day = 24 * hour;
     if (diff < 15 * min) {
-        return `<span title="Actif à l'instant" style="font-size:10px;font-weight:700;color:#2EA067;background:rgba(46,160,103,0.15);padding:2px 6px;border-radius:8px;">⚡ Actif</span>`;
+        return `<span title="${t('activeNow')}" style="font-size:10px;font-weight:700;color:#2EA067;background:rgba(46,160,103,0.15);padding:2px 6px;border-radius:8px;">⚡ ${t('activeShort')}</span>`;
     }
     if (diff < 24 * hour) {
         return `<span title="Actif aujourd'hui" style="font-size:10px;font-weight:700;color:#2D6CDF;background:rgba(45,108,223,0.12);padding:2px 6px;border-radius:8px;">🕐 Aujourd'hui</span>`;
@@ -6058,14 +6115,14 @@ function activityBadge(profile) {
 
 // Texte détaillé de la dernière activité (pour le profil / la fiche détaillée).
 function lastActiveText(profile) {
-    if (!profile || !profile.lastActiveAt) return 'Activité inconnue';
+    if (!profile || !profile.lastActiveAt) return t('activeUnknown');
     const diff = Date.now() - profile.lastActiveAt;
     const min = 60 * 1000, hour = 60 * min, day = 24 * hour;
-    if (diff < 5 * min) return '⚡ Actif à l\'instant';
-    if (diff < hour) return '🕐 Actif il y a ' + Math.round(diff / min) + ' min';
-    if (diff < day) return '🕐 Actif il y a ' + Math.round(diff / hour) + ' h';
-    if (diff < 7 * day) return '📅 Actif il y a ' + Math.round(diff / day) + ' j';
-    return '📅 Inactif depuis un moment';
+    if (diff < 5 * min) return t('activeNow');
+    if (diff < hour) return t('activeAgoMin').replace('{x}', Math.round(diff / min));
+    if (diff < day) return t('activeAgoH').replace('{x}', Math.round(diff / hour));
+    if (diff < 7 * day) return t('activeAgoD').replace('{x}', Math.round(diff / day));
+    return t('inactiveAgo');
 }
 
 // ==========================================
@@ -6138,13 +6195,13 @@ function renderPaymentButtons(profile) {
     const vBtn = document.getElementById('payVerifiedBtn');
     if (vBtn) {
         if (profile.verified) {
-            vBtn.textContent = '✅ Déjà vérifié';
+            vBtn.textContent = t('alreadyVerified');
             vBtn.disabled = true;
             vBtn.style.opacity = '0.6';
             vBtn.style.cursor = 'default';
             vBtn.onclick = null;
         } else {
-            vBtn.textContent = '✅ Badge Identité vérifiée — 500 FCFA';
+            vBtn.textContent = t('payVerifiedButton');
             vBtn.disabled = false;
             vBtn.style.opacity = '1';
             vBtn.style.cursor = 'pointer';
@@ -6158,7 +6215,7 @@ function renderPaymentButtons(profile) {
         if (profile.isPro && (profile.proUntil || 0) > Date.now()) {
             const d = new Date(profile.proUntil);
             const dateStr = d.toLocaleDateString('fr-FR');
-            pBtn.textContent = '⭐ PRO actif jusqu\'au ' + dateStr + ' (renouveler)';
+            pBtn.textContent = t('proActiveUntil').replace('{x}', dateStr);
             // On garde le bouton cliquable : il peut renouveler / prolonger
             pBtn.onclick = function () { startPayment('pro_month'); };
         } else {
@@ -6301,17 +6358,17 @@ function formatInboxTime(ts) {
     const d = new Date(ts), now = new Date();
     if (d.toDateString() === now.toDateString()) return formatChatTime(ts);
     const yest = new Date(now); yest.setDate(now.getDate() - 1);
-    if (d.toDateString() === yest.toDateString()) return 'Hier';
-    if ((now - d) / 86400000 < 7) return d.toLocaleDateString('fr-FR', { weekday: 'long' });
-    return d.toLocaleDateString('fr-FR');
+    if (d.toDateString() === yest.toDateString()) return t('yesterday');
+    if ((now - d) / 86400000 < 7) return d.toLocaleDateString(LANG_LOCALE[currentLang] || 'fr-FR', { weekday: 'long' });
+    return d.toLocaleDateString(LANG_LOCALE[currentLang] || 'fr-FR');
 }
 function formatDaySep(ts) {
     const d = new Date(ts), now = new Date();
     const sameDay = d.toDateString() === now.toDateString();
     const yest = new Date(now); yest.setDate(now.getDate() - 1);
-    if (sameDay) return "Aujourd'hui";
-    if (d.toDateString() === yest.toDateString()) return 'Hier';
-    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (sameDay) return t('today');
+    if (d.toDateString() === yest.toDateString()) return t('yesterday');
+    return d.toLocaleDateString(LANG_LOCALE[currentLang] || 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 // L'autre participant d'un thread : son uid figure dans le threadId
@@ -6353,12 +6410,13 @@ function openMessagesInbox() {
         ov.style.display = 'flex';
         // mon avatar dans l'en-tête de la sidebar
         const myAv = document.getElementById('waMyAv');
-        if (myAv) myAv.src = avatarSrcFor(livePeerName(user.uid) || user.displayName || 'Moi', (profilesCache[user.uid] || {}).profileImage);
+        if (myAv) myAv.src = avatarSrcFor(livePeerName(user.uid) || user.displayName || t('myLabel'), (profilesCache[user.uid] || {}).profileImage);
     }
     chatOverlayOpen = true;
     if (!chatWidgetReady && window.W) {
         chatWidgetReady = true;
         W.init({ theme: (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark') });
+        if (W.setLang) W.setLang(widgetI18nFor(currentLang));
         patchChatWidgetForFirebase();
         W.on('chatOpened', (cid) => onChatWidgetOpened(cid));
         W.on('typing', onChatWidgetTyping);
@@ -6426,7 +6484,7 @@ function syncChatWidgetConvs() {
                 name: name,
                 avatar: avatarSrcFor(name, prof.profileImage),
                 online: p.state === 'active',
-                lastSeen: p.lastChanged ? 'il y a ' + timeAgo(p.lastChanged) : '',
+                lastSeen: p.lastChanged ? timeAgo(p.lastChanged) : '',
                 about: e.jobTitle || prof.jobTitle || ''
             };
         }).filter(c => c.id));
@@ -6593,16 +6651,19 @@ function openJobFromChat() {
 // ou non (réponses générales). Un tap insère le texte dans la
 // saisie (style WhatsApp : on peut encore éditer avant d'envoyer).
 // ============================================================
-const QUICK_REPLIES = {
-    job: ['Je suis disponible', "C'est combien ?", 'Quand tu commences ?', 'Je suis en route', "D'accord, on part", 'Merci beaucoup'],
-    general: ['Bonjour', 'Je suis disponible', "D'accord", 'Merci beaucoup', "Je t'appelle"]
-};
+// Réponses rapides : calculées À L'AFFICHAGE (pas en chargement) pour suivre
+// la langue active de l'app.
+function quickRepliesFor(context) {
+    return context === 'job'
+        ? [t('qrAvailable'), t('qrPrice'), t('qrWhen'), t('qrOnWay'), t('qrGo'), t('qrThanks')]
+        : [t('qrHello'), t('qrAvailable'), t('qrAgree'), t('qrThanks'), t('qrCall')];
+}
 let quickRepliesContext = '';
 function renderQuickReplies(context) {
     const row = document.getElementById('waQuickRow');
     if (!row) return;
     quickRepliesContext = context;
-    const list = QUICK_REPLIES[context] || QUICK_REPLIES.general;
+    const list = quickRepliesFor(context);
     row.innerHTML = '';
     list.forEach(text => {
         const chip = document.createElement('button');
@@ -6638,11 +6699,30 @@ function updateQuickReplies() {
 // ============================================================
 function openUserChatFromPreview() {
     const user = auth.currentUser;
-    if (!user || user.isAnonymous) { showToast('Connecte-toi pour discuter.', 'error'); return; }
+    if (!user || user.isAnonymous) { showToast(t('mustBeLoggedIn'), 'error'); return; }
     const job = window.currentPreviewJob;
     if (!job || !job.user) return;
-    if (job.user === user.uid) { showToast('C\'est ta propre annonce.', 'info'); return; }
-    const name = (profilesCache[job.user] || {}).name || 'Utilisateur';
+    if (job.user === user.uid) { showToast(t('itsOwnJob'), 'info'); return; }
+    const name = (profilesCache[job.user] || {}).name || t('userFallback');
+    openUserChat(job.user, job.id, name, job.title);
+}
+
+// Bouton « Chat sécurisé » du popup carte : remplace l'ancien bouton vert
+// WhatsApp comme action de contact PRINCIPALE. Ouvre/continue la
+// conversation in-app avec l'auteur de l'annonce (la comptabilité du
+// contact — personnes intéressées, notif propriétaire, avis — se fait
+// dans openUserChat(), identique à l'ancien passage par WhatsApp).
+function openChatFromMapPopup(jobId) {
+    const job = jobsById[jobId] || allJobs.find(j => j.id === jobId);
+    if (!job) { alert(t('jobNotFoundAlert')); return; }
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) {
+        alert(t('mustBeLoggedInWhatsapp'));
+        if (typeof openOverlay === 'function') openOverlay('accountPage');
+        return;
+    }
+    if (job.user === user.uid) { showToast(t('itsOwnJob'), 'info'); return; }
+    const name = (profilesCache[job.user] || {}).name || t('userFallback');
     openUserChat(job.user, job.id, name, job.title);
 }
 
@@ -6650,9 +6730,27 @@ function openUserChatFromPreview() {
 // (thread unique par personne — le job fourni sert à la bannière/contexte)
 function openUserChat(peerUid, jobId, peerName, jobTitle) {
     const user = auth.currentUser;
-    if (!user || user.isAnonymous) { showToast('Connecte-toi pour discuter.', 'error'); return; }
+    if (!user || user.isAnonymous) { showToast(t('mustBeLoggedIn'), 'error'); return; }
     const tid = makeThreadId(user.uid, peerUid);
     pendingJobBar = { jobId: jobId || null, jobTitle: jobTitle || null };
+
+    // Le chat in-app est devenu le contact principal : ouvrir la
+    // conversation pour CE job compte comme un « contact » (exactement ce
+    // que faisait l'ancien bouton WhatsApp) — c'est ce qui alimente les
+    // « personnes intéressées », la notification du propriétaire et la
+    // possibilité de laisser un avis ensuite. Idempotent : le même
+    // (job, personne) n'est compté qu'une seule fois.
+    if (jobId && jobId !== 'general') {
+        const j = jobsById[jobId] || allJobs.find(x => x.id === jobId);
+        if (j && j.user === peerUid) {
+            recordJobContactOnce(j, user.uid).then(isNew => {
+                if (isNew) {
+                    bumpDailyStat('jobContacts');
+                    if (typeof triggerInstantNotify === 'function') triggerInstantNotify('new-contact');
+                }
+            }).catch(() => {});
+        }
+    }
     // mémorise le job en contexte du thread (bannière pour la prochaine fois)
     if (jobId && jobId !== 'general') {
         const upd = { jobId: jobId };
@@ -6696,7 +6794,7 @@ function patchChatWidgetForFirebase() {
             from: 'me',
             _ts: Date.now(),
             time: formatChatTime(Date.now()),
-            date: 'Aujourd\'hui',
+            date: t('today'),
             status: 'sent'
         };
         if (data.text) tempMsg.text = data.text;
@@ -6750,7 +6848,7 @@ function patchChatWidgetForFirebase() {
         const fid = m && m.fbId;
         let forEveryone = false;
         if (m && fid && m.from === 'me' && (Date.now() - (m._ts || 0)) < 15 * 60 * 1000) {
-            forEveryone = confirm('Supprimer ce message pour TOUT LE MONDE ?\n\nOK     = pour tout le monde\nAnnuler = seulement pour moi');
+            forEveryone = confirm(t('deleteAllConfirm'));
         }
         origDeleteMessage.call(this, cid, mid);
         if (!me || !fid) return; // message optimiste jamais envoyé : rien à écrire
@@ -6768,7 +6866,7 @@ function patchChatWidgetForFirebase() {
         if (lb && !b) {
             b = document.createElement('button');
             b.id = 'waLBSave';
-            b.textContent = '💾 Enregistrer';
+            b.textContent = '💾 ' + t('downloadBtn');
             b.style.cssText = 'position:absolute;bottom:18px;right:18px;background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:24px;padding:10px 18px;font-size:14px;cursor:pointer;';
             lb.appendChild(b);
         }
@@ -6780,8 +6878,8 @@ function patchChatWidgetForFirebase() {
         const f = inp.files && inp.files[0];
         inp.value = '';
         if (!f || !this.activeId) return;
-        if (!f.type || !f.type.startsWith('image/')) { if (typeof showToast === 'function') showToast('Images uniquement (JPG, PNG, WEBP, GIF).', 'error'); return; }
-        if (f.size > 8 * 1024 * 1024) { if (typeof showToast === 'function') showToast('Photo trop lourde (max 8 Mo).', 'error'); return; }
+        if (!f.type || !f.type.startsWith('image/')) { if (typeof showToast === 'function') showToast(t('imagesOnly'), 'error'); return; }
+        if (f.size > 8 * 1024 * 1024) { if (typeof showToast === 'function') showToast(t('photoTooBig'), 'error'); return; }
         const r = new FileReader();
         r.onload = (e) => this.sendMessage(this.activeId, { image: e.target.result });
         r.readAsDataURL(f);
@@ -6878,7 +6976,7 @@ async function sendChatMessageToThread(threadId, payload, onDone) {
             try { W.__origDelete ? W.__origDelete.call(W, threadId, pendingChatSend.tempMsg.id) : W.deleteMessage(threadId, pendingChatSend.tempMsg.id); } catch (e2) {}
         }
         if (onDone) onDone();
-        showToast('Erreur envoi : ' + ((e && e.message) || 'réseau instable'), 'error');
+        showToast(t('sendErrorPrefix') + ((e && e.message) || '…'), 'error');
     }
 }
 
@@ -6909,7 +7007,7 @@ async function sendChatPhotoToThread(threadId, tempMsg, dataUrl, replyTo, onDone
             try { W.__origDelete ? W.__origDelete.call(W, threadId, pendingChatSend.tempMsg.id) : W.deleteMessage(threadId, pendingChatSend.tempMsg.id); } catch (e2) {}
         }
         if (onDone) onDone();
-        showToast('Erreur envoi de la photo : ' + ((e && e.message) || 'réseau instable'), 'error');
+        showToast(t('sendErrorPrefix') + t('photoMsg') + ' : ' + ((e && e.message) || '…'), 'error');
     }
 }
 
@@ -7461,6 +7559,23 @@ window.popupWhatsAppClick = async function(jobId) {
     }
 }
 
+// Prix : 0 ou vide = "Gratuit" (sinon "<prix> XAF"). Évite les affichages
+// "0 XAF" / "00 XAF" pour les prestations offertes.
+function isFreePrice(job) {
+  const p = String((job && job.price) == null ? '' : job.price).replace(/[^0-9]/g, '');
+  return !p || parseInt(p, 10) === 0;
+}
+function priceLabel(job) {
+  return isFreePrice(job) ? t('freeLabel') : escapeHtml(job.price) + ' XAF';
+}
+// Un "nil"/"null" en lieu (publications de test/anciennes) n'est pas un vrai
+// lieu : on le masque et on retombe sur la catégorie.
+function cleanLandmark(v) {
+  if (v == null) return '';
+  const s = String(v).trim();
+  return /^(nil|null|none)$/i.test(s) ? '' : s;
+}
+
 // Logique de partage WhatsApp, factorisée pour être appelable soit depuis le
 // popup de la carte (job déjà dans jobsById), soit juste après la
 // publication d'une annonce (jobData tenu en main, pas encore forcément
@@ -7470,7 +7585,7 @@ function shareJobViaWhatsApp(jobId, job) {
     const displayContent = getJobDisplayContent(job);
     const requirementsBlock = displayContent.requirements ? '\n\n' + t('waMsgRequirementsLabel') + '\n' + displayContent.requirements : '';
     const phonesText = job.phone2 ? (job.phone + t('waMsgOrConnector') + job.phone2) : (job.phone || '—');
-    const message = t('waMsgShareJob').replace('{title}', (displayContent.title || '').toUpperCase()).replace('{desc}', displayContent.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.landmark || 'Non spécifié').replace('{price}', job.price).replace('{phone}', phonesText).replace('{link}', link);
+    const message = t('waMsgShareJob').replace('{title}', (displayContent.title || '').toUpperCase()).replace('{desc}', displayContent.desc || '').replace('{requirements}', requirementsBlock).replace('{location}', job.landmark || 'Non spécifié').replace('{price}', priceLabel(job)).replace('{phone}', phonesText).replace('{link}', link);
     openWhatsAppReliably(null, null, message);
     showToast(t('sharedOnWhatsapp'), 'success');
 }
@@ -7858,11 +7973,20 @@ function toggleSearchPanel() {
   const panel = document.getElementById('searchPanel');
   if (!panel) return;
   panel.classList.toggle('open');
+  const input = document.getElementById('jobSearchInput');
   if (panel.classList.contains('open')) {
-    const input = document.getElementById('jobSearchInput');
     if (input) input.focus();
+  } else if (input) {
+    input.blur(); // referme le clavier sur mobile
   }
 }
+
+// Touche Échap : referme le panneau de recherche (et les panneaux latéraux)
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const panel = document.getElementById('searchPanel');
+  if (panel && panel.classList.contains('open')) toggleSearchPanel();
+});
 
 function toggleSettingsPanel() {
   const panel = document.getElementById('settingsPanel');

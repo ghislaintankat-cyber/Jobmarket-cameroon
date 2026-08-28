@@ -26,6 +26,19 @@ const SVG={
   star:`<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
 };
 
+// ===== LANGUE (injectée par app.js via W.setLang, cf. I18N de l'app) =====
+// Le widget reste autonome : sans injection, il retombe sur le français.
+const LANG={};
+const FALLBACK={
+  typing:"en train d'écrire…",online:"en ligne",lastSeen:"vu {x}",photo:"Photo",voice:"Voice",file:"Fichier",
+  edited:"modifié",today:"Aujourd'hui",yesterday:"Hier",you:"Toi",unknown:"Inconnu",editBanner:"Modification du message",
+  noResults:"0 résultat(s)",emojiPh:"Rechercher…",option:"Option {x}",reply:"Répondre",react:"Réagir",edit:"Modifier",
+  copy:"Copier",forward:"Transférer",star:"Étoiler",unstar:"Retirer l'étoile",pin:"Épingler",unpin:"Désépingler",del:"Supprimer",
+  noStarred:"Aucun message étoilé",nStarred:"{x} message(s) étoilé(s)",about:"Salut 👋 Je suis sur JobMarket.",
+  noMedia:"Aucun média partagé",votes:"vote",download:"Enregistrer"
+};
+function T(k,x){let v=LANG[k]!==undefined?LANG[k]:FALLBACK[k];if(v===undefined)v=k;if(x!==undefined&&typeof v==='string')v=v.split('{x}').join(String(x));return v}
+
 // Audio context for sounds
 let audioCtx=null;
 function playSound(type){
@@ -75,7 +88,7 @@ const W={
     this.emit('messageReceived',{contactId:cid,message:msg});
   },
   updateStatus(cid,mid,status){const ms=this.convs[cid];if(!ms)return;const m=ms.find(m=>m.id===mid);if(m){m.status=status;if(cid===this.activeId)this.renderMsgs();this.renderChats()}},
-  showTyping(cid){const c=this.contacts.find(c=>c.id===cid);if(c)c._typing=true;if(cid===this.activeId){const s=$('waHeadStatus');s.textContent='typing...';s.classList.add('typing');this._showTypingBub()}this.renderChats()},
+  showTyping(cid){const c=this.contacts.find(c=>c.id===cid);if(c)c._typing=true;if(cid===this.activeId){const s=$('waHeadStatus');s.textContent=T('typing');s.classList.add('typing');this._showTypingBub()}this.renderChats()},
   hideTyping(cid){const c=this.contacts.find(c=>c.id===cid);if(c)c._typing=false;if(cid===this.activeId){this._updHead(c);this._hideTypingBub()}this.renderChats()},
   openChat(cid){
     this.activeId=cid;const c=this.contacts.find(c=>c.id===cid);if(!c)return;
@@ -110,6 +123,12 @@ const W={
   },
   toggleTheme(){this.theme=this.theme==='light'?'dark':'light';this.setTheme(this.theme)},
   setTheme(t){this.theme=t;$('wa').setAttribute('data-theme',t)},
+  setLang(dict){
+    Object.assign(LANG,dict||{});
+    this.renderChats();
+    if(this.activeId){this.renderMsgs();const c=this.contacts.find(c=>c.id===this.activeId);if(c)this._updHead(c)}
+    const ei=$('waEmojiSearchIn');if(ei)ei.placeholder=T('emojiPh');
+  },
   pinChat(cid){if(this._pinned.has(cid))this._pinned.delete(cid);else this._pinned.add(cid);this.renderChats()},
   starMsg(cid,mid){const key=cid+':'+mid;if(this._starred.has(key))this._starred.delete(key);else this._starred.add(key);if(cid===this.activeId)this.renderMsgs()},
   on(ev,fn){if(!this._ev[ev])this._ev[ev]=[];this._ev[ev].push(fn)},
@@ -137,11 +156,11 @@ const W={
       if(last){
         const t=last.time||'';timeH=`<span class="wa-chat-time ${unread?'unread':''}">${t}</span>`;
         if(last.from==='me')lastH+=`<span class="wa-check ${last.status==='read'?'read':''}">${last.status==='sent'?SVG.check:SVG.double}</span>`;
-        if(c._typing)lastH+=`<span class="typing">en train d\'écrire…`;
+        if(c._typing)lastH+=`<span class="typing">${T('typing')}`;
         else if(last.system)lastH+=`<span>🔔 ${esc(last.text).substring(0,40)}</span>`;
         else if(last.text)lastH+=`<span>${esc(last.text).substring(0,50)}</span>`;
-        else if(last.image)lastH+=`<span>📷 Photo</span>`;
-        else if(last.voice)lastH+=`<span>🎤 Voice (${last.voice.duration})</span>`;
+        else if(last.image)lastH+=`<span>📷 ${T('photo')}</span>`;
+        else if(last.voice)lastH+=`<span>🎤 ${T('voice')} (${last.voice.duration})</span>`;
         else if(last.file)lastH+=`<span>📄 ${esc(last.file.name)}</span>`;
         else if(last.poll)lastH+=`<span>📊 Poll: ${esc(last.poll.question)}</span>`;
       }
@@ -157,21 +176,21 @@ const W={
     const contact=this.contacts.find(c=>c.id===this.activeId);
     const isGroup=contact?.isGroup;
     ms.forEach((m,i)=>{
-      const d=m.date||'Today';if(d!==lastDate){h+=`<div class="wa-date"><span>${d}</span></div>`;lastDate=d;lastFrom=''}
+      const d=m.date||T('today');if(d!==lastDate){h+=`<div class="wa-date"><span>${d}</span></div>`;lastDate=d;lastFrom=''}
       if(m.system){h+=`<div class="wa-sys"><span>${esc(m.text)}</span></div>`;lastFrom='';return}
       const sent=m.from==='me',dir=sent?'sent':'recv';
       const prev=ms[i-1],next=ms[i+1];
       const tail=!next||next.from!==m.from||next.date!==m.date||next.system;
       const grouped=prev&&prev.from===m.from&&prev.date===m.date&&!prev.system;
       const showSender=isGroup&&!sent&&(!grouped);
-      const senderName=sent?'':((this.contacts.find(c=>c.id===m.from)||{name:contact?.name||'Unknown'}).name);
+      const senderName=sent?'':((this.contacts.find(c=>c.id===m.from)||{name:contact?.name||T('unknown')}).name);
       const senderColor=getSenderColor(m.from);
       const starred=this._starred.has(this.activeId+':'+m.id);
 
       h+=`<div class="wa-mrow ${dir} ${tail?'tail':''} ${grouped?'no-anim':''}" data-mid="${m.id}" oncontextmenu="W.ctxMsg(event,'${m.id}')" ondblclick="W.reactPick(event,'${m.id}')">`;
       h+=`<div class="wa-bub">`;
       if(showSender)h+=`<div class="wa-sender" style="color:${senderColor}">${esc(senderName)}</div>`;
-      if(m.replyTo){const rm=ms.find(x=>x.id===m.replyTo);if(rm){const rn=rm.from==='me'?'You':((this.contacts.find(c=>c.id===rm.from)||{name:'Unknown'}).name);h+=`<div class="wa-quote" onclick="W.scrollToMsg('${m.replyTo}')"><div class="wa-quote-name">${esc(rn)}</div><div class="wa-quote-text">${rm.text?esc(rm.text):rm.image?'📷 Photo':rm.voice?'🎤 Voice':'📎 File'}</div></div>`}}
+      if(m.replyTo){const rm=ms.find(x=>x.id===m.replyTo);if(rm){const rn=rm.from==='me'?T('you'):((this.contacts.find(c=>c.id===rm.from)||{name:T('unknown')}).name);h+=`<div class="wa-quote" onclick="W.scrollToMsg('${m.replyTo}')"><div class="wa-quote-name">${esc(rn)}</div><div class="wa-quote-text">${rm.text?esc(rm.text):rm.image?'📷 '+T('photo'):rm.voice?'🎤 '+T('voice'):'📎 '+T('file')}</div></div>`}}
       if(m.poll){h+=this._renderPoll(m)}
       if(m.image)h+=`<div class="wa-img" onclick="W.openLB('${m.image}')"><img src="${m.image}" alt="" loading="lazy"></div>`;
       if(m.voice)h+=`<div class="wa-voice"><button class="wa-voice-play" onclick="W.toggleVoice(this)">${SVG.play}</button><div class="wa-wave">${genWave()}</div><span class="wa-voice-dur">${m.voice.duration||'0:12'}</span></div>`;
@@ -180,7 +199,7 @@ const W={
       if(m.text)h+=`<div class="wa-text">${linkify(esc(m.text))}</div>`;
       h+=`<div class="wa-meta">`;
       if(starred)h+=`<span style="color:#f5a623">${SVG.star}</span>`;
-      if(m.edited)h+=`<span class="wa-edited">modifié</span>`;
+      if(m.edited)h+=`<span class="wa-edited">${T('edited')}</span>`;
       h+=`<span class="wa-time">${m.time||''}</span>`;
       if(sent&&m.status){const ic=m.status==='sent'?SVG.check:SVG.double;h+=`<span class="wa-check ${m.status==='read'?'read':''}">${ic}</span>`}
       h+=`</div>`;
@@ -197,7 +216,7 @@ const W={
     let h=`<div class="wa-poll"><div class="wa-poll-q">${esc(p.question)}</div>`;
     p.options.forEach((o,i)=>{
       const pct=total?Math.round(o.votes/total*100):0;
-      h+=`<div class="wa-poll-opt ${o.voted?'voted':''}" onclick="W.votePoll('${m.id}',${i})"><div style="flex:1"><div style="display:flex;justify-content:space-between"><span>${esc(o.text)}</span><span style="font-size:12px;color:var(--text-secondary)">${pct}%</span></div><div class="wa-poll-bar" style="width:${pct}%"></div><div class="wa-poll-votes">${o.votes} vote${o.votes!==1?'s':''}</div></div></div>`;
+      h+=`<div class="wa-poll-opt ${o.voted?'voted':''}" onclick="W.votePoll('${m.id}',${i})"><div style="flex:1"><div style="display:flex;justify-content:space-between"><span>${esc(o.text)}</span><span style="font-size:12px;color:var(--text-secondary)">${pct}%</span></div><div class="wa-poll-bar" style="width:${pct}%"></div><div class="wa-poll-votes">${o.votes} ${T('votes')}</div></div></div>`;
     });
     return h+`</div>`;
   },
@@ -209,13 +228,13 @@ const W={
   },
 
   // ===== UI HELPERS =====
-  _updHead(c){if(!c)return;$('waHeadAv').src=c.avatar;$('waHeadName').textContent=c.name;const s=$('waHeadStatus');s.classList.remove('typing');if(c._typing){s.textContent='en train d\'écrire…';s.classList.add('typing')}else if(c.online)s.textContent='en ligne';else if(c.lastSeen)s.textContent=`vu ${c.lastSeen}`;else s.textContent=''},
+  _updHead(c){if(!c)return;$('waHeadAv').src=c.avatar;$('waHeadName').textContent=c.name;const s=$('waHeadStatus');s.classList.remove('typing');if(c._typing){s.textContent=T('typing');s.classList.add('typing')}else if(c.online)s.textContent=T('online');else if(c.lastSeen)s.textContent=T('lastSeen',c.lastSeen);else s.textContent=''},
   scrollToBottom(force){const el=$('waMsgs');if(force||!this._userScrolled){requestAnimationFrame(()=>{el.scrollTop=el.scrollHeight});this._userScrolled=false;$('waScrollBtn').classList.remove('visible')}},
   scrollToMsg(mid){const el=document.querySelector(`[data-mid="${mid}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.transition='background .3s';el.querySelector('.wa-bub').style.background='rgba(0,168,132,.2)';setTimeout(()=>{el.querySelector('.wa-bub').style.background=''},1500)}},
   _showTypingBub(){const c=$('waMsgs');if($('waTypBub'))return;const d=document.createElement('div');d.id='waTypBub';d.className='wa-mrow recv';d.innerHTML=`<div class="wa-typing-bub"><div class="wa-tdot"></div><div class="wa-tdot"></div><div class="wa-tdot"></div></div>`;c.appendChild(d);this.scrollToBottom()},
   _hideTypingBub(){const e=$('waTypBub');if(e)e.remove()},
   _updSend(){const t=$('waTxt'),has=t&&t.value.trim().length>0;$('waSendIco').style.display=has?'block':'none';$('waMicIco').style.display=has?'none':'block'},
-  _showToast(cid,msg){const c=this.contacts.find(c=>c.id===cid);if(!c)return;const t=$('waToast');$('waToastAv').src=c.avatar;$('waToastName').textContent=c.name;$('waToastText').textContent=msg.text||'📷 Photo';t.classList.add('active');clearTimeout(this._toastT);this._toastT=setTimeout(()=>t.classList.remove('active'),4000)},
+  _showToast(cid,msg){const c=this.contacts.find(c=>c.id===cid);if(!c)return;const t=$('waToast');$('waToastAv').src=c.avatar;$('waToastName').textContent=c.name;$('waToastText').textContent=msg.text||('📷 '+T('photo'));t.classList.add('active');clearTimeout(this._toastT);this._toastT=setTimeout(()=>t.classList.remove('active'),4000)},
 
   // ===== EVENT HANDLERS =====
   onKey(e){
@@ -238,11 +257,11 @@ const W={
   autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';this._updSend()},
 
   // Reply
-  startReply(mid){const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);if(!m)return;this.replyTo=mid;const c=this.contacts.find(c=>c.id===this.activeId);const n=m.from==='me'?'You':(this.contacts.find(c=>c.id===m.from)?.name||c?.name||'Unknown');$('waReplyName').textContent=n;$('waReplyText').textContent=m.text||'📷 Photo';$('waReplyPrev').classList.add('active');$('waTxt').focus()},
+  startReply(mid){const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);if(!m)return;this.replyTo=mid;const c=this.contacts.find(c=>c.id===this.activeId);const n=m.from==='me'?T('you'):(this.contacts.find(c=>c.id===m.from)?.name||c?.name||T('unknown'));$('waReplyName').textContent=n;$('waReplyText').textContent=m.text||'📷 Photo';$('waReplyPrev').classList.add('active');$('waTxt').focus()},
   cancelReply(){this.replyTo=null;$('waReplyPrev').classList.remove('active')},
 
   // Edit
-  startEdit(mid){const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);if(!m||!m.text)return;this.editId=mid;const t=$('waTxt');t.value=m.text;t.focus();this.autoResize(t);$('waReplyName').textContent='Modification du message';$('waReplyText').textContent=m.text;$('waReplyPrev').classList.add('active')},
+  startEdit(mid){const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);if(!m||!m.text)return;this.editId=mid;const t=$('waTxt');t.value=m.text;t.focus();this.autoResize(t);$('waReplyName').textContent=T('editBanner');$('waReplyText').textContent=m.text;$('waReplyPrev').classList.add('active')},
   cancelEdit(){this.editId=null;this.cancelReply()},
 
   // Tabs
@@ -259,7 +278,7 @@ const W={
       const text=el.textContent.toLowerCase();
       if(text.includes(q)){this._searchHits.push(el);const re=new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi');el.innerHTML=el.innerHTML.replace(re,'<span class="wa-search-hl">$1</span>')}
     });
-    $('waSearchCount').textContent=this._searchHits.length?`${Math.min(this._searchIdx+1,this._searchHits.length)}/${this._searchHits.length}`:'0 results';
+    $('waSearchCount').textContent=this._searchHits.length?`${Math.min(this._searchIdx+1,this._searchHits.length)}/${this._searchHits.length}`:T('noResults');
     if(this._searchHits.length)this._scrollToHit();
   },
   searchNav(dir){if(!this._searchHits.length)return;this._searchIdx=(this._searchIdx+dir+this._searchHits.length)%this._searchHits.length;this._scrollToHit()},
@@ -268,7 +287,7 @@ const W={
   // Emoji
   toggleEmoji(){$('waEmoji').classList.toggle('active');$('waAttach').classList.remove('active')},
   _buildEmoji(){
-    const el=$('waEmoji');let h=`<div class="wa-emoji-search"><input placeholder="Rechercher…" oninput="W._filterEmoji(this.value)"></div><div class="wa-emoji-tabs">`;
+    const el=$('waEmoji');let h=`<div class="wa-emoji-search"><input id="waEmojiSearchIn" placeholder="${T('emojiPh')}" oninput="W._filterEmoji(this.value)"></div><div class="wa-emoji-tabs">`;
     const cats=Object.keys(EMOJI);cats.forEach((c,i)=>{h+=`<button class="wa-emoji-tab ${i===0?'active':''}" onclick="W._emojiTab(${i})">${EMOJI[c][0]}</button>`});
     h+=`</div><div class="wa-emoji-grid" id="waEmojiGrid">`;
     EMOJI[cats[0]].forEach(e=>{h+=`<button class="wa-emoji-item" onclick="W._insEmoji('${e}')">${e}</button>`});
@@ -288,13 +307,13 @@ const W={
   onFile(inp){const f=inp.files[0];if(!f||!this.activeId)return;if(f.type.startsWith('image/')){const r=new FileReader();r.onload=e=>{this.sendMessage(this.activeId,{image:e.target.result})};r.readAsDataURL(f)}else{this.sendMessage(this.activeId,{file:{name:f.name,size:fmtSize(f.size)}})}inp.value=''},
 
   // Poll
-  addPollOpt(){const d=$('waPollOpts'),i=document.createElement('input');i.placeholder=`Option ${d.children.length+1}`;i.className='poll-opt';d.appendChild(i)},
+  addPollOpt(){const d=$('waPollOpts'),i=document.createElement('input');i.placeholder=T('option',d.children.length+1);i.className='poll-opt';d.appendChild(i)},
   sendPoll(){
     const q=$('waPollQ').value.trim();if(!q)return;
     const opts=[...document.querySelectorAll('.poll-opt')].map(i=>i.value.trim()).filter(Boolean);
     if(opts.length<2)return;
     this.sendMessage(this.activeId,{poll:{question:q,options:opts.map(t=>({text:t,votes:0,voted:false}))}});
-    $('waPollModal').classList.remove('active');$('waPollQ').value='';$('waPollOpts').innerHTML='<input placeholder="Option 1" class="poll-opt"><input placeholder="Option 2" class="poll-opt">';
+    $('waPollModal').classList.remove('active');$('waPollQ').value='';$('waPollOpts').innerHTML=`<input placeholder="${T('option',1)}" class="poll-opt"><input placeholder="${T('option',2)}" class="poll-opt">`;
   },
 
   // Recording
@@ -314,15 +333,15 @@ const W={
     const starred=this._starred.has(this.activeId+':'+mid);
     const ctx=$('waCtx');
     ctx.innerHTML=`
-      <button onclick="W.startReply('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>Répondre</button>
-      <button onclick="W.reactPick(event,'${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>Réagir</button>
-      ${isMine?`<button onclick="W.startEdit('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier</button>`:''}
-      <button onclick="W._copyMsg('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copier</button>
-      <button onclick="W._fwdMsg('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg>Transférer</button>
-      <button onclick="W.starMsg('${this.activeId}','${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="${starred?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${starred?'Retirer l\'étoile':'Étoiler'}</button>
-      <button onclick="W.pinChat('${this.activeId}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L12 22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>${this._pinned.has(this.activeId)?'Désépingler':'Épingler'}</button>
+      <button onclick="W.startReply('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>${T('reply')}</button>
+      <button onclick="W.reactPick(event,'${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>${T('react')}</button>
+      ${isMine?`<button onclick="W.startEdit('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>${T('edit')}</button>`:''}
+      <button onclick="W._copyMsg('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>${T('copy')}</button>
+      <button onclick="W._fwdMsg('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg>${T('forward')}</button>
+      <button onclick="W.starMsg('${this.activeId}','${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="${starred?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${starred?T('unstar'):T('star')}</button>
+      <button onclick="W.pinChat('${this.activeId}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L12 22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>${this._pinned.has(this.activeId)?T('unpin'):T('pin')}</button>
       <div class="wa-ctx-sep"></div>
-      <button class="danger" onclick="W.deleteMessage('${this.activeId}','${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>Supprimer</button>`;
+      <button class="danger" onclick="W.deleteMessage('${this.activeId}','${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>${T('del')}</button>`;
     ctx.style.top=Math.min(e.clientY,window.innerHeight-300)+'px';
     ctx.style.left=Math.min(e.clientX,window.innerWidth-220)+'px';
     ctx.classList.add('active');
@@ -351,18 +370,18 @@ const W={
   _renderProfile(){
     const c=this.contacts.find(c=>c.id===this.activeId);if(!c)return;
     $('waProfAv').src=c.avatar;$('waProfName').textContent=c.name;
-    $('waProfStatus').textContent=c.online?'Online':(c.lastSeen?`Last seen ${c.lastSeen}`:'');
-    $('waProfAbout').textContent=c.about||'Salut 👋 Je suis sur JobMarket.';
+    $('waProfStatus').textContent=c.online?T('online'):(c.lastSeen?T('lastSeen',c.lastSeen):'');
+    $('waProfAbout').textContent=c.about||T('about');
     const ms=this.convs[this.activeId]||[];const imgs=ms.filter(m=>m.image);
-    $('waProfMedia').innerHTML=imgs.map(m=>`<img src="${m.image}" alt="" onclick="W.openLB('${m.image}')">`).join('')||'<p style="color:var(--text-secondary);font-size:13px;grid-column:1/-1">No shared media yet</p>';
+    $('waProfMedia').innerHTML=imgs.map(m=>`<img src="${m.image}" alt="" onclick="W.openLB('${m.image}')">`).join('')||'<p style="color:var(--text-secondary);font-size:13px;grid-column:1/-1">'+T('noMedia')+'</p>';
   },
 
   // Starred
   toggleStarred(){
-    if(this._starred.size===0){this._showToast2('Aucun message étoilé');return}
+    if(this._starred.size===0){this._showToast2(T('noStarred'));return}
     // Show starred in a simple alert for now
     const items=[...this._starred].map(k=>{const[cid,mid]=k.split(':');const ms=this.convs[cid]||[];const m=ms.find(m=>m.id===mid);return m?m.text||'📷':''}).filter(Boolean);
-    this._showToast2(`${this._starred.size} message(s) étoilé(s)`);
+    this._showToast2(T('nStarred',this._starred.size));
   },
   _showToast2(text){const t=$('waToast');$('waToastAv').src='';$('waToastName').textContent='';$('waToastText').textContent=text;t.classList.add('active');clearTimeout(this._toastT);this._toastT=setTimeout(()=>t.classList.remove('active'),3000)},
 
