@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260827d';
+const APP_BUILD = '20260827e';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -377,7 +377,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NOUVELLE OFFRE D'EMPLOI*\n\n*{title}*\n{desc}{requirements}\n\n💰 Rémunération : {price}\n📍 Lieu : {location}\n📞 Contact : {phone}\n\nPlus de détails ici : {link}",
     waMsgRequirementsLabel: "📋 *Exigences :*",
     waMsgOrConnector: " ou ",
-    waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?",
+    waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?", chatFirstMsgJob: "Bonjour, je vous contacte depuis JobMarket pour : « {jobTitle} ». Est-ce toujours disponible ?",
     catMenage: "Menage", catJardinage: "Jardinage", catMecanique: "Mecanique", catInfo: "Informatique",
     tipLocate: "Ma position", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Style carte",
     tipLang: "Langue", tipSearch: "Rechercher", tipNotifications: "Notifications", tipMessages: "Messages", tipClose: "Fermer",
@@ -621,7 +621,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NEW JOB OPENING*\n\n*{title}*\n{desc}{requirements}\n\n💰 Pay: {price}\n📍 Location: {location}\n📞 Contact: {phone}\n\nMore details here: {link}",
     waMsgRequirementsLabel: "📋 *Requirements:*",
     waMsgOrConnector: " or ",
-    waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?",
+    waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?", chatFirstMsgJob: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\". Is this still available?",
     catMenage: "Cleaning", catJardinage: "Gardening", catMecanique: "Mechanics", catInfo: "IT",
     tipLocate: "My location", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Map style",
     tipLang: "Language", tipSearch: "Search", tipNotifications: "Notifications", tipMessages: "Messages", tipClose: "Close",
@@ -865,7 +865,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NUOVA OFFERTA DI LAVORO*\n\n*{title}*\n{desc}{requirements}\n\n💰 Compenso: {price}\n📍 Luogo: {location}\n📞 Contatto: {phone}\n\nMaggiori dettagli qui: {link}",
     waMsgRequirementsLabel: "📋 *Requisiti:*",
     waMsgOrConnector: " o ",
-    waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?",
+    waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?", chatFirstMsgJob: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\". È ancora disponibile?",
     catMenage: "Pulizie", catJardinage: "Giardinaggio", catMecanique: "Meccanica", catInfo: "Informatica",
     tipLocate: "La mia posizione", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Stile mappa",
     tipLang: "Lingua", tipSearch: "Cerca", tipNotifications: "Notifiche", tipMessages: "Messaggi", tipClose: "Chiudi",
@@ -1109,7 +1109,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NEUES STELLENANGEBOT*\n\n*{title}*\n{desc}{requirements}\n\n💰 Vergütung: {price}\n📍 Ort: {location}\n📞 Kontakt: {phone}\n\nMehr Details hier: {link}",
     waMsgRequirementsLabel: "📋 *Anforderungen:*",
     waMsgOrConnector: " oder ",
-    waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?",
+    waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?", chatFirstMsgJob: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\". Ist das noch verfügbar?",
     catMenage: "Reinigung", catJardinage: "Gartenarbeit", catMecanique: "Mechanik", catInfo: "IT",
     tipLocate: "Mein Standort", tipZoomIn: "Zoom +", tipZoomOut: "Zoom -", tipMapStyle: "Kartenstil",
     tipLang: "Sprache", tipSearch: "Suchen", tipNotifications: "Benachrichtigungen", tipMessages: "Nachrichten", tipClose: "Schließen",
@@ -1353,7 +1353,7 @@ const I18N = {
     waMsgShareJob: "🔊 *新工作机会*\n\n*{title}*\n{desc}{requirements}\n\n💰 报酬：{price} XAF\n📍 地点：{location}\n📞 联系方式：{phone}\n\n详情请点击：{link}",
     waMsgRequirementsLabel: "📋 *要求：*",
     waMsgOrConnector: " 或 ",
-    waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?",
+    waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?", chatFirstMsgJob: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。请问这个还可以预约吗?",
     catMenage: "清洁", catJardinage: "园艺", catMecanique: "机械", catInfo: "信息技术",
     tipLocate: "我的位置", tipZoomIn: "放大", tipZoomOut: "缩小", tipMapStyle: "地图样式",
     tipLang: "语言", tipSearch: "搜索", tipNotifications: "通知", tipMessages: "消息", tipClose: "关闭",
@@ -2616,10 +2616,6 @@ function buildJobPopupHtml(job, jobId) {
         <button onclick="openChatFromMapPopup('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:12px;text-align:center;border-radius:12px;margin-top:8px;border:none;width:100%;cursor:pointer;font-weight:700;font-size:14px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           ${t('secureChat')}
-        </button>
-        <button onclick="popupWhatsAppClick('${jobId}')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:none;border:1px solid #25D366;color:#25D366;padding:10px;text-align:center;border-radius:12px;margin-top:6px;width:100%;cursor:pointer;font-weight:700;font-size:13px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
-          WhatsApp
         </button>
         
         <div style="display:flex;gap:6px;margin-top:8px;">
@@ -5098,9 +5094,7 @@ async function openJobPreview(jobId) {
     // et on masque le bouton "Contacter par WhatsApp" (inutile pour se contacter soi-même).
     const isOwner = !!(auth.currentUser && job.user === auth.currentUser.uid);
     const ownerActionsEl = document.getElementById('previewOwnerActions');
-    const whatsAppBtnEl = document.getElementById('previewWhatsAppBtn');
     if (ownerActionsEl) ownerActionsEl.classList.toggle('hidden', !isOwner);
-    if (whatsAppBtnEl) whatsAppBtnEl.classList.toggle('hidden', isOwner);
     const quoteBtnEl = document.getElementById('previewQuoteBtn');
     if (quoteBtnEl) quoteBtnEl.classList.toggle('hidden', isOwner);
     const chatBtnEl = document.getElementById('previewChatBtn');
@@ -6718,7 +6712,7 @@ function openChatFromMapPopup(jobId) {
     if (!job) { alert(t('jobNotFoundAlert')); return; }
     const user = auth.currentUser;
     if (!user || user.isAnonymous) {
-        alert(t('mustBeLoggedInWhatsapp'));
+        alert(t('mustBeLoggedIn'));
         if (typeof openOverlay === 'function') openOverlay('accountPage');
         return;
     }
@@ -6771,6 +6765,17 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
             W.renderChats();
         }
         W.openChat(tid);
+        // Premier contact via une annonce : on pré-remplit le premier
+        // message (contact en 1 tap, comme WhatsApp) — seulement si la
+        // conversation n'a pas encore démarré et que le champ est vide
+        // (l'utilisateur peut l'éditer ou le vider avant d'envoyer).
+        if (jobId && jobId !== 'general' && jobTitle) {
+          const input = document.getElementById('waTxt');
+          if (input && !input.value && (W.convs[tid] || []).length === 0) {
+            input.value = t('chatFirstMsgJob').replace('{jobTitle}', String(jobTitle).slice(0, 80));
+            if (W.autoResize) W.autoResize(input);
+          }
+        }
     }
 }
 
