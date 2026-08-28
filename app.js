@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260827c';
+const APP_BUILD = '20260827d';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -74,6 +74,7 @@ function logClientError(message, extra) {
       uid: (auth.currentUser && auth.currentUser.uid) || null,
       url: location.href,
       userAgent: navigator.userAgent,
+      build: APP_BUILD, // pour rattacher l'erreur à la version exacte de l'app
       timestamp: Date.now()
     }).catch(() => {});
   } catch (e) { /* silencieux, volontairement */ }

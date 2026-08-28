@@ -1,22 +1,25 @@
 {
   "name": "JobMarket Cameroon",
   "short_name": "JobMarket",
+  "description": "Trouvez des artisans qualifiés près de vous ou proposez vos services : carte, annonces, chat sécurisé, avis vérifiés.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0A0A0F",
   "theme_color": "#FFD700",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
-
-
