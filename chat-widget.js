@@ -91,6 +91,7 @@ const W={
   showTyping(cid){const c=this.contacts.find(c=>c.id===cid);if(c)c._typing=true;if(cid===this.activeId){const s=$('waHeadStatus');s.textContent=T('typing');s.classList.add('typing');this._showTypingBub()}this.renderChats()},
   hideTyping(cid){const c=this.contacts.find(c=>c.id===cid);if(c)c._typing=false;if(cid===this.activeId){this._updHead(c);this._hideTypingBub()}this.renderChats()},
   openChat(cid){
+    this._stopVoice();
     this.activeId=cid;const c=this.contacts.find(c=>c.id===cid);if(!c)return;
     const ms=this.convs[cid]||[];ms.forEach(m=>{if(m.from!=='me'&&m.unread)m.unread=false});
     $('waEmpty').style.display='none';$('waCHead').style.display='flex';$('waMsgs').style.display='flex';$('waInputArea').style.display='flex';
@@ -99,6 +100,7 @@ const W={
     this._userScrolled=false;this.emit('chatOpened',cid);
   },
   goBack(){
+    this._stopVoice();
     this.activeId=null;$('waSide').classList.remove('hidden');
     $('waEmpty').style.display='flex';$('waCHead').style.display='none';$('waMsgs').style.display='none';$('waInputArea').style.display='none';
     this._closeProfile();
@@ -202,7 +204,7 @@ const W={
       if(m.replyTo){const rm=ms.find(x=>x.id===m.replyTo);if(rm){const rn=rm.from==='me'?T('you'):((this.contacts.find(c=>c.id===rm.from)||{name:T('unknown')}).name);h+=`<div class="wa-quote" onclick="W.scrollToMsg('${m.replyTo}')"><div class="wa-quote-name">${esc(rn)}</div><div class="wa-quote-text">${rm.text?esc(rm.text):rm.image?'📷 '+T('photo'):rm.voice?'🎤 '+T('voice'):'📎 '+T('file')}</div></div>`}}
       if(m.poll){h+=this._renderPoll(m)}
       if(m.image)h+=`<div class="wa-img" onclick="W.openLB('${m.image}')"><img src="${m.image}" alt="" loading="lazy"></div>`;
-      if(m.voice)h+=`<div class="wa-voice" data-url="${esc(m.voice.url||'')}"><button class="wa-voice-play" onclick="W.toggleVoice(this)">${SVG.play}</button><div class="wa-wave">${genWave()}</div><span class="wa-voice-dur">${m.voice.duration||'0:00'}</span></div>`;
+      if(m.voice)h+=`<div class="wa-voice" data-url="${esc(m.voice.url||'')}" data-total="${esc(m.voice.duration||'')}"><button class="wa-voice-play" onclick="W.toggleVoice(this)">${SVG.play}</button><div class="wa-voice-main"><div class="wa-wave">${genWave()}</div><div class="wa-voice-prog"><div class="wa-voice-fill"></div></div></div><span class="wa-voice-dur">${m.voice.duration||'0:00'}</span></div>`;
       if(m.file)h+=`<div class="wa-file" onclick="W.emit('openFile',{msgId:'${m.id}',contactId:'${this.activeId}'})"><div class="wa-file-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="wa-file-name">${esc(m.file.name)}</div><div class="wa-file-size">${m.file.size||''}</div></div></div>`;
       if(m.linkPreview)h+=`<div class="wa-linkprev" onclick="window.open('${m.linkPreview.url}','_blank')"><div class="wa-linkprev-body"><div class="wa-linkprev-title">${esc(m.linkPreview.title||'')}</div><div class="wa-linkprev-desc">${esc(m.linkPreview.description||'')}</div><div class="wa-linkprev-url">${esc(m.linkPreview.url||'')}</div></div></div>`;
       if(m.text)h+=`<div class="wa-text">${linkify(esc(m.text))}</div>`;
@@ -217,6 +219,7 @@ const W={
       lastFrom=m.from;
     });
     el.innerHTML=h;
+    this._reattachVoice(el);
     if(this._msgSearch)this._highlightSearch();
   },
 
@@ -330,25 +333,90 @@ const W={
   stopRec(){clearInterval(this.recT);const d=`${Math.floor(this.recS/60)}:${(this.recS%60).toString().padStart(2,'0')}`;this._resetRec();if(this.activeId)this.sendMessage(this.activeId,{voice:{duration:d}});this.emit('recordingStopped',{contactId:this.activeId,duration:d})},
   cancelRec(){clearInterval(this.recT);this._resetRec()},
   _resetRec(){this.rec=false;$('waTxtWrap').style.display='flex';$('waRec').classList.remove('active');$('waEmojiBtn').style.display='flex';$('waAttachBtn').style.display='flex';$('waSendBtn').style.display='flex';this._updSend()},
-  // Lecture réelle du message vocal (1 seul à la fois, comme WhatsApp)
+  _voiceT2L(s){s=Math.max(0,Math.round(s||0));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},
+  // Bind la progression (ondes + temps écoulé) à un wrap donné — réutilisé
+  // au démarrage ET quand le DOM est reconstruit pendant la lecture.
+  _voiceBindProgress(a, wrap){
+    const self=this;
+    const totalLabel=wrap?wrap.dataset.total||'' :'';
+    const fill=wrap?wrap.querySelector('.wa-voice-fill'):null;
+    const durEl=wrap?wrap.querySelector('.wa-voice-dur'):null;
+    const btn=wrap?wrap.querySelector('.wa-voice-play'):null;
+    const resetUI=()=>{
+      if(self._voiceAudio===a){self._voiceAudio=null;self._voicePlaying=false;}
+      if(btn){btn.innerHTML=SVG.play;btn.dataset.p='0';}
+      if(self._voiceBtn===btn)self._voiceBtn=null;
+      if(fill)fill.style.width='0%';
+      if(durEl&&totalLabel)durEl.textContent=totalLabel;
+    };
+    a.ontimeupdate=()=>{
+      if(self._voiceAudio!==a)return;
+      const tot=(a.duration&&isFinite(a.duration)&&a.duration>0)?a.duration:0;
+      if(fill)fill.style.width=tot?Math.min(100,(a.currentTime/tot)*100)+'%':'0%';
+      if(durEl)durEl.textContent=tot?self._voiceT2L(a.currentTime)+' / '+totalLabel:self._voiceT2L(a.currentTime);
+    };
+    a.onended=resetUI;
+    a.onerror=resetUI;
+  },
+  // Arrête la lecture vocale en cours (changement de conversation, retour liste)
+  _stopVoice(){
+    this._voicePlaying=false;
+    if(this._voiceAudio){try{this._voiceAudio.pause();}catch(e){}this._voiceAudio=null;}
+    if(this._voiceBtn){
+      const b=this._voiceBtn;this._voiceBtn=null;
+      b.innerHTML=SVG.play;b.dataset.p='0';
+      const wrap=b.closest?b.closest('.wa-voice'):null;
+      if(wrap){
+        const f=wrap.querySelector('.wa-voice-fill');if(f)f.style.width='0%';
+        const d=wrap.querySelector('.wa-voice-dur');if(d&&wrap.dataset.total)d.textContent=wrap.dataset.total;
+      }
+    }
+  },
+  // Si la liste des messages a été reconstruite PENDANT la lecture (nouveau
+  // message, réaction...), le bouton qui lisait est détaché du DOM → on
+  // ré-attache la lecture au NOUVEAU bouton du même message (pas de lecture
+  // fantôme sans contrôle, position et progression conservées).
+  _reattachVoice(el){
+    if(!this._voicePlaying||!this._voiceAudio||!this._voiceBtn)return;
+    if(this._voiceBtn.isConnected)return; // toujours dans le DOM, rien à faire
+    const oldWrap=this._voiceBtn.closest?this._voiceBtn.closest('.wa-voice'):null;
+    const url=oldWrap?oldWrap.dataset.url:'';
+    const newWrap=[...el.querySelectorAll('.wa-voice')].find(wr=>wr.dataset.url===url)||null;
+    const newBtn=newWrap?newWrap.querySelector('.wa-voice-play'):null;
+    if(!newBtn){this._stopVoice();return;} // message disparu (supprimé) → stop
+    this._voiceBtn=newBtn;
+    newBtn.innerHTML=SVG.pause;newBtn.dataset.p='1';
+    this._voiceBindProgress(this._voiceAudio,newWrap);
+  },
+  // Lecture réelle du message vocal (1 seul à la fois, comme WhatsApp).
+  // Pause → reprise SANS repartir de zéro (même élément audio, position
+  // conservée), comme dans WhatsApp.
   toggleVoice(btn){
     const wrap=btn.closest?btn.closest('.wa-voice'):null;
     const url=wrap?wrap.dataset.url:'';
     if(!url)return;
-    // déjà en lecture → pause
+    // PAUSE / REPRISE de CE message
     if(this._voiceBtn===btn){
-      if(this._voiceAudio)this._voiceAudio.pause();
-      btn.innerHTML=SVG.play;btn.dataset.p='0';this._voiceBtn=null;return;
+      if(this._voicePlaying){
+        if(this._voiceAudio){try{this._voiceAudio.pause();}catch(e){}}
+        this._voicePlaying=false;
+        btn.innerHTML=SVG.play;btn.dataset.p='0';
+        return;
+      }
+      const a=this._voiceAudio;
+      if(!a)return;
+      this._voicePlaying=true;
+      this._voiceBindProgress(a,wrap);
+      const p=a.play();if(p&&typeof p.catch==='function')p.catch(()=>{this._stopVoice();});
+      btn.innerHTML=SVG.pause;btn.dataset.p='1';
+      return;
     }
-    // sinon → stopper la lecture en cours et lancer celle-ci
-    if(this._voiceBtn){this._voiceBtn.innerHTML=SVG.play;this._voiceBtn.dataset.p='0';}
-    if(this._voiceAudio){this._voiceAudio.pause();this._voiceAudio=null;}
+    // AUTRE message → stopper la lecture en cours et lancer celle-ci
+    this._stopVoice();
     const a=new Audio(url);
-    this._voiceAudio=a;this._voiceBtn=btn;
-    const self=this;
-    a.onended=()=>{if(self._voiceBtn===btn){btn.innerHTML=SVG.play;btn.dataset.p='0';}if(self._voiceBtn===btn)self._voiceBtn=null;if(self._voiceAudio===a)self._voiceAudio=null;};
-    a.onerror=()=>{if(self._voiceBtn===btn){btn.innerHTML=SVG.play;btn.dataset.p='0';}if(self._voiceBtn===btn)self._voiceBtn=null;if(self._voiceAudio===a)self._voiceAudio=null;};
-    a.play().catch(()=>{});
+    this._voiceAudio=a;this._voiceBtn=btn;this._voicePlaying=true;
+    this._voiceBindProgress(a,wrap);
+    const p=a.play();if(p&&typeof p.catch==='function')p.catch(()=>{this._stopVoice();});
     btn.innerHTML=SVG.pause;btn.dataset.p='1';
   },
 

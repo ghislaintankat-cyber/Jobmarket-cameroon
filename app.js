@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260827j';
+const APP_BUILD = '20260827m';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -6357,7 +6357,7 @@ let lastVibTs = 0; // timestamp du dernier message reçu ayant fait vibrer (anti
 // Activés uniquement si MediaRecorder est disponible. Tout échec (micro
 // refusé, upload audio refusé par le preset Cloudinary) retombe sur un
 // toast + retour au texte : le chemin d'envoi TEXTE n'est jamais affecté.
-let voiceRecorder = null, voiceChunks = [], voiceStartTs = 0, voiceMaxTimer = null, voiceBusy = false, voiceW = null;
+let voiceRecorder = null, voiceChunks = [], voiceStartTs = 0, voiceMaxTimer = null, voiceBusy = false, voiceW = null, voiceCid = null;
 const VOICE_MAX_MS = 60000; // 60 s max (arrêt automatique)
 
 function voiceDurLabel(secs) {
@@ -6384,6 +6384,7 @@ async function startVoiceRecording(w) {
     voiceBusy = true;
     voiceW = w;
     if (!w.activeId) { stream.getTracks().forEach(tr => tr.stop()); voiceBusy = false; return; }
+    voiceCid = w.activeId; // cible figée au départ : le vocal part dans LA conversation où l'enregistrement a démarré
     const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(mt => { try { return MediaRecorder.isTypeSupported(mt); } catch (e) { return false; } }) || '';
     voiceRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
     voiceChunks = [];
@@ -6415,7 +6416,7 @@ function stopVoiceRecording(w, send) {
     try {
       const url = await uploadVoiceToCloudinary(new File([blob], 'voice.' + (String(blob.type).includes('mp4') ? 'm4a' : 'webm'), { type: blob.type || 'audio/webm' }));
       const w2 = voiceW;
-      if (w2 && w2.activeId) w2.sendMessage(w2.activeId, { audioUrl: url, duration: secs });
+      if (w2 && voiceCid) w2.sendMessage(voiceCid, { audioUrl: url, duration: secs });
     } catch (e) {
       console.warn('voice upload failed', e);
       showToast(t('voiceUploadError'), 'error');
@@ -6657,7 +6658,7 @@ function attachChatListeners(cid, peerUid) {
         if (pendingChatSend && pendingChatSend.cid === cid) {
             const window = pendingChatSend.dataImage ? 60000 : 6000;
             const matched = msgs.some(m => m.from === 'me' && Math.abs((m._ts || 0) - pendingChatSend.ts) < window &&
-                ((pendingChatSend.text && m.text === pendingChatSend.text) || (pendingChatSend.dataImage && m.image)));
+                ((pendingChatSend.text && m.text === pendingChatSend.text) || (pendingChatSend.dataImage && m.image) || (pendingChatSend.voice && m.voice)));
             if (matched) pendingChatSend = null;
             else msgs.push(pendingChatSend.tempMsg);
         }
@@ -6929,7 +6930,7 @@ function patchChatWidgetForFirebase() {
         }
         W.addMessage(cid, tempMsg);
         const isDataImage = !!(data.image && String(data.image).startsWith('data:'));
-        pendingChatSend = { cid: cid, ts: Date.now(), text: data.text || '', dataImage: isDataImage, tempMsg: tempMsg };
+        pendingChatSend = { cid: cid, ts: Date.now(), text: data.text || '', dataImage: isDataImage, voice: !!data.audioUrl, tempMsg: tempMsg };
         const clearPending = () => { if (pendingChatSend && pendingChatSend.tempMsg === tempMsg) pendingChatSend = null; };
         setTimeout(clearPending, isDataImage ? 65000 : 10000);
         if (isDataImage) {
@@ -7085,11 +7086,12 @@ async function sendChatMessageToThread(threadId, payload, onDone) {
         const now = Date.now();
         const myName = String((profilesCache[me.uid] || {}).name || me.displayName || 'Utilisateur').slice(0, 60);
         const peerName = String((profilesCache[peerUid] || {}).name || 'Utilisateur').slice(0, 60);
-        const preview = payload.imageUrl ? '📷 Photo' : (payload.text || '').slice(0, 100);
+        const preview = payload.imageUrl ? '📷 Photo' : (payload.audioUrl ? '🎤 ' + t('voiceMsg') : (payload.text || '').slice(0, 100));
         const msg = { from: me.uid, to: peerUid, timestamp: now, readBy: { [me.uid]: true } };
         if (payload.text) msg.text = payload.text;
         if (payload.imageUrl) msg.imageUrl = payload.imageUrl;
         if (payload.replyTo) msg.replyTo = payload.replyTo;
+        if (payload.audioUrl) { msg.audioUrl = payload.audioUrl; msg.duration = payload.duration; } // SANS CE LIGNE, le vocal s'écrivait VIDE (bulle invisible)
 
         // 0) index userThreads (filet de sécurité des conversations)
         db.ref('userThreads/' + me.uid + '/' + threadId).set(true).catch(() => {});
