@@ -108,11 +108,14 @@ const W={
     this.addMessage(cid,msg);playSound('send');return msg;
   },
   addReaction(cid,mid,emoji){
+    // TOGGLE comme WhatsApp : on ajoute la 1re fois, on retire au 2e appui.
     const ms=this.convs[cid];if(!ms)return;const m=ms.find(m=>m.id===mid);if(!m)return;
     if(!m.reactions)m.reactions=[];
     const ex=m.reactions.find(r=>r.emoji===emoji);
-    if(ex)ex.count=(ex.count||1)+1;else m.reactions.push({emoji,count:1});
+    if(ex){ex.count=(ex.count||1)-1;if(ex.count<=0)m.reactions=m.reactions.filter(r=>r!==ex);}
+    else m.reactions.push({emoji,count:1});
     if(cid===this.activeId)this.renderMsgs();
+    this.emit('reactionToggled',{contactId:cid,messageId:mid,reactions:(m.reactions||[]).slice()});
   },
   editMessage(cid,mid,newText){
     const ms=this.convs[cid];if(!ms)return;const m=ms.find(m=>m.id===mid);if(m){m.text=newText;m.edited=true;if(cid===this.activeId)this.renderMsgs()}

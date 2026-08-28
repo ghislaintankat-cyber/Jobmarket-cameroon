@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260827h';
+const APP_BUILD = '20260827i';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -6850,6 +6850,20 @@ function patchChatWidgetForFirebase() {
         return tempMsg;
     };
 
+    // ---- RÉACTIONS : persistées dans Firebase pour que l'autre partie
+    // les voie aussi (avant : locales seulement). Les messages optimistes
+    // (pas encore confirmés, pas de fbId) attendent la confirmation. ----
+    const origAddReaction = W.addReaction;
+    W.addReaction = function(cid, mid, emoji) {
+      origAddReaction.call(this, cid, mid, emoji);
+      try {
+        const m = (this.convs[cid] || []).find(x => x.id === mid);
+        if (!m || !m.fbId) return;
+        const reactions = (m.reactions || []).map(r => ({ emoji: r.emoji, count: r.count }));
+        db.ref('chats/' + cid + '/messages/' + m.fbId + '/reactions').set(reactions.length ? reactions : null).catch(() => {});
+      } catch (e) {}
+    };
+
     // ---- MODIFIER un message : aussi dans Firebase (champ text) ----
     const origEditMessage = W.editMessage;
     W.editMessage = function(cid, mid, newText) {
@@ -7083,16 +7097,21 @@ async function markChatRead(threadId) {
     try {
         // mon compteur de non-lus -> 0
         await db.ref('userInboxes/' + user.uid + '/threads/' + threadId + '/unread').set(0);
-        // messages reçus non lus -> readBy (déclenche le ✓✓ chez l'autre)
+        // messages reçus non lus -> readBy (déclenche le ✓✓ chez l'autre).
+        // Écriture à CHEMIN PROFOND (messages/{id}/readBy/{moi}) : un
+        // update() multi-champ au niveau /messages remplaceraient chaque
+        // message par {readBy:...} et détruiseraient son contenu (from,
+        // text, timestamp...) — chaque flag est donc écrit seul, en
+        // profondeur, sans toucher au reste du message.
         const snap = await db.ref('chats/' + threadId + '/messages').limitToLast(50).once('value');
-        const updates = {};
+        const write = {};
         snap.forEach(ch => {
             const m = ch.val();
             if (m && m.from !== user.uid && !(m.readBy && m.readBy[user.uid])) {
-                updates[ch.key] = { readBy: { [user.uid]: true } };
+                write['messages/' + ch.key + '/readBy/' + user.uid] = true;
             }
         });
-        if (Object.keys(updates).length) await db.ref('chats/' + threadId + '/messages').update(updates);
+        if (Object.keys(write).length) await db.ref('chats/' + threadId).update(write);
     } catch (e) { /* non critique */ }
 }
 
@@ -7209,11 +7228,24 @@ async function healLegacyThreadsForPair(user, pairId) {
         }
 
         if (!Object.keys(updates.messages).length && !Object.keys(updates.meta).length) return;
+        // Écriture par CHEMIN INDIVIDUEL : update({messages: {...}}) au niveau
+        // du thread REMPLACE le nœud messages entier — les messages déjà
+        // présents dans le thread du duo auraient été détruits (idem pour
+        // meta/participants/names, remplacements de maps entières). Chaque
+        // champ est donc écrit à son chemin complet (fusion par chemin).
         const write = {};
-        if (Object.keys(updates.messages).length) write.messages = updates.messages;
-        if (Object.keys(updates.meta).length) write.meta = updates.meta;
-        // référence chats/{pairId} : autorisée (je suis dans le threadId)
-        await db.ref('chats/' + pairId).update(write);
+        for (const [mid, msg] of Object.entries(updates.messages)) write['messages/' + mid] = msg;
+        for (const [k, v] of Object.entries(updates.meta)) {
+            if (k === 'participants' || k === 'names') {
+                for (const [uid, v2] of Object.entries(v)) write['meta/' + k + '/' + uid] = v2;
+            } else {
+                write['meta/' + k] = v;
+            }
+        }
+        if (Object.keys(write).length) {
+            // référence chats/{pairId} : autorisée (je suis dans le threadId)
+            await db.ref('chats/' + pairId).update(write);
+        }
 
         // La conversation unique du duo doit figurer dans ma boîte de
         // réception (si elle n'existait pas, les messages venaient du thread

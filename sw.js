@@ -158,7 +158,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v15';
+const CACHE_VERSION = 'v16';
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
