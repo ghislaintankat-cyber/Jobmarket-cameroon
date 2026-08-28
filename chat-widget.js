@@ -62,7 +62,7 @@ const W={
   contacts:[],convs:{},activeId:null,replyTo:null,editId:null,
   rec:false,recT:null,recS:0,theme:'light',_ev:{},
   _tab:'all',_search:'',_msgSearch:'',_searchIdx:0,_searchHits:[],
-  _profileOpen:false,_searchOpen:false,_starred:new Set(),_pinned:new Set(),
+  _profileOpen:false,_searchOpen:false,_starred:new Set(),_pinned:new Set(),_voicePos:{},_voiceSpeed:1,
   _scrolledUp:false,_userScrolled:false,
 
   // ===== PUBLIC API =====
@@ -71,7 +71,7 @@ const W={
     if(cfg.conversations)Object.keys(cfg.conversations).forEach(k=>this.convs[k]=cfg.conversations[k]);
     if(cfg.theme)this.setTheme(cfg.theme);
     if(cfg.myAvatar)$('waMyAv').src=cfg.myAvatar;
-    if(cfg.pinned)cfg.pinned.forEach(id=>this._pinned.add(id));
+    if(cfg.pinned)cfg.pinned.forEach(id=>this._pinned.add(id));else this._loadPinned();
     if(cfg.favorites)cfg.favorites.forEach(id=>{const c=this.contacts.find(c=>c.id===id);if(c)c.favorite=true});
     this._buildEmoji();this._bindEvents();this.renderChats();this._updSend();
   },
@@ -134,7 +134,9 @@ const W={
     if(this.activeId){this.renderMsgs();const c=this.contacts.find(c=>c.id===this.activeId);if(c)this._updHead(c)}
     const ei=$('waEmojiSearchIn');if(ei)ei.placeholder=T('emojiPh');
   },
-  pinChat(cid){if(this._pinned.has(cid))this._pinned.delete(cid);else this._pinned.add(cid);this.renderChats()},
+  pinChat(cid){if(this._pinned.has(cid))this._pinned.delete(cid);else this._pinned.add(cid);this._savePinned();this.renderChats()},
+  _savePinned(){try{localStorage.setItem('wa_pinned',JSON.stringify([...this._pinned]));}catch(e){}},
+  _loadPinned(){try{const p=JSON.parse(localStorage.getItem('wa_pinned')||'[]');if(Array.isArray(p))p.forEach(id=>this._pinned.add(id));}catch(e){}},
   starMsg(cid,mid){const key=cid+':'+mid;if(this._starred.has(key))this._starred.delete(key);else this._starred.add(key);if(cid===this.activeId)this.renderMsgs()},
   on(ev,fn){if(!this._ev[ev])this._ev[ev]=[];this._ev[ev].push(fn)},
   off(ev,fn){if(this._ev[ev])this._ev[ev]=this._ev[ev].filter(f=>f!==fn)},
@@ -204,7 +206,7 @@ const W={
       if(m.replyTo){const rm=ms.find(x=>x.id===m.replyTo);if(rm){const rn=rm.from==='me'?T('you'):((this.contacts.find(c=>c.id===rm.from)||{name:T('unknown')}).name);h+=`<div class="wa-quote" onclick="W.scrollToMsg('${m.replyTo}')"><div class="wa-quote-name">${esc(rn)}</div><div class="wa-quote-text">${rm.text?esc(rm.text):rm.image?'📷 '+T('photo'):rm.voice?'🎤 '+T('voice'):'📎 '+T('file')}</div></div>`}}
       if(m.poll){h+=this._renderPoll(m)}
       if(m.image)h+=`<div class="wa-img" onclick="W.openLB('${m.image}')"><img src="${m.image}" alt="" loading="lazy"></div>`;
-      if(m.voice)h+=`<div class="wa-voice" data-url="${esc(m.voice.url||'')}" data-total="${esc(m.voice.duration||'')}"><button class="wa-voice-play" onclick="W.toggleVoice(this)">${SVG.play}</button><div class="wa-voice-main"><div class="wa-wave">${genWave()}</div><div class="wa-voice-prog"><div class="wa-voice-fill"></div></div></div><span class="wa-voice-dur">${m.voice.duration||'0:00'}</span></div>`;
+      if(m.voice)h+=`<div class="wa-voice" data-mid="${m.id}" data-url="${esc(m.voice.url||'')}" data-total="${esc(m.voice.duration||'')}"><button class="wa-voice-play" onclick="W.toggleVoice(this)">${SVG.play}</button><div class="wa-voice-main"><div class="wa-wave">${genWave()}</div><div class="wa-voice-prog"><div class="wa-voice-fill"></div></div></div><span class="wa-voice-dur">${m.voice.duration||'0:00'}</span><span class="wa-voice-speed" onclick="W.cycleVoiceSpeed(this)">1x</span></div>`;
       if(m.file)h+=`<div class="wa-file" onclick="W.emit('openFile',{msgId:'${m.id}',contactId:'${this.activeId}'})"><div class="wa-file-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="wa-file-name">${esc(m.file.name)}</div><div class="wa-file-size">${m.file.size||''}</div></div></div>`;
       if(m.linkPreview)h+=`<div class="wa-linkprev" onclick="window.open('${m.linkPreview.url}','_blank')"><div class="wa-linkprev-body"><div class="wa-linkprev-title">${esc(m.linkPreview.title||'')}</div><div class="wa-linkprev-desc">${esc(m.linkPreview.description||'')}</div><div class="wa-linkprev-url">${esc(m.linkPreview.url||'')}</div></div></div>`;
       if(m.text)h+=`<div class="wa-text">${linkify(esc(m.text))}</div>`;
@@ -338,9 +340,11 @@ const W={
   // au démarrage ET quand le DOM est reconstruit pendant la lecture.
   _voiceBindProgress(a, wrap){
     const self=this;
+    const mid=wrap?wrap.dataset.mid||'' :'';
     const totalLabel=wrap?wrap.dataset.total||'' :'';
     const fill=wrap?wrap.querySelector('.wa-voice-fill'):null;
     const durEl=wrap?wrap.querySelector('.wa-voice-dur'):null;
+    const speedEl=wrap?wrap.querySelector('.wa-voice-speed'):null;
     const btn=wrap?wrap.querySelector('.wa-voice-play'):null;
     const resetUI=()=>{
       if(self._voiceAudio===a){self._voiceAudio=null;self._voicePlaying=false;}
@@ -348,15 +352,45 @@ const W={
       if(self._voiceBtn===btn)self._voiceBtn=null;
       if(fill)fill.style.width='0%';
       if(durEl&&totalLabel)durEl.textContent=totalLabel;
+      if(speedEl)speedEl.style.display='none';
+      if(mid)delete self._voicePos[mid]; // écouté jusqu'au bout / erreur → on repart de zéro
     };
     a.ontimeupdate=()=>{
       if(self._voiceAudio!==a)return;
       const tot=(a.duration&&isFinite(a.duration)&&a.duration>0)?a.duration:0;
       if(fill)fill.style.width=tot?Math.min(100,(a.currentTime/tot)*100)+'%':'0%';
       if(durEl)durEl.textContent=tot?self._voiceT2L(a.currentTime)+' / '+totalLabel:self._voiceT2L(a.currentTime);
+      if(mid)self._voicePos[mid]=a.currentTime; // mémorise la position d'écoute (reprise plus tard)
     };
+    // Reprise à la position d'écoute (message déjà écouté à moitié) — comme WhatsApp
+    a.onloadedmetadata=()=>{
+      const pos=self._voicePos[mid];
+      if(mid&&pos>1&&a.duration&&pos<a.duration-1){try{a.currentTime=pos;}catch(e){}}
+    };
+    // Vitesse de lecture (1x / 1.5x / 2x) — appliquée + badge visible pendant la lecture
+    a.playbackRate=self._voiceSpeed||1;
+    if(speedEl){speedEl.textContent=(self._voiceSpeed||1)+'x';speedEl.style.display='inline-block';}
     a.onended=resetUI;
     a.onerror=resetUI;
+  },
+  // Cycle de vitesse de lecture : 1x → 1.5x → 2x → 1x (comme WhatsApp)
+  cycleVoiceSpeed(btn){
+    const speeds=[1,1.5,2];
+    let i=speeds.indexOf(this._voiceSpeed);if(i<0)i=0;
+    this._voiceSpeed=speeds[(i+1)%speeds.length];
+    if(this._voiceAudio){try{this._voiceAudio.playbackRate=this._voiceSpeed;}catch(e){}}
+    if(btn)btn.textContent=this._voiceSpeed+'x';
+  },
+  // Enregistrer le vocal sur l'appareil (fetch → blob → téléchargement)
+  saveVoice(url, name){
+    if(!url)return;
+    const fname=name||('vocal-'+Date.now()+'.webm');
+    fetch(url).then(r=>{if(!r.ok)throw new Error('http');return r.blob();}).then(blob=>{
+      const obj=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=obj;a.download=fname;document.body.appendChild(a);a.click();
+      setTimeout(()=>{try{document.body.removeChild(a);URL.revokeObjectURL(obj);}catch(e){}},1000);
+    }).catch(()=>{});
   },
   // Arrête la lecture vocale en cours (changement de conversation, retour liste)
   _stopVoice(){
@@ -369,6 +403,7 @@ const W={
       if(wrap){
         const f=wrap.querySelector('.wa-voice-fill');if(f)f.style.width='0%';
         const d=wrap.querySelector('.wa-voice-dur');if(d&&wrap.dataset.total)d.textContent=wrap.dataset.total;
+        const sp=wrap.querySelector('.wa-voice-speed');if(sp)sp.style.display='none';
       }
     }
   },
@@ -401,6 +436,7 @@ const W={
         if(this._voiceAudio){try{this._voiceAudio.pause();}catch(e){}}
         this._voicePlaying=false;
         btn.innerHTML=SVG.play;btn.dataset.p='0';
+        const sp=wrap.querySelector('.wa-voice-speed');if(sp)sp.style.display='none';
         return;
       }
       const a=this._voiceAudio;
@@ -432,6 +468,7 @@ const W={
     ctx.innerHTML=`
       <button onclick="W.startReply('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>${T('reply')}</button>
       <button onclick="W.reactPick(event,'${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>${T('react')}</button>
+      ${(m&&m.voice)?`<button onclick="W.saveVoice('${esc(m.voice.url)}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${T('download')}</button>`:''}
       ${isMine?`<button onclick="W.startEdit('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>${T('edit')}</button>`:''}
       <button onclick="W._copyMsg('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>${T('copy')}</button>
       <button onclick="W._fwdMsg('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg>${T('forward')}</button>

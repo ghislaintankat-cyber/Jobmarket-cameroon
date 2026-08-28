@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260827m';
+const APP_BUILD = '20260827p';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');

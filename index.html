@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260827m">
+<html lang="fr" data-app-build="20260827p">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -429,6 +429,9 @@ body{
 .wa-voice-prog{height:3px;background:rgba(0,0,0,.12);border-radius:2px;margin-top:5px;overflow:hidden}
 .wa[data-theme=dark] .wa-voice-prog{background:rgba(255,255,255,.15)}
 .wa-voice-fill{height:100%;width:0;background:var(--pri);border-radius:2px;transition:width .2s linear}
+.wa-voice-speed{display:none;cursor:pointer;font-size:10px;font-weight:700;color:var(--text-secondary);background:rgba(0,0,0,.08);padding:1px 6px;border-radius:8px;flex-shrink:0;user-select:none}
+.wa[data-theme=dark] .wa-voice-speed{background:rgba(255,255,255,.14);color:var(--text-primary)}
+.wa-voice-speed:active{transform:scale(.93)}
 .wa-voice-play{background:var(--pri);color:#fff;border:0;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
 .wa-voice-play:hover{background:var(--pri-dark)}
 .wa-wave{flex:1;height:32px;display:flex;align-items:center;gap:2px}
@@ -1889,8 +1892,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260827m"></script>
-<script src="app.js?v=20260827m"></script>
+<script src="chat-widget.js?v=20260827p"></script>
+<script src="app.js?v=20260827p"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
