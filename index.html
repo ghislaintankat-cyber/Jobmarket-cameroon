@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260829d">
+<html lang="fr" data-app-build="20260829e">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -605,6 +605,10 @@ body{
 .wa-ctx button svg{width:18px;height:18px;flex-shrink:0}
 .wa-ctx-sep{height:1px;background:var(--border);margin:4px 0}
 .wa-ctx-grp{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);padding:7px 20px 3px;user-select:none}
+
+/* Bouton filtre « 🟢 Dispo maintenant » (panneau liste) */
+.avail-filter-btn{flex:none;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text-dim);font-size:11px;font-weight:700;cursor:pointer;transition:0.15s}
+.avail-filter-btn.active{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 10px rgba(37,211,102,0.35)}
 
 /* ===== MULTI-SÉLECTION (style WhatsApp) ===== */
 .wa-selbar{position:absolute;top:0;left:0;right:0;min-height:var(--header-h);display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-header);border-bottom:1px solid var(--border);z-index:3}
@@ -1649,6 +1653,7 @@ body{
     <button type="button" id="jobsFilterSavedBtn" class="jobs-filter-seg" onclick="showSavedJobsInSheet()" data-i18n="filterSavedJobs">Sauvegardés</button>
   </div>
   <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:0 16px 10px 16px;">
+    <button type="button" id="availFilterBtn" class="avail-filter-btn" data-i18n="availNowBadge" data-i18n-title="availFilterTip" data-i18n-aria-label="availFilterTip" aria-label="N'afficher que les artisans disponibles maintenant" onclick="toggleAvailFilter()">🟢 Dispo</button>
     <span style="font-size:11px;color:var(--text-dim);" data-i18n="sortLabel">Trier :</span>
     <select id="jobSortSel" onchange="setJobSort(this.value)" data-i18n-aria-label="sortLabel" aria-label="Trier :" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:12px;cursor:pointer;">
       <option value="dist" data-i18n="sortNearest">Le plus proche</option>
@@ -1918,8 +1923,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260829d"></script>
-<script src="app.js?v=20260829d"></script>
+<script src="chat-widget.js?v=20260829e"></script>
+<script src="app.js?v=20260829e"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
