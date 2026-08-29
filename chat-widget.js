@@ -33,7 +33,7 @@ const FALLBACK={
   typing:"en train d'écrire…",online:"en ligne",lastSeen:"vu {x}",photo:"Photo",voice:"Voice",file:"Fichier",
   edited:"modifié",today:"Aujourd'hui",yesterday:"Hier",you:"Toi",unknown:"Inconnu",editBanner:"Modification du message",
   noResults:"0 résultat(s)",emojiPh:"Rechercher…",option:"Option {x}",reply:"Répondre",react:"Réagir",edit:"Modifier",
-  copy:"Copier",forward:"Transférer",star:"Étoiler",unstar:"Retirer l'étoile",pin:"Épingler",unpin:"Désépingler",mute:"Muet",unmute:"Désactiver le muet",archive:"Archiver",unarchive:"Désarchiver",del:"Supprimer",
+  copy:"Copier",forward:"Transférer",star:"Étoiler",unstar:"Retirer l'étoile",pin:"Épingler",unpin:"Désépingler",mute:"Muet",unmute:"Désactiver le muet",archive:"Archiver",unarchive:"Désarchiver",del:"Supprimer",grpMsg:"Message",grpConv:"Conversation",
   noStarred:"Aucun message étoilé",nStarred:"{x} message(s) étoilé(s)",about:"Salut 👋 Je suis sur JobMarket.",
   noMedia:"Aucun média partagé",votes:"vote",download:"Enregistrer",lockNotice:"Messages sécurisés — cette conversation reste entre vous deux.",newMsgs:"Nouveaux messages"
 };
@@ -63,7 +63,7 @@ const W={
   rec:false,recT:null,recS:0,theme:'light',_ev:{},
   _tab:'all',_search:'',_msgSearch:'',_searchIdx:0,_searchHits:[],
   _profileOpen:false,_searchOpen:false,_starred:new Set(),_pinned:new Set(),_muted:new Set(),_archived:new Set(),_voicePos:{},_voiceSpeed:1,
-  _scrolledUp:false,_userScrolled:false,
+  _scrolledUp:false,_userScrolled:false,_convCtxOpen:false,
 
   // ===== PUBLIC API =====
   init(cfg={}){
@@ -106,6 +106,27 @@ const W={
     this.activeId=null;$('waSide').classList.remove('hidden');
     $('waEmpty').style.display='flex';$('waCHead').style.display='none';$('waMsgs').style.display='none';$('waInputArea').style.display='none';
     this._closeProfile();
+  },
+  // Tap sur une conversation : l'ouvre — sauf juste après un long-appui
+  // (lequel a ouvert le menu d'options au lieu d'ouvrir le chat).
+  convTap(cid){
+    if(this._convCtxOpen)return; // le menu d'options est ouvert : on ne réouvre pas le chat
+    this.openChat(cid);
+  },
+  // Menu contextuel d'une conversation (long-press / clic droit) :
+  // Archiver / Muet / Épingler — comme les options de conversation WhatsApp.
+  ctxConv(e,cid){
+    if(e&&e.preventDefault)e.preventDefault();
+    this._convCtxOpen=true;this._ctxOpenTs=Date.now();
+    const ctx=$('waCtx');
+    ctx.innerHTML=`
+      <button onclick="W.toggleArchive('${cid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>${this._archived.has(cid)?T('unarchive'):T('archive')}</button>
+      <button onclick="W.toggleMute('${cid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.73 21a2 2 0 01-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0118 8"/><path d="M6.26 6.26A5.86 5.86 0 006 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 00-9.33-4.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>${this._muted.has(cid)?T('unmute'):T('mute')}</button>
+      <button onclick="W.pinChat('${cid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L12 22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>${this._pinned.has(cid)?T('unpin'):T('pin')}</button>
+    `;
+    ctx.style.top=Math.min((e.clientY||0),window.innerHeight-150)+'px';
+    ctx.style.left=Math.min((e.clientX||0),window.innerWidth-220)+'px';
+    ctx.classList.add('active');
   },
   sendMessage(cid,data){
     const msg={id:uid(),from:'me',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),status:'sent',_ts:Date.now(),...data};
@@ -184,7 +205,7 @@ const W={
         else if(last.file)lastH+=`<span>📄 ${esc(last.file.name)}</span>`;
         else if(last.poll)lastH+=`<span>📊 Poll: ${esc(last.poll.question)}</span>`;
       }
-      return`<div class="wa-chat ${act?'active':''} ${pin?'pinned':''}" onclick="W.openChat('${c.id}')">
+      return`<div class="wa-chat ${act?'active':''} ${pin?'pinned':''}" data-cid="${c.id}" onclick="W.convTap('${c.id}')" oncontextmenu="W.ctxConv(event,'${c.id}')">
         <div class="wa-av-wrap"><img class="wa-av" src="${c.avatar}" alt="">${c.online?'<div class="wa-online"></div>':''}</div>
         <div class="wa-chat-body"><div class="wa-chat-top"><span class="wa-chat-name">${esc(c.name)}${pin?'<span class="pin">📌</span>':''}${mute?'<span class="muted">🔕</span>':''}${this._archived.has(c.id)?'<span class="archived">📦</span>':''}</span>${timeH}</div>
         <div class="wa-chat-bot"><span class="wa-chat-last">${lastH}</span>${unread?`<span class="wa-badge">${unread}</span>`:''}</div></div></div>`;
@@ -475,10 +496,11 @@ const W={
 
   // Context menu
   ctxMsg(e,mid){
-    e.preventDefault();const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);const isMine=m&&m.from==='me';
+    e.preventDefault();this._ctxOpenTs=Date.now();const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);const isMine=m&&m.from==='me';
     const starred=this._starred.has(this.activeId+':'+mid);
     const ctx=$('waCtx');
     ctx.innerHTML=`
+      <div class="wa-ctx-grp">${T('grpMsg')}</div>
       <button onclick="W.startReply('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>${T('reply')}</button>
       <button onclick="W.reactPick(event,'${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>${T('react')}</button>
       ${(m&&m.voice)?`<button onclick="W.saveVoice('${esc(m.voice.url)}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${T('download')}</button>`:''}
@@ -486,16 +508,17 @@ const W={
       <button onclick="W._copyMsg('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>${T('copy')}</button>
       <button onclick="W._fwdMsg('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg>${T('forward')}</button>
       <button onclick="W.starMsg('${this.activeId}','${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="${starred?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${starred?T('unstar'):T('star')}</button>
+      <button class="danger" onclick="W.deleteMessage('${this.activeId}','${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>${T('del')}</button>
+      <div class="wa-ctx-sep"></div>
+      <div class="wa-ctx-grp">${T('grpConv')}</div>
       <button onclick="W.pinChat('${this.activeId}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L12 22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>${this._pinned.has(this.activeId)?T('unpin'):T('pin')}</button>
       <button onclick="W.toggleMute('${this.activeId}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.73 21a2 2 0 01-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0118 8"/><path d="M6.26 6.26A5.86 5.86 0 006 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 00-9.33-4.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>${this._muted.has(this.activeId)?T('unmute'):T('mute')}</button>
-      <button onclick="W.toggleArchive('${this.activeId}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>${this._archived.has(this.activeId)?T('unarchive'):T('archive')}</button>
-      <div class="wa-ctx-sep"></div>
-      <button class="danger" onclick="W.deleteMessage('${this.activeId}','${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>${T('del')}</button>`;
+      <button onclick="W.toggleArchive('${this.activeId}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>${this._archived.has(this.activeId)?T('unarchive'):T('archive')}</button>`;
     ctx.style.top=Math.min(e.clientY,window.innerHeight-300)+'px';
     ctx.style.left=Math.min(e.clientX,window.innerWidth-220)+'px';
     ctx.classList.add('active');
   },
-  _hideCtx(){$('waCtx').classList.remove('active')},
+  _hideCtx(){this._convCtxOpen=false;$('waCtx').classList.remove('active')},
   _copyMsg(mid){const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);if(m?.text)navigator.clipboard?.writeText(m.text)},
   _fwdMsg(mid){const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);this._fwdMsg=m;
     const list=$('waFwdList');list.innerHTML=this.contacts.filter(c=>c.id!==this.activeId).map(c=>`<div class="wa-modal-contact" onclick="W._doFwd('${c.id}')"><img src="${c.avatar}" alt=""><div class="name">${esc(c.name)}</div></div>`).join('');
@@ -551,9 +574,13 @@ const W={
     });
     // Global clicks
     document.addEventListener('click',e=>{
-      if(!e.target.closest('.wa-emoji')&&!e.target.closest('#waEmojiBtn'))$('waEmoji').classList.remove('active');
-      if(!e.target.closest('.wa-attach')&&!e.target.closest('#waAttachBtn'))$('waAttach').classList.remove('active');
-      if(!e.target.closest('.wa-ctx'))this._hideCtx();
+      const t=e.target&&e.target.closest?e.target:null; // certains cibles (document) n'ont pas .closest
+      if(t&&(!t.closest('.wa-emoji')&&!t.closest('#waEmojiBtn')))$('waEmoji').classList.remove('active');
+      if(t&&(!t.closest('.wa-attach')&&!t.closest('#waAttachBtn')))$('waAttach').classList.remove('active');
+      if(!t||!t.closest('.wa-ctx')){
+        if(this._ctxOpenTs&&Date.now()-this._ctxOpenTs<900){this._ctxOpenTs=0;return}
+        this._ctxOpenTs=0;this._hideCtx();
+      }
     });
     // Keyboard shortcuts
     document.addEventListener('keydown',e=>{
@@ -566,12 +593,12 @@ const W={
     // Long-appui (mobile) = menu contextuel du message (comme WhatsApp).
     // 500 ms sans mouvement → menu ; tout glissement > 12 px l'annule
     // (ça reste un chat fluide, pas un écran verrouillé).
-    let lpTimer=null,lpMid=null,lpStart=null;
+    let lpTimer=null,lpMid=null,lpCid=null,lpStart=null;
     const cancelLP=()=>{if(lpTimer){clearTimeout(lpTimer);lpTimer=null}};
     main.addEventListener('touchstart',e=>{
       const row=e.target&&e.target.closest?e.target.closest('.wa-mrow'):null;
-      if(!row||!this.activeId){cancelLP();lpMid=null;return}
-      lpMid=row.getAttribute('data-mid');
+      if(!row||!this.activeId){cancelLP();lpMid=null;lpCid=null;return}
+      lpMid=row.getAttribute('data-mid');lpCid=null;
       lpStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
       cancelLP();
       lpTimer=setTimeout(()=>{
@@ -585,6 +612,31 @@ const W={
     },{passive:true});
     main.addEventListener('touchend',cancelLP);
     main.addEventListener('touchcancel',cancelLP);
+    // Long-appui sur une CONVERSATION (barre latérale) = menu d'options
+    // (Archiver / Muet / Épingler). Attaché sur waSide (la liste des
+    // conversations est là, pas dans waMain).
+    let clpTimer=null,clpCid=null,clpStart=null;
+    const cancelCLP=()=>{if(clpTimer){clearTimeout(clpTimer);clpTimer=null}};
+    const side=$('waSide');
+    if(side){
+      side.addEventListener('touchstart',e=>{
+        const chat=e.target&&e.target.closest?e.target.closest('.wa-chat'):null;
+        if(!chat){cancelCLP();clpCid=null;return}
+        clpCid=chat.getAttribute('data-cid');
+        clpStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
+        cancelCLP();
+        clpTimer=setTimeout(()=>{
+          clpTimer=null;const cid=clpCid;clpCid=null;
+          if(cid)this.ctxConv({preventDefault:()=>{},clientX:clpStart?clpStart.x:0,clientY:clpStart?clpStart.y:0},cid);
+        },500);
+      },{passive:true});
+      side.addEventListener('touchmove',e=>{
+        if(!clpTimer||!clpStart)return;
+        if(Math.hypot(e.touches[0].clientX-clpStart.x,e.touches[0].clientY-clpStart.y)>12)cancelCLP();
+      },{passive:true});
+      side.addEventListener('touchend',cancelCLP);
+      side.addEventListener('touchcancel',cancelCLP);
+    }
   },
 };
 

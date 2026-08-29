@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260827r">
+<html lang="fr" data-app-build="20260829a">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -316,7 +316,7 @@ body{
 
 /* Chat list */
 .wa-chats{flex:1;overflow-y:auto;overflow-x:hidden}
-.wa-chat{display:flex;align-items:center;padding:12px 16px;gap:14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;position:relative}
+.wa-chat{display:flex;align-items:center;padding:12px 16px;gap:14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;position:relative;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .wa-chat:hover{background:var(--bg-hover)}
 .wa-chat.active{background:var(--bg-active)}
 .wa-chat.pinned::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--pri)}
@@ -602,6 +602,7 @@ body{
 .wa-ctx button.danger{color:var(--danger)}
 .wa-ctx button svg{width:18px;height:18px;flex-shrink:0}
 .wa-ctx-sep{height:1px;background:var(--border);margin:4px 0}
+.wa-ctx-grp{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);padding:7px 20px 3px;user-select:none}
 
 /* ===== FORWARD MODAL ===== */
 .wa-modal{display:none;position:fixed;inset:0;background:var(--bg-overlay);z-index:12700;align-items:center;justify-content:center;animation:wafadeIn .2s}
@@ -1894,8 +1895,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260827r"></script>
-<script src="app.js?v=20260827r"></script>
+<script src="chat-widget.js?v=20260829a"></script>
+<script src="app.js?v=20260829a"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
