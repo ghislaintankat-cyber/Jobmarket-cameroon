@@ -33,7 +33,7 @@ const FALLBACK={
   typing:"en train d'écrire…",online:"en ligne",lastSeen:"vu {x}",photo:"Photo",voice:"Voice",file:"Fichier",
   edited:"modifié",today:"Aujourd'hui",yesterday:"Hier",you:"Toi",unknown:"Inconnu",editBanner:"Modification du message",
   noResults:"0 résultat(s)",emojiPh:"Rechercher…",option:"Option {x}",reply:"Répondre",react:"Réagir",edit:"Modifier",
-  copy:"Copier",forward:"Transférer",star:"Étoiler",unstar:"Retirer l'étoile",pin:"Épingler",unpin:"Désépingler",mute:"Muet",unmute:"Désactiver le muet",archive:"Archiver",unarchive:"Désarchiver",del:"Supprimer",grpMsg:"Message",grpConv:"Conversation",
+  copy:"Copier",forward:"Transférer",star:"Étoiler",unstar:"Retirer l'étoile",pin:"Épingler",unpin:"Désépingler",mute:"Muet",unmute:"Désactiver le muet",archive:"Archiver",unarchive:"Désarchiver",del:"Supprimer",grpMsg:"Message",grpConv:"Conversation",sel:"Sélectionner",selCount:"{x} sélectionné(s)",delMany:"Supprimer ces {x} message(s) ?",delManyAll:"Supprimer ces messages pour TOUT LE MONDE ?\n\nOK     = pour tout le monde\nAnnuler = seulement pour moi",
   noStarred:"Aucun message étoilé",nStarred:"{x} message(s) étoilé(s)",about:"Salut 👋 Je suis sur JobMarket.",
   noMedia:"Aucun média partagé",votes:"vote",download:"Enregistrer",lockNotice:"Messages sécurisés — cette conversation reste entre vous deux.",newMsgs:"Nouveaux messages"
 };
@@ -62,7 +62,7 @@ const W={
   contacts:[],convs:{},activeId:null,replyTo:null,editId:null,
   rec:false,recT:null,recS:0,theme:'light',_ev:{},
   _tab:'all',_search:'',_msgSearch:'',_searchIdx:0,_searchHits:[],
-  _profileOpen:false,_searchOpen:false,_starred:new Set(),_pinned:new Set(),_muted:new Set(),_archived:new Set(),_voicePos:{},_voiceSpeed:1,
+  _profileOpen:false,_searchOpen:false,_starred:new Set(),_pinned:new Set(),_muted:new Set(),_archived:new Set(),_voicePos:{},_voiceSpeed:1,_selMode:false,_sel:new Set(),
   _scrolledUp:false,_userScrolled:false,_convCtxOpen:false,
 
   // ===== PUBLIC API =====
@@ -102,7 +102,7 @@ const W={
     this._userScrolled=false;this.emit('chatOpened',cid);
   },
   goBack(){
-    this._stopVoice();
+    this._stopVoice();this._exitSel();
     this.activeId=null;$('waSide').classList.remove('hidden');
     $('waEmpty').style.display='flex';$('waCHead').style.display='none';$('waMsgs').style.display='none';$('waInputArea').style.display='none';
     this._closeProfile();
@@ -234,7 +234,9 @@ const W={
       const senderColor=getSenderColor(m.from);
       const starred=this._starred.has(this.activeId+':'+m.id);
 
-      h+=`<div class="wa-mrow ${dir} ${tail?'tail':''} ${grouped?'no-anim':''}" data-mid="${m.id}" oncontextmenu="W.ctxMsg(event,'${m.id}')" ondblclick="W.reactPick(event,'${m.id}')">`;
+      const selCls=this._selMode?(this._sel.has(m.id)?' sel':''):'',selOnc=this._selMode?` onclick="W.selToggle('${m.id}')"`:'';
+      h+=`<div class="wa-mrow ${dir} ${tail?'tail':''} ${grouped?'no-anim':''}${selCls}" data-mid="${m.id}"${selOnc} oncontextmenu="W.ctxMsg(event,'${m.id}')" ondblclick="W.reactPick(event,'${m.id}')">`;
+      if(this._selMode)h+=`<span class="wa-sel" onclick="event.stopPropagation();W.selToggle('${m.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>`;
       h+=`<div class="wa-bub">`;
       if(showSender)h+=`<div class="wa-sender" style="color:${senderColor}">${esc(senderName)}</div>`;
       if(m.replyTo){const rm=ms.find(x=>x.id===m.replyTo);if(rm){const rn=rm.from==='me'?T('you'):((this.contacts.find(c=>c.id===rm.from)||{name:T('unknown')}).name);h+=`<div class="wa-quote" onclick="W.scrollToMsg('${m.replyTo}')"><div class="wa-quote-name">${esc(rn)}</div><div class="wa-quote-text">${rm.text?esc(rm.text):rm.image?'📷 '+T('photo'):rm.voice?'🎤 '+T('voice'):'📎 '+T('file')}</div></div>`}}
@@ -496,11 +498,14 @@ const W={
 
   // Context menu
   ctxMsg(e,mid){
-    e.preventDefault();this._ctxOpenTs=Date.now();const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);const isMine=m&&m.from==='me';
+    e.preventDefault();
+    if(this._selMode){this.selToggle(mid);return} // mode sélection : tout appui = cocher/décocher
+    this._ctxOpenTs=Date.now();const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);const isMine=m&&m.from==='me';
     const starred=this._starred.has(this.activeId+':'+mid);
     const ctx=$('waCtx');
     ctx.innerHTML=`
       <div class="wa-ctx-grp">${T('grpMsg')}</div>
+      <button onclick="W.selStart('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>${T('sel')}</button>
       <button onclick="W.startReply('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>${T('reply')}</button>
       <button onclick="W.reactPick(event,'${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>${T('react')}</button>
       ${(m&&m.voice)?`<button onclick="W.saveVoice('${esc(m.voice.url)}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${T('download')}</button>`:''}
@@ -520,15 +525,29 @@ const W={
   },
   _hideCtx(){this._convCtxOpen=false;$('waCtx').classList.remove('active')},
   _copyMsg(mid){const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);if(m?.text)navigator.clipboard?.writeText(m.text)},
-  _fwdMsg(mid){const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);this._fwdMsg=m;
+  _fwdMsg(mid){const ms=this.convs[this.activeId]||[];const m=ms.find(m=>m.id===mid);this._fwdMsg=m;this._fwdList=m?[m]:[];this._openFwdModal()},
+  _openFwdModal(){
     const list=$('waFwdList');list.innerHTML=this.contacts.filter(c=>c.id!==this.activeId).map(c=>`<div class="wa-modal-contact" onclick="W._doFwd('${c.id}')"><img src="${c.avatar}" alt=""><div class="name">${esc(c.name)}</div></div>`).join('');
     $('waFwdModal').classList.add('active');
   },
-  _doFwd(cid){if(this._fwdMsg){const m={...this._fwdMsg,id:uid(),from:'me',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),status:'sent',_ts:Date.now()};delete m.reactions;if(!this.convs[cid])this.convs[cid]=[];this.convs[cid].push(m);this.renderChats();this.emit('messageForwarded',{to:cid,msg:m})}this.closeFwd()},
+  _doFwd(cid){const list=this._fwdList&&this._fwdList.length?this._fwdList:(this._fwdMsg?[this._fwdMsg]:[]);list.forEach(src=>{const m={...src,id:uid(),from:'me',time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),status:'sent',_ts:Date.now()};delete m.reactions;if(!this.convs[cid])this.convs[cid]=[];this.convs[cid].push(m);this.renderChats();this.emit('messageForwarded',{to:cid,msg:m})});this.closeFwd()},
   closeFwd(){$('waFwdModal').classList.remove('active')},
+
+  // ===== MULTI-SÉLECTION (style WhatsApp) =====
+  // Long-press sur un message → « Sélectionner » : un cercle apparaît sur
+  // chaque bulle, tap = cocher/décocher. La barre du haut permet de
+  // transférer ou supprimer la sélection en bloc.
+  selStart(mid){this._selMode=true;this._sel=new Set([mid]);this._hideCtx();this.renderMsgs();this._renderSelUI()},
+  selToggle(mid){if(!this._selMode)return;if(this._sel.has(mid))this._sel.delete(mid);else this._sel.add(mid);if(!this._sel.size){this._exitSel();this.renderMsgs();return}this.renderMsgs();this._renderSelUI()},
+  selCancel(){this._exitSel();this.renderMsgs()},
+  _exitSel(){if(!this._selMode&&!this._sel.size)return;this._selMode=false;this._sel.clear();this._renderSelUI()},
+  _renderSelUI(){const bar=$('waSelBar');if(!bar)return;bar.style.display=this._selMode?'flex':'none';const wr=$('wa');if(wr)wr.classList.toggle('selmode',this._selMode);if(this._selMode)$('waSelCount').textContent=T('selCount',this._sel.size)},
+  fwdSelected(){const ms=this.convs[this.activeId]||[];const list=[...this._sel].map(id=>ms.find(m=>m.id===id)).filter(Boolean);this._exitSel();this.renderMsgs();if(!list.length)return;this._fwdList=list;this._fwdMsg=list[0];this._openFwdModal()},
+  delSelected(){const cid=this.activeId,ids=[...this._sel];this._exitSel();this.renderMsgs();if(!ids.length)return;if(typeof this.deleteMessages==='function')this.deleteMessages(cid,ids);else ids.forEach(id=>this.deleteMessage(cid,id))},
 
   // React picker
   reactPick(e,mid){
+    if(this._selMode)return; // mode sélection : le double-tap ne doit pas ouvrir le react picker
     e.stopPropagation();const ex=document.querySelector('.wa-rpick');if(ex)ex.remove();
     const p=document.createElement('div');p.className='wa-rpick';
     ['👍','❤️','😂','😮','😢','🙏'].forEach(em=>{p.innerHTML+=`<button onclick="W.addReaction('${this.activeId}','${mid}','${em}');this.parentElement.remove()">${em}</button>`});
@@ -584,7 +603,7 @@ const W={
     });
     // Keyboard shortcuts
     document.addEventListener('keydown',e=>{
-      if(e.key==='Escape'){$('waLB').classList.remove('active');$('waFwdModal').classList.remove('active');$('waPollModal').classList.remove('active');this._hideCtx();if(this._searchOpen)this.toggleSearch();if(this._profileOpen)this._closeProfile()}
+      if(e.key==='Escape'){if(this._selMode){this._exitSel();this.renderMsgs();return} $('waLB').classList.remove('active');$('waFwdModal').classList.remove('active');$('waPollModal').classList.remove('active');this._hideCtx();if(this._searchOpen)this.toggleSearch();if(this._profileOpen)this._closeProfile()}
       if(e.ctrlKey&&e.key==='f'&&this.activeId){e.preventDefault();this.toggleSearch()}
     });
     // Toast click

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260829a">
+<html lang="fr" data-app-build="20260829d">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -258,6 +258,7 @@ body{
   --bg-deep:#efeae2;--bg-panel:#f0f2f5;--bg-sidebar:#fff;--bg-header:#f0f2f5;
   --bg-input:#fff;--bg-bubble-out:#d9fdd3;--bg-bubble-in:#fff;
   --bg-hover:#f5f6f6;--bg-active:#f0f2f5;--bg-overlay:rgba(0,0,0,.6);
+  --bg-menu:#fff;--shadow-menu:0 12px 32px rgba(11,20,26,.22);
   --text-primary:#111b21;--text-secondary:#667781;--text-bubble:#111b21;
   --border:#e9edef;--border-strong:#d1d7db;
   --check:#53bdeb;--unread:#25d366;--danger:#ea0038;
@@ -272,6 +273,7 @@ body{
   --bg-deep:#0b141a;--bg-panel:#111b21;--bg-sidebar:#111b21;--bg-header:#202c33;
   --bg-input:#2a3942;--bg-bubble-out:#005c4b;--bg-bubble-in:#202c33;
   --bg-hover:#202c33;--bg-active:#2a3942;--bg-overlay:rgba(0,0,0,.85);
+  --bg-menu:#1f2c34;--shadow-menu:0 12px 32px rgba(0,0,0,.55);
   --text-primary:#e9edef;--text-secondary:#8696a0;--text-bubble:#e9edef;
   --border:#2a3942;--border-strong:#3b4a54;
   --check:#53bdeb;--unread:#00a884;--danger:#f15c6d;
@@ -595,7 +597,7 @@ body{
 .wa-lightbox-close:hover{background:rgba(0,0,0,.7)}
 
 /* ===== CONTEXT MENU ===== */
-.wa-ctx{display:none;position:fixed;background:var(--bg-sidebar);border-radius:var(--radius);box-shadow:var(--shadow-lg);z-index:12600;min-width:200px;padding:6px 0;animation:wapopIn .1s var(--anim)}
+.wa-ctx{display:none;position:fixed;background:var(--bg-menu);border:1px solid var(--border-strong);border-radius:var(--radius);box-shadow:var(--shadow-menu);z-index:12600;min-width:200px;padding:6px 0;animation:wapopIn .1s var(--anim)}
 .wa-ctx.active{display:block}
 .wa-ctx button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 20px;background:0 0;border:0;text-align:left;font-size:14px;color:var(--text-primary);cursor:pointer;transition:background .1s}
 .wa-ctx button:hover{background:var(--bg-hover)}
@@ -603,6 +605,18 @@ body{
 .wa-ctx button svg{width:18px;height:18px;flex-shrink:0}
 .wa-ctx-sep{height:1px;background:var(--border);margin:4px 0}
 .wa-ctx-grp{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);padding:7px 20px 3px;user-select:none}
+
+/* ===== MULTI-SÉLECTION (style WhatsApp) ===== */
+.wa-selbar{position:absolute;top:0;left:0;right:0;min-height:var(--header-h);display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-header);border-bottom:1px solid var(--border);z-index:3}
+.wa-selcount{flex:1;font-size:14px;font-weight:600;color:var(--text-primary)}
+.wa-sel{position:absolute;top:8px;width:22px;height:22px;border-radius:50%;border:2px solid var(--text-secondary);background:var(--bg-sidebar);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:6;transition:background .1s,border-color .1s}
+.wa-sel svg{width:12px;height:12px;color:#fff;opacity:0}
+.wa-mrow.recv .wa-sel{left:-34px}
+.wa-mrow.sent .wa-sel{right:-34px}
+.wa-mrow.sel .wa-sel{background:var(--pri);border-color:var(--pri)}
+.wa-mrow.sel .wa-sel svg{opacity:1}
+.wa-mrow.sel .wa-bub{outline:2px solid var(--pri);outline-offset:-2px}
+#wa.selmode .wa-mrow{cursor:pointer}
 
 /* ===== FORWARD MODAL ===== */
 .wa-modal{display:none;position:fixed;inset:0;background:var(--bg-overlay);z-index:12700;align-items:center;justify-content:center;animation:wafadeIn .2s}
@@ -1634,6 +1648,15 @@ body{
     <button type="button" id="jobsFilterAllBtn" class="jobs-filter-seg active" onclick="showAllJobsInSheet()" data-i18n="filterAllJobs">Tous</button>
     <button type="button" id="jobsFilterSavedBtn" class="jobs-filter-seg" onclick="showSavedJobsInSheet()" data-i18n="filterSavedJobs">Sauvegardés</button>
   </div>
+  <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:0 16px 10px 16px;">
+    <span style="font-size:11px;color:var(--text-dim);" data-i18n="sortLabel">Trier :</span>
+    <select id="jobSortSel" onchange="setJobSort(this.value)" data-i18n-aria-label="sortLabel" aria-label="Trier :" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:12px;cursor:pointer;">
+      <option value="dist" data-i18n="sortNearest">Le plus proche</option>
+      <option value="rating" data-i18n="sortRating">Mieux notés</option>
+      <option value="price" data-i18n="sortPrice">Moins cher</option>
+      <option value="newest" data-i18n="sortNewest">Plus récent</option>
+    </select>
+  </div>
   <div id="artisanOfMonthBox" style="margin:0 16px 12px 16px;"></div>
   <div class="sheet-body">
     <div id="listContent">
@@ -1895,8 +1918,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260829a"></script>
-<script src="app.js?v=20260829a"></script>
+<script src="chat-widget.js?v=20260829d"></script>
+<script src="app.js?v=20260829d"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2619,6 +2642,13 @@ function previewImage(event) {
       </div>
     </div>
 
+    <!-- Barre de multi-sélection (style WhatsApp) : visible quand des messages sont cochés -->
+    <div class="wa-selbar" id="waSelBar" style="display:none">
+      <button class="wa-icon-btn" title="Fermer" data-i18n-title="chatCloseTitle" onclick="W.selCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      <span class="wa-selcount" id="waSelCount"></span>
+      <button class="wa-icon-btn" title="Transférer" data-i18n-title="chatFwdTitle" onclick="W.fwdSelected()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg></button>
+      <button class="wa-icon-btn" title="Supprimer" data-i18n-title="ctxDelete" onclick="W.delSelected()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+    </div>
     <div class="wa-jobbar" id="waJobBar" style="display:none" onclick="openJobFromChat()"></div>
     <!-- In-chat search bar -->
     <div class="wa-search-bar" id="waMsgSearch">
