@@ -33,7 +33,7 @@ const FALLBACK={
   typing:"en train d'écrire…",online:"en ligne",lastSeen:"vu {x}",photo:"Photo",voice:"Voice",file:"Fichier",
   edited:"modifié",today:"Aujourd'hui",yesterday:"Hier",you:"Toi",unknown:"Inconnu",editBanner:"Modification du message",
   noResults:"0 résultat(s)",emojiPh:"Rechercher…",option:"Option {x}",reply:"Répondre",react:"Réagir",edit:"Modifier",
-  copy:"Copier",forward:"Transférer",star:"Étoiler",unstar:"Retirer l'étoile",pin:"Épingler",unpin:"Désépingler",del:"Supprimer",
+  copy:"Copier",forward:"Transférer",star:"Étoiler",unstar:"Retirer l'étoile",pin:"Épingler",unpin:"Désépingler",mute:"Muet",unmute:"Désactiver le muet",archive:"Archiver",unarchive:"Désarchiver",del:"Supprimer",
   noStarred:"Aucun message étoilé",nStarred:"{x} message(s) étoilé(s)",about:"Salut 👋 Je suis sur JobMarket.",
   noMedia:"Aucun média partagé",votes:"vote",download:"Enregistrer",lockNotice:"Messages sécurisés — cette conversation reste entre vous deux.",newMsgs:"Nouveaux messages"
 };
@@ -62,7 +62,7 @@ const W={
   contacts:[],convs:{},activeId:null,replyTo:null,editId:null,
   rec:false,recT:null,recS:0,theme:'light',_ev:{},
   _tab:'all',_search:'',_msgSearch:'',_searchIdx:0,_searchHits:[],
-  _profileOpen:false,_searchOpen:false,_starred:new Set(),_pinned:new Set(),_voicePos:{},_voiceSpeed:1,
+  _profileOpen:false,_searchOpen:false,_starred:new Set(),_pinned:new Set(),_muted:new Set(),_archived:new Set(),_voicePos:{},_voiceSpeed:1,
   _scrolledUp:false,_userScrolled:false,
 
   // ===== PUBLIC API =====
@@ -72,6 +72,8 @@ const W={
     if(cfg.theme)this.setTheme(cfg.theme);
     if(cfg.myAvatar)$('waMyAv').src=cfg.myAvatar;
     if(cfg.pinned)cfg.pinned.forEach(id=>this._pinned.add(id));else this._loadPinned();
+    this._loadMuted();
+    this._loadArchived();
     if(cfg.favorites)cfg.favorites.forEach(id=>{const c=this.contacts.find(c=>c.id===id);if(c)c.favorite=true});
     this._buildEmoji();this._bindEvents();this.renderChats();this._updSend();
   },
@@ -84,7 +86,7 @@ const W={
     this.convs[cid].push(msg);
     if(cid===this.activeId){this.renderMsgs();if(!this._userScrolled)this.scrollToBottom()}
     this.renderChats();
-    if(msg.from!=='me'){playSound('recv');if(cid!==this.activeId)this._showToast(cid,msg)}
+    if(msg.from!=='me'){if(this._shouldPlaySound(cid))playSound('recv');if(cid!==this.activeId)this._showToast(cid,msg)}
     this.emit('messageReceived',{contactId:cid,message:msg});
   },
   updateStatus(cid,mid,status){const ms=this.convs[cid];if(!ms)return;const m=ms.find(m=>m.id===mid);if(m){m.status=status;if(cid===this.activeId)this.renderMsgs();this.renderChats()}},
@@ -137,6 +139,13 @@ const W={
   pinChat(cid){if(this._pinned.has(cid))this._pinned.delete(cid);else this._pinned.add(cid);this._savePinned();this.renderChats()},
   _savePinned(){try{localStorage.setItem('wa_pinned',JSON.stringify([...this._pinned]));}catch(e){}},
   _loadPinned(){try{const p=JSON.parse(localStorage.getItem('wa_pinned')||'[]');if(Array.isArray(p))p.forEach(id=>this._pinned.add(id));}catch(e){}},
+  toggleMute(cid){if(this._muted.has(cid))this._muted.delete(cid);else this._muted.add(cid);this._saveMuted();this.renderChats();},
+  _saveMuted(){try{localStorage.setItem('wa_muted',JSON.stringify([...this._muted]));}catch(e){}},
+  _loadMuted(){try{const m=JSON.parse(localStorage.getItem('wa_muted')||'[]');if(Array.isArray(m))m.forEach(id=>this._muted.add(id));}catch(e){}},
+  _shouldPlaySound(cid){return !this._muted.has(cid);},
+  toggleArchive(cid){if(this._archived.has(cid))this._archived.delete(cid);else this._archived.add(cid);this._saveArchived();this.renderChats();},
+  _saveArchived(){try{localStorage.setItem('wa_archived',JSON.stringify([...this._archived]));}catch(e){}},
+  _loadArchived(){try{const a=JSON.parse(localStorage.getItem('wa_archived')||'[]');if(Array.isArray(a))a.forEach(id=>this._archived.add(id));}catch(e){}},
   starMsg(cid,mid){const key=cid+':'+mid;if(this._starred.has(key))this._starred.delete(key);else this._starred.add(key);if(cid===this.activeId)this.renderMsgs()},
   on(ev,fn){if(!this._ev[ev])this._ev[ev]=[];this._ev[ev].push(fn)},
   off(ev,fn){if(this._ev[ev])this._ev[ev]=this._ev[ev].filter(f=>f!==fn)},
@@ -147,6 +156,10 @@ const W={
   renderChats(){
     const el=$('waChats');let list=[...this.contacts];
     const f=this._search.toLowerCase();if(f)list=list.filter(c=>c.name.toLowerCase().includes(f));
+    // Archive : les conversations archivées sont masquées des onglets principaux
+    // et affichées uniquement dans l'onglet « Archivées ».
+    if(this._tab==='archived')list=list.filter(c=>this._archived.has(c.id));
+    else list=list.filter(c=>!this._archived.has(c.id));
     if(this._tab==='unread')list=list.filter(c=>(this.convs[c.id]||[]).some(m=>m.from!=='me'&&m.unread));
     if(this._tab==='groups')list=list.filter(c=>c.isGroup);
     if(this._tab==='favorites')list=list.filter(c=>c.favorite);
@@ -158,7 +171,7 @@ const W={
     });
     el.innerHTML=list.map(c=>{
       const ms=this.convs[c.id]||[],last=ms[ms.length-1],unread=ms.filter(m=>m.from!=='me'&&m.unread).length;
-      const act=c.id===this.activeId,pin=this._pinned.has(c.id);
+      const act=c.id===this.activeId,pin=this._pinned.has(c.id),mute=this._muted.has(c.id);
       let lastH='',timeH='';
       if(last){
         const t=last.time||'';timeH=`<span class="wa-chat-time ${unread?'unread':''}">${t}</span>`;
@@ -173,7 +186,7 @@ const W={
       }
       return`<div class="wa-chat ${act?'active':''} ${pin?'pinned':''}" onclick="W.openChat('${c.id}')">
         <div class="wa-av-wrap"><img class="wa-av" src="${c.avatar}" alt="">${c.online?'<div class="wa-online"></div>':''}</div>
-        <div class="wa-chat-body"><div class="wa-chat-top"><span class="wa-chat-name">${esc(c.name)}${pin?'<span class="pin">📌</span>':''}</span>${timeH}</div>
+        <div class="wa-chat-body"><div class="wa-chat-top"><span class="wa-chat-name">${esc(c.name)}${pin?'<span class="pin">📌</span>':''}${mute?'<span class="muted">🔕</span>':''}${this._archived.has(c.id)?'<span class="archived">📦</span>':''}</span>${timeH}</div>
         <div class="wa-chat-bot"><span class="wa-chat-last">${lastH}</span>${unread?`<span class="wa-badge">${unread}</span>`:''}</div></div></div>`;
     }).join('');
   },
@@ -474,6 +487,8 @@ const W={
       <button onclick="W._fwdMsg('${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg>${T('forward')}</button>
       <button onclick="W.starMsg('${this.activeId}','${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="${starred?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${starred?T('unstar'):T('star')}</button>
       <button onclick="W.pinChat('${this.activeId}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L12 22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>${this._pinned.has(this.activeId)?T('unpin'):T('pin')}</button>
+      <button onclick="W.toggleMute('${this.activeId}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.73 21a2 2 0 01-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0118 8"/><path d="M6.26 6.26A5.86 5.86 0 006 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 00-9.33-4.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>${this._muted.has(this.activeId)?T('unmute'):T('mute')}</button>
+      <button onclick="W.toggleArchive('${this.activeId}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>${this._archived.has(this.activeId)?T('unarchive'):T('archive')}</button>
       <div class="wa-ctx-sep"></div>
       <button class="danger" onclick="W.deleteMessage('${this.activeId}','${mid}');W._hideCtx()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>${T('del')}</button>`;
     ctx.style.top=Math.min(e.clientY,window.innerHeight-300)+'px';

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260827p">
+<html lang="fr" data-app-build="20260827r">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -327,6 +327,8 @@ body{
 .wa-chat-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
 .wa-chat-name{font-size:16px;font-weight:400;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
 .wa-chat-name .pin{font-size:12px;color:var(--text-secondary)}
+.wa-chat-name .muted{font-size:12px;color:var(--text-secondary)}
+.wa-chat-name .archived{font-size:12px;color:var(--text-secondary)}
 .wa-chat-time{font-size:12px;color:var(--text-secondary);flex-shrink:0;margin-left:8px}
 .wa-chat-time.unread{color:var(--unread)}
 .wa-chat-bot{display:flex;justify-content:space-between;align-items:center}
@@ -1892,8 +1894,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260827p"></script>
-<script src="app.js?v=20260827p"></script>
+<script src="chat-widget.js?v=20260827r"></script>
+<script src="app.js?v=20260827r"></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2581,6 +2583,7 @@ function previewImage(event) {
     <div class="wa-tabs" id="waTabs">
       <button class="wa-tab active" data-tab="all" data-i18n="chatTabAll" onclick="W.setTab('all')">Toutes</button>
       <button class="wa-tab" data-tab="unread" data-i18n="chatTabUnread" onclick="W.setTab('unread')">Non lues</button>
+      <button class="wa-tab" data-tab="archived" data-i18n="chatTabArchived" onclick="W.setTab('archived')">Archivées</button>
       
       
     </div>
