@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260829e';
+const APP_BUILD = '20260829g';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -366,7 +366,7 @@ const I18N = {
     noContactYet: "Personne ne vous a encore contacté pour ce besoin.", yourWhatsappNumberLabel: "Ton numéro WhatsApp", whatsappNumberHint: "C'est sur ce numéro que tu recevras ton code de vérification à 7 chiffres.",
     idPhotoHint: "📄 Photo de ta pièce d'identité (CNI, passeport...)", tapToAddPhoto: "Toucher pour ajouter la photo", selfieHint: "🤳 Selfie de toi tenant la même pièce à côté de ton visage",
     tapToAddSelfie: "Toucher pour ajouter le selfie", noReviewsYet: "Pas encore d'avis pour ce prestataire.", loadingReviews: "Chargement des avis...",
-    reviewsLoadError: "Erreur de chargement des avis.", contactBeforeReview: "Contactez ce prestataire dans le chat pour pouvoir laisser un avis ensuite.", alreadyReviewed: "✓ Vous avez déjà laissé un avis pour cet échange.",
+    reviewsLoadError: "Erreur de chargement des avis.", contactBeforeReview: "Vous pourrez laisser un avis lorsqu'un artisan aura contacté cette annonce.", alreadyReviewed: "✓ Vous avez déjà laissé un avis pour cet échange.",
     reviewModalTitle: "Comment ça s'est passé ?", prefSaveError: "Préférence non enregistrée (réseau instable ?), réessayez.", welcomeBack: "Bon retour !",
     welcomeUser: "Bienvenue {name}", someUploadsFailed: "{n} photo(s) n'ont pas pu être envoyée(s) (réseau instable ?), le reste de l'annonce est publié quand même.", rejectedWrongType: "{n} fichier(s) ignoré(s) : format non supporté (JPG, PNG, WEBP ou GIF uniquement)",
     rejectedTooBig: "{n} photo(s) ignorée(s) : plus de {mb} Mo", noWhatsappManualCode: "Aucun numéro WhatsApp enregistré pour ce profil. Code à transmettre manuellement : {code}", myPublicationsCount: "Vous avez {n} publication(s)",
@@ -374,7 +374,7 @@ const I18N = {
     positionSavedFill: "Position enregistrée ! Remplissez le formulaire de job.", photoUploadError: "Erreur lors de l'envoi de la photo (réseau instable ?), réessayez.", whatsappOpenError: "Erreur lors de l'ouverture de WhatsApp. Réessayez.",
     chooseRatingFirst: "Choisissez une note avant d'envoyer", reviewSendError: "Erreur lors de l'envoi de l'avis", mustBeLoggedIn: "Vous devez être connecté.",
     fillNameAndJob: "Veuillez renseigner votre nom/société et votre métier/spécialité.", profileSavedSuccess: "Profil Pro enregistré avec succès !", genericError: "Une erreur est survenue.",
-    mustBeLoggedInWhatsapp: "Vous devez être connecté pour écrire sur WhatsApp.", itsOwnJob: "C'est ta propre annonce.", itsOwnJobShort: "C'est ta propre annonce.", paymentReceived: "🎉 Merci ! Paiement reçu, ton compte s'active dans quelques secondes...", accountActivated: "✅ Ton compte est activé ! Merci de ta confiance. 🙏", confirmDeleteListing: "Supprimer définitivement cette annonce ?", verifying: "Vérification...", uploading: "Téléchargement...", saving: "Enregistrement en cours...", sendingPhotos: "Envoi des photos...", alreadyVerified: "✅ Déjà vérifié", proActiveUntil: "⭐ PRO actif jusqu'au {x} (renouveler)", freeLabel: "Gratuit", activeShort: "Actif",  versionTitle: "Nouvelle version disponible", versionBody: "Cette page tourne sur une version obsolète du code. Recharge pour récupérer les corrections.", versionBtn: "Recharger l'app", typing: "en train d'écrire…", online: "en ligne", lastSeen: "vu {x}", photoMsg: "Photo", voiceMsg: "Voice", fileMsg: "Fichier", editedTag: "modifié", today: "Aujourd'hui", yesterday: "Hier", youTag: "Toi", unknownName: "Inconnu", editBanner: "Modification du message", noResults: "0 résultat(s)", emojiSearchPh: "Rechercher…", optionN: "Option {x}", ctxReply: "Répondre", ctxReact: "Réagir", ctxEdit: "Modifier", ctxCopy: "Copier", ctxForward: "Transférer", ctxStar: "Étoiler", ctxUnstar: "Retirer l'étoile", ctxPin: "Épingler", ctxUnpin: "Désépingler", muteLabel: "Muet", unmuteLabel: "Désactiver le muet", archiveLabel: "Archiver", unarchiveLabel: "Désarchiver", ctxDelete: "Supprimer", ctxGroupMsg: "Message", ctxGroupConv: "Conversation", ctxSelect: "Sélectionner", selCount: "{x} sélectionné(s)", delManyConfirm: "Supprimer ces {x} message(s) ?", delManyAllConfirm: "Supprimer ces messages pour TOUT LE MONDE ?\n\nOK     = pour tout le monde\nAnnuler = seulement pour moi", noStarred: "Aucun message étoilé", nStarred: "{x} message(s) étoilé(s)", profileAbout: "Salut 👋 Je suis sur JobMarket.", noMedia: "Aucun média partagé", votes: "vote", downloadBtn: "Enregistrer", sendErrorPrefix: "Erreur envoi : ", deleteAllConfirm: "Supprimer ce message pour TOUT LE MONDE ?\n\nOK     = pour tout le monde\nAnnuler = seulement pour moi", imagesOnly: "Images uniquement (JPG, PNG, WEBP, GIF).", photoTooBig: "Photo trop lourde (max 8 Mo).", photoAdded: "Photo ajoutée ! 📸", photoDeleted: "Photo supprimée.", maxPhotos: "Maximum 6 photos. Supprime-en une d'abord.", photoUploading: "Téléchargement de la photo...", statusUpdated: "Statut mis à jour : ", availNowFull: "Disponible 🟢", availWeekFull: "Cette semaine 🟠", availBusyFull: "Occupé 🔴", myLabel: "Moi", availNowBadge: "🟢 Dispo", availWeekBadge: "🟠 Cette sem.", availFilterTip: "N'afficher que les artisans disponibles maintenant", artisanMonthLabel: "ARTISAN DU MOIS", activeNow: "⚡ Actif à l'instant", activeAgoMin: "🕐 Actif il y a {x} min", activeAgoH: "🕐 Actif il y a {x} h", activeAgoD: "📅 Actif il y a {x} j", inactiveAgo: "📅 Inactif depuis un moment", activeUnknown: "Activité inconnue", timeAgoNow: "à l'instant", timeAgoMin: "il y a {x} min", timeAgoH: "il y a {x} h", timeAgoD: "il y a {x} j", qrAvailable: "Je suis disponible", qrPrice: "C'est combien ?", qrWhen: "Quand tu commences ?", qrOnWay: "Je suis en route", qrGo: "D'accord, on part", qrThanks: "Merci beaucoup", qrHello: "Bonjour", qrAgree: "D'accord", qrCall: "Je t'appelle",  mustCompleteProfileContact: "Vous devez compléter votre profil (nom/société et métier/spécialité) pour contacter cette personne.", phoneUnavailable: "Numéro de téléphone indisponible.",
+    mustBeLoggedInWhatsapp: "Vous devez être connecté pour écrire sur WhatsApp.", itsOwnJob: "C'est ta propre annonce.", itsOwnJobShort: "C'est ta propre annonce.", paymentReceived: "🎉 Merci ! Paiement reçu, ton compte s'active dans quelques secondes...", accountActivated: "✅ Ton compte est activé ! Merci de ta confiance. 🙏", confirmDeleteListing: "Supprimer définitivement cette annonce ?", verifying: "Vérification...", uploading: "Téléchargement...", saving: "Enregistrement en cours...", sendingPhotos: "Envoi des photos...", alreadyVerified: "✅ Déjà vérifié", proActiveUntil: "⭐ PRO actif jusqu'au {x} (renouveler)", freeLabel: "Gratuit", activeShort: "Actif",  versionTitle: "Nouvelle version disponible", versionBody: "Cette page tourne sur une version obsolète du code. Recharge pour récupérer les corrections.", versionBtn: "Recharger l'app", typing: "en train d'écrire…", online: "en ligne", lastSeen: "vu {x}", photoMsg: "Photo", voiceMsg: "Voice", fileMsg: "Fichier", editedTag: "modifié", today: "Aujourd'hui", yesterday: "Hier", youTag: "Toi", unknownName: "Inconnu", editBanner: "Modification du message", noResults: "0 résultat(s)", emojiSearchPh: "Rechercher…", optionN: "Option {x}", ctxReply: "Répondre", ctxReact: "Réagir", ctxEdit: "Modifier", ctxCopy: "Copier", ctxForward: "Transférer", ctxStar: "Étoiler", ctxUnstar: "Retirer l'étoile", ctxPin: "Épingler", ctxUnpin: "Désépingler", muteLabel: "Muet", unmuteLabel: "Désactiver le muet", archiveLabel: "Archiver", unarchiveLabel: "Désarchiver", ctxDelete: "Supprimer", ctxGroupMsg: "Message", ctxGroupConv: "Conversation", ctxSelect: "Sélectionner", selCount: "{x} sélectionné(s)", delManyConfirm: "Supprimer ces {x} message(s) ?", delManyAllConfirm: "Supprimer ces messages pour TOUT LE MONDE ?\n\nOK     = pour tout le monde\nAnnuler = seulement pour moi", noStarred: "Aucun message étoilé", nStarred: "{x} message(s) étoilé(s)", profileAbout: "Salut 👋 Je suis sur JobMarket.", noMedia: "Aucun média partagé", votes: "vote", downloadBtn: "Enregistrer", sendErrorPrefix: "Erreur envoi : ", deleteAllConfirm: "Supprimer ce message pour TOUT LE MONDE ?\n\nOK     = pour tout le monde\nAnnuler = seulement pour moi", imagesOnly: "Images uniquement (JPG, PNG, WEBP, GIF).", photoTooBig: "Photo trop lourde (max 8 Mo).", photoAdded: "Photo ajoutée ! 📸", photoDeleted: "Photo supprimée.", maxPhotos: "Maximum 6 photos. Supprime-en une d'abord.", photoUploading: "Téléchargement de la photo...", statusUpdated: "Statut mis à jour : ", availNowFull: "Disponible 🟢", availWeekFull: "Cette semaine 🟠", availBusyFull: "Occupé 🔴", myLabel: "Moi", availNowBadge: "🟢 Dispo", availWeekBadge: "🟠 Cette sem.", availFilterTip: "N'afficher que les artisans disponibles maintenant", artisanMonthLabel: "ARTISAN DU MOIS", employerMonthLabel: "EMPLOYEUR DU MOIS", employerJobsCount: "{x} annonce(s) publiée(s)", activeNow: "⚡ Actif à l'instant", activeAgoMin: "🕐 Actif il y a {x} min", activeAgoH: "🕐 Actif il y a {x} h", activeAgoD: "📅 Actif il y a {x} j", inactiveAgo: "📅 Inactif depuis un moment", activeUnknown: "Activité inconnue", timeAgoNow: "à l'instant", timeAgoMin: "il y a {x} min", timeAgoH: "il y a {x} h", timeAgoD: "il y a {x} j", qrAvailable: "Je suis disponible", qrPrice: "C'est combien ?", qrWhen: "Quand tu commences ?", qrOnWay: "Je suis en route", qrGo: "D'accord, on part", qrThanks: "Merci beaucoup", qrHello: "Bonjour", qrAgree: "D'accord", qrCall: "Je t'appelle",  mustCompleteProfileContact: "Vous devez compléter votre profil (nom/société et métier/spécialité) pour contacter cette personne.", phoneUnavailable: "Numéro de téléphone indisponible.",
     cannotComputeRoute: "Impossible de calculer l'itinéraire sans votre position.",
     notifTitle: "Nouveaux jobs", publishBtn: "Publier",
     catAll: "Tous", catBtp: "BTP", catElec: "Electricite", catPlomberie: "Plomberie",
@@ -383,7 +383,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NOUVELLE OFFRE D'EMPLOI*\n\n*{title}*\n{desc}{requirements}\n\n💰 Rémunération : {price}\n📍 Lieu : {location}\n📞 Contact : {phone}\n\nPlus de détails ici : {link}",
     waMsgRequirementsLabel: "📋 *Exigences :*",
     waMsgOrConnector: " ou ",
-    waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?", chatFirstMsgJob: "Bonjour, je vous contacte depuis JobMarket pour : « {jobTitle} ». Est-ce toujours disponible ?", chatPinnedTitle: "Épinglés", chatCloseTitle: "Fermer", chatSearchPh: "Rechercher…", chatTabAll: "Toutes", chatTabUnread: "Non lues", chatTabArchived: "Archivées", chatEmptyTitle: "Chat sécurisé", chatEmptyBody: "Tes conversations apparaissent ici. Ouvre une annonce puis « Chat sécurisé » pour démarrer — la discussion continue d'une annonce à l'autre.", keyEnter: "Entrée = Envoyer", keyShiftEnter: "Maj+Entrée = Saut de ligne", keyEsc: "Échap = Fermer", keyCtrlF: "Ctrl+F = Rechercher", chatSearchTitle: "Rechercher", chatMsgSearchPh: "Rechercher dans la conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Joindre", chatSendTitle: "Envoyer", chatMsgPh: "Écris ton message…", chatPhotosAtt: "Photos", chatDropText: "Dépose une image ici", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 Mo", chatContactInfo: "Infos du contact", chatStarAction: "Épingler", chatAboutLabel: "À propos", chatMediaSection: "Médias, liens et documents", chatFwdTitle: "Transférer le message à…", chatPollTitle: "Créer un sondage", chatPollQPh: "Pose une question…", chatPollAddOpt: "+ Ajouter une option", chatPollSend: "Envoyer le sondage", lockNotice: "Messages sécurisés — cette conversation reste entre vous deux.",
+    waMsgContactProvider: "Bonjour, je vous contacte depuis JobMarket pour : \"{jobTitle}\".\n\n--- Profil du prestataire ---\nNom / Société : {profileName}\nMétier : {proTitle}\nCompétences : {proSkills}\n\nEst-ce toujours disponible ?", chatFirstMsgJob: "Bonjour, je vous contacte depuis JobMarket pour : « {jobTitle} ». Est-ce toujours disponible ?", requestQuoteBtn: "Demander un devis", chatQuoteTemplate: "Bonjour, je suis intéressé par votre annonce « {jobTitle} » ({price}). Pourriez-vous m'indiquer un prix estimé et vos disponibilités ?", chatPinnedTitle: "Épinglés", chatCloseTitle: "Fermer", chatSearchPh: "Rechercher…", chatTabAll: "Toutes", chatTabUnread: "Non lues", chatTabArchived: "Archivées", chatEmptyTitle: "Chat sécurisé", chatEmptyBody: "Tes conversations apparaissent ici. Ouvre une annonce puis « Chat sécurisé » pour démarrer — la discussion continue d'une annonce à l'autre.", keyEnter: "Entrée = Envoyer", keyShiftEnter: "Maj+Entrée = Saut de ligne", keyEsc: "Échap = Fermer", keyCtrlF: "Ctrl+F = Rechercher", chatSearchTitle: "Rechercher", chatMsgSearchPh: "Rechercher dans la conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Joindre", chatSendTitle: "Envoyer", chatMsgPh: "Écris ton message…", chatPhotosAtt: "Photos", chatDropText: "Dépose une image ici", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 Mo", chatContactInfo: "Infos du contact", chatStarAction: "Épingler", chatAboutLabel: "À propos", chatMediaSection: "Médias, liens et documents", chatFwdTitle: "Transférer le message à…", chatPollTitle: "Créer un sondage", chatPollQPh: "Pose une question…", chatPollAddOpt: "+ Ajouter une option", chatPollSend: "Envoyer le sondage", lockNotice: "Messages sécurisés — cette conversation reste entre vous deux.",
     voiceMicError: "Impossible d'accéder au micro. Vérifie les autorisations du navigateur.",
     voiceTooShort: "Enregistrement trop court.",
     voiceUploadError: "L'envoi du message vocal a échoué (audio non autorisé ?). Le message texte reste disponible.",
@@ -544,7 +544,7 @@ const I18N = {
     reviewsLeaveBtn: "⭐ Laisser un avis",
     reviewsJobFallback: "ce besoin",
     reviewPromptQuestion: "Comment ça s'est passé ?",
-    reviewPromptWith: "Avec {name} pour “{title}”",
+    reviewPromptWith: "Concernant {name}, pour votre annonce “{title}”",
     reviewCommentPlaceholder: "Commentaire (optionnel)",
     reviewSendBtn: "Envoyer",
     reviewSending: "Envoi...",
@@ -614,7 +614,7 @@ const I18N = {
     noContactYet: "No one has contacted you about this request yet.", yourWhatsappNumberLabel: "Your WhatsApp number", whatsappNumberHint: "You'll receive your 7-digit verification code on this number.",
     idPhotoHint: "📄 Photo of your ID (national ID card, passport...)", tapToAddPhoto: "Tap to add the photo", selfieHint: "🤳 Selfie of you holding the same document next to your face",
     tapToAddSelfie: "Tap to add the selfie", noReviewsYet: "No reviews yet for this provider.", loadingReviews: "Loading reviews...",
-    reviewsLoadError: "Error loading reviews.", contactBeforeReview: "Contact this provider in the chat so you can leave a review afterwards.", alreadyReviewed: "✓ You have already left a review for this exchange.",
+    reviewsLoadError: "Error loading reviews.", contactBeforeReview: "You'll be able to leave a review once a tradesperson contacts this listing.", alreadyReviewed: "✓ You have already left a review for this exchange.",
     reviewModalTitle: "How did it go?", prefSaveError: "Preference not saved (unstable network?), please try again.", welcomeBack: "Welcome back!",
     welcomeUser: "Welcome {name}", someUploadsFailed: "{n} photo(s) could not be uploaded (unstable network?), the rest of the listing was published anyway.", rejectedWrongType: "{n} file(s) ignored: unsupported format (JPG, PNG, WEBP or GIF only)",
     rejectedTooBig: "{n} photo(s) ignored: over {mb} MB", noWhatsappManualCode: "No WhatsApp number saved for this profile. Code to share manually: {code}", myPublicationsCount: "You have {n} listing(s)",
@@ -622,7 +622,7 @@ const I18N = {
     positionSavedFill: "Position saved! Fill in the job form.", photoUploadError: "Error uploading the photo (unstable network?), please try again.", whatsappOpenError: "Error opening WhatsApp. Please try again.",
     chooseRatingFirst: "Choose a rating before sending", reviewSendError: "Error sending the review", mustBeLoggedIn: "You must be logged in.",
     fillNameAndJob: "Please fill in your name/company and your trade/specialty.", profileSavedSuccess: "Pro Profile saved successfully!", genericError: "An error occurred.",
-    mustBeLoggedInWhatsapp: "You must be logged in to message on WhatsApp.", itsOwnJob: "This is your own listing.", itsOwnJobShort: "This is your own listing.", paymentReceived: "🎉 Thanks! Payment received, your account activates in a few seconds...", accountActivated: "✅ Your account is active! Thank you for your trust. 🙏", confirmDeleteListing: "Permanently delete this listing?", verifying: "Verifying...", uploading: "Uploading...", saving: "Saving...", sendingPhotos: "Sending photos...", alreadyVerified: "✅ Already verified", proActiveUntil: "⭐ PRO active until {x} (renew)", freeLabel: "Free", activeShort: "Active",  versionTitle: "New version available", versionBody: "This page is running an outdated version of the code. Reload to get the fixes.", versionBtn: "Reload the app", typing: "typing…", online: "online", lastSeen: "last seen {x}", photoMsg: "Photo", voiceMsg: "Voice", fileMsg: "File", editedTag: "edited", today: "Today", yesterday: "Yesterday", youTag: "You", unknownName: "Unknown", editBanner: "Editing message", noResults: "0 results", emojiSearchPh: "Search…", optionN: "Option {x}", ctxReply: "Reply", ctxReact: "React", ctxEdit: "Edit", ctxCopy: "Copy", ctxForward: "Forward", ctxStar: "Star", ctxUnstar: "Unstar", ctxPin: "Pin", ctxUnpin: "Unpin", muteLabel: "Mute", unmuteLabel: "Unmute", archiveLabel: "Archive", unarchiveLabel: "Unarchive", ctxDelete: "Delete", ctxGroupMsg: "Message", ctxGroupConv: "Conversation", ctxSelect: "Select", selCount: "{x} selected", delManyConfirm: "Delete these {x} message(s) ?", delManyAllConfirm: "Delete these messages for EVERYONE?\n\nOK     = for everyone\nCancel = for me only", noStarred: "No starred messages", nStarred: "{x} starred message(s)", profileAbout: "Hi 👋 I'm on JobMarket.", noMedia: "No shared media yet", votes: "vote(s)", downloadBtn: "Save", sendErrorPrefix: "Send error: ", deleteAllConfirm: "Delete this message for EVERYONE?\n\nOK     = for everyone\nCancel = for me only", imagesOnly: "Images only (JPG, PNG, WEBP, GIF).", photoTooBig: "Photo too large (max 8 MB).", photoAdded: "Photo added! 📸", photoDeleted: "Photo deleted.", maxPhotos: "Maximum 6 photos. Delete one first.", photoUploading: "Uploading photo...", statusUpdated: "Status updated: ", availNowFull: "Available 🟢", availWeekFull: "This week 🟠", availBusyFull: "Busy 🔴", myLabel: "Me", availNowBadge: "🟢 Avail.", availWeekBadge: "🟠 This week", availFilterTip: "Show only tradespeople available now", artisanMonthLabel: "TRADESPERSON OF THE MONTH", activeNow: "⚡ Active just now", activeAgoMin: "🕐 Active {x} min ago", activeAgoH: "🕐 Active {x} h ago", activeAgoD: "📅 Active {x} d ago", inactiveAgo: "📅 Inactive for a while", activeUnknown: "Unknown activity", timeAgoNow: "just now", timeAgoMin: "{x} min ago", timeAgoH: "{x} h ago", timeAgoD: "{x} d ago", qrAvailable: "I'm available", qrPrice: "How much is it?", qrWhen: "When are you starting?", qrOnWay: "I'm on my way", qrGo: "OK, let's go", qrThanks: "Thank you very much", qrHello: "Hello", qrAgree: "OK", qrCall: "I'll call you",  mustCompleteProfileContact: "You must complete your profile (name/company and trade/specialty) to contact this person.", phoneUnavailable: "Phone number unavailable.",
+    mustBeLoggedInWhatsapp: "You must be logged in to message on WhatsApp.", itsOwnJob: "This is your own listing.", itsOwnJobShort: "This is your own listing.", paymentReceived: "🎉 Thanks! Payment received, your account activates in a few seconds...", accountActivated: "✅ Your account is active! Thank you for your trust. 🙏", confirmDeleteListing: "Permanently delete this listing?", verifying: "Verifying...", uploading: "Uploading...", saving: "Saving...", sendingPhotos: "Sending photos...", alreadyVerified: "✅ Already verified", proActiveUntil: "⭐ PRO active until {x} (renew)", freeLabel: "Free", activeShort: "Active",  versionTitle: "New version available", versionBody: "This page is running an outdated version of the code. Reload to get the fixes.", versionBtn: "Reload the app", typing: "typing…", online: "online", lastSeen: "last seen {x}", photoMsg: "Photo", voiceMsg: "Voice", fileMsg: "File", editedTag: "edited", today: "Today", yesterday: "Yesterday", youTag: "You", unknownName: "Unknown", editBanner: "Editing message", noResults: "0 results", emojiSearchPh: "Search…", optionN: "Option {x}", ctxReply: "Reply", ctxReact: "React", ctxEdit: "Edit", ctxCopy: "Copy", ctxForward: "Forward", ctxStar: "Star", ctxUnstar: "Unstar", ctxPin: "Pin", ctxUnpin: "Unpin", muteLabel: "Mute", unmuteLabel: "Unmute", archiveLabel: "Archive", unarchiveLabel: "Unarchive", ctxDelete: "Delete", ctxGroupMsg: "Message", ctxGroupConv: "Conversation", ctxSelect: "Select", selCount: "{x} selected", delManyConfirm: "Delete these {x} message(s) ?", delManyAllConfirm: "Delete these messages for EVERYONE?\n\nOK     = for everyone\nCancel = for me only", noStarred: "No starred messages", nStarred: "{x} starred message(s)", profileAbout: "Hi 👋 I'm on JobMarket.", noMedia: "No shared media yet", votes: "vote(s)", downloadBtn: "Save", sendErrorPrefix: "Send error: ", deleteAllConfirm: "Delete this message for EVERYONE?\n\nOK     = for everyone\nCancel = for me only", imagesOnly: "Images only (JPG, PNG, WEBP, GIF).", photoTooBig: "Photo too large (max 8 MB).", photoAdded: "Photo added! 📸", photoDeleted: "Photo deleted.", maxPhotos: "Maximum 6 photos. Delete one first.", photoUploading: "Uploading photo...", statusUpdated: "Status updated: ", availNowFull: "Available 🟢", availWeekFull: "This week 🟠", availBusyFull: "Busy 🔴", myLabel: "Me", availNowBadge: "🟢 Avail.", availWeekBadge: "🟠 This week", availFilterTip: "Show only tradespeople available now", artisanMonthLabel: "TRADESPERSON OF THE MONTH", employerMonthLabel: "EMPLOYER OF THE MONTH", employerJobsCount: "{x} job(s) posted", activeNow: "⚡ Active just now", activeAgoMin: "🕐 Active {x} min ago", activeAgoH: "🕐 Active {x} h ago", activeAgoD: "📅 Active {x} d ago", inactiveAgo: "📅 Inactive for a while", activeUnknown: "Unknown activity", timeAgoNow: "just now", timeAgoMin: "{x} min ago", timeAgoH: "{x} h ago", timeAgoD: "{x} d ago", qrAvailable: "I'm available", qrPrice: "How much is it?", qrWhen: "When are you starting?", qrOnWay: "I'm on my way", qrGo: "OK, let's go", qrThanks: "Thank you very much", qrHello: "Hello", qrAgree: "OK", qrCall: "I'll call you",  mustCompleteProfileContact: "You must complete your profile (name/company and trade/specialty) to contact this person.", phoneUnavailable: "Phone number unavailable.",
     cannotComputeRoute: "Cannot calculate the route without your position.",
     notifTitle: "New jobs", publishBtn: "Post",
     catAll: "All", catBtp: "Construction", catElec: "Electrical", catPlomberie: "Plumbing",
@@ -631,7 +631,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NEW JOB OPENING*\n\n*{title}*\n{desc}{requirements}\n\n💰 Pay: {price}\n📍 Location: {location}\n📞 Contact: {phone}\n\nMore details here: {link}",
     waMsgRequirementsLabel: "📋 *Requirements:*",
     waMsgOrConnector: " or ",
-    waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?", chatFirstMsgJob: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\". Is this still available?", chatPinnedTitle: "Starred", chatCloseTitle: "Close", chatSearchPh: "Search…", chatTabAll: "All", chatTabUnread: "Unread", chatTabArchived: "Archived", chatEmptyTitle: "Secure chat", chatEmptyBody: "Your conversations appear here. Open a listing then “Secure chat” to start — the discussion continues from one listing to the next.", keyEnter: "Enter = Send", keyShiftEnter: "Shift+Enter = New line", keyEsc: "Esc = Close", keyCtrlF: "Ctrl+F = Search", chatSearchTitle: "Search", chatMsgSearchPh: "Search in conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Attach", chatSendTitle: "Send", chatMsgPh: "Type a message…", chatPhotosAtt: "Photos", chatDropText: "Drop an image here", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Contact info", chatStarAction: "Star", chatAboutLabel: "About", chatMediaSection: "Media, links and docs", chatFwdTitle: "Forward message to…", chatPollTitle: "Create a poll", chatPollQPh: "Ask a question…", chatPollAddOpt: "+ Add option", chatPollSend: "Send Poll", lockNotice: "Secured messages — this conversation stays between you two.",
+    waMsgContactProvider: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\".\n\n--- Provider profile ---\nName / Company: {profileName}\nTrade: {proTitle}\nSkills: {proSkills}\n\nIs this still available?", chatFirstMsgJob: "Hello, I'm contacting you from JobMarket about: \"{jobTitle}\". Is this still available?", requestQuoteBtn: "Request a quote", chatQuoteTemplate: "Hello, I'm interested in your listing \"{jobTitle}\" ({price}). Could you share an estimated price and your availability?", chatPinnedTitle: "Starred", chatCloseTitle: "Close", chatSearchPh: "Search…", chatTabAll: "All", chatTabUnread: "Unread", chatTabArchived: "Archived", chatEmptyTitle: "Secure chat", chatEmptyBody: "Your conversations appear here. Open a listing then “Secure chat” to start — the discussion continues from one listing to the next.", keyEnter: "Enter = Send", keyShiftEnter: "Shift+Enter = New line", keyEsc: "Esc = Close", keyCtrlF: "Ctrl+F = Search", chatSearchTitle: "Search", chatMsgSearchPh: "Search in conversation…", chatEmojiTitle: "Emoji", chatAttachTitle: "Attach", chatSendTitle: "Send", chatMsgPh: "Type a message…", chatPhotosAtt: "Photos", chatDropText: "Drop an image here", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Contact info", chatStarAction: "Star", chatAboutLabel: "About", chatMediaSection: "Media, links and docs", chatFwdTitle: "Forward message to…", chatPollTitle: "Create a poll", chatPollQPh: "Ask a question…", chatPollAddOpt: "+ Add option", chatPollSend: "Send Poll", lockNotice: "Secured messages — this conversation stays between you two.",
     voiceMicError: "Can't access the microphone. Check your browser permissions.",
     voiceTooShort: "Recording too short.",
     voiceUploadError: "Failed to send the voice message (audio not allowed?). Text messages still work.",
@@ -792,7 +792,7 @@ const I18N = {
     reviewsLeaveBtn: "⭐ Leave a review",
     reviewsJobFallback: "this request",
     reviewPromptQuestion: "How did it go?",
-    reviewPromptWith: "With {name} for “{title}”",
+    reviewPromptWith: "About {name}, for your listing “{title}”",
     reviewCommentPlaceholder: "Comment (optional)",
     reviewSendBtn: "Send",
     reviewSending: "Sending...",
@@ -862,7 +862,7 @@ const I18N = {
     noContactYet: "Nessuno ti ha ancora contattato per questa richiesta.", yourWhatsappNumberLabel: "Il tuo numero WhatsApp", whatsappNumberHint: "Riceverai il tuo codice di verifica a 7 cifre su questo numero.",
     idPhotoHint: "📄 Foto del tuo documento d'identità (CI, passaporto...)", tapToAddPhoto: "Tocca per aggiungere la foto", selfieHint: "🤳 Selfie con lo stesso documento tenuto vicino al viso",
     tapToAddSelfie: "Tocca per aggiungere il selfie", noReviewsYet: "Ancora nessuna recensione per questo prestatore.", loadingReviews: "Caricamento recensioni...",
-    reviewsLoadError: "Errore nel caricamento delle recensioni.", contactBeforeReview: "Contatta questo prestatore nella chat per poter lasciare una recensione in seguito.", alreadyReviewed: "✓ Hai già lasciato una recensione per questo scambio.",
+    reviewsLoadError: "Errore nel caricamento delle recensioni.", contactBeforeReview: "Potrai lasciare una recensione quando un artigiano contatterà questo annuncio.", alreadyReviewed: "✓ Hai già lasciato una recensione per questo scambio.",
     reviewModalTitle: "Com'è andata?", prefSaveError: "Preferenza non salvata (rete instabile?), riprova.", welcomeBack: "Bentornato!",
     welcomeUser: "Benvenuto {name}", someUploadsFailed: "{n} foto non sono state caricate (rete instabile?), il resto dell'annuncio è stato comunque pubblicato.", rejectedWrongType: "{n} file ignorati: formato non supportato (solo JPG, PNG, WEBP o GIF)",
     rejectedTooBig: "{n} foto ignorate: oltre {mb} MB", noWhatsappManualCode: "Nessun numero WhatsApp registrato per questo profilo. Codice da comunicare manualmente: {code}", myPublicationsCount: "Hai {n} annuncio/i",
@@ -870,7 +870,7 @@ const I18N = {
     positionSavedFill: "Posizione salvata! Compila il modulo del lavoro.", photoUploadError: "Errore durante l'invio della foto (rete instabile?), riprova.", whatsappOpenError: "Errore durante l'apertura di WhatsApp. Riprova.",
     chooseRatingFirst: "Scegli una valutazione prima di inviare", reviewSendError: "Errore durante l'invio della recensione", mustBeLoggedIn: "Devi essere connesso.",
     fillNameAndJob: "Inserisci il tuo nome/azienda e la tua professione/specialità.", profileSavedSuccess: "Profilo Pro salvato con successo!", genericError: "Si è verificato un errore.",
-    mustBeLoggedInWhatsapp: "Devi essere connesso per scrivere su WhatsApp.", itsOwnJob: "È il tuo stesso annuncio.", itsOwnJobShort: "È il tuo annuncio.", paymentReceived: "🎉 Grazie! Pagamento ricevuto, il tuo account si attiva in pochi secondi...", accountActivated: "✅ Il tuo account è attivo! Grazie per la fiducia. 🙏", confirmDeleteListing: "Eliminare definitivamente questo annuncio?", verifying: "Verifica in corso...", uploading: "Caricamento...", saving: "Salvataggio in corso...", sendingPhotos: "Invio delle foto...", alreadyVerified: "✅ Già verificato", proActiveUntil: "⭐ PRO attivo fino al {x} (rinnova)", freeLabel: "Gratuito", activeShort: "Attivo",  versionTitle: "Nuova versione disponibile", versionBody: "Questa pagina usa una versione obsoleta del codice. Ricarica per ricevere le correzioni.", versionBtn: "Ricarica l'app", typing: "sta scrivendo…", online: "online", lastSeen: "visto {x}", photoMsg: "Foto", voiceMsg: "Vocale", fileMsg: "File", editedTag: "modificato", today: "Oggi", yesterday: "Ieri", youTag: "Tu", unknownName: "Sconosciuto", editBanner: "Modifica del messaggio", noResults: "0 risultati", emojiSearchPh: "Cerca…", optionN: "Opzione {x}", ctxReply: "Rispondi", ctxReact: "Reagisci", ctxEdit: "Modifica", ctxCopy: "Copia", ctxForward: "Inoltra", ctxStar: "Preferisci", ctxUnstar: "Rimuovi preferito", ctxPin: "Fissa", ctxUnpin: "Sblocca", muteLabel: "Muto", unmuteLabel: "Disattivare il muto", archiveLabel: "Archivia", unarchiveLabel: "Sarchivia", ctxDelete: "Elimina", ctxGroupMsg: "Messaggio", ctxGroupConv: "Conversazione", ctxSelect: "Seleziona", selCount: "{x} selezionato(i)", delManyConfirm: "Eliminare questi {x} messaggio(i) ?", delManyAllConfirm: "Eliminare questi messaggi per TUTTI?\n\nOK     = per tutti\nAnnulla = solo per me", noStarred: "Nessun messaggio preferito", nStarred: "{x} messaggio(i) preferito(i)", profileAbout: "Ciao 👋 Sono su JobMarket.", noMedia: "Nessun media condiviso", votes: "voto", downloadBtn: "Salva", sendErrorPrefix: "Errore di invio: ", deleteAllConfirm: "Eliminare questo messaggio per TUTTI?\n\nOK     = per tutti\nAnnulla = solo per me", imagesOnly: "Solo immagini (JPG, PNG, WEBP, GIF).", photoTooBig: "Foto troppo pesante (max 8 MB).", photoAdded: "Foto aggiunta! 📸", photoDeleted: "Foto eliminata.", maxPhotos: "Massimo 6 foto. Prima eliminarne una.", photoUploading: "Caricamento della foto...", statusUpdated: "Stato aggiornato: ", availNowFull: "Disponibile 🟢", availWeekFull: "Questa settimana 🟠", availBusyFull: "Occupato 🔴", myLabel: "Io", availNowBadge: "🟢 Disp.", availWeekBadge: "🟠 Q. settimana", availFilterTip: "Mostra solo artigiani disponibili ora", artisanMonthLabel: "ARTIGIANO DEL MESE", activeNow: "⚡ Attivo adesso", activeAgoMin: "🕐 Attivo {x} min fa", activeAgoH: "🕐 Attivo {x} h fa", activeAgoD: "📅 Attivo {x} g fa", inactiveAgo: "📅 Inattivo da un po'", activeUnknown: "Attività sconosciuta", timeAgoNow: "adesso", timeAgoMin: "{x} min fa", timeAgoH: "{x} h fa", timeAgoD: "{x} g fa", qrAvailable: "Sono disponibile", qrPrice: "Quanto costa?", qrWhen: "Quando inizi?", qrOnWay: "Sono in arrivo", qrGo: "Ok, si parte", qrThanks: "Grazie mille", qrHello: "Ciao", qrAgree: "Ok", qrCall: "Ti chiamo",  mustCompleteProfileContact: "Devi completare il tuo profilo (nome/azienda e professione/specialità) per contattare questa persona.", phoneUnavailable: "Numero di telefono non disponibile.",
+    mustBeLoggedInWhatsapp: "Devi essere connesso per scrivere su WhatsApp.", itsOwnJob: "È il tuo stesso annuncio.", itsOwnJobShort: "È il tuo annuncio.", paymentReceived: "🎉 Grazie! Pagamento ricevuto, il tuo account si attiva in pochi secondi...", accountActivated: "✅ Il tuo account è attivo! Grazie per la fiducia. 🙏", confirmDeleteListing: "Eliminare definitivamente questo annuncio?", verifying: "Verifica in corso...", uploading: "Caricamento...", saving: "Salvataggio in corso...", sendingPhotos: "Invio delle foto...", alreadyVerified: "✅ Già verificato", proActiveUntil: "⭐ PRO attivo fino al {x} (rinnova)", freeLabel: "Gratuito", activeShort: "Attivo",  versionTitle: "Nuova versione disponibile", versionBody: "Questa pagina usa una versione obsoleta del codice. Ricarica per ricevere le correzioni.", versionBtn: "Ricarica l'app", typing: "sta scrivendo…", online: "online", lastSeen: "visto {x}", photoMsg: "Foto", voiceMsg: "Vocale", fileMsg: "File", editedTag: "modificato", today: "Oggi", yesterday: "Ieri", youTag: "Tu", unknownName: "Sconosciuto", editBanner: "Modifica del messaggio", noResults: "0 risultati", emojiSearchPh: "Cerca…", optionN: "Opzione {x}", ctxReply: "Rispondi", ctxReact: "Reagisci", ctxEdit: "Modifica", ctxCopy: "Copia", ctxForward: "Inoltra", ctxStar: "Preferisci", ctxUnstar: "Rimuovi preferito", ctxPin: "Fissa", ctxUnpin: "Sblocca", muteLabel: "Muto", unmuteLabel: "Disattivare il muto", archiveLabel: "Archivia", unarchiveLabel: "Sarchivia", ctxDelete: "Elimina", ctxGroupMsg: "Messaggio", ctxGroupConv: "Conversazione", ctxSelect: "Seleziona", selCount: "{x} selezionato(i)", delManyConfirm: "Eliminare questi {x} messaggio(i) ?", delManyAllConfirm: "Eliminare questi messaggi per TUTTI?\n\nOK     = per tutti\nAnnulla = solo per me", noStarred: "Nessun messaggio preferito", nStarred: "{x} messaggio(i) preferito(i)", profileAbout: "Ciao 👋 Sono su JobMarket.", noMedia: "Nessun media condiviso", votes: "voto", downloadBtn: "Salva", sendErrorPrefix: "Errore di invio: ", deleteAllConfirm: "Eliminare questo messaggio per TUTTI?\n\nOK     = per tutti\nAnnulla = solo per me", imagesOnly: "Solo immagini (JPG, PNG, WEBP, GIF).", photoTooBig: "Foto troppo pesante (max 8 MB).", photoAdded: "Foto aggiunta! 📸", photoDeleted: "Foto eliminata.", maxPhotos: "Massimo 6 foto. Prima eliminarne una.", photoUploading: "Caricamento della foto...", statusUpdated: "Stato aggiornato: ", availNowFull: "Disponibile 🟢", availWeekFull: "Questa settimana 🟠", availBusyFull: "Occupato 🔴", myLabel: "Io", availNowBadge: "🟢 Disp.", availWeekBadge: "🟠 Q. settimana", availFilterTip: "Mostra solo artigiani disponibili ora", artisanMonthLabel: "ARTIGIANO DEL MESE", employerMonthLabel: "IMPIEGATORE DEL MESE", employerJobsCount: "{x} annunci pubblicati", activeNow: "⚡ Attivo adesso", activeAgoMin: "🕐 Attivo {x} min fa", activeAgoH: "🕐 Attivo {x} h fa", activeAgoD: "📅 Attivo {x} g fa", inactiveAgo: "📅 Inattivo da un po'", activeUnknown: "Attività sconosciuta", timeAgoNow: "adesso", timeAgoMin: "{x} min fa", timeAgoH: "{x} h fa", timeAgoD: "{x} g fa", qrAvailable: "Sono disponibile", qrPrice: "Quanto costa?", qrWhen: "Quando inizi?", qrOnWay: "Sono in arrivo", qrGo: "Ok, si parte", qrThanks: "Grazie mille", qrHello: "Ciao", qrAgree: "Ok", qrCall: "Ti chiamo",  mustCompleteProfileContact: "Devi completare il tuo profilo (nome/azienda e professione/specialità) per contattare questa persona.", phoneUnavailable: "Numero di telefono non disponibile.",
     cannotComputeRoute: "Impossibile calcolare l'itinerario senza la tua posizione.",
     notifTitle: "Nuovi lavori", publishBtn: "Pubblica",
     catAll: "Tutti", catBtp: "Edilizia", catElec: "Elettricità", catPlomberie: "Idraulica",
@@ -879,7 +879,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NUOVA OFFERTA DI LAVORO*\n\n*{title}*\n{desc}{requirements}\n\n💰 Compenso: {price}\n📍 Luogo: {location}\n📞 Contatto: {phone}\n\nMaggiori dettagli qui: {link}",
     waMsgRequirementsLabel: "📋 *Requisiti:*",
     waMsgOrConnector: " o ",
-    waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?", chatFirstMsgJob: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\". È ancora disponibile?", chatPinnedTitle: "Preferiti", chatCloseTitle: "Chiudi", chatSearchPh: "Cerca…", chatTabAll: "Tutte", chatTabUnread: "Non lette", chatTabArchived: "Archiviati", chatEmptyTitle: "Chat sicura", chatEmptyBody: "Le tue conversazioni compaiono qui. Apri un annuncio poi « Chat sicura » per iniziare — la discussione continua da un annuncio all'altro.", keyEnter: "Invio = Invia", keyShiftEnter: "Maj+Invio = A capo", keyEsc: "Esc = Chiudi", keyCtrlF: "Ctrl+F = Cerca", chatSearchTitle: "Cerca", chatMsgSearchPh: "Cerca nella conversazione…", chatEmojiTitle: "Emoji", chatAttachTitle: "Allega", chatSendTitle: "Invia", chatMsgPh: "Scrivi un messaggio…", chatPhotosAtt: "Foto", chatDropText: "Rilascia un'immagine qui", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Info contatto", chatStarAction: "Preferisci", chatAboutLabel: "Info", chatMediaSection: "Media, link e documenti", chatFwdTitle: "Inoltra il messaggio a…", chatPollTitle: "Crea un sondaggio", chatPollQPh: "Fai una domanda…", chatPollAddOpt: "+ Aggiungi opzione", chatPollSend: "Invia sondaggio", lockNotice: "Messaggi protetti — questa conversazione resta tra voi due.",
+    waMsgContactProvider: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\".\n\n--- Profilo del fornitore ---\nNome / Azienda: {profileName}\nMestiere: {proTitle}\nCompetenze: {proSkills}\n\nÈ ancora disponibile?", chatFirstMsgJob: "Ciao, ti contatto da JobMarket per: \"{jobTitle}\". È ancora disponibile?", requestQuoteBtn: "Richiedi un preventivo", chatQuoteTemplate: "Ciao, sono interessato al tuo annuncio \"{jobTitle}\" ({price}). Potresti indicarmi un prezzo stimato e le tue disponibilità?", chatPinnedTitle: "Preferiti", chatCloseTitle: "Chiudi", chatSearchPh: "Cerca…", chatTabAll: "Tutte", chatTabUnread: "Non lette", chatTabArchived: "Archiviati", chatEmptyTitle: "Chat sicura", chatEmptyBody: "Le tue conversazioni compaiono qui. Apri un annuncio poi « Chat sicura » per iniziare — la discussione continua da un annuncio all'altro.", keyEnter: "Invio = Invia", keyShiftEnter: "Maj+Invio = A capo", keyEsc: "Esc = Chiudi", keyCtrlF: "Ctrl+F = Cerca", chatSearchTitle: "Cerca", chatMsgSearchPh: "Cerca nella conversazione…", chatEmojiTitle: "Emoji", chatAttachTitle: "Allega", chatSendTitle: "Invia", chatMsgPh: "Scrivi un messaggio…", chatPhotosAtt: "Foto", chatDropText: "Rilascia un'immagine qui", chatDropSub: "JPG, PNG, WEBP, GIF — max 8 MB", chatContactInfo: "Info contatto", chatStarAction: "Preferisci", chatAboutLabel: "Info", chatMediaSection: "Media, link e documenti", chatFwdTitle: "Inoltra il messaggio a…", chatPollTitle: "Crea un sondaggio", chatPollQPh: "Fai una domanda…", chatPollAddOpt: "+ Aggiungi opzione", chatPollSend: "Invia sondaggio", lockNotice: "Messaggi protetti — questa conversazione resta tra voi due.",
     voiceMicError: "Impossibile accedere al microfono. Controlla i permessi del browser.",
     voiceTooShort: "Registrazione troppo breve.",
     voiceUploadError: "Invio del messaggio vocale non riuscito (audio non autorizzato?). I messaggi testuali funzionano ancora.",
@@ -1040,7 +1040,7 @@ const I18N = {
     reviewsLeaveBtn: "⭐ Lascia una recensione",
     reviewsJobFallback: "questa richiesta",
     reviewPromptQuestion: "Com'è andata?",
-    reviewPromptWith: "Con {name} per “{title}”",
+    reviewPromptWith: "Riguardo a {name}, per il tuo annuncio “{title}”",
     reviewCommentPlaceholder: "Commento (facoltativo)",
     reviewSendBtn: "Invia",
     reviewSending: "Invio...",
@@ -1110,7 +1110,7 @@ const I18N = {
     noContactYet: "Bisher hat Sie niemand zu dieser Anfrage kontaktiert.", yourWhatsappNumberLabel: "Ihre WhatsApp-Nummer", whatsappNumberHint: "Sie erhalten Ihren 7-stelligen Bestätigungscode auf dieser Nummer.",
     idPhotoHint: "📄 Foto Ihres Ausweisdokuments (Personalausweis, Reisepass...)", tapToAddPhoto: "Tippen, um das Foto hinzuzufügen", selfieHint: "🤳 Selfie von Ihnen mit demselben Dokument neben Ihrem Gesicht",
     tapToAddSelfie: "Tippen, um das Selfie hinzuzufügen", noReviewsYet: "Noch keine Bewertungen für diesen Anbieter.", loadingReviews: "Bewertungen werden geladen...",
-    reviewsLoadError: "Fehler beim Laden der Bewertungen.", contactBeforeReview: "Kontaktieren Sie diesen Anbieter in der Chat-Unterhaltung, um danach eine Bewertung abgeben zu können.", alreadyReviewed: "✓ Sie haben für diesen Austausch bereits eine Bewertung abgegeben.",
+    reviewsLoadError: "Fehler beim Laden der Bewertungen.", contactBeforeReview: "Sie können eine Bewertung abgeben, sobald ein Handwerker Ihre Anzeige kontaktiert.", alreadyReviewed: "✓ Sie haben für diesen Austausch bereits eine Bewertung abgegeben.",
     reviewModalTitle: "Wie ist es gelaufen?", prefSaveError: "Einstellung nicht gespeichert (instabile Verbindung?), bitte erneut versuchen.", welcomeBack: "Willkommen zurück!",
     welcomeUser: "Willkommen {name}", someUploadsFailed: "{n} Foto(s) konnten nicht hochgeladen werden (instabile Verbindung?), der Rest der Anzeige wurde trotzdem veröffentlicht.", rejectedWrongType: "{n} Datei(en) übersprungen: nicht unterstütztes Format (nur JPG, PNG, WEBP oder GIF)",
     rejectedTooBig: "{n} Foto(s) übersprungen: über {mb} MB", noWhatsappManualCode: "Keine WhatsApp-Nummer für dieses Profil gespeichert. Code manuell mitteilen: {code}", myPublicationsCount: "Sie haben {n} Anzeige(n)",
@@ -1118,7 +1118,7 @@ const I18N = {
     positionSavedFill: "Position gespeichert! Füllen Sie das Auftragsformular aus.", photoUploadError: "Fehler beim Hochladen des Fotos (instabile Verbindung?), bitte erneut versuchen.", whatsappOpenError: "Fehler beim Öffnen von WhatsApp. Bitte erneut versuchen.",
     chooseRatingFirst: "Wählen Sie eine Bewertung, bevor Sie senden", reviewSendError: "Fehler beim Senden der Bewertung", mustBeLoggedIn: "Sie müssen angemeldet sein.",
     fillNameAndJob: "Bitte geben Sie Ihren Namen/Firma und Ihren Beruf/Ihre Spezialität ein.", profileSavedSuccess: "Profi-Profil erfolgreich gespeichert!", genericError: "Ein Fehler ist aufgetreten.",
-    mustBeLoggedInWhatsapp: "Sie müssen angemeldet sein, um über WhatsApp zu schreiben.", itsOwnJob: "Das ist deine eigene Anzeige.", itsOwnJobShort: "Deine Anzeige.", paymentReceived: "🎉 Danke! Zahlung erhalten, dein Konto wird in wenigen Sekunden aktiviert...", accountActivated: "✅ Dein Konto ist aktiv! Danke für dein Vertrauen. 🙏", confirmDeleteListing: "Diese Anzeige endgültig löschen?", verifying: "Wird verifiziert...", uploading: "Wird hochgeladen...", saving: "Wird gespeichert...", sendingPhotos: "Fotos werden gesendet...", alreadyVerified: "✅ Bereits verifiziert", proActiveUntil: "⭐ PRO aktiv bis {x} (verlängern)", freeLabel: "Gratis", activeShort: "Aktiv",  versionTitle: "Neue Version verfügbar", versionBody: "Diese Seite nutzt eine veraltete Code-Version. Neu laden, um die Korrekturen zu erhalten.", versionBtn: "App neu laden", typing: "schreibt…", online: "online", lastSeen: "zuletzt gesehen {x}", photoMsg: "Foto", voiceMsg: "Sprachnachricht", fileMsg: "Datei", editedTag: "bearbeitet", today: "Heute", yesterday: "Gestern", youTag: "Du", unknownName: "Unbekannt", editBanner: "Nachricht bearbeiten", noResults: "0 Ergebnisse", emojiSearchPh: "Suchen…", optionN: "Option {x}", ctxReply: "Antworten", ctxReact: "Reagieren", ctxEdit: "Bearbeiten", ctxCopy: "Kopieren", ctxForward: "Weiterleiten", ctxStar: "Markieren", ctxUnstar: "Markierung entfernen", ctxPin: "Anheften", ctxUnpin: "Lösen", muteLabel: "Stummschalten", unmuteLabel: "Stumm schalten aufheben", archiveLabel: "Archivieren", unarchiveLabel: "Entarchivieren", ctxDelete: "Löschen", ctxGroupMsg: "Nachricht", ctxGroupConv: "Unterhaltung", ctxSelect: "Auswählen", selCount: "{x} ausgewählt", delManyConfirm: "Diese {x} Nachricht(en) löschen?", delManyAllConfirm: "Diese Nachrichten für ALLE löschen?\n\nOK     = für alle\nAbbrechen = nur für mich", noStarred: "Keine markierten Nachrichten", nStarred: "{x} markierte Nachricht(en)", profileAbout: "Hallo 👋 Ich bin bei JobMarket.", noMedia: "Noch keine gemeinsamen Medien", votes: "Stimme", downloadBtn: "Speichern", sendErrorPrefix: "Sendefehler: ", deleteAllConfirm: "Diese Nachricht für ALLE löschen?\n\nOK     = für alle\nAbbrechen = nur für mich", imagesOnly: "Nur Bilder (JPG, PNG, WEBP, GIF).", photoTooBig: "Foto zu groß (max. 8 MB).", photoAdded: "Foto hinzugefügt! 📸", photoDeleted: "Foto gelöscht.", maxPhotos: "Maximal 6 Fotos. Zuerst eines löschen.", photoUploading: "Foto wird hochgeladen...", statusUpdated: "Status aktualisiert: ", availNowFull: "Verfügbar 🟢", availWeekFull: "Diese Woche 🟠", availBusyFull: "Beschäftigt 🔴", myLabel: "Ich", availNowBadge: "🟢 Verfügbar", availWeekBadge: "🟠 Diese Woche", availFilterTip: "Nur aktuell verfügbare Handwerker anzeigen", artisanMonthLabel: "HANDWERKER DES MONATS", activeNow: "⚡ Gerade aktiv", activeAgoMin: "🕐 Vor {x} Min. aktiv", activeAgoH: "🕐 Vor {x} Std. aktiv", activeAgoD: "📅 Vor {x} Tg. aktiv", inactiveAgo: "📅 Seit längerer Zeit inaktiv", activeUnknown: "Unbekannte Aktivität", timeAgoNow: "gerade eben", timeAgoMin: "vor {x} Min.", timeAgoH: "vor {x} Std.", timeAgoD: "vor {x} Tg.", qrAvailable: "Ich bin verfügbar", qrPrice: "Wie viel kostet es?", qrWhen: "Wann beginnst du?", qrOnWay: "Ich bin unterwegs", qrGo: "Ok, los geht's", qrThanks: "Vielen Dank", qrHello: "Hallo", qrAgree: "OK", qrCall: "Ich rufe dich an",  mustCompleteProfileContact: "Sie müssen Ihr Profil (Name/Firma und Beruf/Spezialität) vervollständigen, um diese Person zu kontaktieren.", phoneUnavailable: "Telefonnummer nicht verfügbar.",
+    mustBeLoggedInWhatsapp: "Sie müssen angemeldet sein, um über WhatsApp zu schreiben.", itsOwnJob: "Das ist deine eigene Anzeige.", itsOwnJobShort: "Deine Anzeige.", paymentReceived: "🎉 Danke! Zahlung erhalten, dein Konto wird in wenigen Sekunden aktiviert...", accountActivated: "✅ Dein Konto ist aktiv! Danke für dein Vertrauen. 🙏", confirmDeleteListing: "Diese Anzeige endgültig löschen?", verifying: "Wird verifiziert...", uploading: "Wird hochgeladen...", saving: "Wird gespeichert...", sendingPhotos: "Fotos werden gesendet...", alreadyVerified: "✅ Bereits verifiziert", proActiveUntil: "⭐ PRO aktiv bis {x} (verlängern)", freeLabel: "Gratis", activeShort: "Aktiv",  versionTitle: "Neue Version verfügbar", versionBody: "Diese Seite nutzt eine veraltete Code-Version. Neu laden, um die Korrekturen zu erhalten.", versionBtn: "App neu laden", typing: "schreibt…", online: "online", lastSeen: "zuletzt gesehen {x}", photoMsg: "Foto", voiceMsg: "Sprachnachricht", fileMsg: "Datei", editedTag: "bearbeitet", today: "Heute", yesterday: "Gestern", youTag: "Du", unknownName: "Unbekannt", editBanner: "Nachricht bearbeiten", noResults: "0 Ergebnisse", emojiSearchPh: "Suchen…", optionN: "Option {x}", ctxReply: "Antworten", ctxReact: "Reagieren", ctxEdit: "Bearbeiten", ctxCopy: "Kopieren", ctxForward: "Weiterleiten", ctxStar: "Markieren", ctxUnstar: "Markierung entfernen", ctxPin: "Anheften", ctxUnpin: "Lösen", muteLabel: "Stummschalten", unmuteLabel: "Stumm schalten aufheben", archiveLabel: "Archivieren", unarchiveLabel: "Entarchivieren", ctxDelete: "Löschen", ctxGroupMsg: "Nachricht", ctxGroupConv: "Unterhaltung", ctxSelect: "Auswählen", selCount: "{x} ausgewählt", delManyConfirm: "Diese {x} Nachricht(en) löschen?", delManyAllConfirm: "Diese Nachrichten für ALLE löschen?\n\nOK     = für alle\nAbbrechen = nur für mich", noStarred: "Keine markierten Nachrichten", nStarred: "{x} markierte Nachricht(en)", profileAbout: "Hallo 👋 Ich bin bei JobMarket.", noMedia: "Noch keine gemeinsamen Medien", votes: "Stimme", downloadBtn: "Speichern", sendErrorPrefix: "Sendefehler: ", deleteAllConfirm: "Diese Nachricht für ALLE löschen?\n\nOK     = für alle\nAbbrechen = nur für mich", imagesOnly: "Nur Bilder (JPG, PNG, WEBP, GIF).", photoTooBig: "Foto zu groß (max. 8 MB).", photoAdded: "Foto hinzugefügt! 📸", photoDeleted: "Foto gelöscht.", maxPhotos: "Maximal 6 Fotos. Zuerst eines löschen.", photoUploading: "Foto wird hochgeladen...", statusUpdated: "Status aktualisiert: ", availNowFull: "Verfügbar 🟢", availWeekFull: "Diese Woche 🟠", availBusyFull: "Beschäftigt 🔴", myLabel: "Ich", availNowBadge: "🟢 Verfügbar", availWeekBadge: "🟠 Diese Woche", availFilterTip: "Nur aktuell verfügbare Handwerker anzeigen", artisanMonthLabel: "HANDWERKER DES MONATS", employerMonthLabel: "ARBEITGEBER DES MONATS", employerJobsCount: "{x} Inserate veröffentlicht", activeNow: "⚡ Gerade aktiv", activeAgoMin: "🕐 Vor {x} Min. aktiv", activeAgoH: "🕐 Vor {x} Std. aktiv", activeAgoD: "📅 Vor {x} Tg. aktiv", inactiveAgo: "📅 Seit längerer Zeit inaktiv", activeUnknown: "Unbekannte Aktivität", timeAgoNow: "gerade eben", timeAgoMin: "vor {x} Min.", timeAgoH: "vor {x} Std.", timeAgoD: "vor {x} Tg.", qrAvailable: "Ich bin verfügbar", qrPrice: "Wie viel kostet es?", qrWhen: "Wann beginnst du?", qrOnWay: "Ich bin unterwegs", qrGo: "Ok, los geht's", qrThanks: "Vielen Dank", qrHello: "Hallo", qrAgree: "OK", qrCall: "Ich rufe dich an",  mustCompleteProfileContact: "Sie müssen Ihr Profil (Name/Firma und Beruf/Spezialität) vervollständigen, um diese Person zu kontaktieren.", phoneUnavailable: "Telefonnummer nicht verfügbar.",
     cannotComputeRoute: "Route kann ohne Ihren Standort nicht berechnet werden.",
     notifTitle: "Neue Jobs", publishBtn: "Veröffentlichen",
     catAll: "Alle", catBtp: "Bau", catElec: "Elektrik", catPlomberie: "Sanitär",
@@ -1127,7 +1127,7 @@ const I18N = {
     waMsgShareJob: "🔊 *NEUES STELLENANGEBOT*\n\n*{title}*\n{desc}{requirements}\n\n💰 Vergütung: {price}\n📍 Ort: {location}\n📞 Kontakt: {phone}\n\nMehr Details hier: {link}",
     waMsgRequirementsLabel: "📋 *Anforderungen:*",
     waMsgOrConnector: " oder ",
-    waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?", chatFirstMsgJob: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\". Ist das noch verfügbar?", chatPinnedTitle: "Gestartet", chatCloseTitle: "Schließen", chatSearchPh: "Suchen…", chatTabAll: "Alle", chatTabUnread: "Ungelesen", chatTabArchived: "Archiviert", chatEmptyTitle: "Sicherer Chat", chatEmptyBody: "Deine Gespräche erscheinen hier. Öffne eine Anzeige und dann « Sicherer Chat », um zu starten — die Unterhaltung geht von Anzeige zu Anzeige weiter.", keyEnter: "Enter = Senden", keyShiftEnter: "Strg+Enter = Zeilenumbruch", keyEsc: "Esc = Schließen", keyCtrlF: "Strg+F = Suchen", chatSearchTitle: "Suchen", chatMsgSearchPh: "Im Gespräch suchen…", chatEmojiTitle: "Emoji", chatAttachTitle: "Anhängen", chatSendTitle: "Senden", chatMsgPh: "Nachricht eingeben…", chatPhotosAtt: "Fotos", chatDropText: "Bild hier ablegen", chatDropSub: "JPG, PNG, WEBP, GIF — max. 8 MB", chatContactInfo: "Kontaktinfo", chatStarAction: "Markieren", chatAboutLabel: "Info", chatMediaSection: "Medien, Links und Dokumente", chatFwdTitle: "Nachricht weiterleiten an…", chatPollTitle: "Umfrage erstellen", chatPollQPh: "Stelle eine Frage…", chatPollAddOpt: "+ Option hinzufügen", chatPollSend: "Umfrage senden", lockNotice: "Geschützte Nachrichten — diese Unterhaltung bleibt zwischen euch beiden.",
+    waMsgContactProvider: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\".\n\n--- Anbieterprofil ---\nName / Firma: {profileName}\nBeruf: {proTitle}\nFähigkeiten: {proSkills}\n\nIst das noch verfügbar?", chatFirstMsgJob: "Hallo, ich kontaktiere Sie über JobMarket bezüglich: \"{jobTitle}\". Ist das noch verfügbar?", requestQuoteBtn: "Angebot anfragen", chatQuoteTemplate: "Hallo, ich interessiere mich für Ihre Anzeige \"{jobTitle}\" ({price}). Könnten Sie mir einen geschätzten Preis und Ihre Verfügbarkeit mitteilen?", chatPinnedTitle: "Gestartet", chatCloseTitle: "Schließen", chatSearchPh: "Suchen…", chatTabAll: "Alle", chatTabUnread: "Ungelesen", chatTabArchived: "Archiviert", chatEmptyTitle: "Sicherer Chat", chatEmptyBody: "Deine Gespräche erscheinen hier. Öffne eine Anzeige und dann « Sicherer Chat », um zu starten — die Unterhaltung geht von Anzeige zu Anzeige weiter.", keyEnter: "Enter = Senden", keyShiftEnter: "Strg+Enter = Zeilenumbruch", keyEsc: "Esc = Schließen", keyCtrlF: "Strg+F = Suchen", chatSearchTitle: "Suchen", chatMsgSearchPh: "Im Gespräch suchen…", chatEmojiTitle: "Emoji", chatAttachTitle: "Anhängen", chatSendTitle: "Senden", chatMsgPh: "Nachricht eingeben…", chatPhotosAtt: "Fotos", chatDropText: "Bild hier ablegen", chatDropSub: "JPG, PNG, WEBP, GIF — max. 8 MB", chatContactInfo: "Kontaktinfo", chatStarAction: "Markieren", chatAboutLabel: "Info", chatMediaSection: "Medien, Links und Dokumente", chatFwdTitle: "Nachricht weiterleiten an…", chatPollTitle: "Umfrage erstellen", chatPollQPh: "Stelle eine Frage…", chatPollAddOpt: "+ Option hinzufügen", chatPollSend: "Umfrage senden", lockNotice: "Geschützte Nachrichten — diese Unterhaltung bleibt zwischen euch beiden.",
     voiceMicError: "Kein Zugriff auf das Mikrofon. Browser-Berechtigungen prüfen.",
     voiceTooShort: "Aufnahme zu kurz.",
     voiceUploadError: "Sprachnachricht konnte nicht gesendet werden (Audio nicht erlaubt?). Textnachrichten funktionieren weiterhin.",
@@ -1288,7 +1288,7 @@ const I18N = {
     reviewsLeaveBtn: "⭐ Bewertung abgeben",
     reviewsJobFallback: "diese Anfrage",
     reviewPromptQuestion: "Wie ist es gelaufen?",
-    reviewPromptWith: "Mit {name} für “{title}”",
+    reviewPromptWith: "Betreffend {name}, für Ihre Anzeige “{title}”",
     reviewCommentPlaceholder: "Kommentar (optional)",
     reviewSendBtn: "Senden",
     reviewSending: "Wird gesendet...",
@@ -1358,7 +1358,7 @@ const I18N = {
     noContactYet: "目前还没有人就此需求联系您。", yourWhatsappNumberLabel: "您的WhatsApp号码", whatsappNumberHint: "您将在此号码上收到7位数验证码。",
     idPhotoHint: "📄 身份证件照片(身份证、护照等)", tapToAddPhoto: "点击添加照片", selfieHint: "🤳 手持同一证件贴近面部的自拍照",
     tapToAddSelfie: "点击添加自拍照", noReviewsYet: "该服务者暂无评价。", loadingReviews: "正在加载评价...",
-    reviewsLoadError: "评价加载出错。", contactBeforeReview: "请先在聊天中联系该服务者,之后才能留下评价。", alreadyReviewed: "✓ 您已针对此次交流留下评价。",
+    reviewsLoadError: "评价加载出错。", contactBeforeReview: "当工匠联系此公告后,您就可以留下评价。", alreadyReviewed: "✓ 您已针对此次交流留下评价。",
     reviewModalTitle: "体验如何?", prefSaveError: "偏好设置未保存(网络不稳定?),请重试。", welcomeBack: "欢迎回来!",
     welcomeUser: "欢迎 {name}", someUploadsFailed: "{n}张照片上传失败(网络不稳定?),但信息的其余部分已成功发布。", rejectedWrongType: "已忽略{n}个文件:格式不支持(仅支持JPG、PNG、WEBP或GIF)",
     rejectedTooBig: "已忽略{n}张照片:超过{mb} MB", noWhatsappManualCode: "该资料未保存WhatsApp号码。请手动告知验证码:{code}", myPublicationsCount: "您有{n}条发布信息",
@@ -1366,7 +1366,7 @@ const I18N = {
     positionSavedFill: "位置已保存!请填写工作表单。", photoUploadError: "照片上传出错(网络不稳定?),请重试。", whatsappOpenError: "打开WhatsApp时出错,请重试。",
     chooseRatingFirst: "请先选择评分再发送", reviewSendError: "评价发送失败", mustBeLoggedIn: "您必须先登录。",
     fillNameAndJob: "请填写您的姓名/公司名称及职业/专长。", profileSavedSuccess: "专业资料保存成功!", genericError: "发生了错误。",
-    mustBeLoggedInWhatsapp: "您必须先登录才能在WhatsApp上发送消息。", itsOwnJob: "这是你自己发布的公告。", itsOwnJobShort: "这是你的公告。", paymentReceived: "🎉 谢谢！已收到付款，你的账户将在几秒内激活...", accountActivated: "✅ 你的账户已激活！感谢你的信任。🙏", confirmDeleteListing: "确定永久删除此公告？", verifying: "正在验证...", uploading: "正在上传...", saving: "正在保存...", sendingPhotos: "正在发送照片...", alreadyVerified: "✅ 已验证", proActiveUntil: "⭐ PRO 有效期至 {x}（续期）", freeLabel: "免费", activeShort: "活跃",  versionTitle: "有新版本可用", versionBody: "此页面正在运行旧版本代码。请重新加载以获取修复。", versionBtn: "重新加载应用", typing: "正在输入…", online: "在线", lastSeen: "最后在线 {x}", photoMsg: "照片", voiceMsg: "语音", fileMsg: "文件", editedTag: "已编辑", today: "今天", yesterday: "昨天", youTag: "你", unknownName: "未知", editBanner: "正在编辑消息", noResults: "0 个结果", emojiSearchPh: "搜索…", optionN: "选项 {x}", ctxReply: "回复", ctxReact: "表情回应", ctxEdit: "编辑", ctxCopy: "复制", ctxForward: "转发", ctxStar: "加星", ctxUnstar: "取消星标", ctxPin: "置顶", ctxUnpin: "取消置顶", muteLabel: "静音", unmuteLabel: "取消静音", archiveLabel: "归档", unarchiveLabel: "取消归档", ctxDelete: "删除", ctxGroupMsg: "消息", ctxGroupConv: "对话", ctxSelect: "选择", selCount: "已选 {x} 条", delManyConfirm: "删除这 {x} 条消息吗?", delManyAllConfirm: "将这些消息对所有人删除?\n\n确定     = 对所有人\n取消 = 仅对我", noStarred: "暂无星标消息", nStarred: "{x} 条星标消息", profileAbout: "你好👋 我在JobMarket。", noMedia: "暂无共享媒体", votes: "票", downloadBtn: "下载", sendErrorPrefix: "发送错误：", deleteAllConfirm: "将此消息对所有人删除？\n\n确定     = 对所有人\n取消 = 仅对我", imagesOnly: "仅支持图片（JPG、PNG、WEBP、GIF）。", photoTooBig: "照片太大（最大 8 MB）。", photoAdded: "已添加照片！📸", photoDeleted: "照片已删除。", maxPhotos: "最多 6 张照片，请先删除一张。", photoUploading: "正在上传照片...", statusUpdated: "状态已更新：", availNowFull: "有空 🟢", availWeekFull: "本周 🟠", availBusyFull: "忙碌 🔴", myLabel: "我", availNowBadge: "🟢 有空", availWeekBadge: "🟠 本周", availFilterTip: "只显示当前有空的人", artisanMonthLabel: "本月工匠", activeNow: "⚡ 刚刚活跃", activeAgoMin: "🕐 {x} 分钟前活跃", activeAgoH: "🕐 {x} 小时前活跃", activeAgoD: "📅 {x} 天前活跃", inactiveAgo: "📅 已有一段时间未活跃", activeUnknown: "活动状态未知", timeAgoNow: "刚刚", timeAgoMin: "{x} 分钟前", timeAgoH: "{x} 小时前", timeAgoD: "{x} 天前", qrAvailable: "我有空", qrPrice: "多少钱？", qrWhen: "你什么时候开始？", qrOnWay: "我在路上", qrGo: "好的，出发", qrThanks: "非常感谢", qrHello: "你好", qrAgree: "好的", qrCall: "我打电话给你",  mustCompleteProfileContact: "您必须先完善资料(姓名/公司名称及职业/专长)才能联系此人。", phoneUnavailable: "电话号码不可用。",
+    mustBeLoggedInWhatsapp: "您必须先登录才能在WhatsApp上发送消息。", itsOwnJob: "这是你自己发布的公告。", itsOwnJobShort: "这是你的公告。", paymentReceived: "🎉 谢谢！已收到付款，你的账户将在几秒内激活...", accountActivated: "✅ 你的账户已激活！感谢你的信任。🙏", confirmDeleteListing: "确定永久删除此公告？", verifying: "正在验证...", uploading: "正在上传...", saving: "正在保存...", sendingPhotos: "正在发送照片...", alreadyVerified: "✅ 已验证", proActiveUntil: "⭐ PRO 有效期至 {x}（续期）", freeLabel: "免费", activeShort: "活跃",  versionTitle: "有新版本可用", versionBody: "此页面正在运行旧版本代码。请重新加载以获取修复。", versionBtn: "重新加载应用", typing: "正在输入…", online: "在线", lastSeen: "最后在线 {x}", photoMsg: "照片", voiceMsg: "语音", fileMsg: "文件", editedTag: "已编辑", today: "今天", yesterday: "昨天", youTag: "你", unknownName: "未知", editBanner: "正在编辑消息", noResults: "0 个结果", emojiSearchPh: "搜索…", optionN: "选项 {x}", ctxReply: "回复", ctxReact: "表情回应", ctxEdit: "编辑", ctxCopy: "复制", ctxForward: "转发", ctxStar: "加星", ctxUnstar: "取消星标", ctxPin: "置顶", ctxUnpin: "取消置顶", muteLabel: "静音", unmuteLabel: "取消静音", archiveLabel: "归档", unarchiveLabel: "取消归档", ctxDelete: "删除", ctxGroupMsg: "消息", ctxGroupConv: "对话", ctxSelect: "选择", selCount: "已选 {x} 条", delManyConfirm: "删除这 {x} 条消息吗?", delManyAllConfirm: "将这些消息对所有人删除?\n\n确定     = 对所有人\n取消 = 仅对我", noStarred: "暂无星标消息", nStarred: "{x} 条星标消息", profileAbout: "你好👋 我在JobMarket。", noMedia: "暂无共享媒体", votes: "票", downloadBtn: "下载", sendErrorPrefix: "发送错误：", deleteAllConfirm: "将此消息对所有人删除？\n\n确定     = 对所有人\n取消 = 仅对我", imagesOnly: "仅支持图片（JPG、PNG、WEBP、GIF）。", photoTooBig: "照片太大（最大 8 MB）。", photoAdded: "已添加照片！📸", photoDeleted: "照片已删除。", maxPhotos: "最多 6 张照片，请先删除一张。", photoUploading: "正在上传照片...", statusUpdated: "状态已更新：", availNowFull: "有空 🟢", availWeekFull: "本周 🟠", availBusyFull: "忙碌 🔴", myLabel: "我", availNowBadge: "🟢 有空", availWeekBadge: "🟠 本周", availFilterTip: "只显示当前有空的人", artisanMonthLabel: "本月工匠", employerMonthLabel: "本月雇主", employerJobsCount: "发布了 {x} 个任务", activeNow: "⚡ 刚刚活跃", activeAgoMin: "🕐 {x} 分钟前活跃", activeAgoH: "🕐 {x} 小时前活跃", activeAgoD: "📅 {x} 天前活跃", inactiveAgo: "📅 已有一段时间未活跃", activeUnknown: "活动状态未知", timeAgoNow: "刚刚", timeAgoMin: "{x} 分钟前", timeAgoH: "{x} 小时前", timeAgoD: "{x} 天前", qrAvailable: "我有空", qrPrice: "多少钱？", qrWhen: "你什么时候开始？", qrOnWay: "我在路上", qrGo: "好的，出发", qrThanks: "非常感谢", qrHello: "你好", qrAgree: "好的", qrCall: "我打电话给你",  mustCompleteProfileContact: "您必须先完善资料(姓名/公司名称及职业/专长)才能联系此人。", phoneUnavailable: "电话号码不可用。",
     cannotComputeRoute: "没有您的位置信息,无法计算路线。",
     notifTitle: "新工作", publishBtn: "发布",
     catAll: "全部", catBtp: "建筑", catElec: "电工", catPlomberie: "水管",
@@ -1375,7 +1375,7 @@ const I18N = {
     waMsgShareJob: "🔊 *新工作机会*\n\n*{title}*\n{desc}{requirements}\n\n💰 报酬：{price} XAF\n📍 地点：{location}\n📞 联系方式：{phone}\n\n详情请点击：{link}",
     waMsgRequirementsLabel: "📋 *要求：*",
     waMsgOrConnector: " 或 ",
-    waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?", chatFirstMsgJob: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。请问这个还可以预约吗?", chatPinnedTitle: "已加星", chatCloseTitle: "关闭", chatSearchPh: "搜索…", chatTabAll: "全部", chatTabUnread: "未读", chatTabArchived: "已归档", chatEmptyTitle: "安全聊天", chatEmptyBody: "你的对话会显示在这里。打开一个公告，然后点击「安全聊天」开始——对话会跨公告继续。", keyEnter: "回车 = 发送", keyShiftEnter: "Shift+回车 = 换行", keyEsc: "Esc = 关闭", keyCtrlF: "Ctrl+F = 搜索", chatSearchTitle: "搜索", chatMsgSearchPh: "在对话中搜索…", chatEmojiTitle: "表情", chatAttachTitle: "附加", chatSendTitle: "发送", chatMsgPh: "输入消息…", chatPhotosAtt: "照片", chatDropText: "将图片拖放到这里", chatDropSub: "JPG、PNG、WEBP、GIF — 最大 8 MB", chatContactInfo: "联系信息", chatStarAction: "加星", chatAboutLabel: "关于", chatMediaSection: "媒体、链接和文档", chatFwdTitle: "转发消息给…", chatPollTitle: "创建投票", chatPollQPh: "提个问题…", chatPollAddOpt: "+ 添加选项", chatPollSend: "发送投票", lockNotice: "消息已加密 — 此对话仅你们双方可见。",
+    waMsgContactProvider: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。\n\n--- 服务商资料 ---\n姓名/公司:{profileName}\n职业:{proTitle}\n技能:{proSkills}\n\n请问这个还可以预约吗?", chatFirstMsgJob: "您好,我通过JobMarket联系您,关于:\"{jobTitle}\"。请问这个还可以预约吗?", requestQuoteBtn: "请求报价", chatQuoteTemplate: "您好,我对您的公告\"{jobTitle}\"({price})感兴趣。请告诉我预估价格和您的时间安排。", chatPinnedTitle: "已加星", chatCloseTitle: "关闭", chatSearchPh: "搜索…", chatTabAll: "全部", chatTabUnread: "未读", chatTabArchived: "已归档", chatEmptyTitle: "安全聊天", chatEmptyBody: "你的对话会显示在这里。打开一个公告，然后点击「安全聊天」开始——对话会跨公告继续。", keyEnter: "回车 = 发送", keyShiftEnter: "Shift+回车 = 换行", keyEsc: "Esc = 关闭", keyCtrlF: "Ctrl+F = 搜索", chatSearchTitle: "搜索", chatMsgSearchPh: "在对话中搜索…", chatEmojiTitle: "表情", chatAttachTitle: "附加", chatSendTitle: "发送", chatMsgPh: "输入消息…", chatPhotosAtt: "照片", chatDropText: "将图片拖放到这里", chatDropSub: "JPG、PNG、WEBP、GIF — 最大 8 MB", chatContactInfo: "联系信息", chatStarAction: "加星", chatAboutLabel: "关于", chatMediaSection: "媒体、链接和文档", chatFwdTitle: "转发消息给…", chatPollTitle: "创建投票", chatPollQPh: "提个问题…", chatPollAddOpt: "+ 添加选项", chatPollSend: "发送投票", lockNotice: "消息已加密 — 此对话仅你们双方可见。",
     voiceMicError: "无法访问麦克风。请检查浏览器权限。",
     voiceTooShort: "录音太短。",
     voiceUploadError: "语音消息发送失败（音频未授权？）。文本消息仍可使用。",
@@ -1536,7 +1536,7 @@ const I18N = {
     reviewsLeaveBtn: "⭐ 留下评价",
     reviewsJobFallback: "此需求",
     reviewPromptQuestion: "进展如何？",
-    reviewPromptWith: "与{name}就“{title}”",
+    reviewPromptWith: "关于{name},针对您的公告“{title}”",
     reviewCommentPlaceholder: "评论（选填）",
     reviewSendBtn: "发送",
     reviewSending: "发送中...",
@@ -2712,7 +2712,7 @@ function recalcJobStats() {
   const today = new Date().setHours(0, 0, 0, 0);
   const todayCount = allJobs.filter(j => j.timestamp > today).length;
 
-  document.getElementById('jobCountBadge').textContent = allJobs.length;
+  document.getElementById('jobCountBadge').textContent = visibleJobs().length; // pourvus masqués
   document.getElementById('adminTotalJobs').textContent = allJobs.length;
   document.getElementById('adminTodayJobs').textContent = todayCount;
 
@@ -3120,11 +3120,15 @@ function toggleMapStyle() {
 // Sélecteur "Tous / Sauvegardés" du panneau Liste (voir jobsFilterAllBtn /
 // jobsFilterSavedBtn dans le HTML). Ne touche jamais allJobs lui-même —
 // juste ce qui est affiché dans ce panneau précis.
+// Les annonces marquées « pourvu » DISPARAISSENT de la liste publique (elles
+// restent gérables depuis « Mes annonces »).
+const visibleJobs = () => allJobs.filter(j => j.status !== 'filled');
+
 function showAllJobsInSheet() {
   jobsSheetFilter = 'all';
   document.getElementById('jobsFilterAllBtn')?.classList.add('active');
   document.getElementById('jobsFilterSavedBtn')?.classList.remove('active');
-  updateJobsList(allJobs);
+  updateJobsList(visibleJobs());
 }
 
 function showSavedJobsInSheet() {
@@ -3136,7 +3140,7 @@ function showSavedJobsInSheet() {
     updateJobsList([]);
     return;
   }
-  const saved = allJobs.filter(j => savedJobIds.has(j.id));
+  const saved = visibleJobs().filter(j => savedJobIds.has(j.id));
   updateJobsList(saved);
 }
 
@@ -6348,23 +6352,47 @@ function renderArtisanOfMonth() {
             if (!catLatest[j.user] || ts > catLatest[j.user].ts) catLatest[j.user] = { icon: j.icon, ts };
         }
     } catch (e) {}
+    // « Artisan du mois » = celui qui a reçu le PLUS D'AVIS (ratingCount),
+    // laissés par les employeurs qui l'ont contacté (≥ 3 avis requis). En
+    // cas d'égalité d'avis, la meilleure note départage.
     let best = null;
     for (const uid in profilesCache) {
         const p = profilesCache[uid];
         if (!p || !p.ratingCount || p.ratingCount < 3) continue;
         if (cat && catLatest[uid] && catLatest[uid].icon !== cat) continue;
         if (cat && !catLatest[uid]) continue; // sans annonce visible dans cette catégorie → non éligible
-        const score = (p.ratingAvg || 0) * 1000 + p.ratingCount;
-        if (!best || score > best.score) best = { uid, p, score };
+        if (!best
+            || p.ratingCount > best.p.ratingCount
+            || (p.ratingCount === best.p.ratingCount && (p.ratingAvg || 0) > (best.p.ratingAvg || 0))) {
+            best = { uid, p };
+        }
     }
-    if (!best) { box.innerHTML = ''; return; }
+
+    // « Employeur du mois » = celui qui a posté le PLUS DE JOBS pour recruter
+    // (nombre d'annonces, quelle que soit leur catégorie). Indépendant du
+    // filtre de catégorie ; masqué si personne n'a posté ≥ 2 annonces.
+    let bestEmployer = null;
+    try {
+        const jobCount = {};
+        for (const j of allJobs) {
+            if (!j || !j.user) continue;
+            jobCount[j.user] = (jobCount[j.user] || 0) + 1;
+        }
+        for (const uid in jobCount) {
+            if (jobCount[uid] < 2) continue;
+            if (!bestEmployer || jobCount[uid] > jobCount[bestEmployer.uid]) bestEmployer = { uid, count: jobCount[uid] };
+        }
+    } catch (e) {}
+
+    const artisanHtml = best ? (function () {
+
     const p = best.p;
     const name = escapeHtml(p.name || 'Artisan');
     const job = escapeHtml(p.jobTitle || '');
     const avatar = p.profileImage
         ? `<img src="${p.profileImage}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #FFD700;">`
         : `<div style="width:46px;height:46px;border-radius:50%;background:#FFD70022;display:flex;align-items:center;justify-content:center;font-weight:800;color:#FFD700;">${name.charAt(0).toUpperCase()}</div>`;
-    box.innerHTML = `
+    return `
       <div onclick="openPublicProfile('${best.uid}')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,rgba(255,215,0,0.14),rgba(255,215,0,0.03));border:1px solid rgba(255,215,0,0.35);">
         ${avatar}
         <div style="flex:1;min-width:0;">
@@ -6374,7 +6402,26 @@ function renderArtisanOfMonth() {
         </div>
         <div style="font-size:11px;color:var(--text-dim,#999);">Voir ›</div>
       </div>`;
+    })() : '';
+
+    let html = artisanHtml;
+    if (bestEmployer) {
+        const ep = profilesCache[bestEmployer.uid] || {};
+        const ename = escapeHtml(ep.name || ep.company || 'Membre');
+        html += `
+      <div onclick="openPublicProfile('${bestEmployer.uid}')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;margin-top:8px;background:linear-gradient(135deg,rgba(45,108,223,0.14),rgba(45,108,223,0.03));border:1px solid rgba(45,108,223,0.35);">
+        <div style="width:46px;height:46px;border-radius:50%;background:rgba(45,108,223,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;">🏢</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;font-weight:800;color:#7FB3F5;letter-spacing:0.5px;">🏢 ${t('employerMonthLabel')}</div>
+          <div style="font-weight:700;font-size:14px;color:var(--text,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ename}</div>
+          <div style="font-size:12px;color:#7FB3F5;font-weight:700;">${t('employerJobsCount').replace('{x}', bestEmployer.count)}</div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim,#999);">Voir ›</div>
+      </div>`;
+    }
+    box.innerHTML = html || '';
 }
+
 function openPublicProfile(uid) {
     if (typeof viewUserProfile === 'function') { viewUserProfile(uid); return; }
     showToast('Profil : ' + ((profilesCache[uid]||{}).name || uid), 'info');
@@ -6897,6 +6944,24 @@ function openUserChatFromPreview() {
     openUserChat(job.user, job.id, name, job.title);
 }
 
+// Bouton « Demander un devis » (popup annonce) : ouvre le même chat sécurisé,
+// mais avec un message de DEMANDE DE DEVIS pré-rempli (titre + prix de
+// l'annonce) — le devis reste 100 % dans le chat in-app (l'ancien système de
+// devis séparé avait été retiré car doublon de la messagerie). L'utilisateur
+// édite le message s'il veut et l'envoie en 1 tap.
+function openQuoteRequestFromPreview() {
+    const user = auth.currentUser;
+    if (!user || user.isAnonymous) { showToast(t('mustBeLoggedIn'), 'error'); return; }
+    const job = window.currentPreviewJob;
+    if (!job || !job.user) return;
+    if (job.user === user.uid) { showToast(t('itsOwnJob'), 'info'); return; }
+    const name = (profilesCache[job.user] || {}).name || t('userFallback');
+    const priceTxt = job.price ? (isFreePrice(job) ? t('freeLabel') : job.price + ' XAF') : '';
+    let msg = t('chatQuoteTemplate').replace('{jobTitle}', String(job.title || '').slice(0, 80));
+    msg = priceTxt ? msg.replace('{price}', priceTxt) : msg.replace(' ({price})', '');
+    openUserChat(job.user, job.id, name, job.title, msg);
+}
+
 // Bouton « Chat sécurisé » du popup carte : remplace l'ancien bouton vert
 // WhatsApp comme action de contact PRINCIPALE. Ouvre/continue la
 // conversation in-app avec l'auteur de l'annonce (la comptabilité du
@@ -6918,7 +6983,7 @@ function openChatFromMapPopup(jobId) {
 
 // Point d'entrée unique : ouvre/CONTINUE la conversation avec peerUid
 // (thread unique par personne — le job fourni sert à la bannière/contexte)
-function openUserChat(peerUid, jobId, peerName, jobTitle) {
+function openUserChat(peerUid, jobId, peerName, jobTitle, prefillMsg) {
     const user = auth.currentUser;
     if (!user || user.isAnonymous) { showToast(t('mustBeLoggedIn'), 'error'); return; }
     const tid = makeThreadId(user.uid, peerUid);
@@ -6967,7 +7032,7 @@ function openUserChat(peerUid, jobId, peerName, jobTitle) {
         if (jobId && jobId !== 'general' && jobTitle) {
           const input = document.getElementById('waTxt');
           if (input && !input.value && (W.convs[tid] || []).length === 0) {
-            input.value = t('chatFirstMsgJob').replace('{jobTitle}', String(jobTitle).slice(0, 80));
+            input.value = prefillMsg || t('chatFirstMsgJob').replace('{jobTitle}', String(jobTitle).slice(0, 80));
             if (W.autoResize) W.autoResize(input);
             // clavier prêt (mobile) : l'utilisateur corrige si besoin et envoie en 1 tap
             setTimeout(() => { try { input.focus(); } catch (e) {} }, 300);
@@ -8061,10 +8126,12 @@ async function getReviewsSummary(ownerUid, comments) {
   }
 }
 
-// Affiche un bouton "Laisser un avis" si l'utilisateur connecté a déjà
-// contacté ce prestataire pour CETTE annonce précise. C'est ce qui manquait :
-// avant, un avis ne pouvait être laissé que via une popup automatique
-// apparaissant 3h après le contact — sans bouton, cliquer ne faisait donc rien.
+// Affiche un bouton "Laisser un avis" à l'EMPLOYEUR (propriétaire de
+// l'annonce) quand un ARTISAN l'a contacté pour cette annonce précise.
+// Direction de l'avis (inversée le 30/08) : c'est celui qui POSTE le job
+// (l'employeur, celui qui voulait embaucher) qui note l'artisan contacté —
+// jamais l'inverse. L'avis alimente le profil de l'ARTISAN (personne
+// contactée), pas celui de l'employeur.
 async function renderMyReviewAction(job) {
     const box = document.getElementById('previewReviewAction');
     if (!box) return;
@@ -8072,32 +8139,27 @@ async function renderMyReviewAction(job) {
 
     const user = auth.currentUser;
     const isOwner = !!(user && job.user === user.uid);
-    if (!user || user.isAnonymous || isOwner) return; // pas de bouton pour soi-même ou visiteur non connecté
+    if (!user || user.isAnonymous || !isOwner) return; // le bouton est pour le PROPRIÉTAIRE du job (l'employeur)
 
     try {
-        const entries = await fetchJobContactsFromIndex('job_contacts_by_user/' + user.uid);
-        let myContactKey = null;
-        let myContact = null;
-        entries.forEach(entry => {
-            if (entry.val && entry.val.jobId === job.id) {
-                myContactKey = entry.key;
-                myContact = entry.val;
-            }
-        });
+        // Contacts REÇUS sur cette annonce (index by_job) : les artisans qui
+        // ont contacté l'employeur pour ce job.
+        const entries = await fetchJobContactsFromIndex('job_contacts_by_job/' + job.id);
+        const open = entries
+            .filter(e => e.val && e.val.contactUid !== user.uid && !e.val.reviewed)
+            .sort((a, b) => (b.val.timestamp || 0) - (a.val.timestamp || 0));
 
-        if (!myContactKey) {
-            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:var(--text-dim);">${t('contactBeforeReview')}</div>`;
+        if (!open.length) {
+            const anyReviewed = entries.some(e => e.val && e.val.contactUid !== user.uid && e.val.reviewed);
+            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:${anyReviewed ? 'var(--green,#25D366)' : 'var(--text-dim)'};">${t(anyReviewed ? 'alreadyReviewed' : 'contactBeforeReview')}</div>`;
             return;
         }
 
-        if (myContact.reviewed) {
-            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:var(--green,#25D366);">${t('alreadyReviewed')}</div>`;
-            return;
-        }
-
-        const ownerProfile = profilesCache[job.user] || {};
-        const ownerName = ownerProfile.name || ownerProfile.company || t('reviewsProviderFallback');
-        box.innerHTML = `<button type="button" onclick="showReviewPrompt('${myContactKey}', '${job.user}', '${escapeHtml(job.title || '')}', '${escapeHtml(ownerName)}')" style="margin-top:12px;width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;">${t('reviewsLeaveBtn')}</button>`;
+        const myContactKey = open[0].key;
+        const myContact = open[0].val;
+        const contactorProfile = profilesCache[myContact.contactUid] || {};
+        const contactorName = contactorProfile.name || contactorProfile.company || t('reviewsProviderFallback');
+        box.innerHTML = `<button type="button" onclick="showReviewPrompt('${myContactKey}', '${user.uid}', '${escapeHtml(job.title || '')}', '${escapeHtml(contactorName)}')" style="margin-top:12px;width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;">${t('reviewsLeaveBtn')}</button>`;
     } catch (e) {
         console.warn('renderMyReviewAction error', e);
     }
@@ -8105,31 +8167,37 @@ async function renderMyReviewAction(job) {
 
 async function checkPendingReviews(uid) {
   try {
-    const entries = await fetchJobContactsFromIndex('job_contacts_by_user/' + uid);
-    if (!entries.length) return;
+    // Prompt automatique (3 h après le contact) — maintenant côté EMPLOYEUR :
+    // on parcourt les contacts reçus sur SES annonces (les artisans qui
+    // l'ont contacté) et on le rappelle pour noter l'artisan contactant.
+    const jobsSnap = await db.ref('jobs').orderByChild('user').equalTo(uid).limitToLast(20).once('value');
+    const jobIds = jobsSnap.exists() ? Object.keys(jobsSnap.val()) : [];
 
     let pending = null;
     let pendingKey = null;
-    entries.forEach(entry => {
-      const data = entry.val;
-      if (!pending && data && data.reviewed === false && (Date.now() - data.timestamp) > REVIEW_DELAY_MS) {
-        pending = data;
-        pendingKey = entry.key;
-      }
-    });
+    for (const jid of jobIds) {
+      const entries = await fetchJobContactsFromIndex('job_contacts_by_job/' + jid);
+      entries.forEach(entry => {
+        const data = entry.val;
+        if (data && data.contactUid !== uid && data.reviewed === false && (Date.now() - data.timestamp) > REVIEW_DELAY_MS) {
+          if (!pending || (data.timestamp || 0) > (pending.timestamp || 0)) { pending = data; pendingKey = entry.key; }
+        }
+      });
+    }
     if (!pending) return;
 
     const jobSnap = await db.ref('jobs/' + pending.jobId).once('value');
     const job = jobSnap.val();
     const jobTitle = job ? job.title : t('reviewsJobFallback');
-    const ownerProfile = profilesCache[pending.jobOwnerUid] || {};
-    const ownerName = ownerProfile.name || ownerProfile.company || t('reviewsProviderFallback');
+    const contactorProfile = profilesCache[pending.contactUid] || {};
+    const contactorName = contactorProfile.name || contactorProfile.company || t('reviewsProviderFallback');
 
-    showReviewPrompt(pendingKey, pending.jobOwnerUid, jobTitle, ownerName);
+    showReviewPrompt(pendingKey, uid, jobTitle, contactorName);
   } catch (e) {
     console.warn('checkPendingReviews error', e);
   }
 }
+
 
 function showReviewPrompt(contactKey, jobOwnerUid, jobTitle, ownerName) {
   if (document.getElementById('reviewPromptOverlay')) return; // déjà affiché
