@@ -158,10 +158,12 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v34';
+const CACHE_VERSION = 'v38';
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
+const IMAGE_CACHE = `jobmarket-images-${CACHE_VERSION}`;
+const MAX_IMAGE_ENTRIES = 250;
 
 const SHELL_ASSETS = [
   './',
@@ -194,7 +196,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== SHELL_CACHE && key !== TILE_CACHE)
+          .filter((key) => key !== SHELL_CACHE && key !== TILE_CACHE && key !== IMAGE_CACHE)
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
@@ -218,10 +220,28 @@ function isFirebaseOrUploadCall(url) {
   );
 }
 
+// Images Cloudinary (annonces, portfolios, profils) : URLs déjà transformées
+// (w_500,h_300,q_auto,f_auto...) donc stables et idempotentes — idéales pour
+// un cache. Avant, elles passaient dans isFirebaseOrUploadCall et n'étaient
+// JAMAIS mises en cache : chaque visite re-téléchargeait TOUTES les photos,
+// un vrai poids sur 3G/4G. Mêmes URL = mêmes images, donc cache-first +
+// revalidation silencieuse en arrière-plan (comme les tuiles de carte).
+function isCloudinaryImage(url) {
+  return url.hostname.includes('cloudinary.com') && url.pathname.includes('/upload/');
+}
+
 async function trimTileCache() {
   const cache = await caches.open(TILE_CACHE);
   const keys = await cache.keys();
   if (keys.length > MAX_TILE_ENTRIES) {
+    await cache.delete(keys[0]);
+  }
+}
+
+async function trimImageCache() {
+  const cache = await caches.open(IMAGE_CACHE);
+  const keys = await cache.keys();
+  if (keys.length > MAX_IMAGE_ENTRIES) {
     await cache.delete(keys[0]);
   }
 }
@@ -232,6 +252,32 @@ self.addEventListener('fetch', (event) => {
   if (req.url.startsWith('blob:') || req.url.startsWith('data:')) return;
 
   const url = new URL(req.url);
+
+  if (isCloudinaryImage(url)) {
+    event.respondWith(
+      caches.open(IMAGE_CACHE).then(async (cache) => {
+        const cached = await cache.match(req);
+        if (cached) {
+          // Déjà en cache : réponse immédiate + revalidation silencieuse
+          // en arrière-plan (l'image peut évoluer — ex : nouvelle photo).
+          fetch(req).then((res) => {
+            if (res && res.ok) { cache.put(req, res.clone()); trimImageCache(); }
+          }).catch(() => {});
+          return cached;
+        }
+        // Pas encore en cache : réseau. En cas d'échec (hors-ligne), on
+        // renvoie une réponse vide plutôt qu'une erreur qui casserait l'image.
+        try {
+          const res = await fetch(req);
+          if (res && res.ok) { cache.put(req, res.clone()); trimImageCache(); }
+          return res;
+        } catch (err) {
+          return new Response('', { status: 504, statusText: 'Image indisponible hors-ligne' });
+        }
+      })
+    );
+    return;
+  }
 
   if (isFirebaseOrUploadCall(url)) return;
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260831a">
+<html lang="fr" data-app-build="20260901c">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -90,7 +90,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js" defer></script>
+<!-- leaflet-routing-machine.min.js n'est PLUS chargé ici : il est injecté à
+     la demande (ensureRoutingMachineLoaded dans app.js) uniquement quand
+     l'utilisateur demande un itinéraire. -->
   
 <!-- CompressorJS pour réduire la taille des images -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js" defer></script>
@@ -609,6 +611,11 @@ body{
 .wa-ctx button svg{width:18px;height:18px;flex-shrink:0}
 .wa-ctx-sep{height:1px;background:var(--border);margin:4px 0}
 .wa-ctx-grp{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);padding:7px 20px 3px;user-select:none}
+
+/* Sélecteur « type de profil » (personne / entreprise) */
+.ptype-btn{flex:1;padding:12px;background:var(--surface,#1a1a1a);border:2px solid var(--border,#333);color:var(--text-dim,#999);border-radius:12px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:all .15s}
+.ptype-btn.active{border-color:var(--gold,#FFD700);color:var(--gold,#FFD700);background:rgba(255,215,0,0.08)}
+.ptype-btn:active{transform:scale(0.97)}
 
 /* Bouton filtre « 🟢 Dispo maintenant » (panneau liste) */
 .avail-filter-btn{flex:none;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text-dim);font-size:11px;font-weight:700;cursor:pointer;transition:0.15s}
@@ -1927,8 +1934,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260831a" defer></script>
-<script src="app.js?v=20260831a" defer></script>
+<script src="chat-widget.js?v=20260901c" defer></script>
+<script src="app.js?v=20260901c" defer></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2509,6 +2516,14 @@ body{
         <div class="profile-form-group">
             <label data-i18n="fieldCompany">Société</label>
             <input type="text" id="profileCompany" class="profile-input" data-i18n-placeholder="companyNamePlaceholder" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
+        </div>
+        <div class="profile-form-group">
+            <label data-i18n="profileTypeLabel">Type de profil</label>
+            <div style="display:flex;gap:8px;" id="profileTypeSelector">
+                <button type="button" id="profileTypePersonBtn" onclick="setProfileType('person')" class="ptype-btn active">👤 <span data-i18n="profileTypePerson">Personne</span></button>
+                <button type="button" id="profileTypeCompanyBtn" onclick="setProfileType('company')" class="ptype-btn">🏢 <span data-i18n="profileTypeCompany">Entreprise / Organisation</span></button>
+            </div>
+            <div style="font-size:11px;color:var(--text-dim,#999);margin-top:6px;" id="profileTypeHint"></div>
         </div>
         <div class="profile-form-group">
             <label data-i18n="fieldJobTitle">Ton métier / Spécialité</label>
