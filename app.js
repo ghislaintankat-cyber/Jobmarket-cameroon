@@ -13,7 +13,7 @@
 // appareils avec l'ancienne version en mémoire).
 // ⚠️ À chaque nouvelle version : mettre la même valeur ici ET dans
 // l'attribut data-app-build de <html> dans index.html + le ?v= du script.
-const APP_BUILD = '20260902b';
+const APP_BUILD = '20260902e';
 (function checkAppBuild() {
     try {
         const htmlBuild = document.documentElement.getAttribute('data-app-build');
@@ -116,6 +116,8 @@ function updateAdminMenuVisibility() {
 }
 
 let currentUser = null;
+// Alias « vivant » sur window (tests automatisés + console de debug).
+try { Object.defineProperty(window, 'currentUser', { configurable: true, get: () => currentUser, set: (v) => { currentUser = v; } }); } catch (e) {}
 let userCoords = null;
 let allJobs = [];
 // Alias « vivant » sur window (tests automatisés + console de debug).
@@ -320,6 +322,15 @@ function vibrateDevice(ms) {
 // ===== INTERNATIONALISATION (FR / EN / IT / DE / ZH) =====
 const I18N = {
   fr: {
+    reactivityLabel: "⚡ Répond en ~{x}",
+    unitMin: "min",
+    unitHour: "h",
+    confirmMissionBtn: "✅ Confirmer la mission",
+    missionConfirmedState: "Confirmée",
+    missionConfirmedToast: "Mission confirmée ✅",
+    missionConfirmedByArtisan: "L'artisan a confirmé la mission",
+    missionsConfirmedLabel: "{n} mission(s) confirmée(s) par des clients",
+    missionsAccompliesLabel: "Missions accomplies",
     trustBadgesTitle: "Badges de confiance",
     reviewRateLimited: "Vous avez déjà noté ce prestataire récemment — un nouvel avis sera possible plus tard.",
     toastPaymentPending: "Paiement reçu, activation en cours...",
@@ -569,6 +580,15 @@ const I18N = {
     altProfilePhoto: "Photo de profil"
   },
   en: {
+    reactivityLabel: "⚡ Replies in ~{x}",
+    unitMin: "min",
+    unitHour: "h",
+    confirmMissionBtn: "✅ Confirm the job",
+    missionConfirmedState: "Confirmed",
+    missionConfirmedToast: "Mission confirmed ✅",
+    missionConfirmedByArtisan: "The provider confirmed the job",
+    missionsConfirmedLabel: "{n} mission(s) confirmed by client(s)",
+    missionsAccompliesLabel: "Completed missions",
     trustBadgesTitle: "Trust badges",
     reviewRateLimited: "You've already reviewed this provider recently — a new review will be possible later.",
     toastPaymentPending: "Payment received, activating...",
@@ -818,6 +838,15 @@ const I18N = {
     altProfilePhoto: "Profile photo"
   },
   it: {
+    reactivityLabel: "⚡ Risponde in ~{x}",
+    unitMin: "min",
+    unitHour: "h",
+    confirmMissionBtn: "✅ Conferma il lavoro",
+    missionConfirmedState: "Confermato",
+    missionConfirmedToast: "Lavoro confermato ✅",
+    missionConfirmedByArtisan: "Il fornitore ha confermato il lavoro",
+    missionsConfirmedLabel: "{n} missione/i confermata/e da cliente/i",
+    missionsAccompliesLabel: "Missioni completate",
     trustBadgesTitle: "Badge di fiducia",
     reviewRateLimited: "Hai già recensito questo prestatore di recente — una nuova recensione sarà possibile più avanti.",
     toastPaymentPending: "Pagamento ricevuto, attivazione in corso...",
@@ -1067,6 +1096,15 @@ const I18N = {
     altProfilePhoto: "Foto del profilo"
   },
   de: {
+    reactivityLabel: "⚡ Antwortet in ~{x}",
+    unitMin: "Min.",
+    unitHour: "Std",
+    confirmMissionBtn: "✅ Auftrag bestätigen",
+    missionConfirmedState: "Bestätigt",
+    missionConfirmedToast: "Auftrag bestätigt ✅",
+    missionConfirmedByArtisan: "Der Anbieter hat den Auftrag bestätigt",
+    missionsConfirmedLabel: "{n} bestätigte Auftrag(e) durch Kunde(n)",
+    missionsAccompliesLabel: "Abgeschlossene Aufträge",
     trustBadgesTitle: "Vertrauens-Badges",
     reviewRateLimited: "Sie haben diesen Anbieter kürzlich bereits bewertet — eine neue Bewertung ist später möglich.",
     toastPaymentPending: "Zahlung erhalten, wird aktiviert...",
@@ -1316,6 +1354,15 @@ const I18N = {
     altProfilePhoto: "Profilfoto"
   },
   zh: {
+    reactivityLabel: "⚡ 平均 ~{x} 内回复",
+    unitMin: "分钟",
+    unitHour: "小时",
+    confirmMissionBtn: "✅ 确认任务完成",
+    missionConfirmedState: "已确认",
+    missionConfirmedToast: "任务已确认 ✅",
+    missionConfirmedByArtisan: "服务者已确认任务完成",
+    missionsConfirmedLabel: "客户确认的任务：{n} 个",
+    missionsAccompliesLabel: "已完成任务",
     trustBadgesTitle: "信任徽章",
     reviewRateLimited: "您近期已评价过该服务者 — 稍后可再次评价。",
     toastPaymentPending: "已收到付款,正在激活...",
@@ -1952,6 +1999,7 @@ auth.onAuthStateChanged(user => {
     refreshAdminStatus(user.uid);
     syncSavedJobs(user.uid);
     startInboxBadgeWatch(user.uid); // badge de messages non-lus en temps réel
+    refreshReactivityScore(user.uid); // ⚡ score de réactivité (throttlé 6 h)
     if (deepLinkFromPush && !deepLinkJobId && !deepLinkThreadId) { logNotificationOpened(deepLinkVariant); deepLinkFromPush = false; deepLinkVariant = null; } // clic sur une notif sans cible précise (ex: résumé de relance)
     // Clic sur une notif de message alors que l'app était fermée : on ouvre la
     // conversation maintenant que l'utilisateur est bien connecté.
@@ -2914,7 +2962,9 @@ function renderJobCardHtml(job, i) {
           const rating = p.ratingCount ? `<span style="font-size:11px;color:#FFD700;font-weight:700;">★ ${p.ratingAvg.toFixed(1)}</span>` : '';
           // 👑 Excellence : 5+ avis ET moyenne ≥ 4.5 (même seuil que le badge profil)
           const crown = ((p.ratingCount || 0) >= 5 && (p.ratingAvg || 0) >= 4.5) ? '<span title="Excellence 4.5★+" style="font-size:11px;">👑</span>' : '';
-          return badge + avail + activity + rating + crown;
+          // ⚡ Réactivité du posteur (2+ réponses mesurées) — title au hover
+          const react = (p.reactivity && p.reactivity.min && (p.reactivity.count || 0) >= 2) ? `<span title="${t('reactivityLabel').replace('{x}', formatReactivity(p.reactivity.min))}" style="font-size:11px;">⚡</span>` : '';
+          return badge + avail + activity + rating + crown + react;
         })()}
       </div>
     </div>
@@ -5443,6 +5493,14 @@ async function toggleJobFilledFromPreview() {
     const nowFilled = job.status !== 'filled';
     try {
         await db.ref('jobs/' + job.id).update({ status: nowFilled ? 'filled' : null });
+        // 📜 Historique des missions (garantie confiance) : une annonce marquée
+        // « pourvu » est consignée dans le profil (missions/{jobId}). Réactiver
+        // l'annonce l'en retire. Jamais bloquant : l'erreur ne remonte pas.
+        try {
+            const mRef = db.ref('profiles/' + job.user + '/missions/' + job.id);
+            if (nowFilled) await mRef.set({ title: job.title || '', icon: job.icon || '', price: job.price || '', ts: Date.now() });
+            else await mRef.remove();
+        } catch (me) { console.warn('missions record error', me); }
         showToast(nowFilled ? t('toastMarkedFilled') : t('toastMarkedOpenAgain'), 'success');
         closeJobPreview();
     } catch (e) {
@@ -5569,6 +5627,63 @@ function refreshOpenPreviewIfShowingProfile(uid) {
 // 1. Voir le profil de quelqu'un d'autre (Lecture seule)
 // Affiche le badge "vérifié" + résumé de note (★ moyenne / nb d'avis) en
 // tête de la fiche profil — que ce soit la sienne ou celle d'un autre.
+// ⚡ RÉACTIVITÉ — « Répond en ~X » (roadmap #2)
+// ============================================================
+// La vitesse de réponse se calcule CÔTÉ UTILISATEUR (ses propres fils de
+// chat — lectures autorisées par les règles) puis est publiée sur SON profil
+// (profiles/{uid}/reactivity, lisible par tous). Métrique : pour chaque
+// message du correspondant, le temps avant ma 1re réponse (fenêtre 7 jours
+// max), sur les 50 derniers messages des 20 conversations les plus récentes.
+// On publie la MÉDIANE (robuste aux outliers) + le nombre de réponses mesurées.
+const REACTIVITY_MIN_INTERVAL_MS = 6 * 3600 * 1000; // recalcul max toutes les 6 h
+let reactivityComputing = false;
+function formatReactivity(min) {
+    min = Math.max(1, Math.round(min || 0));
+    return min < 60 ? min + ' ' + t('unitMin') : Math.max(1, Math.round(min / 60)) + ' ' + t('unitHour');
+}
+async function refreshReactivityScore(uid) {
+    if (reactivityComputing || !uid) return;
+    try {
+        const prev = await db.ref('profiles/' + uid + '/reactivity').once('value');
+        if (prev.exists() && (prev.val().ts || 0) && Date.now() - prev.val().ts < REACTIVITY_MIN_INTERVAL_MS) return; // pas trop souvent
+        reactivityComputing = true;
+        const threadsSnap = await db.ref('userInboxes/' + uid + '/threads').once('value');
+        if (!threadsSnap.exists()) return;
+        const threadIds = Object.keys(threadsSnap.val()).slice(0, 20); // 20 conversations récentes max
+        const deltas = [];
+        for (const tid of threadIds) {
+            try {
+                const snap = await db.ref('chats/' + tid + '/messages').limitToLast(50).once('value');
+                if (!snap.exists()) continue;
+                const msgs = Object.keys(snap.val())
+                    .map(k => snap.val()[k])
+                    .filter(m => m && m.from && m.timestamp)
+                    .sort((a, b) => a.timestamp - b.timestamp);
+                let waitingSince = null;
+                for (const m of msgs) {
+                    if (m.from === uid) {
+                        if (waitingSince !== null) {
+                            const d = m.timestamp - waitingSince;
+                            if (d > 0 && d < 7 * 86400000) deltas.push(d); // ignore les réponses > 7 j (fil ancien)
+                            waitingSince = null;
+                        }
+                    } else if (waitingSince === null) {
+                        waitingSince = m.timestamp; // 1er message du correspondant en attente (pas de reset sur messages consécutifs)
+                    }
+                }
+            } catch (e) { continue; } // un fil illisible ne bloque pas le score
+        }
+        if (deltas.length === 0) return;
+        deltas.sort((a, b) => a - b);
+        const median = deltas[Math.floor(deltas.length / 2)];
+        await db.ref('profiles/' + uid + '/reactivity').set({ min: Math.max(1, Math.round(median / 60000)), count: deltas.length, ts: Date.now() });
+    } catch (e) {
+        console.warn('refreshReactivityScore error', e);
+    } finally {
+        reactivityComputing = false;
+    }
+}
+
 function renderProfileBadgeAndRating(profile) {
     const el = document.getElementById('profileBadgeRating');
     if (!el) return;
@@ -5587,9 +5702,16 @@ function renderProfileBadgeAndRating(profile) {
             <span style="color:var(--text-dim,#9999BC);">${avg.toFixed(1)}/5 · ${count} avis</span>
         </div>` : '';
 
-    if (!verifiedHtml && !ratingHtml) { el.innerHTML = ''; return; }
+    // ⚡ Réactivité (seuil : 2+ réponses mesurées, sinon le ~X n'a pas de sens)
+    const react = profile.reactivity;
+    const reactHtml = (react && react.min && (react.count || 0) >= 2) ? `
+        <div style="display:flex;align-items:center;gap:4px;font-size:13px;color:var(--green,#2EA067);font-weight:700;">
+            ${t('reactivityLabel').replace('{x}', formatReactivity(react.min))}
+        </div>` : '';
+
+    if (!verifiedHtml && !ratingHtml && !reactHtml) { el.innerHTML = ''; return; }
     el.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:4px 0 16px 0;';
-    el.innerHTML = verifiedHtml + ratingHtml;
+    el.innerHTML = verifiedHtml + ratingHtml + reactHtml;
 }
 
 async function viewUserProfile(uid) {
@@ -5645,6 +5767,7 @@ async function viewUserProfile(uid) {
 
         renderProfileBadgeAndRating(data);
         renderPublicTrustBadges(data);
+        renderPublicMissions(data);
         renderOwnerReviews(uid, 'profileReviewsBox');
     } catch (error) {
         console.error("Erreur profil:", error);
@@ -5715,6 +5838,11 @@ async function openProfileSheet() {
         if (achBox) achBox.style.display = 'block';
         const pubBox = document.getElementById('publicBadgesBox');
         if (pubBox) { pubBox.style.display = 'none'; pubBox.innerHTML = ''; }
+        const pubMissions = document.getElementById('publicMissionsBox');
+        if (pubMissions) { pubMissions.style.display = 'none'; pubMissions.innerHTML = ''; }
+        // 📜 Rattraper les annonces « pourvu » antérieures à l'historique
+        backfillMissionsFromFilledJobs(user.uid, data);
+        refreshReactivityScore(user.uid); // ⚡ au passage (throttlé 6 h, silencieux)
 
         renderProfileBadgeAndRating(data);
         renderOwnerReviews(user.uid, 'profileReviewsBox');
@@ -6560,7 +6688,7 @@ function renderArtisanOfMonth() {
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;font-weight:800;color:#FFD700;letter-spacing:0.5px;">🏆 ${t('artisanMonthLabel')}${cat ? ' · ' + escapeHtml(getCatLabel(cat).toUpperCase()) : ''}</div>
           <div style="font-weight:700;font-size:14px;color:var(--text,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}${job ? ' · ' + job : ''}</div>
-          <div style="font-size:12px;color:#FFD700;font-weight:700;">★ ${(p.ratingAvg||0).toFixed(1)} <span style="color:var(--text-dim,#999);font-weight:400;">(${p.ratingCount} avis)</span></div>
+          <div style="font-size:12px;color:#FFD700;font-weight:700;">★ ${(p.ratingAvg||0).toFixed(1)} <span style="color:var(--text-dim,#999);font-weight:400;">(${p.ratingCount} avis)</span>${(p.reactivity && p.reactivity.min && (p.reactivity.count || 0) >= 2) ? ` · <span style="color:var(--green,#2EA067);">${t('reactivityLabel').replace('{x}', formatReactivity(p.reactivity.min))}</span>` : ''}</div>
         </div>
         <div style="font-size:11px;color:var(--text-dim,#999);">Voir ›</div>
       </div>`;
@@ -6603,6 +6731,13 @@ function computeAchievementBadges(profile) {
     if (count >= 50) badges.push({ icon: '🏅', label: '50+ clients servis', color: '#C03939' });
     if (count >= 5 && avg >= 4.5) badges.push({ icon: '👑', label: 'Excellence (4.5★+)', color: '#FFD700' });
     if (profile.portfolio && Object.keys(profile.portfolio).length >= 3) badges.push({ icon: '📸', label: 'Portfolio complet', color: '#7A4EC2' });
+    const missionsDone = profile.missions ? Object.keys(profile.missions).length : 0;
+    if (missionsDone >= 1) badges.push({ icon: '📜', label: 'Mission accomplie', color: '#2D6CDF' });
+    if (missionsDone >= 5) badges.push({ icon: '🏆', label: '5+ missions accomplies', color: '#C03939' });
+    const missionsConfirmed = profile.confirmedMissions ? Object.keys(profile.confirmedMissions).length : 0;
+    if (missionsConfirmed >= 1) badges.push({ icon: '✅', label: 'Mission confirmée par un client', color: '#2EA067' });
+    if (missionsConfirmed >= 3) badges.push({ icon: '🏅', label: '3+ missions confirmées par des clients', color: '#C03939' });
+    if (profile.reactivity && (profile.reactivity.min || 0) > 0 && profile.reactivity.min <= 30 && (profile.reactivity.count || 0) >= 3) badges.push({ icon: '⚡', label: 'Réactif (répond en moins de 30 min)', color: '#E88A2A' });
     return badges;
 }
 function renderAchievements(profile) {
@@ -6630,10 +6765,59 @@ function renderPublicTrustBadges(profile) {
     const badges = computeAchievementBadges(profile || {});
     if (badges.length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
     box.style.display = 'block';
+    const confirmedCount = profile.confirmedMissions ? Object.keys(profile.confirmedMissions).length : 0;
+    const confirmedLine = confirmedCount > 0 ? `<div style="font-size:11px;font-weight:700;color:var(--green,#2EA067);margin-top:6px;">✅ ${t('missionsConfirmedLabel').replace('{n}', confirmedCount)}</div>` : '';
     box.innerHTML = `<div style="font-size:11px;font-weight:800;letter-spacing:0.5px;color:var(--text-dim,#999);margin-bottom:6px;">🎖️ ${t('trustBadgesTitle')}</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;">
         ${badges.map(b => `<span title="${escapeHtml(b.label)}" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:${b.color};background:${b.color}1A;border:1px solid ${b.color}55;padding:4px 9px;border-radius:16px;">${b.icon} ${escapeHtml(b.label)}</span>`).join('')}
+      </div>
+      ${confirmedLine}`;
+}
+
+// 📜 Historique des missions accomplies sur le profil PUBLIC : preuve de
+// travail réalisé (annonces marquées « pourvu » par l'artisan lui-même,
+// consignées dans profiles/{uid}/missions). Affiche les 3 plus récentes.
+function renderPublicMissions(profile) {
+    const box = document.getElementById('publicMissionsBox');
+    if (!box) return;
+    const missions = (profile && profile.missions) || {};
+    const ids = Object.keys(missions);
+    if (ids.length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.style.display = 'block';
+    const items = ids.map(id => ({ id, m: missions[id] || {} }))
+        .sort((a, b) => (b.m.ts || 0) - (a.m.ts || 0))
+        .slice(0, 3);
+    const dateFmt = (ts) => { try { return new Date(ts).toLocaleDateString(LANG_LOCALE[currentLang] || 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { return ''; } };
+    box.innerHTML = `<div style="font-size:11px;font-weight:800;letter-spacing:0.5px;color:var(--text-dim,#999);margin-bottom:6px;">📜 ${t('missionsAccompliesLabel')} (${ids.length})</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${items.map(it => `<div style="display:flex;align-items:center;gap:8px;font-size:12px;background:var(--surface,#1a1a1a);border:1px solid var(--border,#333);border-radius:10px;padding:8px 10px;">
+          <span>${getCatIcon(it.m.icon) || '✅'}</span>
+          <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;">${escapeHtml(it.m.title || getCatLabel(it.m.icon) || '')}</span>
+          <span style="font-size:11px;color:var(--text-dim,#999);">${dateFmt(it.m.ts)}</span>
+        </div>`).join('')}
+        ${ids.length > 3 ? `<div style="font-size:11px;color:var(--text-dim,#999);text-align:center;">+ ${ids.length - 3}…</div>` : ''}
       </div>`;
+}
+
+// Rétro-remplissage de l'historique : les annonces « pourvu » postées AVANT
+// l'historique des missions ne sont pas consignées. On les rattrape (sans
+// réseau : allJobs est en mémoire) la 1re ouverture du profil par session.
+let missionsBackfilledFor = null;
+function backfillMissionsFromFilledJobs(uid, profileData) {
+    try {
+        if (missionsBackfilledFor === uid) return;
+        missionsBackfilledFor = uid;
+        const existing = (profileData && profileData.missions) || {};
+        const myFilled = (window.allJobs || []).filter(j => j && j.user === uid && j.status === 'filled');
+        if (!myFilled.length) return;
+        const payload = {};
+        for (const j of myFilled) {
+            if (existing[j.id]) continue;
+            payload[j.id] = { title: j.title || '', icon: j.icon || '', price: j.price || '', ts: j.filledAt || j.timestamp || Date.now() };
+        }
+        if (Object.keys(payload).length === 0) return;
+        db.ref('profiles/' + uid + '/missions').update(payload).catch(e => console.warn('missions backfill error', e));
+    } catch (e) { console.warn('missions backfill error', e); }
 }
 
 // ==========================================
@@ -7042,14 +7226,80 @@ function setJobBar(jobId, jobTitle) {
     const bar = document.getElementById('waJobBar');
     if (!bar) return;
     if (jobId && jobId !== 'general') {
-        bar.textContent = '📋 ' + (jobTitle || 'Voir l\'annonce concernée');
         bar.dataset.jobId = jobId;
         bar.style.display = 'block';
+        bar.innerHTML = `<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📋 ${escapeHtml(jobTitle || 'Voir l\'annonce concernée')}</span>`;
+        renderJobBarConfirmAction(jobId); // async, jamais bloquant
     } else {
         bar.style.display = 'none';
         bar.dataset.jobId = '';
+        bar.innerHTML = '';
     }
     if (typeof updateQuickReplies === 'function') updateQuickReplies();
+}
+
+// Bouton « ✅ Confirmer la mission » dans la bannière de job du chat —
+// côté ARTISAN (celui qui a contacté l'annonce) quand l'employeur a marqué
+// l'annonce « pourvu ». La confirmation est consignée : (1) sur ma propre
+// entrée job_contacts (workConfirmed — lisible par l'employeur, qui est
+// propriétaire du job) et (2) sur MON profil (confirmedMissions — affiché
+// sur mon profil public : preuve sociale « mission confirmée par un client »).
+// Les deux écritures ciblent des chemins autorisés par les règles Firebase
+// (ma propre entrée de contact + mon propre profil).
+async function renderJobBarConfirmAction(jobId) {
+    const bar = document.getElementById('waJobBar');
+    if (!bar || bar.dataset.jobId !== jobId) return; // conversation changée entre-temps
+    const me = auth.currentUser;
+    if (!me || me.isAnonymous) return;
+    const job = (typeof jobsById !== 'undefined' && jobsById[jobId]) || allJobs.find(j => j.id === jobId);
+    if (!job || job.user === me.uid) return;        // réservé à l'ARTISAN (contacteur)
+    if (job.status !== 'filled') return;            // l'employeur a marqué « pourvu »
+    try {
+        const snap = await db.ref('profiles/' + me.uid + '/confirmedMissions/' + jobId).once('value');
+        if (bar.dataset.jobId !== jobId) return;
+        if (snap.exists()) {
+            const b = document.createElement('span');
+            b.style.cssText = 'font-size:10px;font-weight:800;color:var(--green,#2EA067);white-space:nowrap;padding:3px 8px;';
+            b.textContent = '✓ ' + t('missionConfirmedState');
+            bar.appendChild(b);
+            return;
+        }
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = t('confirmMissionBtn');
+        btn.style.cssText = 'margin-left:8px;flex-shrink:0;font-size:10px;font-weight:800;background:var(--green,#2EA067);border:none;color:#fff;padding:4px 10px;border-radius:12px;cursor:pointer;';
+        btn.addEventListener('click', (e) => { e.stopPropagation(); confirmMissionFromChat(jobId); });
+        bar.appendChild(btn);
+    } catch (e) { /* silencieux : la bannière reste fonctionnelle */ }
+}
+
+async function confirmMissionFromChat(jobId) {
+    const me = auth.currentUser;
+    if (!me || me.isAnonymous) { showToast(t('mustBeLoggedIn'), 'error'); return; }
+    const job = (typeof jobsById !== 'undefined' && jobsById[jobId]) || allJobs.find(j => j.id === jobId);
+    if (!job || job.user === me.uid) return;
+    try {
+        // 1) consignation sur ma propre entrée de contact (l'employeur,
+        // propriétaire du job, peut la lire via son index by_job)
+        await db.ref('job_contacts/' + jobId + '_' + me.uid + '/workConfirmed').set({ ts: Date.now(), jobOwnerUid: job.user });
+        // 2) badge/affichage sur MON profil public
+        await db.ref('profiles/' + me.uid + '/confirmedMissions/' + jobId).set({ ts: Date.now(), clientUid: job.user, jobTitle: job.title || '' });
+        showToast(t('missionConfirmedToast'), 'success');
+        // état visuel immédiat (re-rendu propre de la bannière)
+        const bar = document.getElementById('waJobBar');
+        if (bar && bar.dataset.jobId === jobId) {
+            const old = bar.querySelector('button');
+            if (old) {
+                const s = document.createElement('span');
+                s.style.cssText = 'margin-left:8px;flex-shrink:0;font-size:10px;font-weight:800;color:var(--green,#2EA067);padding:3px 8px;';
+                s.textContent = '✓ ' + t('missionConfirmedState');
+                bar.replaceChild(s, old);
+            }
+        }
+    } catch (e) {
+        console.warn('confirmMissionFromChat error', e);
+        showToast(t('toastSendErrorRetry'), 'error');
+    }
 }
 function openJobFromChat() {
     const bar = document.getElementById('waJobBar');
@@ -8378,9 +8628,15 @@ async function renderMyReviewAction(job) {
             .filter(e => e.val && e.val.contactUid !== user.uid && !e.val.reviewed)
             .sort((a, b) => (b.val.timestamp || 0) - (a.val.timestamp || 0));
 
+        // ✅ Confirmation de mission par l'artisan (20260902d) : celui qui a
+        // contacté a confirmé dans le chat que le travail est terminé.
+        // L'employeur le voit ici, dans le popup de sa propre annonce.
+        const anyConfirmed = entries.some(e => e.val && e.val.contactUid !== user.uid && e.val.workConfirmed);
+        const confirmedHtml = anyConfirmed ? `<div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--green,#25D366);">✅ ${t('missionConfirmedByArtisan')}</div>` : '';
+
         if (!open.length) {
             const anyReviewed = entries.some(e => e.val && e.val.contactUid !== user.uid && e.val.reviewed);
-            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:${anyReviewed ? 'var(--green,#25D366)' : 'var(--text-dim)'};">${t(anyReviewed ? 'alreadyReviewed' : 'contactBeforeReview')}</div>`;
+            box.innerHTML = `<div style="margin-top:12px;font-size:12px;color:${anyReviewed ? 'var(--green,#25D366)' : 'var(--text-dim)'};">${t(anyReviewed ? 'alreadyReviewed' : 'contactBeforeReview')}</div>` + confirmedHtml;
             return;
         }
 
@@ -8388,7 +8644,7 @@ async function renderMyReviewAction(job) {
         const myContact = open[0].val;
         const contactorProfile = profilesCache[myContact.contactUid] || {};
         const contactorName = contactorProfile.name || contactorProfile.company || t('reviewsProviderFallback');
-        box.innerHTML = `<button type="button" onclick="showReviewPrompt('${myContactKey}', '${user.uid}', '${escapeHtml(job.title || '')}', '${escapeHtml(contactorName)}')" style="margin-top:12px;width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;">${t('reviewsLeaveBtn')}</button>`;
+        box.innerHTML = `<button type="button" onclick="showReviewPrompt('${myContactKey}', '${user.uid}', '${escapeHtml(job.title || '')}', '${escapeHtml(contactorName)}')" style="margin-top:12px;width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;cursor:pointer;">${t('reviewsLeaveBtn')}</button>` + confirmedHtml;
     } catch (e) {
         console.warn('renderMyReviewAction error', e);
     }
