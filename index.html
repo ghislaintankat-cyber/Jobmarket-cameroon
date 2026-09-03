@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260902e">
+<html lang="fr" data-app-build="20260903c">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1482,11 +1482,25 @@ body{
         <button type="button" onclick="toggleSettingsPanel(); openNotifPrefs();" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
           🔔 <span data-i18n="notifPrefsTitle">Notifications</span>
         </button>
+        <button type="button" id="installAppBtn" onclick="installAppFromSettings()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
+          📲 <span id="installAppBtnLabel" data-i18n="installSettingsBtn">Installer l'app</span>
+        </button>
 
       </div>
     </div>
   </div>
 </header>
+
+<!-- ====== OVERLAY « INSTALLER L'APP » (instructions manuelles iOS/Android) ====== -->
+<div id="installManualOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2200;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface,#1a1a1a);border-radius:16px;padding:24px;max-width:380px;width:100%;">
+    <div style="font-weight:800;font-size:17px;margin-bottom:14px;" data-i18n="installManualTitle">Installer JobMarket sur ton téléphone</div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:10px;line-height:1.5;">🤖 <span data-i18n="installManualAndroid">Android : menu ⋮ du navigateur → « Ajouter sur l'écran d'accueil » (ou « Installer l'app »)</span></div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:10px;line-height:1.5;">🍎 <span data-i18n="installManualIos">iPhone/iPad : bouton Partager (carré avec flèche vers le haut) → « Sur l'écran d'accueil »</span></div>
+    <div style="font-size:12px;color:var(--text-dim,#999);margin-bottom:16px;line-height:1.5;" data-i18n="installManualNote">Une fois sur l'écran d'accueil, l'app se met à jour toute seule à chaque ouverture — pas besoin de repasser par un store.</div>
+    <button type="button" onclick="document.getElementById('installManualOverlay').style.display='none'" style="width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;" data-i18n="okBtn">OK</button>
+  </div>
+</div>
 
 <!-- ===== CATEGORY BAR ===== -->
 <nav class="category-bar">
@@ -1934,8 +1948,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260902e" defer></script>
-<script src="app.js?v=20260902e" defer></script>
+<script src="chat-widget.js?v=20260903c" defer></script>
+<script src="app.js?v=20260903c" defer></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2510,14 +2524,6 @@ body{
     </div>
     <div class="sheet-content" style="padding: 24px; flex: 1; overflow-y: auto;">
         <div class="profile-form-group">
-            <label data-i18n="fieldNameCompany">Nom / Société</label>
-            <input type="text" id="profileName" class="profile-input" data-i18n-placeholder="phName" placeholder="Ex: Jean Dupont ou Dupont Entreprise" required maxlength="100">
-        </div>
-        <div class="profile-form-group">
-            <label data-i18n="fieldCompany">Société</label>
-            <input type="text" id="profileCompany" class="profile-input" data-i18n-placeholder="companyNamePlaceholder" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
-        </div>
-        <div class="profile-form-group">
             <label data-i18n="profileTypeLabel">Type de profil</label>
             <div style="display:flex;gap:8px;" id="profileTypeSelector">
                 <button type="button" id="profileTypePersonBtn" onclick="setProfileType('person')" class="ptype-btn active">👤 <span data-i18n="profileTypePerson">Personne</span></button>
@@ -2526,9 +2532,28 @@ body{
             <div style="font-size:11px;color:var(--text-dim,#999);margin-top:6px;" id="profileTypeHint"></div>
         </div>
         <div class="profile-form-group">
+            <label data-i18n="fieldNameCompany">Nom / Société</label>
+            <input type="text" id="profileName" class="profile-input" data-i18n-placeholder="phName" placeholder="Ex: Jean Dupont ou Dupont Entreprise" required maxlength="100">
+        </div>
+        <div class="profile-form-group">
+            <label data-i18n="fieldCompany">Société</label>
+            <input type="text" id="profileCompany" class="profile-input" data-i18n-placeholder="companyNamePlaceholder" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
+        </div>
+        <div class="profile-form-group">
             <label data-i18n="fieldJobTitle">Ton métier / Spécialité</label>
             <input type="text" id="jobTitle" class="profile-input" data-i18n-placeholder="phJobTitle" placeholder="Ex: Électricien, Maçon, Designer..." maxlength="100">
         </div>
+        <div class="profile-form-group">
+            <label data-i18n="qualLabel">Qualification (optionnel)</label>
+            <select id="profileQualification" class="profile-input" style="width:100%;box-sizing:border-box;appearance:auto;-webkit-appearance:auto;">
+                <option value="" data-i18n="qualNone">—</option>
+                <option value="auto" data-i18n="qualAuto">Auto-formation / Expérience</option>
+                <option value="cap" data-i18n="qualCap">CAP / Formation pratique</option>
+                <option value="bts" data-i18n="qualBts">BTS / Diplômé technique</option>
+                <option value="ing" data-i18n="qualIng">Ingénieur / Expert certifié</option>
+            </select>
+        </div>
+        <div id="profileQualTag" style="display:none;margin:0 0 10px;font-size:12px;font-weight:700;color:var(--blue,#2D6CDF);"></div>
         <div class="profile-form-group">
             <label data-i18n="fieldSkills">Compétences (séparées par des virgules)</label>
             <textarea id="skills" class="profile-textarea" data-i18n-placeholder="phSkills" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..." maxlength="1000"></textarea>
@@ -2549,7 +2574,7 @@ body{
           <div style="font-size:12px; color:var(--text-dim,#999); margin-bottom:10px;">Montre tes plus beaux travaux (jusqu'à 6 photos). Les clients font plus confiance à un artisan qui montre son travail.</div>
           <div id="portfolioGallery" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;"></div>
           <input type="file" id="portfolioInput" accept="image/*" style="display:none;" onchange="uploadPortfolioPhoto(event)">
-          <button type="button" onclick="document.getElementById('portfolioInput').click()"
+          <button type="button" id="portfolioAddBtn" onclick="document.getElementById('portfolioInput').click()"
             style="width:100%; padding:10px; border:1px dashed var(--gold,#FFD700); border-radius:10px; background:none; color:var(--gold,#FFD700); font-weight:700; font-size:13px; cursor:pointer;">
             ➕ Ajouter une photo
           </button>

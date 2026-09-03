@@ -82,6 +82,10 @@ messaging.onBackgroundMessage((payload) => {
     image: data.image || undefined,
     tag,
     vibrate: [200, 100, 200],
+    // Android : un message NOUVEAU (même sujet/tag) rejoue son + vibration
+    // au lieu de remplacer silencieusement la notif existante.
+    renotify: true,
+    lang: data.lang || 'fr', // langue de la chrome de notification
     data,
     // Boutons d'action directement dans la notification : gagne un clic et
     // accélère la mise en contact.
@@ -158,7 +162,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v43';
+const CACHE_VERSION = 'v47';
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
