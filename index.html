@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260903e">
+<html lang="fr" data-app-build="20260904b">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -646,7 +646,8 @@ body{
 .wa-modal-contact .name{font-size:15px;color:var(--text-primary)}
 
 /* ===== TOAST ===== */
-.wa-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--bg-sidebar);color:var(--text-primary);padding:12px 20px;border-radius:var(--radius);box-shadow:var(--shadow-lg);z-index:12800;display:none;align-items:center;gap:10px;animation:waslideDown .3s var(--anim);font-size:14px;max-width:400px}
+.wa-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--bg-sidebar);color:var(--text-primary);padding:12px 20px;border-radius:var(--radius);box-shadow:var(--shadow-lg);z-index:12800;display:none;align-items:center;gap:10px;animation:waslideDown .3s var(--anim);font-size:14px;max-width:400px;cursor:pointer}
+.wa-toast:hover{filter:brightness(1.15)}
 .wa-toast.active{display:flex}
 .wa-toast img{width:32px;height:32px;border-radius:50%;object-fit:cover}
 .wa-toast-body{min-width:0}
@@ -1982,8 +1983,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260903e" defer></script>
-<script src="app.js?v=20260903e" defer></script>
+<script src="chat-widget.js?v=20260904b" defer></script>
+<script src="app.js?v=20260904b" defer></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2755,6 +2756,7 @@ function previewImage(event) {
     <!-- Scroll to bottom -->
     <button class="wa-scroll-btn" id="waScrollBtn" onclick="W.scrollToBottom(true)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      <span class="badge" id="waScrollBadge" style="display:none"></span>
     </button>
 
     <!-- Reply preview -->
