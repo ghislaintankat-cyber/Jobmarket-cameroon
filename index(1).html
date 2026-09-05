@@ -1,0 +1,2841 @@
+<!DOCTYPE html>
+<html lang="fr" data-app-build="20260904h">
+<head>
+<script>
+  // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
+  // un flash visible (thème sombre par défaut puis bascule vers clair).
+  // On aligne aussi la balise theme-color sur ce même choix dès maintenant :
+  // sans ça, la barre de statut du téléphone/navigateur (au-dessus de la
+  // topbar, et parfois en bas selon l'appareil) restait toujours sombre
+  // même en thème clair, puisque cette balise est indépendante du CSS.
+  try {
+    var savedTheme = localStorage.getItem('jmc_theme');
+    if (savedTheme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.write('<meta name="theme-color" content="#FFFFFF"/>');
+    } else {
+      document.write('<meta name="theme-color" content="#0A0A0F"/>');
+    }
+  } catch (e) {
+    document.write('<meta name="theme-color" content="#0A0A0F"/>');
+  }
+</script>
+  <meta name="google-site-verification" content="0_-xcrADFwsu6oefUuQE1JTLLzyfl-ptmIqpmvDb7fo" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="description" content="JobMarket Cameroon - Trouvez des artisans et jobs proches de vous"/>
+<title>JobMarket Cameroon</title>
+
+<!-- Open Graph / Twitter Card : aperçu enrichi quand un lien de l'app est
+     partagé sur WhatsApp, Facebook, Twitter, etc. Reste STATIQUE (même
+     aperçu générique quelle que soit la page/le job partagé) car cette app
+     est une SPA sans rendu serveur — les robots qui génèrent ces aperçus
+     n'exécutent pas le JavaScript, ils ne lisent que le HTML initial. Un
+     aperçu dynamique par job (photo + titre du job précis) demanderait un
+     petit service séparé qui intercepte les robots avant qu'ils touchent
+     cette page. -->
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="JobMarket Cameroon"/>
+<meta property="og:title" content="JobMarket Cameroon"/>
+<meta property="og:description" content="Trouvez des artisans et jobs proches de vous au Cameroun : BTP, électricité, plomberie, ménage, jardinage, mécanique, informatique."/>
+<meta property="og:image" content="https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/icon-512.png"/>
+<meta property="og:url" content="https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="JobMarket Cameroon"/>
+<meta name="twitter:description" content="Trouvez des artisans et jobs proches de vous au Cameroun."/>
+<meta name="twitter:image" content="https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/icon-512.png"/>
+
+<!-- Données structurées (schema.org) : aide Google à comprendre ce qu'est
+     le site (nom, zone couverte) pour l'affichage dans les résultats de
+     recherche. NE PAS utiliser le type "JobPosting" ici : JobPosting est
+     réservé aux offres d'EMPLOI (recrutement), et l'utiliser pour des
+     demandes de service entre particuliers serait un mésusage sanctionné
+     par Google (avertissement Search Console, voire perte du droit aux
+     résultats enrichis). Chaque annonce utilise le type "Demand" (le
+     pendant exact de "Offer" pour une demande, pas une offre) — voir
+     worker/share-preview.js, qui sert le balisage dynamique par annonce
+     aux robots. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "JobMarket Cameroon",
+  "url": "https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/",
+  "description": "Trouvez des artisans et prestataires de services proches de vous au Cameroun : BTP, électricité, plomberie, ménage, jardinage, mécanique, informatique.",
+  "inLanguage": ["fr", "en"],
+  "publisher": {
+    "@type": "Organization",
+    "name": "JobMarket Cameroon",
+    "areaServed": {
+      "@type": "Country",
+      "name": "Cameroon"
+    }
+  }
+}
+</script>
+
+<!-- PWA Manifest inline -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://unpkg.com"/>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
+<link rel="preconnect" href="https://www.gstatic.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<!-- leaflet-routing-machine.min.js n'est PLUS chargé ici : il est injecté à
+     la demande (ensureRoutingMachineLoaded dans app.js) uniquement quand
+     l'utilisateur demande un itinéraire. -->
+  
+<!-- CompressorJS pour réduire la taille des images -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js" defer></script>
+  
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js" defer></script>
+  
+<style>
+/* Le style du panneau de détail (job-drawer) est défini plus bas, dans le
+   bloc "VERSION SOMBRE" harmonisé avec le thème doré de l'application. */
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --gold: #FFD700;
+  --gold-dim: #C9A800;
+  --gold-glow: rgba(255,215,0,0.18);
+  --blue: #007AFF;
+  --green: #25D366;
+  --red-cam: #CE1126;
+  --green-cam: #007A5E;
+  --dark: #0A0A0F;
+  --dark2: #13131A;
+  --dark3: #1C1C28;
+  --surface: #1E1E2E;
+  --surface2: #252538;
+  --border: rgba(255,255,255,0.07);
+  --text: #F0F0F8;
+  --text-dim: #9999BC;
+  --danger: #FF3B30;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-xl: 34px;
+  --shadow-gold: 0 0 30px rgba(255,215,0,0.15);
+  --transition: cubic-bezier(0.34,1.56,0.64,1);
+  --ease: cubic-bezier(0.25,0.46,0.45,0.94);
+  --glass-bg: rgba(10,10,15,0.85);
+}
+
+/* ===== THÈME CLAIR ===== */
+/* N'écrase que les variables de fond/texte/bordure — les couleurs d'accent
+   (or, bleu, vert...) restent identiques pour garder l'identité visuelle,
+   sauf --gold qui bascule sur sa variante plus foncée (--gold-dim) : du
+   texte doré clair sur fond blanc serait illisible. */
+:root[data-theme="light"] {
+  --gold: #857000; /* contraste WCAG AA (~4.9:1) sur fond blanc, contre 2.3:1 avant */
+  --dark: #FFFFFF;
+  --dark2: #FFFFFF;
+  --dark3: #FAFAFC;
+  --surface: #FFFFFF;
+  --surface2: #F7F7FA;
+  --border: rgba(0,0,0,0.1);
+  --text: #16161F;
+  --text-dim: #5C5C78;
+  --glass-bg: rgba(255,255,255,0.99);
+}
+
+/* En mode clair : barres du haut et du bas bien opaques et claires,
+   pour que la carte (satellite) ne transparaisse pas à travers et ne
+   les rende pas grisâtres. */
+:root[data-theme="light"] .topbar,
+:root[data-theme="light"] .bottom-nav {
+  background: #FFFFFF;
+}
+
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--dark);
+  color:var(--text);
+  overscroll-behavior:none;
+}
+
+/* ===== MAP ===== */
+#map {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  filter: brightness(0.9) saturate(1.15); /* Légèrement réajusté pour des couleurs plus éclatantes */
+}
+
+/* Ombrage cinématique pour faire ressortir l'interface par-dessus la carte */
+#map::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* Laisse passer les clics sur la carte */
+  z-index: 2;
+  background: linear-gradient(to bottom, rgba(10,10,15,0.4) 0%, rgba(10,10,15,0) 15%, rgba(10,10,15,0) 85%, rgba(10,10,15,0.5) 100%);
+  }
+
+/* ===== SPLASH SCREEN ===== */
+#splash{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--dark);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:20px;
+  transition:opacity 0.6s var(--ease),transform 0.6s var(--ease);
+}
+#splash.hide{opacity:0;transform:scale(1.04);pointer-events:none;}
+.splash-logo{
+  width:90px;height:90px;
+  background:linear-gradient(135deg,var(--gold),#B8860B);
+  border-radius:28px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;
+  font-weight:800;font-size:32px;color:#0A0A0F;
+  box-shadow:0 0 60px rgba(255,215,0,0.35);
+  animation:pulse-logo 2s ease-in-out infinite;
+}
+@keyframes pulse-logo{
+  0%,100%{box-shadow:0 0 40px rgba(255,215,0,0.35);}
+  50%{box-shadow:0 0 70px rgba(255,215,0,0.55);}
+}
+.splash-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:22px;
+  letter-spacing:-0.5px;color:var(--text);
+}
+.splash-sub{color:var(--text-dim);font-size:14px;}
+.splash-bar{
+  width:160px;height:3px;background:var(--dark3);border-radius:4px;overflow:hidden;margin-top:12px;
+}
+.splash-progress{
+  height:100%;width:0;background:linear-gradient(90deg,var(--gold),#FFA500);
+  border-radius:4px;animation:load-bar 2s ease forwards;
+}
+@keyframes load-bar{to{width:100%;}}
+
+/* ===== TOP BAR ===== */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  height:68px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;
+  background:var(--glass-bg);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--border);
+}
+.logo-wrap{display:flex;align-items:center;gap:10px;}
+.logo-icon{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,var(--gold),#B8860B);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#0A0A0F;
+}
+.logo-text{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:16px;
+  line-height:1;
+  color:var(--text);
+}
+.logo-text span{color:var(--gold);}
+.logo-sub{font-size:10px;color:var(--text-dim);font-weight:400;letter-spacing:1px;text-transform:uppercase;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+
+/* ===== MESSAGERIE « CHAT SÉCURISÉ » (widget style WhatsApp — chat-widget.js) ===== */
+.msg-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;background:#ef4444;color:#fff;border-radius:9px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;}
+.msg-overlay{position:fixed;inset:0;z-index:11500;background:var(--dark);display:flex;flex-direction:column;}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+#chatWidgetOverlay{
+  --pri:#00a884;--pri-dark:#008069;--pri-light:#d9fdd3;
+  --bg-deep:#efeae2;--bg-panel:#f0f2f5;--bg-sidebar:#fff;--bg-header:#f0f2f5;
+  --bg-input:#fff;--bg-bubble-out:#d9fdd3;--bg-bubble-in:#fff;
+  --bg-hover:#f5f6f6;--bg-active:#f0f2f5;--bg-overlay:rgba(0,0,0,.6);
+  --bg-menu:#fff;--shadow-menu:0 12px 32px rgba(11,20,26,.22);
+  --text-primary:#111b21;--text-secondary:#667781;--text-bubble:#111b21;
+  --border:#e9edef;--border-strong:#d1d7db;
+  --check:#53bdeb;--unread:#25d366;--danger:#ea0038;
+  --shadow:0 1px 2px rgba(0,0,0,.1);--shadow-lg:0 8px 32px rgba(0,0,0,.12);
+  --radius:8px;--radius-lg:16px;
+  --header-h:60px;--input-h:62px;
+  --anim:cubic-bezier(.4,0,.2,1);
+  --bg-chat-wall:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='%23000' fill-opacity='.04'%3E%3Cpath d='M30 18l3.2 7.4 8 .8-6 5.3 1.8 7.8-6.9-4.1-7 4.1 1.8-7.8-6-5.3 8-.8z'/%3E%3Cpath d='M128 40c-3.5-5.5-13-4.5-13 2.5 0 5.5 8 10 13 14.5 5-4.5 13-9 13-14.5 0-7-9.5-8-13-2.5z'/%3E%3Ccircle cx='192' cy='26' r='6'/%3E%3Cpath d='M14 96q5-9 10 0t10 0 10 0' fill='none' stroke='%23000' stroke-opacity='.04' stroke-width='3'/%3E%3Cpath d='M96 128h5v7h7v5h-7v7h-5v-7h-7v-5h7z'/%3E%3Cpath d='M172 118l3.4 7.8 8.4.8-6.3 5.6 1.9 8.2-7.3-4.3-7.4 4.3 1.9-8.2-6.3-5.6 8.4-.8z'/%3E%3Cpath d='M52 178c-3-4.8-11.4-4-11.4 2.2 0 4.8 7 8.8 11.4 12.7 4.4-3.9 11.4-7.9 11.4-12.7 0-6.2-8.4-7-11.4-2.2z'/%3E%3Ccircle cx='132' cy='196' r='5'/%3E%3Cpath d='M196 168h4.5v6h6v4.5h-6v6h-4.5v-6h-6v-4.5h6z'/%3E%3C/g%3E%3C/svg%3E");
+}
+#chatWidgetOverlay[data-theme=dark]{
+  --pri:#00a884;--pri-dark:#008069;--pri-light:#005c4b;
+  --bg-deep:#0b141a;--bg-panel:#111b21;--bg-sidebar:#111b21;--bg-header:#202c33;
+  --bg-input:#2a3942;--bg-bubble-out:#005c4b;--bg-bubble-in:#202c33;
+  --bg-hover:#202c33;--bg-active:#2a3942;--bg-overlay:rgba(0,0,0,.85);
+  --bg-menu:#1f2c34;--shadow-menu:0 12px 32px rgba(0,0,0,.55);
+  --text-primary:#e9edef;--text-secondary:#8696a0;--text-bubble:#e9edef;
+  --border:#2a3942;--border-strong:#3b4a54;
+  --check:#53bdeb;--unread:#00a884;--danger:#f15c6d;
+  --shadow:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 8px 32px rgba(0,0,0,.4);
+  --bg-chat-wall:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='%23fff' fill-opacity='.03'%3E%3Cpath d='M30 18l3.2 7.4 8 .8-6 5.3 1.8 7.8-6.9-4.1-7 4.1 1.8-7.8-6-5.3 8-.8z'/%3E%3Cpath d='M128 40c-3.5-5.5-13-4.5-13 2.5 0 5.5 8 10 13 14.5 5-4.5 13-9 13-14.5 0-7-9.5-8-13-2.5z'/%3E%3Ccircle cx='192' cy='26' r='6'/%3E%3Cpath d='M96 128h5v7h7v5h-7v7h-5v-7h-7v-5h7z'/%3E%3Cpath d='M172 118l3.4 7.8 8.4.8-6.3 5.6 1.9 8.2-7.3-4.3-7.4 4.3 1.9-8.2-6.3-5.6 8.4-.8z'/%3E%3Cpath d='M52 178c-3-4.8-11.4-4-11.4 2.2 0 4.8 7 8.8 11.4 12.7 4.4-3.9 11.4-7.9 11.4-12.7 0-6.2-8.4-7-11.4-2.2z'/%3E%3Ccircle cx='132' cy='196' r='5'/%3E%3Cpath d='M196 168h4.5v6h6v4.5h-6v6h-4.5v-6h-6v-4.5h6z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+
+
+/* ===== WIDGET ===== */
+.wa{width:100%;height:100%;display:flex;background:var(--bg-deep);overflow:hidden;position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+
+
+/* ===== SCROLLBARS ===== */
+.wa ::-webkit-scrollbar{width:6px}
+.wa ::-webkit-scrollbar-track{background:transparent}
+.wa ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}
+.wa ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25)}
+
+/* ===== SIDEBAR ===== */
+.wa-side{width:400px;min-width:320px;max-width:400px;background:var(--bg-sidebar);display:flex;flex-direction:column;border-right:1px solid var(--border);z-index:10;transition:transform .3s var(--anim)}
+.wa-side-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--bg-header);min-height:var(--header-h)}
+.wa-side-head .avatar{width:40px;height:40px;border-radius:50%;cursor:pointer;object-fit:cover}
+.wa-side-acts{display:flex;gap:2px;align-items:center}
+.wa-icon-btn{background:0 0;border:0;color:var(--text-secondary);cursor:pointer;padding:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .15s;position:relative}
+.wa-icon-btn:hover{background:var(--bg-hover)}
+.wa-icon-btn svg{width:22px;height:22px}
+
+/* Search */
+.wa-search{padding:8px 12px;background:var(--bg-sidebar)}
+.wa-search-box{display:flex;align-items:center;background:var(--bg-panel);border-radius:var(--radius);padding:0 12px;gap:12px;transition:box-shadow .2s}
+.wa-search-box:focus-within{box-shadow:0 0 0 2px var(--pri)}
+.wa-search-box svg{color:var(--text-secondary);flex-shrink:0;width:18px;height:18px}
+.wa-search-box input{width:100%;padding:9px 0;border:0;outline:0;background:0 0;font-size:14px;color:var(--text-primary)}
+.wa-search-box input::placeholder{color:var(--text-secondary)}
+
+/* Tabs */
+.wa-tabs{display:flex;padding:0 12px;gap:8px;background:var(--bg-sidebar);border-bottom:1px solid var(--border)}
+.wa-tab{padding:10px 14px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;border:0;background:0 0;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.wa-tab:hover{color:var(--text-primary)}
+.wa-tab.active{color:var(--pri);border-bottom-color:var(--pri)}
+
+/* Chat list */
+.wa-chats{flex:1;overflow-y:auto;overflow-x:hidden}
+.wa-chat{display:flex;align-items:center;padding:12px 16px;gap:14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;position:relative;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.wa-chat:hover{background:var(--bg-hover)}
+.wa-chat.active{background:var(--bg-active)}
+.wa-chat.pinned::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--pri)}
+.wa-av-wrap{position:relative;flex-shrink:0}
+.wa-av{width:49px;height:49px;border-radius:50%;object-fit:cover;background:var(--border)}
+.wa-online{position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:var(--unread);border:2px solid var(--bg-sidebar)}
+.wa-chat-body{flex:1;min-width:0}
+.wa-chat-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.wa-chat-name{font-size:16px;font-weight:400;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.wa-chat-name .pin{font-size:12px;color:var(--text-secondary)}
+.wa-chat-name .muted{font-size:12px;color:var(--text-secondary)}
+.wa-chat-name .archived{font-size:12px;color:var(--text-secondary)}
+.wa-chat-time{font-size:12px;color:var(--text-secondary);flex-shrink:0;margin-left:8px}
+.wa-chat-time.unread{color:var(--unread)}
+.wa-chat-bot{display:flex;justify-content:space-between;align-items:center}
+.wa-chat-last{font-size:14px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;display:flex;align-items:center;gap:4px}
+.wa-chat-last .typing{color:var(--pri);font-style:italic}
+.wa-badge{background:var(--unread);color:#fff;font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center;flex-shrink:0;margin-left:8px}
+.wa-check{display:inline-flex;align-items:center;flex-shrink:0}
+.wa-check svg{width:16px;height:16px}
+.wa-check.read svg{color:var(--check)}
+
+/* ===== MAIN ===== */
+.wa-main{flex:1;display:flex;flex-direction:column;background:var(--bg-deep);position:relative;min-width:0;overflow:hidden}
+.wa-wall{position:absolute;inset:0;background:var(--bg-chat-wall);z-index:0;pointer-events:none}
+
+/* Chat header */
+.wa-chead{display:flex;align-items:center;padding:10px 16px;gap:14px;background:var(--bg-header);min-height:var(--header-h);z-index:2;border-bottom:1px solid var(--border)}
+.wa-back{display:none;background:0 0;border:0;color:var(--text-secondary);cursor:pointer;padding:4px;margin-right:4px}
+.wa-back svg{width:24px;height:24px}
+.wa-chead-av{width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;flex-shrink:0}
+.wa-chead-info{flex:1;min-width:0;cursor:pointer}
+.wa-chead-name{font-size:16px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wa-chead-status{font-size:13px;color:var(--text-secondary)}
+.wa-chead-status.typing{color:var(--pri)}
+.wa-chead-acts{display:flex;gap:2px}
+
+/* Empty state */
+.wa-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-secondary);text-align:center;padding:40px;z-index:1}
+.wa-empty-icon{width:280px;height:200px;margin-bottom:32px;opacity:.6}
+.wa-empty h2{font-size:32px;font-weight:300;color:var(--text-primary);margin-bottom:16px}
+.wa-empty p{font-size:14px;max-width:500px;line-height:1.7}
+.wa-empty .keys{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.wa-empty .key{background:var(--bg-panel);padding:6px 14px;border-radius:20px;font-size:12px;color:var(--text-secondary)}
+
+/* Messages */
+.wa-msgs{flex:1;overflow-y:auto;padding:12px 60px;z-index:1;display:flex;flex-direction:column;gap:2px;scroll-behavior:smooth}
+
+/* Scroll to bottom */
+.wa-scroll-btn{position:absolute;bottom:80px;right:20px;z-index:5;width:42px;height:42px;border-radius:50%;background:var(--bg-sidebar);border:0;cursor:pointer;box-shadow:var(--shadow-lg);display:none;align-items:center;justify-content:center;color:var(--text-secondary);transition:all .2s}
+.wa-scroll-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
+.wa-scroll-btn.visible{display:flex}
+.wa-scroll-btn .badge{position:absolute;top:-4px;right:-4px;background:var(--pri);color:#fff;font-size:11px;font-weight:600;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.wa-scroll-btn svg{width:22px;height:22px}
+
+/* Date divider */
+.wa-date{text-align:center;margin:16px 0 12px}
+.wa-date span{background:var(--bg-bubble-in);color:var(--text-secondary);font-size:12px;padding:5px 12px;border-radius:var(--radius);box-shadow:var(--shadow);display:inline-block}
+
+/* System message */
+.wa-sys{text-align:center;margin:12px 0}
+.wa-sys span{background:var(--bg-panel);color:var(--text-secondary);font-size:12px;padding:5px 14px;border-radius:16px;display:inline-block;box-shadow:var(--shadow)}
+.wa-sys span.wa-newmsg{background:var(--unread);color:#fff;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:5px 14px;border-radius:12px}
+
+/* Message row */
+.wa-mrow{display:flex;margin-bottom:2px;position:relative;animation:wamsgIn .25s var(--anim) both;touch-action:manipulation}
+.wa-mrow.sent{justify-content:flex-end}
+.wa-mrow.recv{justify-content:flex-start}
+.wa-mrow.no-anim{animation:none}
+
+@keyframes wamsgIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+
+/* Sender name in groups */
+.wa-sender{font-size:12.5px;font-weight:600;margin-bottom:2px;padding-left:4px}
+
+/* Bubble */
+.wa-bub{max-width:65%;padding:6px 8px 8px;border-radius:var(--radius);position:relative;box-shadow:var(--shadow);word-wrap:break-word;overflow-wrap:break-word;transition:background .15s}
+.wa-mrow.sent .wa-bub{background:var(--bg-bubble-out);border-top-right-radius:0}
+.wa-mrow.recv .wa-bub{background:var(--bg-bubble-in);border-top-left-radius:0}
+.wa-mrow.tail .wa-bub{border-top-right-radius:0}
+.wa-mrow.recv.tail .wa-bub{border-top-left-radius:0}
+
+/* Bubble tail */
+.wa-mrow.sent.tail .wa-bub::before{content:'';position:absolute;top:0;right:-8px;width:0;height:0;border-left:8px solid var(--bg-bubble-out);border-bottom:8px solid transparent}
+.wa-mrow.recv.tail .wa-bub::before{content:'';position:absolute;top:0;left:-8px;width:0;height:0;border-right:8px solid var(--bg-bubble-in);border-bottom:8px solid transparent}
+
+.wa-text{font-size:14.5px;line-height:1.45;color:var(--text-bubble);margin-right:52px;white-space:pre-wrap}
+.wa-text a{color:var(--pri-dark);text-decoration:none}
+.wa-text a:hover{text-decoration:underline}
+
+/* Edited label */
+.wa-edited{font-size:11px;color:var(--text-secondary);font-style:italic;margin-right:4px}
+
+/* Meta */
+.wa-meta{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:-12px;float:right;position:relative;top:8px}
+.wa-time{font-size:11px;color:var(--text-secondary)}
+
+/* Reply quote in bubble */
+.wa-quote{background:rgba(0,0,0,.05);border-left:4px solid var(--pri);border-radius:4px;padding:6px 10px;margin-bottom:4px;cursor:pointer;transition:background .15s}
+.wa-quote:hover{background:rgba(0,0,0,.08)}
+.wa-quote-name{font-weight:600;color:var(--pri-dark);font-size:12.5px;margin-bottom:2px}
+.wa-quote-text{color:var(--text-secondary);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+
+/* Image message */
+.wa-img{border-radius:6px;overflow:hidden;margin-bottom:4px;cursor:pointer;max-width:330px;position:relative}
+.wa-img img{width:100%;display:block;border-radius:6px;transition:transform .2s}
+.wa-img:hover img{transform:scale(1.02)}
+
+/* Voice */
+.wa-voice{display:flex;align-items:center;gap:10px;min-width:250px}
+.wa-voice-main{flex:1;min-width:120px}
+.wa-voice-prog{height:3px;background:rgba(0,0,0,.12);border-radius:2px;margin-top:5px;overflow:hidden}
+.wa[data-theme=dark] .wa-voice-prog{background:rgba(255,255,255,.15)}
+.wa-voice-fill{height:100%;width:0;background:var(--pri);border-radius:2px;transition:width .2s linear}
+.wa-voice-speed{display:none;cursor:pointer;font-size:10px;font-weight:700;color:var(--text-secondary);background:rgba(0,0,0,.08);padding:1px 6px;border-radius:8px;flex-shrink:0;user-select:none}
+.wa[data-theme=dark] .wa-voice-speed{background:rgba(255,255,255,.14);color:var(--text-primary)}
+.wa-voice-speed:active{transform:scale(.93)}
+.wa-voice-play{background:var(--pri);color:#fff;border:0;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.wa-voice-play:hover{background:var(--pri-dark)}
+.wa-wave{flex:1;height:32px;display:flex;align-items:center;gap:2px}
+.wa-wave .bar{width:3px;border-radius:2px;background:var(--pri);opacity:.5;transition:opacity .2s}
+.wa-wave .bar.played{opacity:1}
+.wa-voice-dur{font-size:11px;color:var(--text-secondary);flex-shrink:0}
+
+/* File */
+.wa-file{display:flex;align-items:center;gap:10px;min-width:220px;background:rgba(0,0,0,.04);border-radius:6px;padding:10px;cursor:pointer;transition:background .15s}
+.wa-file:hover{background:rgba(0,0,0,.08)}
+.wa-file-ico{width:42px;height:42px;border-radius:8px;background:var(--pri);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wa-file-ico svg{color:#fff;width:20px;height:20px}
+.wa-file-name{font-size:14px;color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.wa-file-size{font-size:12px;color:var(--text-secondary)}
+
+/* Link preview */
+.wa-linkprev{background:rgba(0,0,0,.04);border-radius:6px;margin-bottom:6px;overflow:hidden;cursor:pointer;border-left:3px solid var(--pri)}
+.wa-linkprev-body{padding:8px 10px}
+.wa-linkprev-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px}
+.wa-linkprev-desc{font-size:12px;color:var(--text-secondary);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wa-linkprev-url{font-size:11px;color:var(--pri-dark);margin-top:4px}
+
+/* Reactions */
+.wa-reacts{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;position:absolute;bottom:-14px}
+.wa-mrow.sent .wa-reacts{right:8px}
+.wa-mrow.recv .wa-reacts{left:8px}
+.wa-rchip{background:var(--bg-bubble-in);border:1px solid var(--border);border-radius:12px;padding:2px 8px;font-size:16px;cursor:pointer;display:flex;align-items:center;gap:3px;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s}
+.wa-rchip:hover{transform:scale(1.15);box-shadow:var(--shadow-lg)}
+.wa-rchip .cnt{font-size:11px;color:var(--text-secondary)}
+
+/* Reaction picker */
+.wa-rpick{position:absolute;background:var(--bg-sidebar);border-radius:24px;padding:6px 10px;box-shadow:var(--shadow-lg);display:flex;gap:4px;z-index:100;animation:wapopIn .15s var(--anim)}
+.wa-rpick button{background:0 0;border:0;font-size:24px;cursor:pointer;padding:4px;border-radius:50%;transition:transform .1s,background .1s}
+.wa-rpick button:hover{transform:scale(1.3);background:var(--bg-hover)}
+
+/* Poll */
+.wa-poll{min-width:260px}
+.wa-poll-q{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:8px}
+.wa-poll-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;margin:4px 0;border-radius:6px;cursor:pointer;transition:background .15s;border:1px solid var(--border)}
+.wa-poll-opt:hover{background:var(--bg-hover)}
+.wa-poll-opt.voted{border-color:var(--pri);background:rgba(0,168,132,.06)}
+.wa-poll-bar{height:4px;background:var(--pri);border-radius:2px;margin-top:4px;transition:width .4s var(--anim)}
+.wa-poll-votes{font-size:11px;color:var(--text-secondary);margin-top:2px}
+
+/* Typing */
+.wa-typing-bub{display:flex;gap:5px;padding:12px 16px;background:var(--bg-bubble-in);border-radius:var(--radius);border-top-left-radius:0;box-shadow:var(--shadow)}
+.wa-tdot{width:8px;height:8px;border-radius:50%;background:var(--text-secondary);animation:watdot 1.4s infinite}
+.wa-tdot:nth-child(2){animation-delay:.2s}
+.wa-tdot:nth-child(3){animation-delay:.4s}
+@keyframes watdot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-5px)}}
+
+@keyframes wapopIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@keyframes waslideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes waslideRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes wafadeIn{from{opacity:0}to{opacity:1}}
+
+/* ===== INPUT ===== */
+.wa-input-area{display:flex;align-items:flex-end;padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));gap:8px;background:var(--bg-panel);z-index:2;min-height:var(--input-h)}
+.wa-input-area .wa-icon-btn{color:var(--text-secondary)}
+.wa-input-area .wa-icon-btn:hover{color:var(--text-primary)}
+.wa-txt-wrap{flex:1;background:var(--bg-input);border-radius:var(--radius);padding:8px 12px;min-height:42px;max-height:150px;display:flex;align-items:center}
+.wa-txt{width:100%;border:0;outline:0;resize:none;font-size:15px;line-height:1.45;color:var(--text-primary);background:0 0;font-family:inherit;max-height:130px;overflow-y:auto}
+.wa-txt::placeholder{color:var(--text-secondary)}
+.wa-send{background:var(--pri)!important;color:#fff!important;width:42px;height:42px;border-radius:50%!important;transition:background .15s,transform .1s!important}
+.wa-send:hover{background:var(--pri-dark)!important}
+.wa-send:active{transform:scale(.92)!important}
+
+/* Reply preview */
+.wa-reply-prev{display:none;background:var(--bg-input);border-radius:var(--radius);padding:8px 12px;margin:0 16px;border-left:4px solid var(--pri);position:relative;z-index:2;animation:waslideUp .2s var(--anim)}
+.wa-reply-prev.active{display:flex;align-items:center;justify-content:space-between}
+.wa-reply-prev-name{font-size:13px;font-weight:600;color:var(--pri-dark)}
+.wa-reply-prev-text{font-size:13px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px}
+.wa-reply-prev-close{background:0 0;border:0;color:var(--text-secondary);cursor:pointer;padding:4px;font-size:20px;line-height:1}
+
+/* Quick replies (réponses rapides contextuelles) */
+.wa-quick{display:none;padding:0 12px calc(6px + env(safe-area-inset-bottom,0px));overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;z-index:2;background:var(--bg-panel)}
+.wa-quick::-webkit-scrollbar{display:none}
+.wa-quick.active{display:block}
+.wa-quick-row{display:flex;gap:6px;width:max-content;padding:2px}
+.wa-quick-chip{background:var(--bg-input);border:1px solid var(--border);color:var(--pri);font-size:13px;font-weight:600;padding:7px 12px;border-radius:16px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:background .1s,transform .1s;font-family:inherit}
+.wa-quick-chip:hover{background:var(--bg-hover)}
+.wa-quick-chip:active{transform:scale(.96)}
+
+/* Recording */
+.wa-rec{display:none;align-items:center;gap:12px;flex:1;background:var(--bg-input);border-radius:var(--radius);padding:8px 16px}
+.wa-rec.active{display:flex}
+.wa-rec-dot{width:10px;height:10px;border-radius:50%;background:var(--danger);animation:wapulse 1s infinite}
+@keyframes wapulse{0%,100%{opacity:1}50%{opacity:.3}}
+.wa-rec-time{font-size:14px;color:var(--text-primary);font-variant-numeric:tabular-nums}
+
+/* Emoji picker */
+.wa-emoji{display:none;position:absolute;bottom:70px;left:16px;background:var(--bg-sidebar);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:50;width:350px;max-height:400px;overflow:hidden;flex-direction:column;animation:wapopIn .15s var(--anim)}
+.wa-emoji.active{display:flex}
+.wa-emoji-search{padding:8px 12px;border-bottom:1px solid var(--border)}
+.wa-emoji-search input{width:100%;padding:8px 10px;border:0;outline:0;background:var(--bg-panel);border-radius:6px;font-size:13px;color:var(--text-primary)}
+.wa-emoji-tabs{display:flex;border-bottom:1px solid var(--border);padding:4px 8px;gap:2px;overflow-x:auto}
+.wa-emoji-tab{background:0 0;border:0;font-size:20px;padding:6px 8px;cursor:pointer;border-radius:6px;transition:background .1s}
+.wa-emoji-tab:hover,.wa-emoji-tab.active{background:var(--bg-hover)}
+.wa-emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:8px;overflow-y:auto;flex:1}
+.wa-emoji-item{background:0 0;border:0;font-size:24px;padding:4px;cursor:pointer;border-radius:6px;transition:background .1s;display:flex;align-items:center;justify-content:center}
+.wa-emoji-item:hover{background:var(--bg-hover)}
+
+/* Attach popup */
+.wa-attach{display:none;position:absolute;bottom:70px;left:60px;background:var(--bg-sidebar);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:10px;z-index:50;animation:wapopIn .15s var(--anim)}
+.wa-attach.active{display:flex;flex-direction:column;gap:4px}
+.wa-att-opt{display:flex;align-items:center;gap:14px;padding:10px 20px 10px 12px;border-radius:var(--radius);cursor:pointer;transition:background .1s;background:0 0;border:0;font-size:14px;color:var(--text-primary);text-align:left;width:100%}
+.wa-att-opt:hover{background:var(--bg-hover)}
+.wa-att-ico{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.wa-att-ico.photos{background:#bf59cf}
+.wa-att-ico.camera{background:#ec4c78}
+.wa-att-ico.doc{background:#5157ae}
+.wa-att-ico.contact{background:#009de2}
+.wa-att-ico.poll{background:#ff9800}
+.wa-att-ico svg{color:#fff;width:20px;height:20px}
+
+/* Drag & drop overlay */
+.wa-drop{display:none;position:absolute;inset:0;background:rgba(0,168,132,.1);border:3px dashed var(--pri);border-radius:var(--radius-lg);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:12px;animation:wafadeIn .2s}
+.wa-drop.active{display:flex}
+.wa-drop-text{font-size:18px;font-weight:600;color:var(--pri)}
+.wa-drop-sub{font-size:14px;color:var(--text-secondary)}
+
+/* ===== CONTACT PROFILE PANEL ===== */
+.wa-profile{position:absolute;top:0;right:0;bottom:0;width:380px;background:var(--bg-sidebar);z-index:20;transform:translateX(100%);transition:transform .3s var(--anim);display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1)}
+.wa-profile.open{transform:translateX(0)}
+.wa-prof-head{display:flex;align-items:center;gap:16px;padding:16px;background:var(--bg-header);min-height:var(--header-h)}
+.wa-prof-head .wa-icon-btn{color:var(--text-primary)}
+.wa-prof-head h3{font-size:16px;font-weight:500;color:var(--text-primary)}
+.wa-prof-body{flex:1;overflow-y:auto}
+.wa-prof-avatar{display:flex;flex-direction:column;align-items:center;padding:32px 0;background:var(--bg-sidebar)}
+.wa-prof-avatar img{width:120px;height:120px;border-radius:50%;object-fit:cover;margin-bottom:16px}
+.wa-prof-avatar .name{font-size:22px;font-weight:500;color:var(--text-primary)}
+.wa-prof-avatar .status{font-size:14px;color:var(--text-secondary);margin-top:4px}
+.wa-prof-section{padding:16px;border-top:8px solid var(--bg-panel)}
+.wa-prof-section h4{font-size:14px;color:var(--text-secondary);margin-bottom:8px}
+.wa-prof-section p{font-size:15px;color:var(--text-primary);line-height:1.5}
+.wa-prof-actions{display:flex;gap:24px;justify-content:center;padding:16px;border-top:8px solid var(--bg-panel)}
+.wa-prof-action{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;background:0 0;border:0;color:var(--text-secondary);transition:color .15s}
+.wa-prof-action:hover{color:var(--pri)}
+.wa-prof-action svg{width:24px;height:24px}
+.wa-prof-action span{font-size:12px}
+.wa-prof-media{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:8px}
+.wa-prof-media img{width:100%;aspect-ratio:1;object-fit:cover;cursor:pointer;transition:opacity .15s}
+.wa-prof-media img:hover{opacity:.8}
+
+/* ===== IN-CHAT SEARCH ===== */
+.wa-search-bar{display:none;background:var(--bg-header);padding:8px 16px;gap:10px;align-items:center;z-index:3;border-bottom:1px solid var(--border);animation:waslideUp .2s var(--anim)}
+.wa-search-bar.active{display:flex}
+.wa-search-bar input{flex:1;padding:8px 12px;border:0;outline:0;background:var(--bg-input);border-radius:6px;font-size:14px;color:var(--text-primary)}
+.wa-search-bar input::placeholder{color:var(--text-secondary)}
+.wa-search-nav{display:flex;align-items:center;gap:4px;color:var(--text-secondary);font-size:13px}
+.wa-search-hl{background:#ffc107;border-radius:2px;padding:0 2px}
+.wa-search-hl.current{background:#ff9800}
+
+/* ===== LIGHTBOX ===== */
+.wa-lightbox{display:none;position:fixed;inset:0;background:var(--bg-overlay);z-index:12500;align-items:center;justify-content:center;animation:wafadeIn .2s}
+.wa-lightbox.active{display:flex}
+.wa-lightbox img{max-width:92vw;max-height:92vh;border-radius:4px;box-shadow:0 0 40px rgba(0,0,0,.5)}
+.wa-lightbox-close{position:absolute;top:16px;right:16px;background:rgba(0,0,0,.5);border:0;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.wa-lightbox-close:hover{background:rgba(0,0,0,.7)}
+
+/* ===== CONTEXT MENU ===== */
+.wa-ctx{display:none;position:fixed;background:var(--bg-menu);border:1px solid var(--border-strong);border-radius:var(--radius);box-shadow:var(--shadow-menu);z-index:12600;min-width:200px;padding:6px 0;animation:wapopIn .1s var(--anim)}
+.wa-ctx.active{display:block}
+.wa-ctx button{display:flex;align-items:center;gap:12px;width:100%;padding:10px 20px;background:0 0;border:0;text-align:left;font-size:14px;color:var(--text-primary);cursor:pointer;transition:background .1s}
+.wa-ctx button:hover{background:var(--bg-hover)}
+.wa-ctx button.danger{color:var(--danger)}
+.wa-ctx button svg{width:18px;height:18px;flex-shrink:0}
+.wa-ctx-sep{height:1px;background:var(--border);margin:4px 0}
+.wa-ctx-grp{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);padding:7px 20px 3px;user-select:none}
+
+/* Sélecteur « type de profil » (personne / entreprise) */
+.ptype-btn{flex:1;padding:12px;background:var(--surface,#1a1a1a);border:2px solid var(--border,#333);color:var(--text-dim,#999);border-radius:12px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:all .15s}
+.ptype-btn.active{border-color:var(--gold,#FFD700);color:var(--gold,#FFD700);background:rgba(255,215,0,0.08)}
+.ptype-btn:active{transform:scale(0.97)}
+
+/* Bouton filtre « 🟢 Dispo maintenant » (panneau liste) */
+.avail-filter-btn{flex:none;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text-dim);font-size:11px;font-weight:700;cursor:pointer;transition:0.15s}
+.avail-filter-btn.active{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 10px rgba(37,211,102,0.35)}
+
+/* ===== MULTI-SÉLECTION (style WhatsApp) ===== */
+.wa-selbar{position:absolute;top:0;left:0;right:0;min-height:var(--header-h);display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-header);border-bottom:1px solid var(--border);z-index:3}
+.wa-selcount{flex:1;font-size:14px;font-weight:600;color:var(--text-primary)}
+.wa-sel{position:absolute;top:8px;width:22px;height:22px;border-radius:50%;border:2px solid var(--text-secondary);background:var(--bg-sidebar);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:6;transition:background .1s,border-color .1s}
+.wa-sel svg{width:12px;height:12px;color:#fff;opacity:0}
+.wa-mrow.recv .wa-sel{left:-34px}
+.wa-mrow.sent .wa-sel{right:-34px}
+.wa-mrow.sel .wa-sel{background:var(--pri);border-color:var(--pri)}
+.wa-mrow.sel .wa-sel svg{opacity:1}
+.wa-mrow.sel .wa-bub{outline:2px solid var(--pri);outline-offset:-2px}
+#wa.selmode .wa-mrow{cursor:pointer}
+
+/* ===== FORWARD MODAL ===== */
+.wa-modal{display:none;position:fixed;inset:0;background:var(--bg-overlay);z-index:12700;align-items:center;justify-content:center;animation:wafadeIn .2s}
+.wa-modal.active{display:flex}
+.wa-modal-box{background:var(--bg-sidebar);border-radius:var(--radius-lg);width:420px;max-height:80vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:wapopIn .2s var(--anim)}
+.wa-modal-head{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--border)}
+.wa-modal-head h3{font-size:16px;font-weight:500;color:var(--text-primary);flex:1}
+.wa-modal-list{flex:1;overflow-y:auto;padding:8px 0}
+.wa-modal-contact{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;transition:background .1s}
+.wa-modal-contact:hover{background:var(--bg-hover)}
+.wa-modal-contact img{width:42px;height:42px;border-radius:50%;object-fit:cover}
+.wa-modal-contact .name{font-size:15px;color:var(--text-primary)}
+
+/* ===== TOAST ===== */
+.wa-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--bg-sidebar);color:var(--text-primary);padding:12px 20px;border-radius:var(--radius);box-shadow:var(--shadow-lg);z-index:12800;display:none;align-items:center;gap:10px;animation:waslideDown .3s var(--anim);font-size:14px;max-width:400px;cursor:pointer}
+.wa-toast:hover{filter:brightness(1.15)}
+.wa-toast.active{display:flex}
+.wa-toast img{width:32px;height:32px;border-radius:50%;object-fit:cover}
+.wa-toast-body{min-width:0}
+.wa-toast-name{font-weight:600;font-size:13px}
+.wa-toast-text{font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+@keyframes waslideDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ===== POLL MODAL ===== */
+.wa-poll-modal{padding:16px}
+.wa-poll-modal h3{font-size:16px;font-weight:500;color:var(--text-primary);margin-bottom:16px}
+.wa-poll-modal input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--text-primary);background:var(--bg-input);outline:0;margin-bottom:8px}
+.wa-poll-modal input:focus{border-color:var(--pri)}
+.wa-poll-modal .add-opt{background:0 0;border:0;color:var(--pri);cursor:pointer;font-size:14px;padding:8px 0;display:flex;align-items:center;gap:6px}
+.wa-poll-modal .send-poll{width:100%;padding:12px;background:var(--pri);color:#fff;border:0;border-radius:6px;font-size:15px;font-weight:500;cursor:pointer;margin-top:12px;transition:background .15s}
+.wa-poll-modal .send-poll:hover{background:var(--pri-dark)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .wa-side{width:100%;max-width:100%;position:absolute;inset:0;z-index:10}
+  .wa-side.hidden{transform:translateX(-100%)}
+  .wa-main{width:100%}
+  .wa-chead .wa-back{display:flex}
+  .wa-msgs{padding:12px 16px}
+  .wa-bub{max-width:85%}
+  .wa-attach{left:16px}
+  .wa-profile{width:100%}
+  .wa-emoji{left:8px;right:8px;width:auto}
+}
+@media(max-width:480px){
+  .wa-msgs{padding:8px 8px}
+}
+
+.wa-jobbar{padding:8px 16px;background:rgba(45,108,215,.14);border-bottom:1px solid rgba(45,108,215,.28);font-size:12.5px;font-weight:600;color:#4d8bff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
+#chatWidgetOverlay[data-theme=light] .wa-jobbar{background:rgba(45,108,215,.08);color:#2D6CDF;border-bottom-color:rgba(45,108,215,.18)}
+.icon-btn{
+  width:40px;height:40px;border:none;cursor:pointer;
+  background:var(--surface);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text);transition:background 0.2s,transform 0.15s;
+}
+.icon-btn:active{transform:scale(0.92);}
+.icon-btn svg{width:18px;height:18px;}
+.post-btn{
+  display:flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,var(--gold),#E6B800);
+  border:none;cursor:pointer;
+  padding:9px 16px;border-radius:22px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:13px;
+  color:#0A0A0F;
+  box-shadow:0 4px 15px rgba(255,215,0,0.3);
+  transition:transform 0.15s,box-shadow 0.2s;
+}
+.post-btn:active{transform:scale(0.95);box-shadow:0 2px 8px rgba(255,215,0,0.2);}
+.post-btn svg{width:14px;height:14px;}
+
+/* ===== CATEGORY BAR ===== */
+.category-bar{
+  position:fixed;top:68px;left:0;right:0;z-index:999;
+  display:flex;gap:8px;
+  padding:10px 16px;
+  overflow-x:auto;
+  background:var(--glass-bg);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  scrollbar-width:none;
+}
+.category-bar::-webkit-scrollbar{display:none;}
+.cat-btn{
+  display:flex;align-items:center;gap:6px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text-dim);
+  padding:8px 14px;border-radius:22px;
+  font-family:'DM Sans',sans-serif;font-weight:500;font-size:13px;
+  white-space:nowrap;cursor:pointer;
+  transition:all 0.2s;
+  flex-shrink:0;
+}
+.cat-btn.active,.cat-btn:hover{
+  background:var(--gold);color:#0A0A0F;border-color:var(--gold);
+  font-weight:700;
+  box-shadow:0 4px 12px rgba(255,215,0,0.25);
+}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* ===== SIDE CONTROLS ===== */
+.side-controls{
+  position:fixed;right:14px;top:160px;z-index:999;
+  display:flex;flex-direction:column;gap:10px;
+}
+.side-btn{
+  width:50px;height:50px;border:none;cursor:pointer;
+  background:var(--glass-bg);
+  backdrop-filter:blur(16px);
+  border-radius:14px;border:1px solid var(--border);
+  color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+  transition:transform 0.15s,background 0.2s;
+}
+.side-btn:active{transform:scale(0.9);}
+.side-btn svg{width:20px;height:20px;}
+.dist-badge{
+  background:var(--glass-bg);
+  backdrop-filter:blur(16px);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px 12px;
+  text-align:center;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+}
+.dist-badge-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);}
+.dist-badge-value{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--gold);}
+
+/* ===== DRAWERS & OVERLAYS ===== */
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:1001;
+  background:var(--dark2);
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  border-top:1px solid var(--border);
+  max-height:90vh;overflow-y:auto;
+  transform:translateY(100%);
+  transition:transform 0.4s var(--transition);
+  box-shadow:0 -20px 60px rgba(0,0,0,0.6);
+}
+.sheet.open{transform:translateY(0);}
+.sheet-handle{
+  width:40px;height:4px;background:var(--surface2);
+  border-radius:4px;margin:14px auto 0;
+}
+.sheet-header{
+  padding:16px 20px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sheet-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:18px;
+}
+.sheet-body{padding:0 20px 20px;}
+
+.overlay-page{
+  position:fixed;inset:0;z-index:1002;
+  background:var(--dark);
+  transform:translateX(100%);
+  transition:transform 0.38s var(--ease);
+  overflow-y:auto;
+}
+.overlay-page.open{transform:translateX(0);}
+.overlay-header{
+  position:sticky;top:0;z-index:10;
+  background:var(--dark2);
+  backdrop-filter:blur(20px);
+  padding:16px 20px;
+  display:flex;align-items:center;gap:14px;
+  border-bottom:1px solid var(--border);
+}
+.back-btn{
+  width:38px;height:38px;border:none;cursor:pointer;
+  background:var(--surface);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text);flex-shrink:0;
+}
+.back-btn svg{width:18px;height:18px;}
+.overlay-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:17px;
+}
+.overlay-body{padding:20px;}
+.hidden{display:none!important;}
+
+/* ===== FORM ELEMENTS ===== */
+.form-group{margin-bottom:14px;}
+.form-label{
+  display:block;margin-bottom:6px;
+  font-size:12px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.8px;
+  color:var(--text-dim);
+}
+.form-input,.form-select,.form-textarea{
+  width:100%;padding:14px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:16px;
+  outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+  -webkit-appearance:none;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(255,215,0,0.12);
+}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text-dim);}
+.form-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%238888A8' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:20px;padding-right:40px;}
+.form-select option{background:var(--dark2);color:var(--text);}
+.form-textarea{min-height:90px;resize:vertical;}
+
+.upload-zone{
+  border:2px dashed var(--border);
+  border-radius:var(--radius-md);
+  padding:24px;text-align:center;cursor:pointer;
+  background:var(--surface);
+  transition:border-color 0.2s,background 0.2s;
+}
+.upload-zone:hover{border-color:var(--gold);background:rgba(255,215,0,0.04);}
+.upload-zone input{display:none;}
+.upload-icon{margin-bottom:8px;color:var(--gold);}
+.upload-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+.upload-sub{font-size:12px;color:var(--text-dim);}
+.image-previews{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.image-preview-item{
+  width:60px;height:60px;border-radius:10px;
+  object-fit:cover;border:2px solid var(--gold);
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:15px;border:none;cursor:pointer;
+  border-radius:var(--radius-md);
+  font-family:'Syne',sans-serif;font-weight:700;font-size:15px;
+  transition:transform 0.15s,box-shadow 0.2s,opacity 0.2s;
+}
+.btn:active{transform:scale(0.97);}
+.btn:disabled{opacity:0.5;pointer-events:none;}
+.btn-primary{
+  background:linear-gradient(135deg,var(--gold),#E6B800);
+  color:#0A0A0F;
+  box-shadow:0 6px 20px rgba(255,215,0,0.3);
+}
+.btn-primary:hover{box-shadow:0 8px 28px rgba(255,215,0,0.4);}
+.btn-google{background:#DB4437;color:#fff;}
+.btn-whatsapp{background:#25D366;color:#fff;}
+.btn-whatsapp:hover{box-shadow:0 8px 28px rgba(37,211,102,0.4);}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 6px 20px rgba(37,211,102,0.25);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+.btn+.btn{margin-top:10px;}
+.btn svg{width:18px;height:18px;flex-shrink:0;}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:1000;
+  height:82px;
+  display:flex;align-items:center;
+  background:var(--glass-bg);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border-top:1px solid var(--border);
+  padding:0 8px;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:4px;border:none;background:none;cursor:pointer;
+  color:var(--text-dim);padding:8px;
+  transition:color 0.2s;
+  font-family:'DM Sans',sans-serif;font-weight:500;font-size:11px;
+}
+.nav-item.active{color:var(--gold);}
+.nav-item svg{width:22px;height:22px;}
+.nav-center-wrap{flex:0 0 80px;display:flex;justify-content:center;}
+.nav-center{
+  width:62px;height:62px;
+  background:linear-gradient(135deg,var(--gold),#E6B800);
+  border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 4px rgba(255,215,0,0.2),0 8px 25px rgba(255,215,0,0.4);
+  transform:translateY(-12px);
+  transition:transform 0.2s var(--transition),box-shadow 0.2s;
+  color:#0A0A0F;
+}
+.nav-center:active{transform:translateY(-8px) scale(0.95);}
+.nav-center svg{width:26px;height:26px;}
+
+/* ===== JOB LIST ===== */
+.jobs-sheet .sheet-body{padding-bottom:100px;}
+.job-card{
+  background:var(--surface);
+  border-radius:var(--radius-md);
+  padding:14px;margin-bottom:10px;
+  border:1px solid var(--border);
+  display:flex;gap:12px;align-items:flex-start;
+  cursor:pointer;
+  transition:background 0.2s,transform 0.15s;
+  animation:slide-up 0.3s var(--ease) both;
+}
+@keyframes slide-up{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.job-card:active{transform:scale(0.98);}
+.job-card-icon{
+  width:46px;height:46px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:20px;
+}
+.job-card-body{flex:1;min-width:0;}
+.job-card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.job-card-meta{display:flex;align-items:center;gap:6px;margin-top:4px;}
+.job-card-price{font-weight:700;font-size:14px;color:var(--green);}
+.job-card-dist{font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:3px;}
+.job-card-verified{width:14px;height:14px;color:var(--blue);}
+.job-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+
+/* ===== ACCOUNT PAGE ===== */
+.avatar{
+  width:82px;height:82px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),#B8860B);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:#0A0A0F;
+  margin:0 auto 8px;
+  box-shadow:0 0 0 4px rgba(255,215,0,0.2);
+}
+.account-name{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:20px;
+  text-align:center;margin-bottom:4px;
+}
+.account-email{font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:6px;}
+.account-status{font-size:12px;color:var(--text-dim);text-align:center;margin-bottom:24px;}
+.account-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-md);overflow:hidden;margin-bottom:12px;
+}
+.account-item{
+  display:flex;align-items:center;gap:12px;
+  padding:15px 16px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background 0.2s;color:var(--text);
+  text-decoration:none;font-size:15px;font-weight:500;
+}
+.account-item:last-child{border-bottom:none;}
+.account-item:active{background:var(--surface2);}
+.account-item-icon{
+  width:34px;height:34px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.account-item-icon svg{width:18px;height:18px;}
+.account-item span{flex:1;}
+.account-item-arrow svg{width:16px;height:16px;color:var(--text-dim);}
+
+/* ===== ITINERARY PANEL ===== */
+.itin-panel{
+  position:fixed;bottom:96px;left:14px;z-index:999;
+  background:var(--glass-bg);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:14px;min-width:150px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.5);
+}
+.itin-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:4px;}
+.itin-value{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--gold);}
+.itin-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+
+/* ===== AUTH TABS ===== */
+.auth-tabs{display:flex;gap:4px;background:var(--surface);border-radius:var(--radius-sm);padding:4px;margin-bottom:20px;}
+.auth-tab{
+  flex:1;padding:10px;border:none;background:none;cursor:pointer;
+  border-radius:10px;color:var(--text-dim);
+  font-family:'Syne',sans-serif;font-weight:700;font-size:14px;
+  transition:all 0.2s;
+}
+.auth-tab.active{background:var(--gold);color:#0A0A0F;}
+
+/* ===== DIVIDER ===== */
+.divider{display:flex;align-items:center;gap:10px;margin:16px 0;}
+.divider-line{flex:1;height:1px;background:var(--border);}
+.divider-text{font-size:12px;color:var(--text-dim);}
+
+/* ===== TAGS / BADGES ===== */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:20px;
+  font-size:11px;font-weight:700;
+}
+.badge-gold{background:rgba(255,215,0,0.15);color:var(--gold);}
+.badge-green{background:rgba(37,211,102,0.12);color:var(--green);}
+.badge-blue{background:rgba(0,122,255,0.12);color:var(--blue);}
+
+/* ===== TOAST ===== */
+#toast{
+  position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);
+  z-index:999999;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:12px 20px;
+  font-size:14px;font-weight:500;
+  box-shadow:0 8px 30px rgba(0,0,0,0.5);
+  opacity:0;
+  transition:all 0.3s var(--ease);
+  white-space:nowrap;
+  max-width:calc(100vw - 32px);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.success{border-color:var(--green);color:var(--green);}
+#toast.error{border-color:var(--danger);color:var(--danger);}
+#toast.info{border-color:var(--gold);color:var(--gold);}
+
+/* ===== NOTIFICATION DOT ===== */
+.notif-dot{
+  position:absolute;top:-2px;right:-2px;
+  width:8px;height:8px;background:var(--red-cam);
+  border-radius:50%;border:2px solid var(--dark);
+}
+
+/* ===== LOADING STATE ===== */
+.spinner{
+  width:20px;height:20px;border-radius:50%;
+  border:2px solid rgba(10,10,15,0.3);
+  border-top-color:#0A0A0F;
+  animation:spin 0.7s linear infinite;
+  flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== CHAT UI ===== */
+.chat-messages{
+  padding:16px;display:flex;flex-direction:column;gap:10px;
+  min-height:300px;max-height:50vh;overflow-y:auto;
+}
+.chat-msg{
+  max-width:80%;padding:12px 15px;border-radius:18px;
+  font-size:14px;line-height:1.5;
+}
+.chat-msg.mine{
+  background:var(--blue);color:#fff;
+  align-self:flex-end;border-bottom-right-radius:4px;
+}
+.chat-msg.error{
+  color:var(--danger,#FF3B30);
+  border:1px solid var(--danger,#FF3B30);
+}
+.chat-msg.theirs{
+  background:var(--surface2);color:var(--text);
+  align-self:flex-start;border-bottom-left-radius:4px;
+}
+.chat-input-row{
+  display:flex;gap:10px;align-items:center;
+  padding:12px 16px;border-top:1px solid var(--border);
+}
+.chat-input{
+  flex:1;padding:12px 16px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:22px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px;
+  outline:none;
+}
+.chat-send{
+  width:42px;height:42px;border:none;cursor:pointer;
+  background:var(--blue);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.chat-send svg{width:18px;height:18px;}
+.chat-safety{
+  margin:0 16px 4px;padding:9px 11px;border:1px solid rgba(37,211,102,.32);
+  border-radius:10px;background:rgba(37,211,102,.08);color:#b9efd3;font-size:11px;line-height:1.4;
+}
+.chat-suggestions{display:flex;gap:7px;overflow-x:auto;padding:7px 16px 11px;scrollbar-width:none;}
+.chat-suggestion{white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:999px;padding:7px 10px;font-size:12px;cursor:pointer;}
+.chat-suggestion:active{border-color:var(--gold);color:var(--gold);}
+
+/* ===== ADMIN PANEL ===== */
+.admin-stat{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:16px;
+  text-align:center;
+}
+.admin-stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--gold);}
+.admin-stat-label{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+
+/* ===== LEAFLET OVERRIDES ===== */
+.leaflet-popup-content-wrapper{
+  background:var(--dark2)!important;border:1px solid var(--border)!important;
+  border-radius:var(--radius-md)!important;box-shadow:0 10px 40px rgba(0,0,0,0.6)!important;
+}
+.leaflet-popup-tip{background:var(--dark2)!important;}
+.leaflet-popup-content{color:var(--text)!important;margin:14px!important;}
+.leaflet-routing-container{background:var(--dark2)!important;color:var(--text)!important;border-radius:var(--radius-md)!important;}
+/* Le bouton de fermeture (x) de Leaflet est gris foncé par défaut (prévu pour un
+   fond blanc) : sur notre thème sombre il devient quasi invisible. On l'éclaircit. */
+.leaflet-popup-close-button{color:var(--text-dim)!important;font-size:20px!important;}
+.leaflet-popup-close-button:hover{color:var(--text)!important;}
+
+/* ===== MISC ===== */
+.section-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:16px;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.empty-state{
+  text-align:center;padding:40px 20px;
+  color:var(--text-dim);
+}
+.empty-state svg{width:48px;height:48px;margin-bottom:12px;opacity:0.4;}
+.empty-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text);margin-bottom:6px;}
+.empty-sub{font-size:14px;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px;}
+  
+  /* ======================================================= */
+/* DESIGN DU PANNEAU DE PRÉVISUALISATION (VERSION SOMBRE) */
+/* ======================================================= */
+.job-drawer {
+    position: fixed;
+    top: 0;
+    right: -400px; /* Masqué par défaut hors de l'écran */
+    width: 380px;
+    height: 100%;
+    background: var(--dark2); /* Fond bleu nuit très sombre */
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+    z-index: 9999; /* Reste au-dessus de la carte */
+    transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+    font-family: 'DM Sans', sans-serif;
+    border-left: 1px solid var(--border);
+    color: var(--text);
+}
+
+/* Version responsive pour téléphones portables */
+@media (max-width: 480px) {
+    .job-drawer {
+        width: 100%;
+        right: -100%;
+    }
+}
+
+/* Classe activée par le JavaScript pour ouvrir le volet */
+.job-drawer.open {
+    right: 0;
+}
+
+.drawer-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface); /* Couleur de carte surélevée */
+    border-bottom: 1px solid var(--border);
+}
+
+#previewCategory {
+    background: var(--gold-glow);
+    color: var(--gold);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.close-drawer-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: color 0.2s;
+}
+
+.close-drawer-btn:hover {
+    color: var(--danger); /* Rouge ou doré au survol pour fermer */
+}
+
+.drawer-body {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Style du Titre principal */
+.drawer-body h2 {
+    margin: 0 0 6px 0;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+}
+
+/* Titre des sections comme "Description du besoin" */
+.drawer-body h3 {
+    color: var(--gold);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+}
+
+/* Texte de description */
+#previewDescription {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.drawer-price-tag {
+    font-size: 22px;
+    color: var(--green); /* Vert WhatsApp/Dollar éclatant */
+    font-weight: 700;
+    margin-bottom: 20px;
+    font-family: 'Syne', sans-serif;
+}
+
+.drawer-info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-dim); /* Texte secondaire grisé */
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.drawer-divider {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+}
+
+.drawer-footer {
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+}
+#previewOwnerActions{margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<!-- ===== SPLASH ===== -->
+<div id="splash">
+  <div class="splash-logo">JM</div>
+  <div>
+    <div class="splash-title">JobMarket Cameroon</div>
+    <div class="splash-sub" data-i18n="splashSubtitle">Artisans qualifiés près de vous</div>
+  </div>
+  <div class="splash-bar"><div class="splash-progress"></div></div>
+</div>
+
+<!-- ===== LANGUAGE PICKER (shown once, after the splash, until the user picks a language) ===== -->
+<style>
+.lang-pick-option{transition:background .15s,border-color .15s,transform .12s;}
+.lang-pick-option:hover{background:var(--gold,#FFD700) !important;color:#0A0A0F !important;border-color:var(--gold,#FFD700) !important;}
+.lang-pick-option:active{transform:scale(0.97);}
+</style>
+<div id="langPicker" style="display:none;position:fixed;inset:0;z-index:10500;background:rgba(10,10,15,0.88);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
+  <div style="position:relative;width:100%;max-width:340px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <button onclick="closeLangPicker()" data-i18n-aria-label="closeAriaLabel" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border:none;border-radius:50%;background:rgba(255,255,255,0.06);color:var(--text-dim);cursor:pointer;font-size:14px;">✕</button>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--text);margin-bottom:4px;padding-right:24px;" data-i18n="langModalTitle">Choisissez votre langue</div>
+    <div style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">Choose your language</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="lang-pick-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇫🇷 Français</button>
+      <button class="lang-pick-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇬🇧 English</button>
+      <button class="lang-pick-option" onclick="setLanguage('it')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇮🇹 Italiano</button>
+      <button class="lang-pick-option" onclick="setLanguage('de')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇩🇪 Deutsch</button>
+      <button class="lang-pick-option" onclick="setLanguage('zh')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇨🇳 中文</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<!-- Bandeau "hors connexion" : au lieu qu'une action (publier, contacter,
+     laisser un avis...) échoue en silence ou avec une erreur générique
+     quand le réseau tombe, on prévient tout de suite et clairement — voir
+     initOfflineDetection() plus bas, qui écoute les événements
+     online/offline du navigateur. -->
+<div id="offlineBanner" style="position:fixed;top:0;left:0;right:0;z-index:1100;background:#FF3B30;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:6px 12px;transform:translateY(-100%);transition:transform 0.3s var(--ease,ease);">
+  📡 <span data-i18n="offlineBannerText">Pas de connexion internet — certaines actions peuvent échouer</span>
+</div>
+
+<!-- Modale "Partager ton annonce", proposée juste après une publication réussie
+     (voir promptShareNewJob()) — le moment où l'annonce a le plus besoin de
+     visibilité est juste après sa mise en ligne, avant qu'elle ne redescende
+     dans le classement au fil des publications suivantes. -->
+<div id="shareNewJobModal" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(10,10,15,0.75);align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:340px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center;">
+    <div style="font-size:38px;margin-bottom:12px;">📣</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--text);margin-bottom:6px;" data-i18n="shareNewJobTitle">Annonce publiée !</div>
+    <div style="color:var(--text-dim);font-size:13px;line-height:1.5;margin-bottom:18px;" data-i18n="shareNewJobBody">Partage-la maintenant sur WhatsApp pour toucher plus de monde dès les premières minutes.</div>
+    <button id="shareNewJobBtn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:13px;border-radius:14px;border:none;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:10px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.987-1.417A9.953 9.953 0 0 0 11.999 22C17.522 22 22 17.523 22 12S17.522 2 11.999 2zm0 18.17a8.14 8.14 0 0 1-4.152-1.135l-.297-.176-3.078.875.876-3.003-.194-.308A8.11 8.11 0 0 1 3.83 12c0-4.509 3.661-8.17 8.169-8.17 4.508 0 8.17 3.661 8.17 8.17 0 4.508-3.662 8.17-8.17 8.17z"/></svg>
+      <span data-i18n="shareNewJobBtn">Partager sur WhatsApp</span>
+    </button>
+    <button onclick="document.getElementById('shareNewJobModal').style.display='none';" style="width:100%;background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;padding:8px;" data-i18n="notifPrimerLater">Plus tard</button>
+  </div>
+</div>
+
+<!-- ===== ÉCRAN D'ACCUEIL (onboarding, affiché une seule fois au tout premier lancement,
+     juste après le choix de la langue, tant que 'jmc_onboarding_seen' n'est pas mémorisé) ===== -->
+<style>
+.onb-slide{display:none;flex-direction:column;align-items:center;text-align:center;}
+.onb-slide.active{display:flex;}
+.onb-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.18);transition:background .2s,width .2s;}
+.onb-dot.active{background:var(--gold,#FFD700);width:20px;border-radius:4px;}
+</style>
+<div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:10400;background:rgba(10,10,15,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
+  <div style="position:relative;width:100%;max-width:360px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px 24px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <button onclick="skipOnboarding()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;padding:6px;" data-i18n="onbSkip">Passer</button>
+
+    <div class="onb-slide active" data-slide="0">
+      <div style="font-size:44px;margin-bottom:16px;">🗺️</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle1">Trouvez un pro près de chez vous</div>
+      <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody1">Explorez la carte pour découvrir des artisans qualifiés autour de vous, avec leur note et leur distance.</div>
+    </div>
+    <div class="onb-slide" data-slide="1">
+      <div style="font-size:44px;margin-bottom:16px;">➕</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle2">Publiez votre besoin en quelques secondes</div>
+      <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody2">Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.</div>
+    </div>
+    <div class="onb-slide" data-slide="2">
+      <div style="font-size:44px;margin-bottom:16px;">✅</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle3">Contactez en toute confiance</div>
+      <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody3">Consultez les avis et les badges vérifiés, puis échangez directement via le chat sécurisé de l'app.</div>
+    </div>
+
+    <div style="display:flex;gap:6px;justify-content:center;margin:22px 0 18px;">
+      <div class="onb-dot active" data-dot="0"></div>
+      <div class="onb-dot" data-dot="1"></div>
+      <div class="onb-dot" data-dot="2"></div>
+    </div>
+
+    <button id="onbNextBtn" onclick="onboardingNext()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:14px;color:#0A0A0F;font-size:14px;font-weight:800;cursor:pointer;" data-i18n="onbNext">Suivant</button>
+  </div>
+</div>
+
+<!-- ===== INVITE D'INSTALLATION PWA =====
+     Capture l'événement natif "beforeinstallprompt" (Android/Chrome — pas
+     Safari iOS, qui n'a pas cette API) pour proposer une bannière à notre
+     image plutôt que la mini-barre générique du navigateur, au bon moment
+     plutôt qu'au chargement. Voir initInstallPrompt() plus bas. -->
+<div id="installPrompt" style="display:none;position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:420px;margin:0 auto;background:var(--dark2);border:1px solid rgba(255,215,0,0.25);border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:8900;">
+  <div style="display:flex;gap:12px;align-items:flex-start;">
+    <div style="width:42px;height:42px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#0A0A0F;">JM</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--text);margin-bottom:4px;" data-i18n="installPromptTitle">Installe l'app sur ton téléphone</div>
+      <div style="color:var(--text-dim);font-size:13px;line-height:1.4;" data-i18n="installPromptBody">Accès plus rapide depuis l'écran d'accueil, comme une vraie application.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button onclick="respondToInstallPrompt(false)" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
+    <button onclick="respondToInstallPrompt(true)" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="installPromptInstall">Installer</button>
+  </div>
+</div>
+
+<!-- ===== ACCROCHE NOTIFICATIONS (pré-prompt avant le popup natif du navigateur) =====
+     But : ne JAMAIS déclencher Notification.requestPermission() à froid.
+     Un refus au popup natif du navigateur est quasi définitif (aucun moyen de
+     redemander depuis le site), donc on explique d'abord la valeur, et seul un
+     clic volontaire sur "Activer" déclenche le vrai popup natif. -->
+<div id="notifPrimer" style="display:none;position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:420px;margin:0 auto;background:var(--dark2);border:1px solid rgba(255,215,0,0.25);border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:9000;">
+  <div style="display:flex;gap:12px;align-items:flex-start;">
+    <div style="width:42px;height:42px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);display:flex;align-items:center;justify-content:center;font-size:20px;">🔔</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--text);margin-bottom:4px;" data-i18n="notifPrimerTitle">Ne ratez plus aucun job</div>
+      <div style="color:var(--text-dim);font-size:13px;line-height:1.4;" data-i18n="notifPrimerBody">Soyez alerté(e) dès qu'un nouveau job correspondant à vos catégories est publié près de chez vous.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button onclick="respondToNotifPrimer(false)" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
+    <button onclick="respondToNotifPrimer(true)" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="notifPrimerEnable">Activer les alertes</button>
+  </div>
+</div>
+
+<!-- Bandeau de rappel avant expiration d'un boost, affiché seulement à l'ouverture
+     de "Mes publications" quand une annonce boostée du propriétaire arrive à
+     échéance sous 24h et qu'il lui reste au moins un crédit pour la renouveler
+     (voir checkBoostExpiry()). -->
+<div id="boostExpiryBanner" style="display:none;position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));max-width:420px;margin:0 auto;background:var(--dark2);border:1px solid rgba(255,215,0,0.25);border-radius:18px;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,0.5);z-index:9000;">
+  <div style="display:flex;gap:12px;align-items:flex-start;">
+    <div style="width:42px;height:42px;flex-shrink:0;border-radius:12px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);display:flex;align-items:center;justify-content:center;font-size:20px;">🚀</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--text);margin-bottom:4px;" id="boostExpiryTitle" data-i18n="boostExpiryTitle">Ta mise en avant expire bientôt</div>
+      <div style="color:var(--text-dim);font-size:13px;line-height:1.4;" id="boostExpiryBody"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button onclick="dismissBoostExpiryBanner()" style="flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;" data-i18n="notifPrimerLater">Plus tard</button>
+    <button id="boostExpiryRenewBtn" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="boostExpiryRenewBtn">Renouveler (1 crédit)</button>
+  </div>
+</div>
+
+<!-- ===== MAP ===== -->
+<div id="map"></div>
+
+<!-- ===== TOPBAR ===== -->
+<header class="topbar">
+  <div class="logo-wrap">
+    <div class="logo-icon">JM</div>
+    <div>
+      <div class="logo-text">Job<span>Market</span></div>
+      <div class="logo-sub">Cameroon PRO</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="icon-btn" id="messagesBtn" style="position:relative;" onclick="openMessagesInbox()" data-i18n-title="tipMessages" title="Messages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <div class="msg-badge" id="messagesBadge" style="display:none;">0</div>
+    </button>
+    <button class="icon-btn" id="notifBtn" style="position:relative;" onclick="toggleNotifPanel()" data-i18n-title="tipNotifications" title="Notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="notif-dot" id="notifDot" style="display:none;"></div>
+    </button>
+    <div id="notifPanel" style="display:none;position:absolute;top:60px;right:16px;width:320px;max-width:calc(100vw - 32px);max-height:400px;overflow-y:auto;background:var(--dark);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:2000;">
+      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:700;" data-i18n="notifTitle">Nouveaux jobs</div>
+      <div id="notifList" style="padding:8px;"></div>
+    </div>
+    <div style="position:relative;">
+      <button class="icon-btn" id="settingsBtn" onclick="toggleSettingsPanel()" data-i18n-title="tipSettings" title="Paramètres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <div id="settingsPanel" style="display:none;position:absolute;top:48px;right:0;width:260px;max-width:calc(100vw - 32px);background:var(--dark);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:2100;padding:16px;">
+        <div style="font-weight:700;margin-bottom:12px;font-family:'Syne',sans-serif;" data-i18n="settingsTitle">Paramètres</div>
+
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;" data-i18n="settingsLanguage">Langue</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+          <button onclick="setLanguage('fr')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇫🇷</button>
+          <button onclick="setLanguage('en')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇬🇧</button>
+          <button onclick="setLanguage('it')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇮🇹</button>
+          <button onclick="setLanguage('de')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇩🇪</button>
+          <button onclick="setLanguage('zh')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇨🇳</button>
+        </div>
+
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;" data-i18n="settingsTheme">Thème</div>
+        <button id="themeToggleBtn" onclick="toggleTheme()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
+          <span id="themeToggleIcon">🌙</span>
+          <span id="themeToggleLabel" data-i18n="themeDark">Sombre</span>
+        </button>
+
+        <div style="font-size:12px;color:var(--text-dim);margin:14px 0 8px 0;" data-i18n="settingsNotifications">Notifications</div>
+        <button type="button" onclick="toggleSettingsPanel(); openNotifPrefs();" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
+          🔔 <span data-i18n="notifPrefsTitle">Notifications</span>
+        </button>
+        <button type="button" id="installAppBtn" onclick="installAppFromSettings()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
+          📲 <span id="installAppBtnLabel" data-i18n="installSettingsBtn">Installer l'app</span>
+        </button>
+
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ====== OVERLAY « INSTALLER L'APP » (instructions manuelles iOS/Android) ====== -->
+<div id="installManualOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2200;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface,#1a1a1a);border-radius:16px;padding:24px;max-width:380px;width:100%;">
+    <div style="font-weight:800;font-size:17px;margin-bottom:14px;" data-i18n="installManualTitle">Installer JobMarket sur ton téléphone</div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:10px;line-height:1.5;">🤖 <span data-i18n="installManualAndroid">Android : menu ⋮ du navigateur → « Ajouter sur l'écran d'accueil » (ou « Installer l'app »)</span></div>
+    <div style="font-size:13px;color:var(--text);margin-bottom:10px;line-height:1.5;">🍎 <span data-i18n="installManualIos">iPhone/iPad : bouton Partager (carré avec flèche vers le haut) → « Sur l'écran d'accueil »</span></div>
+    <div style="font-size:12px;color:var(--text-dim,#999);margin-bottom:16px;line-height:1.5;" data-i18n="installManualNote">Une fois sur l'écran d'accueil, l'app se met à jour toute seule à chaque ouverture — pas besoin de repasser par un store.</div>
+    <button type="button" onclick="document.getElementById('installManualOverlay').style.display='none'" style="width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;" data-i18n="okBtn">OK</button>
+  </div>
+</div>
+
+<!-- ===== CATEGORY BAR ===== -->
+<nav class="category-bar">
+  <button class="cat-btn active" onclick="filterJobs('all',this)">
+    <div class="cat-dot" style="background:var(--gold)"></div>
+    <span data-i18n="catAll">Tous</span>
+  </button>
+  <button class="cat-btn" onclick="filterJobs('btp',this)">
+    <div class="cat-dot" style="background:#FF9500"></div>
+    <span data-i18n="catBtp">BTP</span>
+  </button>
+  <button class="cat-btn" onclick="filterJobs('electricite',this)">
+    <div class="cat-dot" style="background:#FFD700"></div>
+    <span data-i18n="catElec">Electricite</span>
+  </button>
+  <button class="cat-btn" onclick="filterJobs('plomberie',this)">
+    <div class="cat-dot" style="background:#007AFF"></div>
+    <span data-i18n="catPlomberie">Plomberie</span>
+  </button>
+  <button class="cat-btn" onclick="filterJobs('menage',this)">
+    <div class="cat-dot" style="background:#25D366"></div>
+    <span data-i18n="catMenage">Menage</span>
+  </button>
+  <button class="cat-btn" onclick="filterJobs('jardinage',this)">
+    <div class="cat-dot" style="background:#34C759"></div>
+    <span data-i18n="catJardinage">Jardinage</span>
+  </button>
+  <button class="cat-btn" onclick="filterJobs('mecanique',this)">
+    <div class="cat-dot" style="background:#FF3B30"></div>
+    <span data-i18n="catMecanique">Mecanique</span>
+  </button>
+  <button class="cat-btn" onclick="filterJobs('informatique',this)">
+    <div class="cat-dot" style="background:#AF52DE"></div>
+    <span data-i18n="catInfo">Informatique</span>
+  </button>
+</nav>
+
+<!-- ===== SEARCH PANEL (recherche par nom + filtre par rayon) ===== -->
+<div class="search-panel" id="searchPanel">
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input type="text" class="search-input" id="jobSearchInput" data-i18n-placeholder="searchJobPlaceholder" placeholder="Rechercher un job (ex: plombier, menage...)">
+    <button type="button" class="search-close-btn" onclick="toggleSearchPanel()" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">✕</button>
+  </div>
+  <div class="filter-chips" id="radiusFilters">
+    <button type="button" class="filter-chip active" data-radius="0">Tout</button>
+    <button type="button" class="filter-chip" data-radius="0.5">500 m</button>
+    <button type="button" class="filter-chip" data-radius="2">2 km</button>
+    <button type="button" class="filter-chip" data-radius="5">5 km</button>
+    <button type="button" class="filter-chip" data-radius="10">10 km</button>
+  </div>
+  <div class="search-results-count" id="searchResultsCount"></div>
+</div>
+
+<!-- ===== SIDE CONTROLS ===== -->
+<div class="side-controls">
+  <button class="side-btn" onclick="locateMe()" data-i18n-title="tipLocate" title="Ma position">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+  </button>
+  <button class="side-btn" onclick="map.zoomIn()" data-i18n-title="tipZoomIn" title="Zoom +">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+  <button class="side-btn" onclick="map.zoomOut()" data-i18n-title="tipZoomOut" title="Zoom -">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+  <button class="side-btn" onclick="toggleMapStyle()" data-i18n-title="tipMapStyle" title="Style carte" id="mapStyleBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+  </button>
+  <div class="dist-badge">
+    <div class="dist-badge-label" data-i18n="distanceLabel">Distance</div>
+    <div class="dist-badge-value" id="maxDistDisplay">--</div>
+    <div class="dist-badge-label">km</div>
+  </div>
+</div>
+
+<!-- ===== ITINERARY PANEL (hidden by default) ===== -->
+<div class="itin-panel hidden" id="itinPanel">
+  <div class="itin-label" data-i18n="itinLabel">Itineraire</div>
+  <div class="itin-value" id="itinDist">--</div>
+  <div class="itin-sub" id="itinTime" data-i18n="calculating">Calcul en cours...</div>
+  <button style="width:100%;margin-top:10px;padding:8px;background:var(--danger);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;" onclick="clearRoute()" data-i18n="cancelBtn">Annuler</button>
+</div>
+
+<!-- ===== JOB PUBLISH FORM SHEET ===== -->
+<div class="sheet" id="jobFormSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" data-i18n="publishTitle">Publier un Job</div>
+    <button class="icon-btn" onclick="toggleJobForm()" data-i18n-title="tipClose" title="Fermer" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body">
+    <input type="hidden" id="jobLat" value="">
+    <input type="hidden" id="jobLng" value="">
+    
+    <div class="form-group">
+      <label class="form-label" data-i18n="fieldCategory">Categorie</label>
+      <select class="form-select" id="category">
+        <option value="btp|#FF9500" data-i18n="optBtp">BTP / Maconnerie</option>
+        <option value="electricite|#FFD700" data-i18n="optElec">Electricite</option>
+        <option value="plomberie|#007AFF" data-i18n="optPlomberie">Plomberie</option>
+        <option value="menage|#25D366" data-i18n="optMenage">Menage / Nettoyage</option>
+        <option value="jardinage|#34C759" data-i18n="optJardinage">Jardinage</option>
+        <option value="mecanique|#FF3B30" data-i18n="optMecanique">Mecanique Auto</option>
+        <option value="informatique|#AF52DE" data-i18n="optInfo">Informatique</option>
+      </select>
+      <button type="button" class="btn-ai-improve" id="suggestCategoryBtn" onclick="suggestJobCategory()" data-i18n="btnSuggestCategory" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">✨ Suggérer la catégorie</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="fieldTitle">Titre du job</label>
+      <input class="form-input" id="title" type="text" data-i18n-placeholder="phTitle" placeholder="Ex: Pose de carrelage salle de bain" required minlength="5" maxlength="150"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="fieldDesc">Description</label>
+      <textarea class="form-textarea" id="desc" data-i18n-placeholder="phDesc" placeholder="Decrivez le travail a effectuer..." required minlength="10" maxlength="3000"></textarea>
+      <button type="button" class="btn-ai-improve" id="improveDescBtn" onclick="improveJobDescription()" data-i18n="btnImproveDesc" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">✨ Améliorer avec l'IA</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="fieldRequirements">Exigences (optionnel)</label>
+      <textarea class="form-textarea" id="requirements" data-i18n-placeholder="phRequirements" placeholder="Ex: Ponctuel, experience minimum 2 ans, materiel personnel..." maxlength="800"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-group">
+        <label class="form-label" data-i18n="fieldPrice">Prix (XAF)</label>
+        <input class="form-input" id="price" type="text" data-i18n-placeholder="phPrice" placeholder="Ex: 15 000 XAF" required maxlength="30"/>
+        <button type="button" class="btn-ai-improve" id="suggestPriceBtn" onclick="suggestJobPrice()" data-i18n="btnSuggestPrice" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">💡 Suggérer un prix</button>
+        <div id="priceSuggestionBox" style="display:none;font-size:12px;margin-top:6px;line-height:1.4;color:var(--text-secondary,#999);"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="fieldPhone">Telephone</label>
+        <input class="form-input" id="phone" type="tel" placeholder="6XX XXX XXX" required pattern="[0-9 ]{9,15}" data-i18n-title="phoneValidTitle" title="Numero de telephone valide, ex: 6XX XXX XXX" maxlength="20"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="fieldPhone2">Deuxieme numero (optionnel)</label>
+      <input class="form-input" id="phone2" type="tel" placeholder="6XX XXX XXX" pattern="[0-9 ]{9,15}" data-i18n-title="phoneValidTitle" title="Numero de telephone valide, ex: 6XX XXX XXX" maxlength="20"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="fieldLandmark">Repere / Quartier</label>
+      <input class="form-input" id="landmark" type="text" data-i18n-placeholder="phLandmark" placeholder="Ex: Bastos, pres du rond-point..." maxlength="150"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="fieldPhotos">Photos (jusqu'a 5)</label>
+      <div class="upload-zone" onclick="document.getElementById('jobImages').click()">
+        <div class="upload-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <div class="upload-title" data-i18n="uploadTitle">Ajouter des photos</div>
+        <div class="upload-sub" data-i18n="uploadSub">JPG, PNG, WEBP — Max 5 images, 8 Mo chacune</div>
+        <input type="file" id="jobImages" multiple accept="image/*" onchange="previewImages(this)"/>
+      </div>
+      <div class="image-previews" id="imagePreviews"></div>
+    </div>
+    <button class="btn btn-primary" id="publishBtn" onclick="addJob()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <span data-i18n="publishNow">Publier maintenant</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===== JOBS LIST SHEET ===== -->
+<div class="sheet jobs-sheet" id="jobsSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">
+      <span data-i18n="jobsNearby">Jobs proches</span>
+      <span class="badge badge-gold" id="jobCountBadge">0</span>
+    </div>
+    <button class="icon-btn" onclick="closeSheet('jobsSheet')" data-i18n-title="tipClose" title="Fermer" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div style="display:flex;gap:8px;padding:0 16px 12px 16px;">
+    <button type="button" id="jobsFilterAllBtn" class="jobs-filter-seg active" onclick="showAllJobsInSheet()" data-i18n="filterAllJobs">Tous</button>
+    <button type="button" id="jobsFilterSavedBtn" class="jobs-filter-seg" onclick="showSavedJobsInSheet()" data-i18n="filterSavedJobs">Sauvegardés</button>
+  </div>
+  <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:0 16px 10px 16px;">
+    <button type="button" id="availFilterBtn" class="avail-filter-btn" data-i18n="availNowBadge" data-i18n-title="availFilterTip" data-i18n-aria-label="availFilterTip" aria-label="N'afficher que les artisans disponibles maintenant" onclick="toggleAvailFilter()">🟢 Dispo</button>
+    <span style="font-size:11px;color:var(--text-dim);" data-i18n="sortLabel">Trier :</span>
+    <select id="jobSortSel" onchange="setJobSort(this.value)" data-i18n-aria-label="sortLabel" aria-label="Trier :" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:12px;cursor:pointer;">
+      <option value="dist" data-i18n="sortNearest">Le plus proche</option>
+      <option value="rating" data-i18n="sortRating">Mieux notés</option>
+      <option value="price" data-i18n="sortPrice">Moins cher</option>
+      <option value="newest" data-i18n="sortNewest">Plus récent</option>
+    </select>
+  </div>
+  <div id="artisanOfMonthBox" style="margin:0 16px 12px 16px;"></div>
+  <div class="sheet-body">
+    <div id="listContent">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ACCOUNT PAGE ===== -->
+<div class="overlay-page" id="accountPage">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('accountPage')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title" data-i18n="myAccount">Mon Compte</div>
+  </div>
+  <div class="overlay-body">
+    <!-- Avatar -->
+    <div id="userAvatar" class="avatar">JM</div>
+    <div class="account-name" id="accountName" data-i18n="userFallback">Utilisateur</div>
+    <div class="account-email" id="accountEmail" data-i18n="notConnected">Non connecte</div>
+    <div class="account-status" id="profileStatus" data-i18n="profileIncomplete">Profil incomplet</div>
+
+    <!-- Auth Section (shown when not logged in) -->
+    <div id="authSection">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('signup')" data-i18n="tabSignup">Creer compte</button>
+        <button class="auth-tab" onclick="switchAuthTab('login')" data-i18n="tabLogin">Connexion</button>
+      </div>
+      <div id="authForm">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="email" type="email" placeholder="exemple@email.com" required maxlength="100"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="fieldPassword">Mot de passe</label>
+          <input class="form-input" id="password" type="password" data-i18n-placeholder="phPassword" placeholder="Minimum 8 caracteres" required minlength="8" maxlength="100"/>
+        </div>
+        <button class="btn btn-primary" id="authMainBtn" onclick="signupEmail()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span data-i18n="createAccountBtn">Creer mon compte</span>
+        </button>
+        <div id="forgotPasswordLink" class="hidden" style="text-align:center;margin-top:10px;">
+          <a href="#" onclick="forgotPassword(); return false;" style="font-size:13px;color:var(--text-dim,#9999BC);text-decoration:underline;" data-i18n="forgotPassword">Mot de passe oublié ?</a>
+        </div>
+        <div class="divider"><div class="divider-line"></div><div class="divider-text" data-i18n="orWord">ou</div><div class="divider-line"></div></div>
+        <button class="btn btn-google" onclick="loginGoogle()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          <span data-i18n="continueGoogle">Continuer avec Google</span>
+        </button>
+        <!-- ===== CONNEXION WHATSAPP / TÉLÉPHONE (Firebase Phone Auth) =====
+             Le bouton n'apparaît que si une clé reCAPTCHA est configurée
+             dans app.js (RECAPTCHA_PHONE_SITE_KEY) — sinon zéro impact. -->
+        <button class="btn btn-whatsapp" id="phoneAuthBtn" style="display:none;margin-top:10px;width:100%;" onclick="togglePhoneAuthBox()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          <span data-i18n="continueWhatsApp">Continuer avec WhatsApp / téléphone</span>
+        </button>
+        <div id="phoneAuthBox" style="display:none;margin-top:12px;">
+          <div id="phoneStep1">
+            <div class="form-group">
+              <label class="form-label" data-i18n="phoneLabel">Numéro de téléphone</label>
+              <input class="form-input" id="phoneNumberInput" type="tel" inputmode="tel" autocomplete="tel" data-i18n-placeholder="phonePlaceholder" placeholder="+237 6XX XX XX XX" maxlength="17"/>
+            </div>
+            <button class="btn btn-whatsapp" style="width:100%;" onclick="sendPhoneOtp()">
+              <span data-i18n="sendCodeBtn">Envoyer le code</span>
+            </button>
+          </div>
+          <div id="phoneStep2" style="display:none;">
+            <div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:8px;text-align:center;" data-i18n="otpHint">Saisis le code reçu (SMS / WhatsApp)</div>
+            <div class="form-group">
+              <input class="form-input" id="phoneOtpInput" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="6" style="text-align:center;letter-spacing:8px;font-size:20px;font-weight:800;"/>
+            </div>
+            <button class="btn btn-primary" style="width:100%;" onclick="verifyPhoneOtp()">
+              <span data-i18n="verifyCodeBtn">Valider le code</span>
+            </button>
+            <div style="text-align:center;margin-top:10px;">
+              <a href="#" onclick="resendPhoneOtp(); return false;" style="font-size:13px;color:var(--text-dim,#9999BC);text-decoration:underline;" data-i18n="resendCodeBtn">Renvoyer le code</a>
+            </div>
+          </div>
+        </div>
+        <!-- Conteneur reCAPTCHA invisible : doit rester dans le DOM (widget invisible) -->
+        <div id="phoneRecaptchaContainer"></div>
+      </div>
+    </div>
+
+    <!-- User dashboard (shown when logged in) -->
+   <div id="userDashboard" class="hidden">
+  <div class="account-card">
+    
+    <a class="account-item" href="#" onclick="openProfileSheet()" style="background:linear-gradient(135deg,rgba(255,215,0,0.14),rgba(255,215,0,0.04));border:1px solid rgba(255,215,0,0.3);border-radius:12px;margin-bottom:10px;">
+      <div class="account-item-icon" style="background:var(--gold,#FFD700);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0A0A0F" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <span style="font-weight:800;" data-i18n="myProProfile">Mon Profil Pro</span>
+      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold,#FFD700)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </a>
+
+    <a class="account-item" id="adminMenuItem" href="#" onclick="openAdminPanel()">
+      <div class="account-item-icon" style="background:rgba(255,215,0,0.15);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      </div>
+      <span data-i18n="adminDashboard">Dashboard Admin</span>
+      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </a>
+
+    <a class="account-item" href="#" onclick="openChat()">
+      <div class="account-item-icon" style="background:rgba(0,122,255,0.15);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <span data-i18n="chatPanelTitle">Assistant sécurisé</span>
+      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </a>
+
+    <a class="account-item" href="#" onclick="openMyJobs()">
+      <div class="account-item-icon" style="background:rgba(37,211,102,0.12);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+      </div>
+      <span data-i18n="myListings">Mes publications</span>
+      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </a>
+
+  </div>
+
+   <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    <span data-i18n="logout">Déconnexion</span>
+  </button>
+</div>
+  </div>
+</div>
+
+<!-- ===== NOTIFICATION PREFS ===== -->
+<div class="overlay-page" id="notifPrefsPage">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('notifPrefsPage')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title" data-i18n="notifPrefsTitle">Notifications</div>
+  </div>
+  <div class="overlay-body">
+    <p style="color:var(--text-dim,#9999BC);font-size:14px;line-height:1.5;margin:0 0 18px;" data-i18n="notifPrefsIntro">
+      Choisissez les catégories pour lesquelles vous voulez être notifié(e) des nouvelles offres. Décochez celles qui ne vous concernent pas.
+    </p>
+    <div id="notifPrefsList"></div>
+  </div>
+</div>
+    
+ <!-- ===== ADMIN PANEL ===== -->
+<div class="overlay-page" id="adminPanel">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('adminPanel')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title" data-i18n="adminDashboard">Dashboard Admin</div>
+    <span class="badge badge-gold" style="margin-left:auto;" data-i18n="adminBadge">ADMIN</span>
+  </div>
+  <div class="overlay-body">
+    <div class="admin-grid">
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminTotalJobs">0</div>
+        <div class="admin-stat-label" data-i18n="adminStatJobsTotal">Jobs total</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminTotalUsers">0</div>
+        <div class="admin-stat-label" data-i18n="adminStatUsers">Utilisateurs</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminTodayJobs">0</div>
+        <div class="admin-stat-label" data-i18n="adminStatToday">Publies aujourd'hui</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val">CM</div>
+        <div class="admin-stat-label" data-i18n="adminStatCountry">Pays actif</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminNotifOpenRate">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatNotifOpenRate">Taux d'ouverture notifs (7j)</div>
+        <div id="adminNotifOpenRateBreakdown" style="font-size:11px;color:var(--text-dim);margin-top:4px;">--</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatContacts">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatContactsWeek">Contacts WhatsApp (7j)</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatReviews">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatReviewsWeek">Avis laissés (7j)</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatSignups">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatSignupsWeek">Inscriptions (7j)</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatBoosts">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatBoostsWeek">Boosts utilisés (7j)</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adminStatSearches">--</div>
+        <div class="admin-stat-label" data-i18n="adminStatSearchesWeek">Recherches (7j)</div>
+      </div>
+    </div>
+    <div class="section-title" data-i18n="adminReportsTitle">Signalements en attente</div>
+    <div id="adminReportsList"></div>
+
+    <div class="section-title" data-i18n="adminVerificationsTitle">Vérifications en attente</div>
+    <div id="adminVerificationsList"></div>
+
+    <div class="section-title" data-i18n="adminAllJobsTitle">Tous les jobs</div>
+    <div id="adminJobsList"></div>
+  </div>
+</div>
+
+<!-- ===== CHAT PAGE ===== -->
+<div class="overlay-page" id="chatPage">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('chatPage')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title" data-i18n="chatPanelTitle">Assistant sécurisé</div>
+    <span class="badge badge-green" data-i18n="chatOfflineBadge">Hors ligne · privé</span>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg theirs" data-i18n="chatWelcomeMsg">Bonjour ! Je peux vous aider à utiliser JobMarket, publier une demande, trouver un artisan, comprendre les prix et repérer les signaux de fraude. Mes réponses restent sur cet appareil.</div>
+  </div>
+  <div class="chat-suggestions" data-i18n-aria-label="faqAriaLabel" aria-label="Questions fréquentes">
+    <button class="chat-suggestion" type="button" data-query="Comment publier un job ?" data-i18n="chatSuggestion1" onclick="askChatSuggestion(this)">Comment publier un job ?</button>
+    <button class="chat-suggestion" type="button" data-query="Comment éviter une arnaque ?" data-i18n="chatSuggestion2" onclick="askChatSuggestion(this)">Comment éviter une arnaque ?</button>
+    <button class="chat-suggestion" type="button" data-query="Comment calculer ma marge ?" data-i18n="chatSuggestion3" onclick="askChatSuggestion(this)">Comment calculer ma marge ?</button>
+    <button class="chat-suggestion" type="button" data-query="Comment gérer mes publications ?" data-i18n="chatSuggestion4" onclick="askChatSuggestion(this)">Comment gérer mes publications ?</button>
+  </div>
+  <div class="chat-safety" data-i18n="chatSafetyNotice">Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d'identité dans le chat.</div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" type="text" data-i18n-placeholder="chatInputPlaceholder" placeholder="Votre message..." onkeypress="handleChatKey(event)"/>
+    <button class="chat-send" onclick="sendChatMessage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ===== SIGNALEMENT D'UNE ANNONCE ===== -->
+<div class="overlay-page" id="reportModal">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('reportModal')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title" data-i18n="reportModalTitle">Signaler cette annonce</div>
+  </div>
+  <div class="overlay-body">
+    <p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;" data-i18n="reportModalIntro">Un signal utile pour l'équipe : décrivez ce qui vous semble problématique. Les signalements abusifs peuvent être retracés jusqu'à votre compte.</p>
+    <div class="form-group">
+      <label class="form-label" data-i18n="reportReasonLabel">Motif</label>
+      <select class="form-select" id="reportReason">
+        <option value="fraud" data-i18n="reportReasonFraud">Arnaque / fraude suspectée</option>
+        <option value="inappropriate" data-i18n="reportReasonInappropriate">Contenu inapproprié</option>
+        <option value="misleading" data-i18n="reportReasonMisleading">Prix ou description trompeurs</option>
+        <option value="duplicate" data-i18n="reportReasonDuplicate">Annonce en double / spam</option>
+        <option value="other" data-i18n="reportReasonOther">Autre</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="reportCommentLabel">Détails (optionnel)</label>
+      <textarea class="form-textarea" id="reportComment" data-i18n-placeholder="phReportComment" placeholder="Expliquez brièvement le problème..." maxlength="500"></textarea>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:8px;" onclick="submitReport()" data-i18n="reportSubmitBtn">Envoyer le signalement</button>
+  </div>
+</div>
+<nav class="bottom-nav">
+  <button class="nav-item active" id="navMap" onclick="activateNav('map')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+    <span data-i18n="navMap">Carte</span>
+  </button>
+  <button class="nav-item" id="navList" onclick="activateNav('list')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    <span data-i18n="navList">Liste</span>
+  </button>
+  <div class="nav-center-wrap">
+    <button class="nav-center" onclick="toggleJobForm()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+  <button class="nav-item" id="navSearch" onclick="activateNav('search')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span data-i18n="navSearch">Chercher</span>
+  </button>
+  <button class="nav-item" id="navAccount" onclick="activateNav('account')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span data-i18n="navAccount">Compte</span>
+  </button>
+</nav>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="chat-widget.js?v=20260904h" defer></script>
+<script src="app.js?v=20260904h" defer></script>
+
+  
+ <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
+<div id="jobPreviewDrawer" class="job-drawer">
+    <div class="drawer-header">
+        <span class="drawer-badge" id="previewCategory">Catégorie</span>
+        <button class="close-drawer-btn" onclick="closeJobPreview()" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">&times;</button>
+    </div>
+    
+    <div class="drawer-body">
+        <h2 id="previewTitle">Titre de l'annonce</h2>
+        
+        <div style="display:flex; gap:8px; margin:8px 0 12px;">
+            <span id="previewPriceBadge" style="background:#25D366; color:white; padding:4px 12px; border-radius:12px; font-size:13px; font-weight:700;">0 XAF</span>
+            <span id="previewCategoryBadge" style="background:#FFD700; color:#111; padding:4px 12px; border-radius:12px; font-size:13px; font-weight:700;">Catégorie</span>
+        </div>
+        
+        <div class="drawer-info-row">
+            <span>📧</span>
+            <span id="previewEmail">Non spécifié</span>
+        </div>
+        
+        <hr class="drawer-divider">
+        
+                <h3 data-i18n="descNeed">Description du besoin :</h3>
+        <p id="previewDescription">Détails de l'emploi ou du service demandé...</p>
+
+        <!-- Analyse IA des signaux d'alerte (arnaque potentielle) : masquée pour
+             ses propres annonces via previewScamCheck (même logique que le bouton
+             WhatsApp), et déclenchée manuellement plutôt qu'automatiquement pour
+             ne pas gaspiller le budget IA sur des annonces jamais consultées en détail. -->
+        <div id="previewScamCheck" style="margin:14px 0;">
+          <button type="button" class="btn-ai-improve" id="scamCheckBtn" onclick="analyzeScamSignals()" data-i18n="btnScamCheck" style="background:none;border:1px solid var(--border,#333);color:var(--text-dim,#999);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">🛡️ Analyser les signaux d'alerte</button>
+          <div id="scamCheckBox" style="display:none;font-size:13px;margin-top:8px;padding:10px 12px;border-radius:8px;line-height:1.4;"></div>
+        </div>
+
+        <!-- Avis reçus par l'auteur de l'annonce : visible par tout le monde, pas
+             seulement le propriétaire, pour permettre de décider AVANT de contacter. -->
+        <div id="previewOwnerReviews"></div>
+
+        <!-- Bouton pour laisser un avis soi-même, si on a déjà contacté ce prestataire -->
+        <div id="previewReviewAction"></div>
+
+        <!-- NOUVEAU : Conteneur pour afficher les personnes intéressées -->
+        <div id="previewContactsContainer"></div>
+    </div>
+    
+    <div class="drawer-footer">
+        <div id="previewOwnerActions" class="hidden">
+            <button class="btn btn-ghost" id="previewToggleFilledBtn" onclick="toggleJobFilledFromPreview()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                <span id="previewToggleFilledLabel" data-i18n="markAsFilled">Marquer comme pourvu</span>
+            </button>
+            <button class="btn btn-primary" onclick="editJobFromPreview()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <span data-i18n="editListing">Modifier l'annonce</span>
+            </button>
+            <button class="btn btn-danger" onclick="deleteJobFromPreview()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                <span data-i18n="deleteListing">Supprimer l'annonce</span>
+            </button>
+        </div>
+        <button class="btn btn-green" id="previewChatBtn" onclick="openUserChatFromPreview()">
+            <span style="font-size:16px;">🔒</span> <span data-i18n="secureChat">Chat sécurisé</span>
+        </button>
+        <button class="btn btn-blue" onclick="openQuoteRequestFromPreview()">
+            <span style="font-size:16px;">💬</span> <span data-i18n="requestQuoteBtn">Demander un devis</span>
+        </button>
+        <button class="btn btn-blue" onclick="shareJobViaWhatsApp()">
+            <span style="font-size:16px;">🔗</span> <span data-i18n="shareWhatsApp">Partager sur WhatsApp</span>
+        </button>
+        <button class="btn btn-blue" onclick="drawRouteFromPreview()">
+            <span data-i18n="seeItinerary">Voir l'itinéraire</span>
+        </button>
+        <button class="btn" id="previewSaveBtn" data-save-btn="" onclick="toggleSaveJob(window.currentPreviewJob && window.currentPreviewJob.id)" style="background:none;border:1px solid var(--border,#333);color:var(--text-dim,#999);">
+            🔖 <span data-i18n="saveLabel">Sauvegarder</span>
+        </button>
+    </div>
+</div>
+  <style>
+ .profile-sheet { 
+    position: fixed;
+    top: 0;
+    right: -100%; /* Caché à droite par défaut */
+    width: 100%;
+    max-width: 420px;
+    height: 100%;
+    background: #0A0A0F;
+    z-index: 11000; /* Priorité maximale pour passer devant la carte */
+    transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-left: 1px solid #1E1E2F;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .profile-sheet.open {
+    right: 0; /* Glisse vers l'écran */
+  }
+  .profile-sheet-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1E1E2F;
+  }
+.profile-sheet-header h2 {
+    margin: 0;
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    color: white;
+    font-weight: 700;
+  }
+  .sheet-close-btn {
+    background: rgba(255,255,255,0.05);
+    border: none;
+    color: #888;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+  }
+  .sheet-close-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+  }
+  .profile-form-group {
+    margin-bottom: 20px;
+  }
+  .profile-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #8A8A9E;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .profile-input {
+    width: 100%;
+    padding: 14px;
+    background: #14141F;
+    border: 1px solid #222235;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    box-sizing: border-box;
+    transition: 0.2s;
+  }
+  .profile-input:focus {
+    outline: none;
+    border-color: var(--gold, #FFD700);
+    background: #1A1A2A;
+  }
+  .profile-textarea {
+    width: 100%;
+    height: 100px;
+    padding: 14px;
+    background: #14141F;
+    border: 1px solid #222235;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    box-sizing: border-box;
+    resize: none;
+    transition: 0.2s;
+  }
+  .profile-textarea:focus {
+    outline: none;
+    border-color: var(--gold, #FFD700);
+    background: #1A1A2A;
+  }
+  .profile-save-btn {
+    width: 100%;
+    padding: 15px;
+    background: #25D366;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: 0.2s;
+    box-shadow: 0 4px 12px rgba(37,211,102,0.2);
+  }
+  .profile-save-btn:active {
+    transform: scale(0.98);
+  }
+
+/* Sélecteur "Tous / Sauvegardés" en haut du panneau Liste */
+.jobs-filter-seg {
+  flex: 1;
+  padding: 8px 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.jobs-filter-seg.active {
+  background: var(--gold);
+  color: #111;
+  border-color: var(--gold);
+}
+
+/* ===== ENHANCED FEATURES - NEW STYLES ===== */
+
+/* Description tronquée à 3 lignes dans le popup carte (style WhatsApp) :
+   évite qu'une longue annonce ne recouvre tout l'écran sur mobile. Le
+   bouton "...voir plus" (voir toggleDescClamp()) retire cette classe. */
+.popup-desc-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.popup-desc-clamp.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* FEATURE 1: Advanced Job Search */
+.search-panel {
+  position: fixed;
+  top: 68px;
+  left: 0;
+  right: 0;
+  z-index: 1050; /* au-dessus de .category-bar (999), qui recouvrait le champ de recherche et rendait le texte tapé invisible */
+  background: var(--dark2);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: none;
+}
+.search-panel.open {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slide-down 0.3s var(--ease);
+}
+.search-close-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 12px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.search-close-btn:active { transform: scale(.94); }
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.search-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text) !important;
+  font-size: 16px; /* jamais moins de 16px : en dessous, iOS Safari zoome automatiquement sur le champ au focus */
+  outline: none;
+  transition: border-color 0.2s;
+  caret-color: var(--text);
+  -webkit-text-fill-color: var(--text) !important; /* certains navigateurs mobiles ignorent "color" seul et rendent le texte tapé invisible sans ceci */
+  transform: translateZ(0); /* force sa propre couche de rendu : évite un bug où le texte tapé ne se rafraîchit pas visuellement dans un parent flouté (backdrop-filter) sur certains Android/Chrome mobile */
+  -webkit-transform: translateZ(0);
+}
+.search-input:-webkit-autofill,
+.search-input:-webkit-autofill:hover,
+.search-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset !important;
+  transition: background-color 9999s ease-in-out 0s; /* empêche le fond blanc forcé par l'auto-remplissage */
+}
+.search-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.12);
+}
+.filter-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-chip {
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+.filter-chip.active {
+  background: var(--gold);
+  color: #0A0A0F;
+  border-color: var(--gold);
+  font-weight: 700;
+}
+.search-results-count {
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 0 4px;
+}
+
+/* FEATURE 2: Glassmorphism & Animations */
+.job-card {
+  background: rgba(30, 30, 46, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s var(--ease);
+}
+.job-card:hover {
+  background: rgba(30, 30, 46, 0.8);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255,215,0,0.1);
+}
+
+/* FEATURE 3: Loading Skeleton */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 2s infinite;
+}
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-card {
+  height: 80px;
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+}
+
+/* FEATURE 4: Radius Filters */
+.radius-filters {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.radius-filters::-webkit-scrollbar { display: none; }
+.radius-btn {
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.radius-btn.active {
+  background: var(--gold);
+  color: #0A0A0F;
+  border-color: var(--gold);
+  font-weight: 700;
+}
+
+/* FEATURE 5: Rich Job Card Fields */
+.job-card-salary {
+  background: rgba(37,211,102,0.1);
+  color: var(--green);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+.job-card-experience {
+  background: rgba(255,215,0,0.1);
+  color: var(--gold);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: inline-block;
+}
+.job-card-urgency-urgent {
+  background: rgba(255,59,48,0.15);
+  color: #FF3B30;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+.job-card-distance-km {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255,215,0,0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* FEATURE 6: Admin Dashboard */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.admin-stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+}
+.admin-stat-value {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.admin-stat-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.admin-users-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.admin-user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  transition: background 0.2s;
+}
+.admin-user-item:active { background: var(--surface2); }
+.admin-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), #B8860B);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #0A0A0F;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.admin-user-info {
+  flex: 1;
+  min-width: 0;
+}
+.admin-user-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+.admin-user-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  display: flex;
+  gap: 8px;
+}
+.admin-user-status {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 700;
+}
+.admin-user-status.verified {
+  background: rgba(37,211,102,0.2);
+  color: var(--green);
+}
+.admin-user-status.pending {
+  background: rgba(255,215,0,0.15);
+  color: var(--gold);
+}
+
+/* FEATURE 7: WhatsApp Button */
+.whatsapp-button {
+  background: #25D366;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37,211,102,0.3);
+  transition: all 0.2s;
+  width: 100%;
+}
+.whatsapp-button:active { transform: scale(0.95); }
+
+/* FEATURE 8: Gallery Enhancement */
+.photo-gallery-enhanced {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.photo-item {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.photo-item:hover {
+  transform: scale(1.05);
+}
+
+/* FEATURE 9: Smooth Card Entrance */
+@keyframes card-pop {
+  from { opacity: 0; transform: translateY(15px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.job-card { animation: card-pop 0.4s var(--ease) forwards; }
+</style>
+
+<div id="profileSheet" class="profile-sheet">
+    <div class="profile-sheet-header">
+        <h2 data-i18n="myProProfile">Mon Profil Pro</h2>
+      <div class="profile-form-group" style="text-align: center; margin-bottom: 20px;">
+    <div id="profileImagePreview" style="width: 100px; height: 100px; border-radius: 50%; background: #222; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #FFD700;">
+        <span style="color: #666; font-size: 12px;" data-i18n="photoWord">Photo</span>
+    </div>
+    <input type="file" id="profileImageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
+    <button type="button" onclick="document.getElementById('profileImageInput').click()" style="background:none; border:1px solid #FFD700; color:#FFD700; padding:5px 15px; border-radius:20px; cursor:pointer; font-size: 12px;" data-i18n="changePhoto">
+        Changer photo
+    </button>
+</div>
+        <button onclick="closeSheet('profileSheet')" class="sheet-close-btn" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">✕</button>
+    </div>
+    <div class="sheet-content" style="padding: 24px; flex: 1; overflow-y: auto;">
+        <div class="profile-form-group">
+            <label data-i18n="profileTypeLabel">Type de profil</label>
+            <div style="display:flex;gap:8px;" id="profileTypeSelector">
+                <button type="button" id="profileTypePersonBtn" onclick="setProfileType('person')" class="ptype-btn active">👤 <span data-i18n="profileTypePerson">Personne</span></button>
+                <button type="button" id="profileTypeCompanyBtn" onclick="setProfileType('company')" class="ptype-btn">🏢 <span data-i18n="profileTypeCompany">Entreprise / Organisation</span></button>
+            </div>
+            <div style="font-size:11px;color:var(--text-dim,#999);margin-top:6px;" id="profileTypeHint"></div>
+        </div>
+        <div class="profile-form-group">
+            <label data-i18n="fieldNameCompany">Nom / Société</label>
+            <input type="text" id="profileName" class="profile-input" data-i18n-placeholder="phName" placeholder="Ex: Jean Dupont ou Dupont Entreprise" required maxlength="100">
+        </div>
+        <div class="profile-form-group">
+            <label data-i18n="fieldCompany">Société</label>
+            <input type="text" id="profileCompany" class="profile-input" data-i18n-placeholder="companyNamePlaceholder" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
+        </div>
+        <div class="profile-form-group">
+            <label data-i18n="fieldJobTitle">Ton métier / Spécialité</label>
+            <input type="text" id="jobTitle" class="profile-input" data-i18n-placeholder="phJobTitle" placeholder="Ex: Électricien, Maçon, Designer..." maxlength="100">
+        </div>
+        <div class="profile-form-group">
+            <label data-i18n="qualLabel">Qualification (optionnel)</label>
+            <select id="profileQualification" class="profile-input" style="width:100%;box-sizing:border-box;appearance:auto;-webkit-appearance:auto;">
+                <option value="" data-i18n="qualNone">—</option>
+                <option value="auto" data-i18n="qualAuto">Auto-formation / Expérience</option>
+                <option value="cap" data-i18n="qualCap">CAP / Formation pratique</option>
+                <option value="bts" data-i18n="qualBts">BTS / Diplômé technique</option>
+                <option value="ing" data-i18n="qualIng">Ingénieur / Expert certifié</option>
+            </select>
+        </div>
+        <div id="profileQualTag" style="display:none;margin:0 0 10px;font-size:12px;font-weight:700;color:var(--blue,#2D6CDF);"></div>
+        <div class="profile-form-group">
+            <label data-i18n="fieldSkills">Compétences (séparées par des virgules)</label>
+            <textarea id="skills" class="profile-textarea" data-i18n-placeholder="phSkills" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..." maxlength="1000"></textarea>
+            <button type="button" class="btn-ai-improve" id="optimizeProfileBtn" onclick="optimizeArtisanProfile()" data-i18n="btnOptimizeProfile" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">✨ Optimiser avec l'IA</button>
+        </div>
+        <div id="profileBadgeRating" style="margin: 4px 0 16px 0;"></div>
+        <div id="publicBadgesBox" style="margin: 0 0 14px 0; display:none;"></div>
+        <div id="publicMissionsBox" style="margin: 0 0 14px 0; display:none;"></div>
+        <div id="verificationStatusBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
+            <!-- Rempli dynamiquement par renderVerificationStatus() -->
+        </div>
+        <div id="profileReviewsBox"></div>
+        <div id="achievementsBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;"></div>
+
+        <!-- ====== PORTFOLIO PHOTOS (réalisations de l'artisan) ====== -->
+        <div id="portfolioBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;">
+          <div style="font-weight:700; font-size:14px; color:var(--gold,#FFD700); margin-bottom:4px;">📸 Mes réalisations</div>
+          <div style="font-size:12px; color:var(--text-dim,#999); margin-bottom:10px;">Montre tes plus beaux travaux (jusqu'à 6 photos). Les clients font plus confiance à un artisan qui montre son travail.</div>
+          <div id="portfolioGallery" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;"></div>
+          <input type="file" id="portfolioInput" accept="image/*" style="display:none;" onchange="uploadPortfolioPhoto(event)">
+          <button type="button" id="portfolioAddBtn" onclick="document.getElementById('portfolioInput').click()"
+            style="width:100%; padding:10px; border:1px dashed var(--gold,#FFD700); border-radius:10px; background:none; color:var(--gold,#FFD700); font-weight:700; font-size:13px; cursor:pointer;">
+            ➕ Ajouter une photo
+          </button>
+        </div>
+        <!-- ====== FIN PORTFOLIO ====== -->
+
+        <!-- ====== DISPONIBILITÉ EN TEMPS RÉEL ====== -->
+        <div id="availabilityBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;">
+          <div style="font-weight:700; font-size:14px; color:var(--gold,#FFD700); margin-bottom:4px;">🕐 Ma disponibilité</div>
+          <div style="font-size:12px; color:var(--text-dim,#999); margin-bottom:10px;">Dis aux clients si tu es libre. Ça les encourage à te contacter tout de suite.</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" id="availBtnNow" onclick="setAvailability('now')"
+              style="flex:1; min-width:90px; padding:10px; border:1px solid #2EA067; border-radius:10px; background:none; color:#2EA067; font-weight:700; font-size:12.5px; cursor:pointer;">🟢 Disponible</button>
+            <button type="button" id="availBtnWeek" onclick="setAvailability('week')"
+              style="flex:1; min-width:90px; padding:10px; border:1px solid #E88A2A; border-radius:10px; background:none; color:#E88A2A; font-weight:700; font-size:12.5px; cursor:pointer;">🟠 Cette semaine</button>
+            <button type="button" id="availBtnBusy" onclick="setAvailability('busy')"
+              style="flex:1; min-width:90px; padding:10px; border:1px solid #C03939; border-radius:10px; background:none; color:#C03939; font-weight:700; font-size:12.5px; cursor:pointer;">🔴 Occupé</button>
+          </div>
+        </div>
+        <!-- ====== FIN DISPONIBILITÉ ====== -->
+
+        <!-- ====== STATISTIQUES (réservé PRO) ====== -->
+        <div id="proStatsBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;">
+          <!-- Rempli dynamiquement par renderProStats() -->
+        </div>
+        <!-- ====== FIN STATISTIQUES ====== -->
+        <div id="referralBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
+            <!-- Rempli dynamiquement par renderReferralBox() -->
+        </div>
+
+        <!-- ====== BLOC PAIEMENT : DEVENIR PRO (NotchPay) ====== -->
+        <div style="margin:16px 0; padding:16px; border:1px solid rgba(255,215,0,0.25); border-radius:16px; background:var(--dark2,#14213a);">
+          <div style="font-weight:800; font-size:15px; color:var(--gold,#FFD700); margin-bottom:6px;" data-i18n="payProTitle">
+            ⭐ Passer au compte PRO
+          </div>
+          <div style="font-size:13px; color:var(--text-dim,#aaa); line-height:1.4; margin-bottom:12px;" data-i18n="payProDesc">
+            Sois mieux classé, annonces illimitées, badge doré et statistiques.
+          </div>
+          <button onclick="startPayment('pro_month')" id="payProBtn" data-i18n="payProButton"
+            style="width:100%; padding:12px; margin-bottom:8px; border:none; border-radius:12px; background:linear-gradient(135deg,#FFD700,#E6B800); color:#0A0A0F; font-weight:700; font-size:14px; cursor:pointer;">
+            Devenir Pro — 1 500 FCFA / mois
+          </button>
+          <button onclick="startPayment('verified')" id="payVerifiedBtn" data-i18n="payVerifiedButton"
+            style="width:100%; padding:12px; margin-bottom:8px; border:1px solid #2EA067; border-radius:12px; background:none; color:#2EA067; font-weight:700; font-size:14px; cursor:pointer;">
+            ✅ Badge Identité vérifiée — 500 FCFA
+          </button>
+          <button onclick="startPayment('boost_pack')" data-i18n="payBoostButton"
+            style="width:100%; padding:12px; border:1px solid #2D6CDF; border-radius:12px; background:none; color:#2D6CDF; font-weight:700; font-size:14px; cursor:pointer;">
+            🚀 Pack 3 boosts — 500 FCFA
+          </button>
+        </div>
+        <!-- ====== FIN BLOC PAIEMENT ====== -->
+
+        <div style="margin-top: 10px;">
+            <button onclick="saveProfile()" id="saveProfileBtn" class="profile-save-btn" data-i18n="saveChanges">Enregistrer les modifications</button>
+        </div>
+    </div>
+</div>
+  
+<script>
+function previewImage(event) {
+    const reader = new FileReader();
+    reader.onload = function(){
+        const output = document.getElementById('profileImagePreview');
+        output.innerHTML = `<img src="${reader.result}" alt="${t('altDocumentPreview')}" style="width:100%; height:100%; object-fit:cover;">`;
+    };
+    reader.readAsDataURL(event.target.files[0]);
+}
+</script>
+
+<!-- ====== MESSAGERIE « CHAT SÉCURISÉ » (widget style WhatsApp, branché sur Firebase dans app.js) ====== -->
+<div id="chatWidgetOverlay" class="msg-overlay" data-theme="light" style="display:none;">
+<div class="wa" id="wa">
+  <!-- SIDEBAR -->
+  <div class="wa-side" id="waSide">
+    <div class="wa-side-head">
+      <img class="avatar" src="" id="waMyAv">
+      <div class="wa-side-acts">
+        <button class="wa-icon-btn" title="Épinglés" data-i18n-title="chatPinnedTitle" onclick="W.toggleStarred()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+        <button class="wa-icon-btn" title="Fermer" data-i18n-title="chatCloseTitle" onclick="closeMessagesInbox()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+    </div>
+    <div class="wa-search"><div class="wa-search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" placeholder="Rechercher…" data-i18n-placeholder="chatSearchPh" id="waSearchIn" oninput="W.filterChats(this.value)"></div></div>
+    <div class="wa-tabs" id="waTabs">
+      <button class="wa-tab active" data-tab="all" data-i18n="chatTabAll" onclick="W.setTab('all')">Toutes</button>
+      <button class="wa-tab" data-tab="unread" data-i18n="chatTabUnread" onclick="W.setTab('unread')">Non lues</button>
+      <button class="wa-tab" data-tab="archived" data-i18n="chatTabArchived" onclick="W.setTab('archived')">Archivées</button>
+      
+      
+    </div>
+    <div class="wa-chats" id="waChats"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="wa-main" id="waMain">
+    <div class="wa-wall"></div>
+
+    <!-- Empty state -->
+    <div class="wa-empty" id="waEmpty">
+      <svg class="wa-empty-icon" viewBox="0 0 303 172" fill="none"><path d="M229.6 14.4H73.4C55 14.4 40 29.4 40 47.8V118c0 18.4 15 33.4 33.4 33.4H99l52.5 26.3v-26.3h78c18.4 0 33.4-15 33.4-33.4V47.8c.1-18.4-14.9-33.4-33.3-33.4z" fill="currentColor" opacity=".08"/><path d="M151.5 54c-23.5 0-42.5 15.2-42.5 34s19 34 42.5 34c4.3 0 8.4-.5 12.3-1.4l16.7 8.4v-13.6c9.9-6.6 16-17 16-27.4 0-18.8-19-34-42.5-34h-2.5z" fill="currentColor" opacity=".12"/></svg>
+      <h2 data-i18n="chatEmptyTitle">Chat sécurisé</h2>
+      <p data-i18n="chatEmptyBody">Tes conversations apparaissent ici. Ouvre une annonce puis « Chat sécurisé » pour démarrer — la discussion continue d'une annonce à l'autre.</p>
+      <div class="keys"><span class="key" data-i18n="keyEnter">Entrée = Envoyer</span><span class="key" data-i18n="keyShiftEnter">Maj+Entrée = Saut de ligne</span><span class="key" data-i18n="keyEsc">Échap = Fermer</span><span class="key" data-i18n="keyCtrlF">Ctrl+F = Rechercher</span></div>
+    </div>
+
+    <!-- Chat header -->
+    <div class="wa-chead" id="waCHead" style="display:none">
+      <button class="wa-back" onclick="W.goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+      <img class="wa-chead-av" id="waHeadAv" src="">
+      <div class="wa-chead-info" onclick="W.toggleProfile()">
+        <div class="wa-chead-name" id="waHeadName"></div>
+        <div class="wa-chead-status" id="waHeadStatus"></div>
+      </div>
+      <div class="wa-chead-acts">
+        
+        
+        <button class="wa-icon-btn" title="Rechercher" data-i18n-title="chatSearchTitle" onclick="W.toggleSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
+        
+      </div>
+    </div>
+
+    <!-- Barre de multi-sélection (style WhatsApp) : visible quand des messages sont cochés -->
+    <div class="wa-selbar" id="waSelBar" style="display:none">
+      <button class="wa-icon-btn" title="Fermer" data-i18n-title="chatCloseTitle" onclick="W.selCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      <span class="wa-selcount" id="waSelCount"></span>
+      <button class="wa-icon-btn" title="Transférer" data-i18n-title="chatFwdTitle" onclick="W.fwdSelected()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg></button>
+      <button class="wa-icon-btn" title="Supprimer" data-i18n-title="ctxDelete" onclick="W.delSelected()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+    </div>
+    <div class="wa-jobbar" id="waJobBar" style="display:none" onclick="openJobFromChat()"></div>
+    <!-- In-chat search bar -->
+    <div class="wa-search-bar" id="waMsgSearch">
+      <svg style="width:18px;height:18px;color:var(--text-secondary)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Rechercher dans la conversation…" data-i18n-placeholder="chatMsgSearchPh" id="waMsgSearchIn" oninput="W.searchMessages(this.value)">
+      <div class="wa-search-nav"><span id="waSearchCount">0/0</span>
+        <button class="wa-icon-btn" onclick="W.searchNav(-1)"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg></button>
+        <button class="wa-icon-btn" onclick="W.searchNav(1)"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+      <button class="wa-icon-btn" onclick="W.toggleSearch()"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+
+    <!-- Messages -->
+    <div class="wa-msgs" id="waMsgs" style="display:none"></div>
+
+    <!-- Scroll to bottom -->
+    <button class="wa-scroll-btn" id="waScrollBtn" onclick="W.scrollToBottom(true)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      <span class="badge" id="waScrollBadge" style="display:none"></span>
+    </button>
+
+    <!-- Reply preview -->
+    <div class="wa-reply-prev" id="waReplyPrev">
+      <div><div class="wa-reply-prev-name" id="waReplyName"></div><div class="wa-reply-prev-text" id="waReplyText"></div></div>
+      <button class="wa-reply-prev-close" onclick="W.cancelReply()">&times;</button>
+    </div>
+
+    <!-- Quick replies (réponses rapides contextuelles) -->
+    <div class="wa-quick" id="waQuickReplies">
+      <div class="wa-quick-row" id="waQuickRow"></div>
+    </div>
+
+    <!-- Input -->
+    <div class="wa-input-area" id="waInputArea" style="display:none">
+      <button class="wa-icon-btn" title="Emoji" data-i18n-title="chatEmojiTitle" onclick="W.toggleEmoji()" id="waEmojiBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
+      <button class="wa-icon-btn" title="Joindre" data-i18n-title="chatAttachTitle" onclick="W.toggleAttach()" id="waAttachBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></button>
+      <div class="wa-txt-wrap" id="waTxtWrap"><textarea class="wa-txt" id="waTxt" placeholder="Écris ton message…" data-i18n-placeholder="chatMsgPh" rows="1" oninput="W.autoResize(this)" onkeydown="W.onKey(event)"></textarea></div>
+      <button class="wa-icon-btn wa-send" title="Envoyer" data-i18n-title="chatSendTitle" onclick="W.onSendBtn()" id="waSendBtn"><svg viewBox="0 0 24 24" fill="currentColor" id="waSendIco"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg><svg viewBox="0 0 24 24" fill="currentColor" id="waMicIco" style="display:none"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.41 2.72 6.23 6 6.72V22h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg></button>
+      <!-- Barre d'enregistrement vocale (comme WhatsApp) : annuler / minuteur / envoyer -->
+      <div class="wa-rec" id="waRec">
+        <button class="wa-icon-btn" title="Annuler" data-i18n-title="cancelBtn" onclick="W.cancelRec()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        <span class="wa-rec-dot"></span>
+        <span class="wa-rec-time" id="waRecTime">0:00</span>
+        <button class="wa-icon-btn wa-send" title="Envoyer" data-i18n-title="chatSendTitle" onclick="W.stopRec()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      </div>
+    </div>
+
+    <!-- Emoji picker -->
+    <div class="wa-emoji" id="waEmoji"></div>
+    <!-- Attach popup -->
+    <div class="wa-attach" id="waAttach">
+      <button class="wa-att-opt" onclick="W.attach('photos')"><span class="wa-att-ico photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span data-i18n="chatPhotosAtt">Photos</span></button>
+      
+      
+      
+      
+    </div>
+
+    <!-- Drag & drop -->
+    <div class="wa-drop" id="waDrop"><svg style="width:48px;height:48px;color:var(--pri)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="wa-drop-text" data-i18n="chatDropText">Dépose une image ici</span><span class="wa-drop-sub" data-i18n="chatDropSub">JPG, PNG, WEBP, GIF — max 8 Mo</span></div>
+
+    <!-- Profile panel -->
+    <div class="wa-profile" id="waProfile">
+      <div class="wa-prof-head"><button class="wa-icon-btn" onclick="W.toggleProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button><h3 data-i18n="chatContactInfo">Infos du contact</h3></div>
+      <div class="wa-prof-body">
+        <div class="wa-prof-avatar"><img id="waProfAv" src=""><div class="name" id="waProfName"></div><div class="status" id="waProfStatus"></div></div>
+        <div class="wa-prof-actions">
+          
+          
+          <button class="wa-prof-action" onclick="W.toggleStarred()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span data-i18n="chatStarAction">Épingler</span></button>
+          
+        </div>
+        <div class="wa-prof-section"><h4 data-i18n="chatAboutLabel">À propos</h4><p id="waProfAbout" data-i18n="profileAbout">Salut 👋 Je suis sur JobMarket.</p></div>
+        <div class="wa-prof-section"><h4 data-i18n="chatMediaSection">Médias, liens et documents</h4><div class="wa-prof-media" id="waProfMedia"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+<!-- Lightbox -->
+<div class="wa-lightbox" id="waLB" onclick="W.closeLB()"><button class="wa-lightbox-close">&times;</button><img id="waLBImg" src=""></div>
+<!-- Context menu -->
+<div class="wa-ctx" id="waCtx"></div>
+<!-- Forward modal -->
+<div class="wa-modal" id="waFwdModal"><div class="wa-modal-box"><div class="wa-modal-head"><button class="wa-icon-btn" onclick="W.closeFwd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button><h3 data-i18n="chatFwdTitle">Transférer le message à…</h3></div><div class="wa-modal-list" id="waFwdList"></div></div></div>
+<!-- Poll modal -->
+<div class="wa-modal" id="waPollModal"><div class="wa-modal-box"><div class="wa-poll-modal"><h3 data-i18n="chatPollTitle">Créer un sondage</h3><input id="waPollQ" placeholder="Pose une question…" data-i18n-placeholder="chatPollQPh"><div id="waPollOpts"><input placeholder="Option 1" class="poll-opt"><input placeholder="Option 2" class="poll-opt"></div><button class="add-opt" data-i18n="chatPollAddOpt" onclick="W.addPollOpt()">+ Ajouter une option</button><button class="send-poll" data-i18n="chatPollSend" onclick="W.sendPoll()">Envoyer le sondage</button></div></div></div>
+<!-- Toast -->
+<div class="wa-toast" id="waToast"><img id="waToastAv" src=""><div class="wa-toast-body"><div class="wa-toast-name" id="waToastName"></div><div class="wa-toast-text" id="waToastText"></div></div></div>
+<!-- Hidden file input -->
+<input type="file" id="waFileIn" style="display:none" onchange="W.onFile(this)">
+
+
+
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a316c12ece7cbd85',t:'MTc4Nzc4ODM5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3642f7bd935f047',t:'MTc4ODYwMDMxNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+</html>
