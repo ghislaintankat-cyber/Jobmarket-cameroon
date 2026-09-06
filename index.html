@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905i">
+<html lang="fr" data-app-build="20260905l">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -384,6 +384,8 @@ body{
 /* Date divider */
 .wa-date{text-align:center;margin:16px 0 12px}
 .wa-date span{background:var(--bg-bubble-in);color:var(--text-secondary);font-size:12px;padding:5px 12px;border-radius:var(--radius);box-shadow:var(--shadow);display:inline-block}
+.wa-load-older{display:block;margin:8px auto 6px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--text-secondary);background:var(--bg-bubble-in);border:1px solid var(--border);border-radius:16px;cursor:pointer;box-shadow:var(--shadow)}
+.wa-load-older:active{transform:scale(.97)}
 
 /* System message */
 .wa-sys{text-align:center;margin:12px 0}
@@ -1694,6 +1696,7 @@ body{
   <div style="display:flex;gap:8px;padding:0 16px 12px 16px;">
     <button type="button" id="jobsFilterAllBtn" class="jobs-filter-seg active" onclick="showAllJobsInSheet()" data-i18n="filterAllJobs">Tous</button>
     <button type="button" id="jobsFilterSavedBtn" class="jobs-filter-seg" onclick="showSavedJobsInSheet()" data-i18n="filterSavedJobs">Sauvegardés</button>
+    <button type="button" id="jobsFilterMineBtn" class="jobs-filter-seg" onclick="showMyJobsInSheet()" data-i18n="filterMyJobs">Mes annonces</button>
   </div>
   <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:0 16px 10px 16px;">
     <button type="button" id="availFilterBtn" class="avail-filter-btn" data-i18n="availNowBadge" data-i18n-title="availFilterTip" data-i18n-aria-label="availFilterTip" aria-label="N'afficher que les artisans disponibles maintenant" onclick="toggleAvailFilter()">🟢 Dispo</button>
@@ -1706,7 +1709,6 @@ body{
       <option value="pro" data-i18n="sortProFirst">⭐ Pro / vérifié d'abord</option>
     </select>
   </div>
-  <div id="artisanOfMonthBox" style="margin:0 16px 12px 16px;"></div>
   <div class="sheet-body">
     <div id="listContent">
       <div class="skeleton skeleton-card"></div>
@@ -1714,6 +1716,8 @@ body{
       <div class="skeleton skeleton-card"></div>
       <div class="skeleton skeleton-card"></div>
     </div>
+    <!-- Les « du mois » passent APRÈS les jobs : la liste est l'essentiel, la vitrine en dessous -->
+    <div id="artisanOfMonthBox" style="margin:12px 16px 8px 16px;"></div>
   </div>
 </div>
 
@@ -1968,8 +1972,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905i" defer></script>
-<script src="app.js?v=20260905i" defer></script>
+<script src="chat-widget.js?v=20260905l" defer></script>
+<script src="app.js?v=20260905l" defer></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2559,6 +2563,28 @@ body{
 .wa-ai-chip:hover{background:linear-gradient(135deg,rgba(122,78,194,.30),rgba(255,215,0,.20))}
 .wa-ai-chip:active{transform:scale(.97)}
 .wa-ai-chip.loading{opacity:.7;cursor:default}
+
+/* 20260905j : sous-ligne statut du correspondant (métier · vérifié · dispo) */
+.wa-chead-sub{font-size:11px;color:var(--text-secondary,#8696a0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;line-height:1.3}
+
+/* ===== 20260905k : images du chat -50% de largeur (moins d'espace pris) ===== */
+.wa-img{max-width:110px}
+.wa-imgs{max-width:226px}
+/* ===== 20260905l : images du chat encore -50% (le chat respire) ===== */
+.wa-img{max-width:55px}
+.wa-imgs{max-width:118px}
+/* ===== 20260905k : pilule « Ma réponse » + menu 3 modes IA ===== */
+.wa-ai-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:16px;border:1px solid rgba(122,78,194,.55);background:linear-gradient(135deg,rgba(122,78,194,.14),rgba(255,215,0,.08));color:var(--text-primary,#e9edef);font-size:12.5px;font-weight:700;cursor:pointer;transition:background .15s}
+.wa-ai-pill:hover{background:linear-gradient(135deg,rgba(122,78,194,.26),rgba(255,215,0,.14))}
+.wa-ai-menu{position:fixed;z-index:30000;min-width:260px;background:var(--bg-menu,#1f2c34);border:1px solid var(--border-strong,#3b4a54);border-radius:14px;box-shadow:0 16px 44px rgba(0,0,0,.55);overflow:hidden;padding:6px 0}
+.wa-ai-menu button{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left}
+.wa-ai-menu button:hover{background:rgba(122,78,194,.16)}
+.wa-ai-menu .wa-ai-menu-ico{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+.wa-ai-menu .wa-ai-menu-title{font-size:14px;font-weight:700;color:var(--text-primary,#e9edef);display:block}
+.wa-ai-menu .wa-ai-menu-sub{font-size:11.5px;color:var(--text-secondary,#8696a0);display:block;margin-top:1px}
+.wa-ai-menu .wa-ai-menu-sep{height:1px;background:var(--border,#2a3942);margin:4px 10px}
+/* tag « traduit » sous une bulle traduite automatiquement */
+.wa-translated{font-size:10px;color:var(--text-secondary,#8696a0);opacity:.85;margin-top:2px}
 </style>
 
 <div id="profileSheet" class="profile-sheet">
@@ -2748,6 +2774,7 @@ function previewImage(event) {
       <img class="wa-chead-av" id="waHeadAv" src="">
       <div class="wa-chead-info" onclick="W.toggleProfile()">
         <div class="wa-chead-name" id="waHeadName"></div>
+        <div class="wa-chead-sub" id="waHeadSub" style="display:none"></div>
         <div class="wa-chead-status" id="waHeadStatus"></div>
       </div>
       <div class="wa-chead-acts">
@@ -2794,8 +2821,10 @@ function previewImage(event) {
 
     <!-- Suggestions de réponse IA (20260905g) : 1-2 réponses prêtes à envoyer, dans la voix de l'artisan -->
     <div class="wa-quick" id="waAiSuggest" style="background:linear-gradient(135deg,rgba(122,78,194,.06),rgba(255,215,0,.05))">
-      <div class="wa-quick-row" id="waAiRow"></div>
+      <div class="wa-quick-row" id="waAiRow" style="justify-content:center"></div>
     </div>
+    <!-- Menu 3 modes IA (pilule « Ma réponse ») : positionné en fixed au clic -->
+    <div id="waAiMenu" class="wa-ai-menu" style="display:none"></div>
 
     <!-- Quick replies (réponses rapides contextuelles) -->
     <div class="wa-quick" id="waQuickReplies">
@@ -2867,6 +2896,6 @@ function previewImage(event) {
 
 
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a316c12ece7cbd85',t:'MTc4Nzc4ODM5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a369cfe9ed23d2e1',t:'MTc4ODY1OTMxNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a316c12ece7cbd85',t:'MTc4Nzc4ODM5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
