@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905b">
+<html lang="fr" data-app-build="20260905c">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1976,8 +1976,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905b" defer></script>
-<script src="app.js?v=20260905b" defer></script>
+<script src="chat-widget.js?v=20260905c" defer></script>
+<script src="app.js?v=20260905c" defer></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2625,6 +2625,12 @@ body{
         <div class="profile-form-group">
             <label id="profileNameLabel" data-i18n="fieldNameCompany">Nom / Société</label>
             <input type="text" id="profileName" class="profile-input" data-i18n-placeholder="phName" placeholder="Ex: Jean Dupont ou Dupont Entreprise" required maxlength="100">
+        </div>
+        <!-- (20260905c) Téléphone de la société : champ de la CARTE ENTREPRISE
+             (masqué en mode personne) → companyProfile.phone. -->
+        <div class="profile-form-group" id="companyPhoneGroup" style="display:none;">
+            <label data-i18n="companyCardPhone">Téléphone de la société</label>
+            <input type="tel" id="companyPhone" class="profile-input" placeholder="Ex: 699 00 00 00" maxlength="20">
         </div>
         <div class="profile-form-group" id="profileCompanyGroup">
             <label data-i18n="fieldCompany">Société</label>
