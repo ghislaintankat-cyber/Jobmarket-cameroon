@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905a">
+<html lang="fr" data-app-build="20260905b">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1976,8 +1976,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905a" defer></script>
-<script src="app.js?v=20260905a" defer></script>
+<script src="chat-widget.js?v=20260905b" defer></script>
+<script src="app.js?v=20260905b" defer></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2619,19 +2619,22 @@ body{
             </div>
             <div style="font-size:11px;color:var(--text-dim,#999);margin-top:6px;" id="profileTypeHint"></div>
         </div>
+        <!-- (20260905b) CARTE ENTREPRISE (companyProfile) : sa fiche à part,
+             affichée quelle que soit la carte active. -->
+        <div id="companyBlockBox" style="display:none;margin:0 0 14px 0;padding:14px;background:linear-gradient(135deg,rgba(45,108,223,0.10),rgba(37,211,102,0.05));border:1px solid rgba(45,108,223,0.35);border-radius:12px;"></div>
         <div class="profile-form-group">
-            <label data-i18n="fieldNameCompany">Nom / Société</label>
+            <label id="profileNameLabel" data-i18n="fieldNameCompany">Nom / Société</label>
             <input type="text" id="profileName" class="profile-input" data-i18n-placeholder="phName" placeholder="Ex: Jean Dupont ou Dupont Entreprise" required maxlength="100">
         </div>
-        <div class="profile-form-group">
+        <div class="profile-form-group" id="profileCompanyGroup">
             <label data-i18n="fieldCompany">Société</label>
             <input type="text" id="profileCompany" class="profile-input" data-i18n-placeholder="companyNamePlaceholder" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
         </div>
         <div class="profile-form-group">
-            <label data-i18n="fieldJobTitle">Ton métier / Spécialité</label>
+            <label id="jobTitleLabel" data-i18n="fieldJobTitle">Ton métier / Spécialité</label>
             <input type="text" id="jobTitle" class="profile-input" data-i18n-placeholder="phJobTitle" placeholder="Ex: Électricien, Maçon, Designer..." maxlength="100">
         </div>
-        <div class="profile-form-group">
+        <div class="profile-form-group" id="profileQualificationGroup">
             <label data-i18n="qualLabel">Qualification (optionnel)</label>
             <select id="profileQualification" class="profile-input" style="width:100%;box-sizing:border-box;appearance:auto;-webkit-appearance:auto;">
                 <option value="" data-i18n="qualNone">—</option>
@@ -2643,7 +2646,7 @@ body{
         </div>
         <div id="profileQualTag" style="display:none;margin:0 0 10px;font-size:12px;font-weight:700;color:var(--blue,#2D6CDF);"></div>
         <div class="profile-form-group">
-            <label data-i18n="fieldSkills">Compétences (séparées par des virgules)</label>
+            <label id="skillsLabel" data-i18n="fieldSkills">Compétences (séparées par des virgules)</label>
             <textarea id="skills" class="profile-textarea" data-i18n-placeholder="phSkills" placeholder="Ex: Installation de compteurs, Dépannage d'urgence, Câblage..." maxlength="1000"></textarea>
             <button type="button" class="btn-ai-improve" id="optimizeProfileBtn" onclick="optimizeArtisanProfile()" data-i18n="btnOptimizeProfile" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">✨ Optimiser avec l'IA</button>
         </div>
