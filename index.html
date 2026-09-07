@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905z">
+<html lang="fr" data-app-build="20260905a">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1700,6 +1700,7 @@ body{
   </div>
   <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:0 16px 10px 16px;">
     <button type="button" id="availFilterBtn" class="avail-filter-btn" data-i18n="availNowBadge" data-i18n-title="availFilterTip" data-i18n-aria-label="availFilterTip" aria-label="N'afficher que les artisans disponibles maintenant" onclick="toggleAvailFilter()">🟢 Dispo</button>
+    <button type="button" id="companyFilterBtn" class="avail-filter-btn" data-i18n="companyFilterLabel" data-i18n-title="companyFilterTip" data-i18n-aria-label="companyFilterTip" aria-label="N'afficher que les annonces d'entreprises" onclick="toggleCompanyFilter()">🏢 Entreprises</button>
     <span style="font-size:11px;color:var(--text-dim);" data-i18n="sortLabel">Trier :</span>
     <select id="jobSortSel" onchange="setJobSort(this.value)" data-i18n-aria-label="sortLabel" aria-label="Trier :" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:12px;cursor:pointer;">
       <option value="dist" data-i18n="sortNearest">Le plus proche</option>
@@ -1975,8 +1976,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905z" defer></script>
-<script src="app.js?v=20260905z" defer></script>
+<script src="chat-widget.js?v=20260905a" defer></script>
+<script src="app.js?v=20260905a" defer></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
