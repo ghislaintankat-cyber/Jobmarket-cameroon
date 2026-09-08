@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905c">
+<html lang="fr" data-app-build="20260905h">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1722,6 +1722,36 @@ body{
   </div>
 </div>
 
+<!-- ===== (20260905g) RÉPERTOIRE ENTREPRISES ===== -->
+<!-- La vitrine des profils entreprise : logo, métier, vérification, avis,
+     téléphone. Données = profilesCache (temps réel, zéro réseau en plus).
+     Une ligne = un profil avec profileType « company » ou une carte
+     entreprise renseignée ; tap → profil public de l'entreprise. -->
+<div class="sheet jobs-sheet" id="companiesSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">
+      <span data-i18n="companiesDirTitle">Entreprises</span>
+      <span class="badge badge-gold" id="companiesCountBadge">0</span>
+    </div>
+    <button class="icon-btn" onclick="closeSheet('companiesSheet')" data-i18n-title="tipClose" title="Fermer" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div style="display:flex;gap:8px;padding:0 16px 10px 16px;align-items:center;">
+    <input type="text" id="companiesSearchInput" data-i18n-placeholder="companiesDirSearchPh" placeholder="Chercher une entreprise…" oninput="setCompaniesDirSearch(this.value)" style="flex:1;min-width:0;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13px;">
+    <select id="companiesSortSel" onchange="setCompaniesDirSort(this.value)" data-i18n-aria-label="companiesDirSortRating" aria-label="Trier" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer;">
+      <option value="rating" data-i18n="companiesDirSortRating">Les mieux notées</option>
+      <option value="near" data-i18n="companiesDirSortNear">Près de moi</option>
+      <option value="name" data-i18n="companiesDirSortName">Nom A→Z</option>
+    </select>
+  </div>
+  <div class="sheet-body">
+    <div id="companiesDirList" style="display:flex;flex-direction:column;gap:8px;padding:0 16px 16px 16px;"></div>
+  </div>
+</div>
+<!-- ===== FIN RÉPERTOIRE ENTREPRISES ===== -->
+
 <!-- ===== ACCOUNT PAGE ===== -->
 <div class="overlay-page" id="accountPage">
   <div class="overlay-header">
@@ -1771,6 +1801,9 @@ body{
     <!-- User dashboard (shown when logged in) -->
    <div id="userDashboard" class="hidden">
   <div class="account-card">
+    <!-- (20260905e) Nudge de complétude : incite à compléter le profil pour
+         être vu plus souvent (masqué à 100 %). Rempli par updateAccountUI. -->
+    <div id="profileCompletenessNudge" style="display:none;margin-bottom:10px;padding:10px 12px;background:linear-gradient(135deg,rgba(37,211,102,0.10),rgba(45,108,223,0.06));border:1px solid rgba(37,211,102,0.35);border-radius:12px;font-size:12px;line-height:1.4;"></div>
     
     <a class="account-item" href="#" onclick="openProfileSheet()" style="background:linear-gradient(135deg,rgba(255,215,0,0.14),rgba(255,215,0,0.04));border:1px solid rgba(255,215,0,0.3);border-radius:12px;margin-bottom:10px;">
       <div class="account-item-icon" style="background:var(--gold,#FFD700);">
@@ -1960,6 +1993,12 @@ body{
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
     <span data-i18n="navList">Liste</span>
   </button>
+  <!-- (20260905g) Répertoire ENTREPRISES : la vitrine qui donne un vrai
+       destinataire aux profils entreprise (carte société, logo, vérif). -->
+  <button class="nav-item" id="navCompanies" onclick="activateNav('companies')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="1"/><line x1="9" y1="8" x2="9.01" y2="8"/><line x1="15" y1="8" x2="15.01" y2="8"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="15" y1="12" x2="15.01" y2="12"/><path d="M9 21v-4h6v4"/></svg>
+    <span data-i18n="navCompanies">Entreprises</span>
+  </button>
   <div class="nav-center-wrap">
     <button class="nav-center" onclick="toggleJobForm()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1976,8 +2015,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905c" defer></script>
-<script src="app.js?v=20260905c" defer></script>
+<script src="chat-widget.js?v=20260905h" defer></script>
+<script src="app.js?v=20260905h" defer></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2632,6 +2671,13 @@ body{
             <label data-i18n="companyCardPhone">Téléphone de la société</label>
             <input type="tel" id="companyPhone" class="profile-input" placeholder="Ex: 699 00 00 00" maxlength="20">
         </div>
+        <!-- (20260905h) Adresse / quartier de la société (masqué en mode
+             personne) → companyProfile.address ; la position GPS est capturée
+             automatiquement à l'enregistrement si la géoloc est dispo. -->
+        <div class="profile-form-group" id="companyAddressGroup" style="display:none;">
+            <label data-i18n="companyAddressLabel">Ville / quartier</label>
+            <input type="text" id="companyAddress" class="profile-input" data-i18n-placeholder="companyAddressPlaceholder" placeholder="Ex: Bastos, Yaoundé" maxlength="120">
+        </div>
         <div class="profile-form-group" id="profileCompanyGroup">
             <label data-i18n="fieldCompany">Société</label>
             <input type="text" id="profileCompany" class="profile-input" data-i18n-placeholder="companyNamePlaceholder" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
@@ -2718,6 +2764,9 @@ body{
           <div style="font-size:13px; color:var(--text-dim,#aaa); line-height:1.4; margin-bottom:12px;" data-i18n="payProDesc">
             Sois mieux classé, annonces illimitées, badge doré et statistiques.
           </div>
+          <!-- (20260905f) Avantages PRO CONCRETS (1 ligne = 1 vraie feature) +
+               preuve sociale + alerte d'expiration. Rempli par renderProBenefits. -->
+          <div id="proBenefitsBox" style="display:none;margin-bottom:12px;padding:10px 12px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:10px;"></div>
           <button onclick="startPayment('pro_month')" id="payProBtn" data-i18n="payProButton"
             style="width:100%; padding:12px; margin-bottom:8px; border:none; border-radius:12px; background:linear-gradient(135deg,#FFD700,#E6B800); color:#0A0A0F; font-weight:700; font-size:14px; cursor:pointer;">
             Devenir Pro — 1 500 FCFA / mois
