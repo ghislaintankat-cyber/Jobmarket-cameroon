@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905h">
+<html lang="fr" data-app-build="20260905m">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -110,6 +110,7 @@
 /* ===== DESIGN TOKENS ===== */
 :root {
   --gold: #FFD700;
+  --guarantee-title: #7FB3F5; /* bleu clair lisible sur fond sombre */
   --gold-dim: #C9A800;
   --gold-glow: rgba(255,215,0,0.18);
   --blue: #007AFF;
@@ -142,6 +143,7 @@
    texte doré clair sur fond blanc serait illisible. */
 :root[data-theme="light"] {
   --gold: #857000; /* contraste WCAG AA (~4.9:1) sur fond blanc, contre 2.3:1 avant */
+  --guarantee-title: #1750B0; /* variante foncée (le #7FB3F5 est illisible sur fond clair) */
   --dark: #FFFFFF;
   --dark2: #FFFFFF;
   --dark3: #FAFAFC;
@@ -1746,6 +1748,22 @@ body{
       <option value="name" data-i18n="companiesDirSortName">Nom A→Z</option>
     </select>
   </div>
+  <!-- (20260905i) Filtre par VILLE : options dérivées des adresses des
+       entreprises présentes (dernier jeton après la virgule). Rempli
+       dynamiquement par renderCompaniesDirCitySelect(). -->
+  <div style="display:flex;gap:8px;padding:0 16px 10px 16px;align-items:center;">
+    <select id="companiesCitySel" onchange="setCompaniesDirCity(this.value)" data-i18n-aria-label="companiesDirCityAll" aria-label="Ville" style="flex:1;min-width:0;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer;">
+      <option value="" data-i18n="companiesDirCityAll">Toutes les villes</option>
+    </select>
+  </div>
+  <!-- (20260905j) Filtre par MÉTIER/SECTEUR : une des 7 catégories des jobs
+       (celles renseignées dans la carte entreprise des entreprises
+       présentes). Rempli par renderCompaniesDirCatSelect(). -->
+  <div style="display:flex;gap:8px;padding:0 16px 10px 16px;align-items:center;">
+    <select id="companiesCatSel" onchange="setCompaniesDirCat(this.value)" data-i18n-aria-label="companiesDirCatAll" aria-label="Métier" style="flex:1;min-width:0;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer;">
+      <option value="" data-i18n="companiesDirCatAll">Tous les métiers</option>
+    </select>
+  </div>
   <div class="sheet-body">
     <div id="companiesDirList" style="display:flex;flex-direction:column;gap:8px;padding:0 16px 16px 16px;"></div>
   </div>
@@ -2015,8 +2033,8 @@ body{
 </nav>
 
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905h" defer></script>
-<script src="app.js?v=20260905h" defer></script>
+<script src="chat-widget.js?v=20260905j" defer></script>
+<script src="app.js?v=20260905j" defer></script>
 
   
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
@@ -2108,10 +2126,13 @@ body{
     width: 100%;
     max-width: 420px;
     height: 100%;
-    background: #0A0A0F;
+    /* (20260905k) thème-aware : AVANT = #0A0A0F en dur → en thème clair le
+       panneau restait sombre alors que --text basculait en sombre → textes
+       (dont la box « Garantie JobMarket ») quasi illisibles. */
+    background: var(--dark, #0A0A0F);
     z-index: 11000; /* Priorité maximale pour passer devant la carte */
     transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    border-left: 1px solid #1E1E2F;
+    border-left: 1px solid var(--border, #1E1E2F);
     box-shadow: -10px 0 30px rgba(0,0,0,0.6);
     display: flex;
     flex-direction: column;
@@ -2125,19 +2146,19 @@ body{
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #1E1E2F;
+    border-bottom: 1px solid var(--border, #1E1E2F);
   }
 .profile-sheet-header h2 {
     margin: 0;
     font-family: 'Syne', sans-serif;
     font-size: 20px;
-    color: white;
+    color: var(--text, white);
     font-weight: 700;
   }
   .sheet-close-btn {
-    background: rgba(255,255,255,0.05);
+    background: rgba(128,128,145,0.18); /* neutre : visible sur sombre ET clair */
     border: none;
-    color: #888;
+    color: var(--text-dim, #888);
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -2149,8 +2170,8 @@ body{
     transition: 0.2s;
   }
   .sheet-close-btn:hover {
-    background: rgba(255,255,255,0.1);
-    color: white;
+    background: rgba(128,128,145,0.3);
+    color: var(--text, white);
   }
   .profile-form-group {
     margin-bottom: 20px;
@@ -2158,17 +2179,17 @@ body{
   .profile-form-group label {
     display: block;
     margin-bottom: 8px;
-    color: #8A8A9E;
+    color: var(--text-dim, #8A8A9E);
     font-size: 14px;
     font-weight: 500;
   }
   .profile-input {
     width: 100%;
     padding: 14px;
-    background: #14141F;
-    border: 1px solid #222235;
+    background: var(--dark3, #14141F);
+    border: 1px solid var(--border, #222235);
     border-radius: 12px;
-    color: white;
+    color: var(--text, white);
     font-size: 15px;
     font-family: 'DM Sans', sans-serif;
     box-sizing: border-box;
@@ -2177,16 +2198,16 @@ body{
   .profile-input:focus {
     outline: none;
     border-color: var(--gold, #FFD700);
-    background: #1A1A2A;
+    background: var(--surface2, #1A1A2A);
   }
   .profile-textarea {
     width: 100%;
     height: 100px;
     padding: 14px;
-    background: #14141F;
-    border: 1px solid #222235;
+    background: var(--dark3, #14141F);
+    border: 1px solid var(--border, #222235);
     border-radius: 12px;
-    color: white;
+    color: var(--text, white);
     font-size: 15px;
     font-family: 'DM Sans', sans-serif;
     box-sizing: border-box;
@@ -2196,7 +2217,7 @@ body{
   .profile-textarea:focus {
     outline: none;
     border-color: var(--gold, #FFD700);
-    background: #1A1A2A;
+    background: var(--surface2, #1A1A2A);
   }
   .profile-save-btn {
     width: 100%;
@@ -2638,11 +2659,11 @@ body{
     <div class="profile-sheet-header">
         <h2 data-i18n="myProProfile">Mon Profil Pro</h2>
       <div class="profile-form-group" style="text-align: center; margin-bottom: 20px;">
-    <div id="profileImagePreview" style="width: 100px; height: 100px; border-radius: 50%; background: #222; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #FFD700;">
+    <div id="profileImagePreview" style="width: 100px; height: 100px; border-radius: 50%; background: #222; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid var(--gold,#FFD700);">
         <span style="color: #666; font-size: 12px;" data-i18n="photoWord">Photo</span>
     </div>
     <input type="file" id="profileImageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
-    <button type="button" onclick="document.getElementById('profileImageInput').click()" style="background:none; border:1px solid #FFD700; color:#FFD700; padding:5px 15px; border-radius:20px; cursor:pointer; font-size: 12px;" data-i18n="changePhoto">
+    <button type="button" onclick="document.getElementById('profileImageInput').click()" style="background:none; border:1px solid var(--gold,#FFD700); color:var(--gold,#FFD700); padding:5px 15px; border-radius:20px; cursor:pointer; font-size: 12px;" data-i18n="changePhoto">
         Changer photo
     </button>
 </div>
@@ -2678,6 +2699,22 @@ body{
             <label data-i18n="companyAddressLabel">Ville / quartier</label>
             <input type="text" id="companyAddress" class="profile-input" data-i18n-placeholder="companyAddressPlaceholder" placeholder="Ex: Bastos, Yaoundé" maxlength="120">
         </div>
+        <!-- (20260905j) Métier / secteur de la société (masqué en mode
+             personne) → companyProfile.category ; alimente le filtre « Métier »
+             du répertoire Entreprises (une des 7 catégories des jobs). -->
+        <div class="profile-form-group" id="companyCatGroup" style="display:none;">
+            <label data-i18n="companyCatLabel">Métier / secteur (pour le répertoire)</label>
+            <select id="companyCatSel" class="profile-input" style="width:100%;box-sizing:border-box;appearance:auto;-webkit-appearance:auto;">
+              <option value="" data-i18n="companyCatNone">— (non précisé)</option>
+              <option value="btp" data-i18n="optBtp">BTP / Maçonnerie</option>
+              <option value="electricite" data-i18n="optElec">Électricité</option>
+              <option value="plomberie" data-i18n="optPlomberie">Plomberie</option>
+              <option value="menage" data-i18n="optMenage">Ménage / Nettoyage</option>
+              <option value="jardinage" data-i18n="optJardinage">Jardinage</option>
+              <option value="mecanique" data-i18n="optMecanique">Mécanique Auto</option>
+              <option value="informatique" data-i18n="optInfo">Informatique</option>
+            </select>
+        </div>
         <div class="profile-form-group" id="profileCompanyGroup">
             <label data-i18n="fieldCompany">Société</label>
             <input type="text" id="profileCompany" class="profile-input" data-i18n-placeholder="companyNamePlaceholder" placeholder="Ex: Les Bâtisseurs du Cameroun" maxlength="100">
@@ -2709,7 +2746,7 @@ body{
              affichée UNIQUEMENT sur le profil PUBLIC (décision d'embauche),
              jamais sur le profil privé (c'est un message aux clients). ===== -->
         <div id="guaranteeBox" style="margin: 0 0 14px 0; padding:14px; background:linear-gradient(135deg,rgba(45,108,223,0.10),rgba(37,211,102,0.06)); border:1px solid rgba(45,108,223,0.35); border-radius:12px; display:none;">
-          <div style="font-weight:800; font-size:14px; color:#7FB3F5; margin-bottom:6px;" data-i18n="guaranteeTitle">🛡️ Garantie JobMarket</div>
+          <div style="font-weight:800; font-size:14px; color:var(--guarantee-title,#7FB3F5); margin-bottom:6px;" data-i18n="guaranteeTitle">🛡️ Garantie JobMarket</div>
           <div style="font-size:12.5px; color:var(--text,#e9edef); line-height:1.5; margin-bottom:5px;" data-i18n="guaranteeLine1">Si un problème survient avec ce prestataire, notre équipe intervient pour médier.</div>
           <div style="font-size:12.5px; color:var(--text,#e9edef); line-height:1.5; font-weight:600;" data-i18n="guaranteeLine2">Règle d'or : ne payez JAMAIS l'intégralité à l'avance — soldez après le travail terminé.</div>
         </div>
