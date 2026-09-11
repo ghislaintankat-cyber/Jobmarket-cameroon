@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905m">
+<html lang="fr" data-app-build="20260905v">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -25,7 +25,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="description" content="JobMarket Cameroon - Trouvez des artisans et jobs proches de vous"/>
 <title>JobMarket Cameroon</title>
-
 <!-- Open Graph / Twitter Card : aperçu enrichi quand un lien de l'app est
      partagé sur WhatsApp, Facebook, Twitter, etc. Reste STATIQUE (même
      aperçu générique quelle que soit la page/le job partagé) car cette app
@@ -44,7 +43,6 @@
 <meta name="twitter:title" content="JobMarket Cameroon"/>
 <meta name="twitter:description" content="Trouvez des artisans et jobs proches de vous au Cameroun."/>
 <meta name="twitter:image" content="https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/icon-512.png"/>
-
 <!-- Données structurées (schema.org) : aide Google à comprendre ce qu'est
      le site (nom, zone couverte) pour l'affichage dans les résultats de
      recherche. NE PAS utiliser le type "JobPosting" ici : JobPosting est
@@ -73,7 +71,6 @@
   }
 }
 </script>
-
 <!-- PWA Manifest inline -->
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -85,7 +82,6 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
 <link rel="preconnect" href="https://www.gstatic.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
-
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
@@ -93,17 +89,14 @@
 <!-- leaflet-routing-machine.min.js n'est PLUS chargé ici : il est injecté à
      la demande (ensureRoutingMachineLoaded dans app.js) uniquement quand
      l'utilisateur demande un itinéraire. -->
-  
 <!-- CompressorJS pour réduire la taille des images -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js" defer></script>
-  
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js" defer></script>
-  
 <style>
 /* Le style du panneau de détail (job-drawer) est défini plus bas, dans le
    bloc "VERSION SOMBRE" harmonisé avec le thème doré de l'application. */
@@ -135,7 +128,6 @@
   --ease: cubic-bezier(0.25,0.46,0.45,0.94);
   --glass-bg: rgba(10,10,15,0.85);
 }
-
 /* ===== THÈME CLAIR ===== */
 /* N'écrase que les variables de fond/texte/bordure — les couleurs d'accent
    (or, bleu, vert...) restent identiques pour garder l'identité visuelle,
@@ -154,7 +146,6 @@
   --text-dim: #5C5C78;
   --glass-bg: rgba(255,255,255,0.99);
 }
-
 /* En mode clair : barres du haut et du bas bien opaques et claires,
    pour que la carte (satellite) ne transparaisse pas à travers et ne
    les rende pas grisâtres. */
@@ -162,7 +153,6 @@
 :root[data-theme="light"] .bottom-nav {
   background: #FFFFFF;
 }
-
 /* ===== RESET & BASE ===== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;}
@@ -172,7 +162,6 @@ body{
   color:var(--text);
   overscroll-behavior:none;
 }
-
 /* ===== MAP ===== */
 #map {
   position: fixed;
@@ -180,7 +169,6 @@ body{
   z-index: 1;
   filter: brightness(0.9) saturate(1.15); /* Légèrement réajusté pour des couleurs plus éclatantes */
 }
-
 /* Ombrage cinématique pour faire ressortir l'interface par-dessus la carte */
 #map::after {
   content: '';
@@ -190,7 +178,6 @@ body{
   z-index: 2;
   background: linear-gradient(to bottom, rgba(10,10,15,0.4) 0%, rgba(10,10,15,0) 15%, rgba(10,10,15,0) 85%, rgba(10,10,15,0.5) 100%);
   }
-
 /* ===== SPLASH SCREEN ===== */
 #splash{
   position:fixed;inset:0;z-index:9999;
@@ -228,7 +215,6 @@ body{
   border-radius:4px;animation:load-bar 2s ease forwards;
 }
 @keyframes load-bar{to{width:100%;}}
-
 /* ===== TOP BAR ===== */
 .topbar{
   position:fixed;top:0;left:0;right:0;z-index:1000;
@@ -256,11 +242,9 @@ body{
 .logo-text span{color:var(--gold);}
 .logo-sub{font-size:10px;color:var(--text-dim);font-weight:400;letter-spacing:1px;text-transform:uppercase;}
 .topbar-right{display:flex;align-items:center;gap:8px;}
-
 /* ===== MESSAGERIE « CHAT SÉCURISÉ » (widget style WhatsApp — chat-widget.js) ===== */
 .msg-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;background:#ef4444;color:#fff;border-radius:9px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;}
 .msg-overlay{position:fixed;inset:0;z-index:11500;background:var(--dark);display:flex;flex-direction:column;}
-
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 #chatWidgetOverlay{
   --pri:#00a884;--pri-dark:#008069;--pri-light:#d9fdd3;
@@ -289,19 +273,13 @@ body{
   --shadow:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 8px 32px rgba(0,0,0,.4);
   --bg-chat-wall:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cg fill='%23fff' fill-opacity='.03'%3E%3Cpath d='M30 18l3.2 7.4 8 .8-6 5.3 1.8 7.8-6.9-4.1-7 4.1 1.8-7.8-6-5.3 8-.8z'/%3E%3Cpath d='M128 40c-3.5-5.5-13-4.5-13 2.5 0 5.5 8 10 13 14.5 5-4.5 13-9 13-14.5 0-7-9.5-8-13-2.5z'/%3E%3Ccircle cx='192' cy='26' r='6'/%3E%3Cpath d='M96 128h5v7h7v5h-7v7h-5v-7h-7v-5h7z'/%3E%3Cpath d='M172 118l3.4 7.8 8.4.8-6.3 5.6 1.9 8.2-7.3-4.3-7.4 4.3 1.9-8.2-6.3-5.6 8.4-.8z'/%3E%3Cpath d='M52 178c-3-4.8-11.4-4-11.4 2.2 0 4.8 7 8.8 11.4 12.7 4.4-3.9 11.4-7.9 11.4-12.7 0-6.2-8.4-7-11.4-2.2z'/%3E%3Ccircle cx='132' cy='196' r='5'/%3E%3Cpath d='M196 168h4.5v6h6v4.5h-6v6h-4.5v-6h-6v-4.5h6z'/%3E%3C/g%3E%3C/svg%3E");
 }
-
-
-
 /* ===== WIDGET ===== */
 .wa{width:100%;height:100%;display:flex;background:var(--bg-deep);overflow:hidden;position:relative;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
-
-
 /* ===== SCROLLBARS ===== */
 .wa ::-webkit-scrollbar{width:6px}
 .wa ::-webkit-scrollbar-track{background:transparent}
 .wa ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}
 .wa ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25)}
-
 /* ===== SIDEBAR ===== */
 .wa-side{width:400px;min-width:320px;max-width:400px;background:var(--bg-sidebar);display:flex;flex-direction:column;border-right:1px solid var(--border);z-index:10;transition:transform .3s var(--anim)}
 .wa-side-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--bg-header);min-height:var(--header-h)}
@@ -310,7 +288,6 @@ body{
 .wa-icon-btn{background:0 0;border:0;color:var(--text-secondary);cursor:pointer;padding:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .15s;position:relative}
 .wa-icon-btn:hover{background:var(--bg-hover)}
 .wa-icon-btn svg{width:22px;height:22px}
-
 /* Search */
 .wa-search{padding:8px 12px;background:var(--bg-sidebar)}
 .wa-search-box{display:flex;align-items:center;background:var(--bg-panel);border-radius:var(--radius);padding:0 12px;gap:12px;transition:box-shadow .2s}
@@ -318,13 +295,12 @@ body{
 .wa-search-box svg{color:var(--text-secondary);flex-shrink:0;width:18px;height:18px}
 .wa-search-box input{width:100%;padding:9px 0;border:0;outline:0;background:0 0;font-size:14px;color:var(--text-primary)}
 .wa-search-box input::placeholder{color:var(--text-secondary)}
-
 /* Tabs */
 .wa-tabs{display:flex;padding:0 12px;gap:8px;background:var(--bg-sidebar);border-bottom:1px solid var(--border)}
 .wa-tab{padding:10px 14px;font-size:13px;font-weight:500;color:var(--text-secondary);cursor:pointer;border:0;background:0 0;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
 .wa-tab:hover{color:var(--text-primary)}
 .wa-tab.active{color:var(--pri);border-bottom-color:var(--pri)}
-
+.wa-tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 5px;margin-left:6px;background:var(--danger,#FF3B30);color:#fff;border-radius:9px;font-size:10.5px;font-weight:800;line-height:1;vertical-align:1px}
 /* Chat list */
 .wa-chats{flex:1;overflow-y:auto;overflow-x:hidden}
 .wa-chat{display:flex;align-items:center;padding:12px 16px;gap:14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;position:relative;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
@@ -349,11 +325,9 @@ body{
 .wa-check{display:inline-flex;align-items:center;flex-shrink:0}
 .wa-check svg{width:16px;height:16px}
 .wa-check.read svg{color:var(--check)}
-
 /* ===== MAIN ===== */
 .wa-main{flex:1;display:flex;flex-direction:column;background:var(--bg-deep);position:relative;min-width:0;overflow:hidden}
 .wa-wall{position:absolute;inset:0;background:var(--bg-chat-wall);z-index:0;pointer-events:none}
-
 /* Chat header */
 .wa-chead{display:flex;align-items:center;padding:10px 16px;gap:14px;background:var(--bg-header);min-height:var(--header-h);z-index:2;border-bottom:1px solid var(--border)}
 .wa-back{display:none;background:0 0;border:0;color:var(--text-secondary);cursor:pointer;padding:4px;margin-right:4px}
@@ -364,7 +338,6 @@ body{
 .wa-chead-status{font-size:13px;color:var(--text-secondary)}
 .wa-chead-status.typing{color:var(--pri)}
 .wa-chead-acts{display:flex;gap:2px}
-
 /* Empty state */
 .wa-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-secondary);text-align:center;padding:40px;z-index:1}
 .wa-empty-icon{width:280px;height:200px;margin-bottom:32px;opacity:.6}
@@ -372,72 +345,57 @@ body{
 .wa-empty p{font-size:14px;max-width:500px;line-height:1.7}
 .wa-empty .keys{margin-top:24px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .wa-empty .key{background:var(--bg-panel);padding:6px 14px;border-radius:20px;font-size:12px;color:var(--text-secondary)}
-
 /* Messages */
 .wa-msgs{flex:1;overflow-y:auto;padding:12px 60px;z-index:1;display:flex;flex-direction:column;gap:2px;scroll-behavior:smooth}
-
 /* Scroll to bottom */
 .wa-scroll-btn{position:absolute;bottom:80px;right:20px;z-index:5;width:42px;height:42px;border-radius:50%;background:var(--bg-sidebar);border:0;cursor:pointer;box-shadow:var(--shadow-lg);display:none;align-items:center;justify-content:center;color:var(--text-secondary);transition:all .2s}
 .wa-scroll-btn:hover{background:var(--bg-hover);color:var(--text-primary)}
 .wa-scroll-btn.visible{display:flex}
 .wa-scroll-btn .badge{position:absolute;top:-4px;right:-4px;background:var(--pri);color:#fff;font-size:11px;font-weight:600;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .wa-scroll-btn svg{width:22px;height:22px}
-
 /* Date divider */
 .wa-date{text-align:center;margin:16px 0 12px}
 .wa-date span{background:var(--bg-bubble-in);color:var(--text-secondary);font-size:12px;padding:5px 12px;border-radius:var(--radius);box-shadow:var(--shadow);display:inline-block}
 .wa-load-older{display:block;margin:8px auto 6px;padding:6px 16px;font-size:12px;font-weight:600;color:var(--text-secondary);background:var(--bg-bubble-in);border:1px solid var(--border);border-radius:16px;cursor:pointer;box-shadow:var(--shadow)}
 .wa-load-older:active{transform:scale(.97)}
-
 /* System message */
 .wa-sys{text-align:center;margin:12px 0}
 .wa-sys span{background:var(--bg-panel);color:var(--text-secondary);font-size:12px;padding:5px 14px;border-radius:16px;display:inline-block;box-shadow:var(--shadow)}
 .wa-sys span.wa-newmsg{background:var(--unread);color:#fff;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:5px 14px;border-radius:12px}
-
 /* Message row */
 .wa-mrow{display:flex;margin-bottom:2px;position:relative;animation:wamsgIn .25s var(--anim) both;touch-action:manipulation}
 .wa-mrow.sent{justify-content:flex-end}
 .wa-mrow.recv{justify-content:flex-start}
 .wa-mrow.no-anim{animation:none}
-
 @keyframes wamsgIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
-
 /* Sender name in groups */
 .wa-sender{font-size:12.5px;font-weight:600;margin-bottom:2px;padding-left:4px}
-
 /* Bubble */
 .wa-bub{max-width:65%;padding:6px 8px 8px;border-radius:var(--radius);position:relative;box-shadow:var(--shadow);word-wrap:break-word;overflow-wrap:break-word;transition:background .15s}
 .wa-mrow.sent .wa-bub{background:var(--bg-bubble-out);border-top-right-radius:0}
 .wa-mrow.recv .wa-bub{background:var(--bg-bubble-in);border-top-left-radius:0}
 .wa-mrow.tail .wa-bub{border-top-right-radius:0}
 .wa-mrow.recv.tail .wa-bub{border-top-left-radius:0}
-
 /* Bubble tail */
 .wa-mrow.sent.tail .wa-bub::before{content:'';position:absolute;top:0;right:-8px;width:0;height:0;border-left:8px solid var(--bg-bubble-out);border-bottom:8px solid transparent}
 .wa-mrow.recv.tail .wa-bub::before{content:'';position:absolute;top:0;left:-8px;width:0;height:0;border-right:8px solid var(--bg-bubble-in);border-bottom:8px solid transparent}
-
 .wa-text{font-size:14.5px;line-height:1.45;color:var(--text-bubble);margin-right:52px;white-space:pre-wrap}
 .wa-text a{color:var(--pri-dark);text-decoration:none}
 .wa-text a:hover{text-decoration:underline}
-
 /* Edited label */
 .wa-edited{font-size:11px;color:var(--text-secondary);font-style:italic;margin-right:4px}
-
 /* Meta */
 .wa-meta{display:flex;align-items:center;gap:3px;justify-content:flex-end;margin-top:-12px;float:right;position:relative;top:8px}
 .wa-time{font-size:11px;color:var(--text-secondary)}
-
 /* Reply quote in bubble */
 .wa-quote{background:rgba(0,0,0,.05);border-left:4px solid var(--pri);border-radius:4px;padding:6px 10px;margin-bottom:4px;cursor:pointer;transition:background .15s}
 .wa-quote:hover{background:rgba(0,0,0,.08)}
 .wa-quote-name{font-weight:600;color:var(--pri-dark);font-size:12.5px;margin-bottom:2px}
 .wa-quote-text{color:var(--text-secondary);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
-
 /* Image message */
 .wa-img{border-radius:6px;overflow:hidden;margin-bottom:4px;cursor:pointer;max-width:330px;position:relative}
 .wa-img img{width:100%;display:block;border-radius:6px;transition:transform .2s}
 .wa-img:hover img{transform:scale(1.02)}
-
 /* Voice */
 .wa-voice{display:flex;align-items:center;gap:10px;min-width:250px}
 .wa-voice-main{flex:1;min-width:120px}
@@ -453,7 +411,6 @@ body{
 .wa-wave .bar{width:3px;border-radius:2px;background:var(--pri);opacity:.5;transition:opacity .2s}
 .wa-wave .bar.played{opacity:1}
 .wa-voice-dur{font-size:11px;color:var(--text-secondary);flex-shrink:0}
-
 /* File */
 .wa-file{display:flex;align-items:center;gap:10px;min-width:220px;background:rgba(0,0,0,.04);border-radius:6px;padding:10px;cursor:pointer;transition:background .15s}
 .wa-file:hover{background:rgba(0,0,0,.08)}
@@ -461,14 +418,12 @@ body{
 .wa-file-ico svg{color:#fff;width:20px;height:20px}
 .wa-file-name{font-size:14px;color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
 .wa-file-size{font-size:12px;color:var(--text-secondary)}
-
 /* Link preview */
 .wa-linkprev{background:rgba(0,0,0,.04);border-radius:6px;margin-bottom:6px;overflow:hidden;cursor:pointer;border-left:3px solid var(--pri)}
 .wa-linkprev-body{padding:8px 10px}
 .wa-linkprev-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px}
 .wa-linkprev-desc{font-size:12px;color:var(--text-secondary);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .wa-linkprev-url{font-size:11px;color:var(--pri-dark);margin-top:4px}
-
 /* Reactions */
 .wa-reacts{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;position:absolute;bottom:-14px}
 .wa-mrow.sent .wa-reacts{right:8px}
@@ -476,12 +431,10 @@ body{
 .wa-rchip{background:var(--bg-bubble-in);border:1px solid var(--border);border-radius:12px;padding:2px 8px;font-size:16px;cursor:pointer;display:flex;align-items:center;gap:3px;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s}
 .wa-rchip:hover{transform:scale(1.15);box-shadow:var(--shadow-lg)}
 .wa-rchip .cnt{font-size:11px;color:var(--text-secondary)}
-
 /* Reaction picker */
 .wa-rpick{position:absolute;background:var(--bg-sidebar);border-radius:24px;padding:6px 10px;box-shadow:var(--shadow-lg);display:flex;gap:4px;z-index:100;animation:wapopIn .15s var(--anim)}
 .wa-rpick button{background:0 0;border:0;font-size:24px;cursor:pointer;padding:4px;border-radius:50%;transition:transform .1s,background .1s}
 .wa-rpick button:hover{transform:scale(1.3);background:var(--bg-hover)}
-
 /* Poll */
 .wa-poll{min-width:260px}
 .wa-poll-q{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:8px}
@@ -490,19 +443,16 @@ body{
 .wa-poll-opt.voted{border-color:var(--pri);background:rgba(0,168,132,.06)}
 .wa-poll-bar{height:4px;background:var(--pri);border-radius:2px;margin-top:4px;transition:width .4s var(--anim)}
 .wa-poll-votes{font-size:11px;color:var(--text-secondary);margin-top:2px}
-
 /* Typing */
 .wa-typing-bub{display:flex;gap:5px;padding:12px 16px;background:var(--bg-bubble-in);border-radius:var(--radius);border-top-left-radius:0;box-shadow:var(--shadow)}
 .wa-tdot{width:8px;height:8px;border-radius:50%;background:var(--text-secondary);animation:watdot 1.4s infinite}
 .wa-tdot:nth-child(2){animation-delay:.2s}
 .wa-tdot:nth-child(3){animation-delay:.4s}
 @keyframes watdot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-5px)}}
-
 @keyframes wapopIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
 @keyframes waslideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
 @keyframes waslideRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
 @keyframes wafadeIn{from{opacity:0}to{opacity:1}}
-
 /* ===== INPUT ===== */
 .wa-input-area{display:flex;align-items:flex-end;padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));gap:8px;background:var(--bg-panel);z-index:2;min-height:var(--input-h)}
 .wa-input-area .wa-icon-btn{color:var(--text-secondary)}
@@ -513,14 +463,12 @@ body{
 .wa-send{background:var(--pri)!important;color:#fff!important;width:42px;height:42px;border-radius:50%!important;transition:background .15s,transform .1s!important}
 .wa-send:hover{background:var(--pri-dark)!important}
 .wa-send:active{transform:scale(.92)!important}
-
 /* Reply preview */
 .wa-reply-prev{display:none;background:var(--bg-input);border-radius:var(--radius);padding:8px 12px;margin:0 16px;border-left:4px solid var(--pri);position:relative;z-index:2;animation:waslideUp .2s var(--anim)}
 .wa-reply-prev.active{display:flex;align-items:center;justify-content:space-between}
 .wa-reply-prev-name{font-size:13px;font-weight:600;color:var(--pri-dark)}
 .wa-reply-prev-text{font-size:13px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px}
 .wa-reply-prev-close{background:0 0;border:0;color:var(--text-secondary);cursor:pointer;padding:4px;font-size:20px;line-height:1}
-
 /* Quick replies (réponses rapides contextuelles) */
 .wa-quick{display:none;padding:0 12px calc(6px + env(safe-area-inset-bottom,0px));overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;z-index:2;background:var(--bg-panel)}
 .wa-quick::-webkit-scrollbar{display:none}
@@ -529,14 +477,12 @@ body{
 .wa-quick-chip{background:var(--bg-input);border:1px solid var(--border);color:var(--pri);font-size:13px;font-weight:600;padding:7px 12px;border-radius:16px;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:background .1s,transform .1s;font-family:inherit}
 .wa-quick-chip:hover{background:var(--bg-hover)}
 .wa-quick-chip:active{transform:scale(.96)}
-
 /* Recording */
 .wa-rec{display:none;align-items:center;gap:12px;flex:1;background:var(--bg-input);border-radius:var(--radius);padding:8px 16px}
 .wa-rec.active{display:flex}
 .wa-rec-dot{width:10px;height:10px;border-radius:50%;background:var(--danger);animation:wapulse 1s infinite}
 @keyframes wapulse{0%,100%{opacity:1}50%{opacity:.3}}
 .wa-rec-time{font-size:14px;color:var(--text-primary);font-variant-numeric:tabular-nums}
-
 /* Emoji picker */
 .wa-emoji{display:none;position:absolute;bottom:70px;left:16px;background:var(--bg-sidebar);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:50;width:350px;max-height:400px;overflow:hidden;flex-direction:column;animation:wapopIn .15s var(--anim)}
 .wa-emoji.active{display:flex}
@@ -548,7 +494,6 @@ body{
 .wa-emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:8px;overflow-y:auto;flex:1}
 .wa-emoji-item{background:0 0;border:0;font-size:24px;padding:4px;cursor:pointer;border-radius:6px;transition:background .1s;display:flex;align-items:center;justify-content:center}
 .wa-emoji-item:hover{background:var(--bg-hover)}
-
 /* Attach popup */
 .wa-attach{display:none;position:absolute;bottom:70px;left:60px;background:var(--bg-sidebar);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:10px;z-index:50;animation:wapopIn .15s var(--anim)}
 .wa-attach.active{display:flex;flex-direction:column;gap:4px}
@@ -561,13 +506,11 @@ body{
 .wa-att-ico.contact{background:#009de2}
 .wa-att-ico.poll{background:#ff9800}
 .wa-att-ico svg{color:#fff;width:20px;height:20px}
-
 /* Drag & drop overlay */
 .wa-drop{display:none;position:absolute;inset:0;background:rgba(0,168,132,.1);border:3px dashed var(--pri);border-radius:var(--radius-lg);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:12px;animation:wafadeIn .2s}
 .wa-drop.active{display:flex}
 .wa-drop-text{font-size:18px;font-weight:600;color:var(--pri)}
 .wa-drop-sub{font-size:14px;color:var(--text-secondary)}
-
 /* ===== CONTACT PROFILE PANEL ===== */
 .wa-profile{position:absolute;top:0;right:0;bottom:0;width:380px;background:var(--bg-sidebar);z-index:20;transform:translateX(100%);transition:transform .3s var(--anim);display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1)}
 .wa-profile.open{transform:translateX(0)}
@@ -590,7 +533,6 @@ body{
 .wa-prof-media{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:8px}
 .wa-prof-media img{width:100%;aspect-ratio:1;object-fit:cover;cursor:pointer;transition:opacity .15s}
 .wa-prof-media img:hover{opacity:.8}
-
 /* ===== IN-CHAT SEARCH ===== */
 .wa-search-bar{display:none;background:var(--bg-header);padding:8px 16px;gap:10px;align-items:center;z-index:3;border-bottom:1px solid var(--border);animation:waslideUp .2s var(--anim)}
 .wa-search-bar.active{display:flex}
@@ -599,14 +541,12 @@ body{
 .wa-search-nav{display:flex;align-items:center;gap:4px;color:var(--text-secondary);font-size:13px}
 .wa-search-hl{background:#ffc107;border-radius:2px;padding:0 2px}
 .wa-search-hl.current{background:#ff9800}
-
 /* ===== LIGHTBOX ===== */
 .wa-lightbox{display:none;position:fixed;inset:0;background:var(--bg-overlay);z-index:12500;align-items:center;justify-content:center;animation:wafadeIn .2s}
 .wa-lightbox.active{display:flex}
 .wa-lightbox img{max-width:92vw;max-height:92vh;border-radius:4px;box-shadow:0 0 40px rgba(0,0,0,.5)}
 .wa-lightbox-close{position:absolute;top:16px;right:16px;background:rgba(0,0,0,.5);border:0;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .wa-lightbox-close:hover{background:rgba(0,0,0,.7)}
-
 /* ===== CONTEXT MENU ===== */
 .wa-ctx{display:none;position:fixed;background:var(--bg-menu);border:1px solid var(--border-strong);border-radius:var(--radius);box-shadow:var(--shadow-menu);z-index:12600;min-width:200px;padding:6px 0;animation:wapopIn .1s var(--anim)}
 .wa-ctx.active{display:block}
@@ -616,16 +556,13 @@ body{
 .wa-ctx button svg{width:18px;height:18px;flex-shrink:0}
 .wa-ctx-sep{height:1px;background:var(--border);margin:4px 0}
 .wa-ctx-grp{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);padding:7px 20px 3px;user-select:none}
-
 /* Sélecteur « type de profil » (personne / entreprise) */
 .ptype-btn{flex:1;padding:12px;background:var(--surface,#1a1a1a);border:2px solid var(--border,#333);color:var(--text-dim,#999);border-radius:12px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:all .15s}
 .ptype-btn.active{border-color:var(--gold,#FFD700);color:var(--gold,#FFD700);background:rgba(255,215,0,0.08)}
 .ptype-btn:active{transform:scale(0.97)}
-
 /* Bouton filtre « 🟢 Dispo maintenant » (panneau liste) */
 .avail-filter-btn{flex:none;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text-dim);font-size:11px;font-weight:700;cursor:pointer;transition:0.15s}
 .avail-filter-btn.active{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 10px rgba(37,211,102,0.35)}
-
 /* ===== MULTI-SÉLECTION (style WhatsApp) ===== */
 .wa-selbar{position:absolute;top:0;left:0;right:0;min-height:var(--header-h);display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-header);border-bottom:1px solid var(--border);z-index:3}
 .wa-selcount{flex:1;font-size:14px;font-weight:600;color:var(--text-primary)}
@@ -637,7 +574,6 @@ body{
 .wa-mrow.sel .wa-sel svg{opacity:1}
 .wa-mrow.sel .wa-bub{outline:2px solid var(--pri);outline-offset:-2px}
 #wa.selmode .wa-mrow{cursor:pointer}
-
 /* ===== FORWARD MODAL ===== */
 .wa-modal{display:none;position:fixed;inset:0;background:var(--bg-overlay);z-index:12700;align-items:center;justify-content:center;animation:wafadeIn .2s}
 .wa-modal.active{display:flex}
@@ -649,7 +585,6 @@ body{
 .wa-modal-contact:hover{background:var(--bg-hover)}
 .wa-modal-contact img{width:42px;height:42px;border-radius:50%;object-fit:cover}
 .wa-modal-contact .name{font-size:15px;color:var(--text-primary)}
-
 /* ===== TOAST ===== */
 .wa-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--bg-sidebar);color:var(--text-primary);padding:12px 20px;border-radius:var(--radius);box-shadow:var(--shadow-lg);z-index:12800;display:none;align-items:center;gap:10px;animation:waslideDown .3s var(--anim);font-size:14px;max-width:400px;cursor:pointer}
 .wa-toast:hover{filter:brightness(1.15)}
@@ -659,7 +594,6 @@ body{
 .wa-toast-name{font-weight:600;font-size:13px}
 .wa-toast-text{font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
 @keyframes waslideDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-
 /* ===== POLL MODAL ===== */
 .wa-poll-modal{padding:16px}
 .wa-poll-modal h3{font-size:16px;font-weight:500;color:var(--text-primary);margin-bottom:16px}
@@ -668,7 +602,6 @@ body{
 .wa-poll-modal .add-opt{background:0 0;border:0;color:var(--pri);cursor:pointer;font-size:14px;padding:8px 0;display:flex;align-items:center;gap:6px}
 .wa-poll-modal .send-poll{width:100%;padding:12px;background:var(--pri);color:#fff;border:0;border-radius:6px;font-size:15px;font-weight:500;cursor:pointer;margin-top:12px;transition:background .15s}
 .wa-poll-modal .send-poll:hover{background:var(--pri-dark)}
-
 /* ===== RESPONSIVE ===== */
 @media(max-width:900px){
   .wa-side{width:100%;max-width:100%;position:absolute;inset:0;z-index:10}
@@ -684,7 +617,6 @@ body{
 @media(max-width:480px){
   .wa-msgs{padding:8px 8px}
 }
-
 .wa-jobbar{padding:8px 16px;background:rgba(45,108,215,.14);border-bottom:1px solid rgba(45,108,215,.28);font-size:12.5px;font-weight:600;color:#4d8bff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
 #chatWidgetOverlay[data-theme=light] .wa-jobbar{background:rgba(45,108,215,.08);color:#2D6CDF;border-bottom-color:rgba(45,108,215,.18)}
 .icon-btn{
@@ -707,7 +639,6 @@ body{
 }
 .post-btn:active{transform:scale(0.95);box-shadow:0 2px 8px rgba(255,215,0,0.2);}
 .post-btn svg{width:14px;height:14px;}
-
 /* ===== CATEGORY BAR ===== */
 .category-bar{
   position:fixed;top:68px;left:0;right:0;z-index:999;
@@ -737,7 +668,6 @@ body{
   box-shadow:0 4px 12px rgba(255,215,0,0.25);
 }
 .cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-
 /* ===== SIDE CONTROLS ===== */
 .side-controls{
   position:fixed;right:14px;top:160px;z-index:999;
@@ -766,7 +696,6 @@ body{
 }
 .dist-badge-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);}
 .dist-badge-value{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--gold);}
-
 /* ===== DRAWERS & OVERLAYS ===== */
 .sheet{
   position:fixed;left:0;right:0;bottom:0;z-index:1001;
@@ -791,7 +720,6 @@ body{
   font-family:'Syne',sans-serif;font-weight:800;font-size:18px;
 }
 .sheet-body{padding:0 20px 20px;}
-
 .overlay-page{
   position:fixed;inset:0;z-index:1002;
   background:var(--dark);
@@ -820,7 +748,6 @@ body{
 }
 .overlay-body{padding:20px;}
 .hidden{display:none!important;}
-
 /* ===== FORM ELEMENTS ===== */
 .form-group{margin-bottom:14px;}
 .form-label{
@@ -848,7 +775,6 @@ body{
 .form-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%238888A8' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:20px;padding-right:40px;}
 .form-select option{background:var(--dark2);color:var(--text);}
 .form-textarea{min-height:90px;resize:vertical;}
-
 .upload-zone{
   border:2px dashed var(--border);
   border-radius:var(--radius-md);
@@ -866,7 +792,6 @@ body{
   width:60px;height:60px;border-radius:10px;
   object-fit:cover;border:2px solid var(--gold);
 }
-
 /* ===== BUTTONS ===== */
 .btn{
   display:flex;align-items:center;justify-content:center;gap:8px;
@@ -892,7 +817,6 @@ body{
 .btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--border);}
 .btn+.btn{margin-top:10px;}
 .btn svg{width:18px;height:18px;flex-shrink:0;}
-
 /* ===== BOTTOM NAV ===== */
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;z-index:1000;
@@ -927,7 +851,6 @@ body{
 }
 .nav-center:active{transform:translateY(-8px) scale(0.95);}
 .nav-center svg{width:26px;height:26px;}
-
 /* ===== JOB LIST ===== */
 .jobs-sheet .sheet-body{padding-bottom:100px;}
 .job-card{
@@ -954,7 +877,6 @@ body{
 .job-card-dist{font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:3px;}
 .job-card-verified{width:14px;height:14px;color:var(--blue);}
 .job-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
-
 /* ===== ACCOUNT PAGE ===== */
 .avatar{
   width:82px;height:82px;border-radius:50%;
@@ -990,7 +912,6 @@ body{
 .account-item-icon svg{width:18px;height:18px;}
 .account-item span{flex:1;}
 .account-item-arrow svg{width:16px;height:16px;color:var(--text-dim);}
-
 /* ===== ITINERARY PANEL ===== */
 .itin-panel{
   position:fixed;bottom:96px;left:14px;z-index:999;
@@ -1004,7 +925,6 @@ body{
 .itin-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:4px;}
 .itin-value{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--gold);}
 .itin-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
-
 /* ===== AUTH TABS ===== */
 .auth-tabs{display:flex;gap:4px;background:var(--surface);border-radius:var(--radius-sm);padding:4px;margin-bottom:20px;}
 .auth-tab{
@@ -1014,12 +934,10 @@ body{
   transition:all 0.2s;
 }
 .auth-tab.active{background:var(--gold);color:#0A0A0F;}
-
 /* ===== DIVIDER ===== */
 .divider{display:flex;align-items:center;gap:10px;margin:16px 0;}
 .divider-line{flex:1;height:1px;background:var(--border);}
 .divider-text{font-size:12px;color:var(--text-dim);}
-
 /* ===== TAGS / BADGES ===== */
 .badge{
   display:inline-flex;align-items:center;gap:4px;
@@ -1029,7 +947,6 @@ body{
 .badge-gold{background:rgba(255,215,0,0.15);color:var(--gold);}
 .badge-green{background:rgba(37,211,102,0.12);color:var(--green);}
 .badge-blue{background:rgba(0,122,255,0.12);color:var(--blue);}
-
 /* ===== TOAST ===== */
 #toast{
   position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);
@@ -1048,14 +965,12 @@ body{
 #toast.success{border-color:var(--green);color:var(--green);}
 #toast.error{border-color:var(--danger);color:var(--danger);}
 #toast.info{border-color:var(--gold);color:var(--gold);}
-
 /* ===== NOTIFICATION DOT ===== */
 .notif-dot{
   position:absolute;top:-2px;right:-2px;
   width:8px;height:8px;background:var(--red-cam);
   border-radius:50%;border:2px solid var(--dark);
 }
-
 /* ===== LOADING STATE ===== */
 .spinner{
   width:20px;height:20px;border-radius:50%;
@@ -1065,7 +980,6 @@ body{
   flex-shrink:0;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
-
 /* ===== CHAT UI ===== */
 .chat-messages{
   padding:16px;display:flex;flex-direction:column;gap:10px;
@@ -1111,7 +1025,6 @@ body{
 .chat-suggestions{display:flex;gap:7px;overflow-x:auto;padding:7px 16px 11px;scrollbar-width:none;}
 .chat-suggestion{white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:999px;padding:7px 10px;font-size:12px;cursor:pointer;}
 .chat-suggestion:active{border-color:var(--gold);color:var(--gold);}
-
 /* ===== ADMIN PANEL ===== */
 .admin-stat{
   background:var(--surface);border:1px solid var(--border);
@@ -1121,7 +1034,6 @@ body{
 .admin-stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--gold);}
 .admin-stat-label{font-size:12px;color:var(--text-dim);margin-top:2px;}
 .admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-
 /* ===== LEAFLET OVERRIDES ===== */
 .leaflet-popup-content-wrapper{
   background:var(--dark2)!important;border:1px solid var(--border)!important;
@@ -1134,7 +1046,6 @@ body{
    fond blanc) : sur notre thème sombre il devient quasi invisible. On l'éclaircit. */
 .leaflet-popup-close-button{color:var(--text-dim)!important;font-size:20px!important;}
 .leaflet-popup-close-button:hover{color:var(--text)!important;}
-
 /* ===== MISC ===== */
 .section-title{
   font-family:'Syne',sans-serif;font-weight:800;font-size:16px;
@@ -1147,12 +1058,10 @@ body{
 .empty-state svg{width:48px;height:48px;margin-bottom:12px;opacity:0.4;}
 .empty-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text);margin-bottom:6px;}
 .empty-sub{font-size:14px;}
-
 /* Scrollbar */
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px;}
-  
   /* ======================================================= */
 /* DESIGN DU PANNEAU DE PRÉVISUALISATION (VERSION SOMBRE) */
 /* ======================================================= */
@@ -1172,7 +1081,6 @@ body{
     border-left: 1px solid var(--border);
     color: var(--text);
 }
-
 /* Version responsive pour téléphones portables */
 @media (max-width: 480px) {
     .job-drawer {
@@ -1180,12 +1088,10 @@ body{
         right: -100%;
     }
 }
-
 /* Classe activée par le JavaScript pour ouvrir le volet */
 .job-drawer.open {
     right: 0;
 }
-
 .drawer-header {
     padding: 20px;
     display: flex;
@@ -1194,7 +1100,6 @@ body{
     background: var(--surface); /* Couleur de carte surélevée */
     border-bottom: 1px solid var(--border);
 }
-
 #previewCategory {
     background: var(--gold-glow);
     color: var(--gold);
@@ -1206,7 +1111,6 @@ body{
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-
 .close-drawer-btn {
     background: none;
     border: none;
@@ -1215,17 +1119,14 @@ body{
     color: var(--text-dim);
     transition: color 0.2s;
 }
-
 .close-drawer-btn:hover {
     color: var(--danger); /* Rouge ou doré au survol pour fermer */
 }
-
 .drawer-body {
     padding: 24px;
     flex: 1;
     overflow-y: auto;
 }
-
 /* Style du Titre principal */
 .drawer-body h2 {
     margin: 0 0 6px 0;
@@ -1234,7 +1135,6 @@ body{
     font-weight: 800;
     font-size: 22px;
 }
-
 /* Titre des sections comme "Description du besoin" */
 .drawer-body h3 {
     color: var(--gold);
@@ -1244,14 +1144,12 @@ body{
     letter-spacing: 0.8px;
     margin-bottom: 8px;
 }
-
 /* Texte de description */
 #previewDescription {
     color: var(--text);
     font-size: 14px;
     line-height: 1.6;
 }
-
 .drawer-price-tag {
     font-size: 22px;
     color: var(--green); /* Vert WhatsApp/Dollar éclatant */
@@ -1259,7 +1157,6 @@ body{
     margin-bottom: 20px;
     font-family: 'Syne', sans-serif;
 }
-
 .drawer-info-row {
     display: flex;
     align-items: center;
@@ -1268,13 +1165,11 @@ body{
     font-size: 14px;
     margin-bottom: 15px;
 }
-
 .drawer-divider {
     border: 0;
     border-top: 1px solid var(--border);
     margin: 20px 0;
 }
-
 .drawer-footer {
     padding: 20px;
     border-top: 1px solid var(--border);
@@ -1284,7 +1179,6 @@ body{
 </style>
 </head>
 <body>
-
 <!-- ===== SPLASH ===== -->
 <div id="splash">
   <div class="splash-logo">JM</div>
@@ -1294,7 +1188,6 @@ body{
   </div>
   <div class="splash-bar"><div class="splash-progress"></div></div>
 </div>
-
 <!-- ===== LANGUAGE PICKER (shown once, after the splash, until the user picks a language) ===== -->
 <style>
 .lang-pick-option{transition:background .15s,border-color .15s,transform .12s;}
@@ -1309,16 +1202,12 @@ body{
     <div style="display:flex;flex-direction:column;gap:8px;">
       <button class="lang-pick-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇫🇷 Français</button>
       <button class="lang-pick-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇬🇧 English</button>
-      <button class="lang-pick-option" onclick="setLanguage('it')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇮🇹 Italiano</button>
-      <button class="lang-pick-option" onclick="setLanguage('de')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇩🇪 Deutsch</button>
-      <button class="lang-pick-option" onclick="setLanguage('zh')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇨🇳 中文</button>
+      
     </div>
   </div>
 </div>
-
 <!-- ===== TOAST ===== -->
 <div id="toast"></div>
-
 <!-- Bandeau "hors connexion" : au lieu qu'une action (publier, contacter,
      laisser un avis...) échoue en silence ou avec une erreur générique
      quand le réseau tombe, on prévient tout de suite et clairement — voir
@@ -1327,7 +1216,6 @@ body{
 <div id="offlineBanner" style="position:fixed;top:0;left:0;right:0;z-index:1100;background:#FF3B30;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:6px 12px;transform:translateY(-100%);transition:transform 0.3s var(--ease,ease);">
   📡 <span data-i18n="offlineBannerText">Pas de connexion internet — certaines actions peuvent échouer</span>
 </div>
-
 <!-- Popup « hors ligne » : quand la connexion tombe, on le dit CLAIREMENT et
      on propose le plan de la carte — les tuiles des zones déjà visitées sont
      en cache (keepBuffer du layer satellite) et restent consultables sans
@@ -1341,7 +1229,6 @@ body{
     <button type="button" onclick="hideOfflinePopup()" style="width:100%;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#9999BC);padding:11px;border-radius:12px;font-weight:600;font-size:13px;cursor:pointer;" data-i18n="offlinePopLater">Plus tard</button>
   </div>
 </div>
-
 <!-- Modale "Partager ton annonce", proposée juste après une publication réussie
      (voir promptShareNewJob()) — le moment où l'annonce a le plus besoin de
      visibilité est juste après sa mise en ligne, avant qu'elle ne redescende
@@ -1358,7 +1245,6 @@ body{
     <button onclick="document.getElementById('shareNewJobModal').style.display='none';" style="width:100%;background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;padding:8px;" data-i18n="notifPrimerLater">Plus tard</button>
   </div>
 </div>
-
 <!-- ===== ÉCRAN D'ACCUEIL (onboarding, affiché une seule fois au tout premier lancement,
      juste après le choix de la langue, tant que 'jmc_onboarding_seen' n'est pas mémorisé) ===== -->
 <style>
@@ -1370,7 +1256,6 @@ body{
 <div id="onboardingOverlay" style="display:none;position:fixed;inset:0;z-index:10400;background:rgba(10,10,15,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
   <div style="position:relative;width:100%;max-width:360px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px 24px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
     <button onclick="skipOnboarding()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;padding:6px;" data-i18n="onbSkip">Passer</button>
-
     <div class="onb-slide active" data-slide="0">
       <div style="font-size:44px;margin-bottom:16px;">🗺️</div>
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle1">Trouvez un pro près de chez vous</div>
@@ -1386,17 +1271,14 @@ body{
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle3">Contactez en toute confiance</div>
       <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody3">Consultez les avis et les badges vérifiés, puis échangez directement via le chat sécurisé de l'app.</div>
     </div>
-
     <div style="display:flex;gap:6px;justify-content:center;margin:22px 0 18px;">
       <div class="onb-dot active" data-dot="0"></div>
       <div class="onb-dot" data-dot="1"></div>
       <div class="onb-dot" data-dot="2"></div>
     </div>
-
     <button id="onbNextBtn" onclick="onboardingNext()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:14px;color:#0A0A0F;font-size:14px;font-weight:800;cursor:pointer;" data-i18n="onbNext">Suivant</button>
   </div>
 </div>
-
 <!-- ===== INVITE D'INSTALLATION PWA =====
      Capture l'événement natif "beforeinstallprompt" (Android/Chrome — pas
      Safari iOS, qui n'a pas cette API) pour proposer une bannière à notre
@@ -1415,7 +1297,6 @@ body{
     <button onclick="respondToInstallPrompt(true)" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="installPromptInstall">Installer</button>
   </div>
 </div>
-
 <!-- ===== ACCROCHE NOTIFICATIONS (pré-prompt avant le popup natif du navigateur) =====
      But : ne JAMAIS déclencher Notification.requestPermission() à froid.
      Un refus au popup natif du navigateur est quasi définitif (aucun moyen de
@@ -1434,7 +1315,6 @@ body{
     <button onclick="respondToNotifPrimer(true)" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="notifPrimerEnable">Activer les alertes</button>
   </div>
 </div>
-
 <!-- Bandeau de rappel avant expiration d'un boost, affiché seulement à l'ouverture
      de "Mes publications" quand une annonce boostée du propriétaire arrive à
      échéance sous 24h et qu'il lui reste au moins un crédit pour la renouveler
@@ -1452,10 +1332,8 @@ body{
     <button id="boostExpiryRenewBtn" style="flex:1.4;padding:10px;background:linear-gradient(135deg,var(--gold,#FFD700),#E6B800);border:none;border-radius:12px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;" data-i18n="boostExpiryRenewBtn">Renouveler (1 crédit)</button>
   </div>
 </div>
-
 <!-- ===== MAP ===== -->
 <div id="map"></div>
-
 <!-- ===== TOPBAR ===== -->
 <header class="topbar">
   <div class="logo-wrap">
@@ -1484,22 +1362,17 @@ body{
       </button>
       <div id="settingsPanel" style="display:none;position:absolute;top:48px;right:0;width:260px;max-width:calc(100vw - 32px);background:var(--dark);border:1px solid rgba(255,255,255,0.1);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:2100;padding:16px;">
         <div style="font-weight:700;margin-bottom:12px;font-family:'Syne',sans-serif;" data-i18n="settingsTitle">Paramètres</div>
-
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;" data-i18n="settingsLanguage">Langue</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
           <button onclick="setLanguage('fr')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇫🇷</button>
           <button onclick="setLanguage('en')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇬🇧</button>
-          <button onclick="setLanguage('it')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇮🇹</button>
-          <button onclick="setLanguage('de')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇩🇪</button>
-          <button onclick="setLanguage('zh')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇨🇳</button>
+          
         </div>
-
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;" data-i18n="settingsTheme">Thème</div>
         <button id="themeToggleBtn" onclick="toggleTheme()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
           <span id="themeToggleIcon">🌙</span>
           <span id="themeToggleLabel" data-i18n="themeDark">Sombre</span>
         </button>
-
         <div style="font-size:12px;color:var(--text-dim);margin:14px 0 8px 0;" data-i18n="settingsNotifications">Notifications</div>
         <button type="button" onclick="toggleSettingsPanel(); openNotifPrefs();" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
           🔔 <span data-i18n="notifPrefsTitle">Notifications</span>
@@ -1507,12 +1380,10 @@ body{
         <button type="button" id="installAppBtn" onclick="installAppFromSettings()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
           📲 <span id="installAppBtnLabel" data-i18n="installSettingsBtn">Installer l'app</span>
         </button>
-
       </div>
     </div>
   </div>
 </header>
-
 <!-- ====== OVERLAY « INSTALLER L'APP » (instructions manuelles iOS/Android) ====== -->
 <div id="installManualOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2200;align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--surface,#1a1a1a);border-radius:16px;padding:24px;max-width:380px;width:100%;">
@@ -1523,7 +1394,6 @@ body{
     <button type="button" onclick="document.getElementById('installManualOverlay').style.display='none'" style="width:100%;background:var(--gold,#FFD700);border:none;color:#111;padding:12px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;" data-i18n="okBtn">OK</button>
   </div>
 </div>
-
 <!-- ===== CATEGORY BAR ===== -->
 <nav class="category-bar">
   <button class="cat-btn active" onclick="filterJobs('all',this)">
@@ -1558,8 +1428,13 @@ body{
     <div class="cat-dot" style="background:#AF52DE"></div>
     <span data-i18n="catInfo">Informatique</span>
   </button>
+  <!-- (20260905q) Catégorie « Autre » : les services hors des 7 métiers
+       (coiffure, couture, photographie, cours particuliers...) — gris neutre -->
+  <button class="cat-btn" onclick="filterJobs('autre',this)">
+    <div class="cat-dot" style="background:#8E8E93"></div>
+    <span data-i18n="catAutre">Autre</span>
+  </button>
 </nav>
-
 <!-- ===== SEARCH PANEL (recherche par nom + filtre par rayon) ===== -->
 <div class="search-panel" id="searchPanel">
   <div style="display:flex;gap:8px;align-items:center;">
@@ -1575,7 +1450,6 @@ body{
   </div>
   <div class="search-results-count" id="searchResultsCount"></div>
 </div>
-
 <!-- ===== SIDE CONTROLS ===== -->
 <div class="side-controls">
   <button class="side-btn" onclick="locateMe()" data-i18n-title="tipLocate" title="Ma position">
@@ -1596,7 +1470,6 @@ body{
     <div class="dist-badge-label">km</div>
   </div>
 </div>
-
 <!-- ===== ITINERARY PANEL (hidden by default) ===== -->
 <div class="itin-panel hidden" id="itinPanel">
   <div class="itin-label" data-i18n="itinLabel">Itineraire</div>
@@ -1604,7 +1477,6 @@ body{
   <div class="itin-sub" id="itinTime" data-i18n="calculating">Calcul en cours...</div>
   <button style="width:100%;margin-top:10px;padding:8px;background:var(--danger);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;" onclick="clearRoute()" data-i18n="cancelBtn">Annuler</button>
 </div>
-
 <!-- ===== JOB PUBLISH FORM SHEET ===== -->
 <div class="sheet" id="jobFormSheet">
   <div class="sheet-handle"></div>
@@ -1617,7 +1489,6 @@ body{
   <div class="sheet-body">
     <input type="hidden" id="jobLat" value="">
     <input type="hidden" id="jobLng" value="">
-    
     <div class="form-group">
       <label class="form-label" data-i18n="fieldCategory">Categorie</label>
       <select class="form-select" id="category">
@@ -1628,6 +1499,7 @@ body{
         <option value="jardinage|#34C759" data-i18n="optJardinage">Jardinage</option>
         <option value="mecanique|#FF3B30" data-i18n="optMecanique">Mecanique Auto</option>
         <option value="informatique|#AF52DE" data-i18n="optInfo">Informatique</option>
+        <option value="autre|#8E8E93" data-i18n="optAutre">Autre (coiffure, couture...)</option>
       </select>
       <button type="button" class="btn-ai-improve" id="suggestCategoryBtn" onclick="suggestJobCategory()" data-i18n="btnSuggestCategory" style="margin-top:8px;background:none;border:1px solid var(--accent,#25D366);color:var(--accent,#25D366);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">✨ Suggérer la catégorie</button>
     </div>
@@ -1682,7 +1554,6 @@ body{
     </button>
   </div>
 </div>
-
 <!-- ===== JOBS LIST SHEET ===== -->
 <div class="sheet jobs-sheet" id="jobsSheet">
   <div class="sheet-handle"></div>
@@ -1723,7 +1594,6 @@ body{
     <div id="artisanOfMonthBox" style="margin:12px 16px 8px 16px;"></div>
   </div>
 </div>
-
 <!-- ===== (20260905g) RÉPERTOIRE ENTREPRISES ===== -->
 <!-- La vitrine des profils entreprise : logo, métier, vérification, avis,
      téléphone. Données = profilesCache (temps réel, zéro réseau en plus).
@@ -1769,7 +1639,6 @@ body{
   </div>
 </div>
 <!-- ===== FIN RÉPERTOIRE ENTREPRISES ===== -->
-
 <!-- ===== ACCOUNT PAGE ===== -->
 <div class="overlay-page" id="accountPage">
   <div class="overlay-header">
@@ -1784,7 +1653,6 @@ body{
     <div class="account-name" id="accountName" data-i18n="userFallback">Utilisateur</div>
     <div class="account-email" id="accountEmail" data-i18n="notConnected">Non connecte</div>
     <div class="account-status" id="profileStatus" data-i18n="profileIncomplete">Profil incomplet</div>
-
     <!-- Auth Section (shown when not logged in) -->
     <div id="authSection">
       <div class="auth-tabs">
@@ -1812,17 +1680,14 @@ body{
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
           <span data-i18n="continueGoogle">Continuer avec Google</span>
         </button>
-
       </div>
     </div>
-
     <!-- User dashboard (shown when logged in) -->
    <div id="userDashboard" class="hidden">
   <div class="account-card">
     <!-- (20260905e) Nudge de complétude : incite à compléter le profil pour
          être vu plus souvent (masqué à 100 %). Rempli par updateAccountUI. -->
     <div id="profileCompletenessNudge" style="display:none;margin-bottom:10px;padding:10px 12px;background:linear-gradient(135deg,rgba(37,211,102,0.10),rgba(45,108,223,0.06));border:1px solid rgba(37,211,102,0.35);border-radius:12px;font-size:12px;line-height:1.4;"></div>
-    
     <a class="account-item" href="#" onclick="openProfileSheet()" style="background:linear-gradient(135deg,rgba(255,215,0,0.14),rgba(255,215,0,0.04));border:1px solid rgba(255,215,0,0.3);border-radius:12px;margin-bottom:10px;">
       <div class="account-item-icon" style="background:var(--gold,#FFD700);">
         <svg viewBox="0 0 24 24" fill="none" stroke="#0A0A0F" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1830,7 +1695,6 @@ body{
       <span style="font-weight:800;" data-i18n="myProProfile">Mon Profil Pro</span>
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold,#FFD700)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
-
     <a class="account-item" id="adminMenuItem" href="#" onclick="openAdminPanel()">
       <div class="account-item-icon" style="background:rgba(255,215,0,0.15);">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -1838,7 +1702,6 @@ body{
       <span data-i18n="adminDashboard">Dashboard Admin</span>
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
-
     <a class="account-item" href="#" onclick="openChat()">
       <div class="account-item-icon" style="background:rgba(0,122,255,0.15);">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -1846,7 +1709,6 @@ body{
       <span data-i18n="chatPanelTitle">Assistant sécurisé</span>
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
-
     <a class="account-item" href="#" onclick="openMyJobs()">
       <div class="account-item-icon" style="background:rgba(37,211,102,0.12);">
         <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
@@ -1854,9 +1716,7 @@ body{
       <span data-i18n="myListings">Mes publications</span>
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
-
   </div>
-
    <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     <span data-i18n="logout">Déconnexion</span>
@@ -1864,7 +1724,6 @@ body{
 </div>
   </div>
 </div>
-
 <!-- ===== NOTIFICATION PREFS ===== -->
 <div class="overlay-page" id="notifPrefsPage">
   <div class="overlay-header">
@@ -1880,7 +1739,6 @@ body{
     <div id="notifPrefsList"></div>
   </div>
 </div>
-    
  <!-- ===== ADMIN PANEL ===== -->
 <div class="overlay-page" id="adminPanel">
   <div class="overlay-header">
@@ -1936,18 +1794,14 @@ body{
     </div>
     <div class="section-title" data-i18n="adminReportsTitle">Signalements en attente</div>
     <div id="adminReportsList"></div>
-
     <div class="section-title" data-i18n="adminVerificationsTitle">Vérifications en attente</div>
     <div id="adminVerificationsList"></div>
-
     <div class="section-title" data-i18n="adminReferralsTitle">Crédits parrainage à attribuer</div>
     <div id="adminReferralsList"></div>
-
     <div class="section-title" data-i18n="adminAllJobsTitle">Tous les jobs</div>
     <div id="adminJobsList"></div>
   </div>
 </div>
-
 <!-- ===== CHAT PAGE ===== -->
 <div class="overlay-page" id="chatPage">
   <div class="overlay-header">
@@ -1974,7 +1828,6 @@ body{
     </button>
   </div>
 </div>
-
 <!-- ===== SIGNALEMENT D'UNE ANNONCE ===== -->
 <div class="overlay-page" id="reportModal">
   <div class="overlay-header">
@@ -2031,41 +1884,31 @@ body{
     <span data-i18n="navAccount">Compte</span>
   </button>
 </nav>
-
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905j" defer></script>
-<script src="app.js?v=20260905j" defer></script>
-
-  
+<script src="chat-widget.js?v=20260905v" defer></script>
+<script src="app.js?v=20260905v" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
         <span class="drawer-badge" id="previewCategory">Catégorie</span>
         <button class="close-drawer-btn" onclick="closeJobPreview()" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">&times;</button>
     </div>
-    
     <div class="drawer-body">
         <h2 id="previewTitle">Titre de l'annonce</h2>
-        
         <div style="display:flex; gap:8px; margin:8px 0 12px;">
             <span id="previewPriceBadge" style="background:#25D366; color:white; padding:4px 12px; border-radius:12px; font-size:13px; font-weight:700;">0 XAF</span>
             <span id="previewCategoryBadge" style="background:#FFD700; color:#111; padding:4px 12px; border-radius:12px; font-size:13px; font-weight:700;">Catégorie</span>
         </div>
-        
         <!-- (20260905x) Identité du posteur : société 🏢 / personne 👤 +
              signaux de confiance (✓ Vérifié, PRO) — l'entreprise se démarque. -->
         <div id="previewPosterRow" style="display:none;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;flex-wrap:wrap;"></div>
-        
         <div class="drawer-info-row">
             <span>📧</span>
             <span id="previewEmail">Non spécifié</span>
         </div>
-        
         <hr class="drawer-divider">
-        
                 <h3 data-i18n="descNeed">Description du besoin :</h3>
         <p id="previewDescription">Détails de l'emploi ou du service demandé...</p>
-
         <!-- Analyse IA des signaux d'alerte (arnaque potentielle) : masquée pour
              ses propres annonces via previewScamCheck (même logique que le bouton
              WhatsApp), et déclenchée manuellement plutôt qu'automatiquement pour
@@ -2074,18 +1917,14 @@ body{
           <button type="button" class="btn-ai-improve" id="scamCheckBtn" onclick="analyzeScamSignals()" data-i18n="btnScamCheck" style="background:none;border:1px solid var(--border,#333);color:var(--text-dim,#999);border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">🛡️ Analyser les signaux d'alerte</button>
           <div id="scamCheckBox" style="display:none;font-size:13px;margin-top:8px;padding:10px 12px;border-radius:8px;line-height:1.4;"></div>
         </div>
-
         <!-- Avis reçus par l'auteur de l'annonce : visible par tout le monde, pas
              seulement le propriétaire, pour permettre de décider AVANT de contacter. -->
         <div id="previewOwnerReviews"></div>
-
         <!-- Bouton pour laisser un avis soi-même, si on a déjà contacté ce prestataire -->
         <div id="previewReviewAction"></div>
-
         <!-- NOUVEAU : Conteneur pour afficher les personnes intéressées -->
         <div id="previewContactsContainer"></div>
     </div>
-    
     <div class="drawer-footer">
         <div id="previewOwnerActions" class="hidden">
             <button class="btn btn-ghost" id="previewToggleFilledBtn" onclick="toggleJobFilledFromPreview()">
@@ -2236,7 +2075,6 @@ body{
   .profile-save-btn:active {
     transform: scale(0.98);
   }
-
 /* Sélecteur "Tous / Sauvegardés" en haut du panneau Liste */
 .jobs-filter-seg {
   flex: 1;
@@ -2254,9 +2092,7 @@ body{
   color: #111;
   border-color: var(--gold);
 }
-
 /* ===== ENHANCED FEATURES - NEW STYLES ===== */
-
 /* Description tronquée à 3 lignes dans le popup carte (style WhatsApp) :
    évite qu'une longue annonce ne recouvre tout l'écran sur mobile. Le
    bouton "...voir plus" (voir toggleDescClamp()) retire cette classe. */
@@ -2271,7 +2107,6 @@ body{
   -webkit-line-clamp: unset;
   overflow: visible;
 }
-
 /* FEATURE 1: Advanced Job Search */
 .search-panel {
   position: fixed;
@@ -2362,7 +2197,6 @@ body{
   color: var(--text-dim);
   padding: 0 4px;
 }
-
 /* FEATURE 2: Glassmorphism & Animations */
 .job-card {
   background: rgba(30, 30, 46, 0.5);
@@ -2376,7 +2210,6 @@ body{
   transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(255,215,0,0.1);
 }
-
 /* FEATURE 3: Loading Skeleton */
 .skeleton {
   background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
@@ -2392,7 +2225,6 @@ body{
   border-radius: var(--radius-md);
   margin-bottom: 10px;
 }
-
 /* FEATURE 4: Radius Filters */
 .radius-filters {
   display: flex;
@@ -2423,7 +2255,6 @@ body{
   border-color: var(--gold);
   font-weight: 700;
 }
-
 /* FEATURE 5: Rich Job Card Fields */
 .job-card-salary {
   background: rgba(37,211,102,0.1);
@@ -2461,7 +2292,6 @@ body{
   padding: 2px 6px;
   border-radius: 4px;
 }
-
 /* FEATURE 6: Admin Dashboard */
 .admin-stats-grid {
   display: grid;
@@ -2552,7 +2382,6 @@ body{
   background: rgba(255,215,0,0.15);
   color: var(--gold);
 }
-
 /* FEATURE 7: WhatsApp Button */
 .whatsapp-button {
   background: #25D366;
@@ -2571,7 +2400,6 @@ body{
   width: 100%;
 }
 .whatsapp-button:active { transform: scale(0.95); }
-
 /* FEATURE 8: Gallery Enhancement */
 .photo-gallery-enhanced {
   display: grid;
@@ -2591,14 +2419,12 @@ body{
 .photo-item:hover {
   transform: scale(1.05);
 }
-
 /* FEATURE 9: Smooth Card Entrance */
 @keyframes card-pop {
   from { opacity: 0; transform: translateY(15px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .job-card { animation: card-pop 0.4s var(--ease) forwards; }
-
 /* ===== 20260905f : photos chat (plus petites + grille multi) ===== */
 .wa-img{max-width:220px}
 .wa-imgs{display:grid;grid-template-columns:1fr 1fr;gap:3px;border-radius:8px;overflow:hidden;margin-bottom:4px}
@@ -2625,16 +2451,13 @@ body{
 #chatWidgetOverlay[data-theme='light'] .wa-ctx button.danger{color:#ea0038}
 #chatWidgetOverlay[data-theme='light'] .wa-ctx-sep{background:#e9edef}
 #chatWidgetOverlay[data-theme='light'] .wa-ctx-grp{color:#54656f}
-
 /* ===== 20260905g : suggestions de réponse IA ===== */
 .wa-ai-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:7px 13px;border-radius:16px;border:1px solid rgba(122,78,194,.55);background:linear-gradient(135deg,rgba(122,78,194,.16),rgba(255,215,0,.10));color:var(--text-primary,#e9edef);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s}
 .wa-ai-chip:hover{background:linear-gradient(135deg,rgba(122,78,194,.30),rgba(255,215,0,.20))}
 .wa-ai-chip:active{transform:scale(.97)}
 .wa-ai-chip.loading{opacity:.7;cursor:default}
-
 /* 20260905j : sous-ligne statut du correspondant (métier · vérifié · dispo) */
 .wa-chead-sub{font-size:11px;color:var(--text-secondary,#8696a0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;line-height:1.3}
-
 /* ===== 20260905k : images du chat -50% de largeur (moins d'espace pris) ===== */
 .wa-img{max-width:110px}
 .wa-imgs{max-width:226px}
@@ -2654,7 +2477,6 @@ body{
 /* tag « traduit » sous une bulle traduite automatiquement */
 .wa-translated{font-size:10px;color:var(--text-secondary,#8696a0);opacity:.85;margin-top:2px}
 </style>
-
 <div id="profileSheet" class="profile-sheet">
     <div class="profile-sheet-header">
         <h2 data-i18n="myProProfile">Mon Profil Pro</h2>
@@ -2713,6 +2535,7 @@ body{
               <option value="jardinage" data-i18n="optJardinage">Jardinage</option>
               <option value="mecanique" data-i18n="optMecanique">Mécanique Auto</option>
               <option value="informatique" data-i18n="optInfo">Informatique</option>
+              <option value="autre" data-i18n="optAutre">Autre (coiffure, couture...)</option>
             </select>
         </div>
         <div class="profile-form-group" id="profileCompanyGroup">
@@ -2755,7 +2578,6 @@ body{
         </div>
         <div id="profileReviewsBox"></div>
         <div id="achievementsBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;"></div>
-
         <!-- ====== PORTFOLIO PHOTOS (réalisations de l'artisan) ====== -->
         <div id="portfolioBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;">
           <div id="portfolioTitle" style="font-weight:700; font-size:14px; color:var(--gold,#FFD700); margin-bottom:4px;">📸 Mes réalisations</div>
@@ -2768,7 +2590,6 @@ body{
           </button>
         </div>
         <!-- ====== FIN PORTFOLIO ====== -->
-
         <!-- ====== DISPONIBILITÉ EN TEMPS RÉEL ====== -->
         <div id="availabilityBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;">
           <div style="font-weight:700; font-size:14px; color:var(--gold,#FFD700); margin-bottom:4px;">🕐 Ma disponibilité</div>
@@ -2783,7 +2604,6 @@ body{
           </div>
         </div>
         <!-- ====== FIN DISPONIBILITÉ ====== -->
-
         <!-- ====== STATISTIQUES (réservé PRO) ====== -->
         <div id="proStatsBox" style="margin:16px 0; padding:14px; background:var(--surface,#1a1a1a); border:1px solid var(--border,#333); border-radius:12px;">
           <!-- Rempli dynamiquement par renderProStats() -->
@@ -2792,7 +2612,6 @@ body{
         <div id="referralBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
             <!-- Rempli dynamiquement par renderReferralBox() -->
         </div>
-
         <!-- ====== BLOC PAIEMENT : DEVENIR PRO (NotchPay) ====== -->
         <div style="margin:16px 0; padding:16px; border:1px solid rgba(255,215,0,0.25); border-radius:16px; background:var(--dark2,#14213a);">
           <div style="font-weight:800; font-size:15px; color:var(--gold,#FFD700); margin-bottom:6px;" data-i18n="payProTitle">
@@ -2816,15 +2635,18 @@ body{
             style="width:100%; padding:12px; border:1px solid #2D6CDF; border-radius:12px; background:none; color:#2D6CDF; font-weight:700; font-size:14px; cursor:pointer;">
             🚀 Pack 3 boosts — 500 FCFA
           </button>
+          <!-- (20260905p) Historique de MES paiements : dernier lot de 10,
+               lu depuis payments_by_user/<uid> (maintenu par le worker
+               payment — l'utilisateur ne voit QUE ses lignes). Rempli par
+               renderPaymentHistory() à l'ouverture du profil. -->
+          <div id="paymentHistoryBox" style="display:none;margin-top:12px;border-top:1px solid rgba(255,215,0,0.18);padding-top:12px;"></div>
         </div>
         <!-- ====== FIN BLOC PAIEMENT ====== -->
-
         <div style="margin-top: 10px;">
             <button onclick="saveProfile()" id="saveProfileBtn" class="profile-save-btn" data-i18n="saveChanges">Enregistrer les modifications</button>
         </div>
     </div>
 </div>
-  
 <script>
 function previewImage(event) {
     const reader = new FileReader();
@@ -2835,7 +2657,6 @@ function previewImage(event) {
     reader.readAsDataURL(event.target.files[0]);
 }
 </script>
-
 <!-- ====== MESSAGERIE « CHAT SÉCURISÉ » (widget style WhatsApp, branché sur Firebase dans app.js) ====== -->
 <div id="chatWidgetOverlay" class="msg-overlay" data-theme="light" style="display:none;">
 <div class="wa" id="wa">
@@ -2852,17 +2673,14 @@ function previewImage(event) {
     <div class="wa-tabs" id="waTabs">
       <button class="wa-tab active" data-tab="all" data-i18n="chatTabAll" onclick="W.setTab('all')">Toutes</button>
       <button class="wa-tab" data-tab="unread" data-i18n="chatTabUnread" onclick="W.setTab('unread')">Non lues</button>
+      <button class="wa-tab" data-tab="action" onclick="W.setTab('action')"><span data-i18n="chatTabAction">À traiter</span><span class="wa-tab-badge" id="waTabActionBadge" style="display:none"></span></button>
       <button class="wa-tab" data-tab="archived" data-i18n="chatTabArchived" onclick="W.setTab('archived')">Archivées</button>
-      
-      
     </div>
     <div class="wa-chats" id="waChats"></div>
   </div>
-
   <!-- MAIN -->
   <div class="wa-main" id="waMain">
     <div class="wa-wall"></div>
-
     <!-- Empty state -->
     <div class="wa-empty" id="waEmpty">
       <svg class="wa-empty-icon" viewBox="0 0 303 172" fill="none"><path d="M229.6 14.4H73.4C55 14.4 40 29.4 40 47.8V118c0 18.4 15 33.4 33.4 33.4H99l52.5 26.3v-26.3h78c18.4 0 33.4-15 33.4-33.4V47.8c.1-18.4-14.9-33.4-33.3-33.4z" fill="currentColor" opacity=".08"/><path d="M151.5 54c-23.5 0-42.5 15.2-42.5 34s19 34 42.5 34c4.3 0 8.4-.5 12.3-1.4l16.7 8.4v-13.6c9.9-6.6 16-17 16-27.4 0-18.8-19-34-42.5-34h-2.5z" fill="currentColor" opacity=".12"/></svg>
@@ -2870,7 +2688,6 @@ function previewImage(event) {
       <p data-i18n="chatEmptyBody">Tes conversations apparaissent ici. Ouvre une annonce puis « Chat sécurisé » pour démarrer — la discussion continue d'une annonce à l'autre.</p>
       <div class="keys"><span class="key" data-i18n="keyEnter">Entrée = Envoyer</span><span class="key" data-i18n="keyShiftEnter">Maj+Entrée = Saut de ligne</span><span class="key" data-i18n="keyEsc">Échap = Fermer</span><span class="key" data-i18n="keyCtrlF">Ctrl+F = Rechercher</span></div>
     </div>
-
     <!-- Chat header -->
     <div class="wa-chead" id="waCHead" style="display:none">
       <button class="wa-back" onclick="W.goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
@@ -2881,13 +2698,9 @@ function previewImage(event) {
         <div class="wa-chead-status" id="waHeadStatus"></div>
       </div>
       <div class="wa-chead-acts">
-        
-        
         <button class="wa-icon-btn" title="Rechercher" data-i18n-title="chatSearchTitle" onclick="W.toggleSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
-        
       </div>
     </div>
-
     <!-- Barre de multi-sélection (style WhatsApp) : visible quand des messages sont cochés -->
     <div class="wa-selbar" id="waSelBar" style="display:none">
       <button class="wa-icon-btn" title="Fermer" data-i18n-title="chatCloseTitle" onclick="W.selCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
@@ -2906,34 +2719,28 @@ function previewImage(event) {
       </div>
       <button class="wa-icon-btn" onclick="W.toggleSearch()"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
-
     <!-- Messages -->
     <div class="wa-msgs" id="waMsgs" style="display:none"></div>
-
     <!-- Scroll to bottom -->
     <button class="wa-scroll-btn" id="waScrollBtn" onclick="W.scrollToBottom(true)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
       <span class="badge" id="waScrollBadge" style="display:none"></span>
     </button>
-
     <!-- Reply preview -->
     <div class="wa-reply-prev" id="waReplyPrev">
       <div><div class="wa-reply-prev-name" id="waReplyName"></div><div class="wa-reply-prev-text" id="waReplyText"></div></div>
       <button class="wa-reply-prev-close" onclick="W.cancelReply()">&times;</button>
     </div>
-
     <!-- Suggestions de réponse IA (20260905g) : 1-2 réponses prêtes à envoyer, dans la voix de l'artisan -->
     <div class="wa-quick" id="waAiSuggest" style="background:linear-gradient(135deg,rgba(122,78,194,.06),rgba(255,215,0,.05))">
       <div class="wa-quick-row" id="waAiRow" style="justify-content:center"></div>
     </div>
     <!-- Menu 3 modes IA (pilule « Ma réponse ») : positionné en fixed au clic -->
     <div id="waAiMenu" class="wa-ai-menu" style="display:none"></div>
-
     <!-- Quick replies (réponses rapides contextuelles) -->
     <div class="wa-quick" id="waQuickReplies">
       <div class="wa-quick-row" id="waQuickRow"></div>
     </div>
-
     <!-- Input -->
     <div class="wa-input-area" id="waInputArea" style="display:none">
       <button class="wa-icon-btn" title="Emoji" data-i18n-title="chatEmojiTitle" onclick="W.toggleEmoji()" id="waEmojiBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
@@ -2948,31 +2755,21 @@ function previewImage(event) {
         <button class="wa-icon-btn wa-send" title="Envoyer" data-i18n-title="chatSendTitle" onclick="W.stopRec()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
       </div>
     </div>
-
     <!-- Emoji picker -->
     <div class="wa-emoji" id="waEmoji"></div>
     <!-- Attach popup -->
     <div class="wa-attach" id="waAttach">
       <button class="wa-att-opt" onclick="W.attach('photos')"><span class="wa-att-ico photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span data-i18n="chatPhotosAtt">Photos</span></button>
-      
-      
-      
-      
     </div>
-
     <!-- Drag & drop -->
     <div class="wa-drop" id="waDrop"><svg style="width:48px;height:48px;color:var(--pri)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="wa-drop-text" data-i18n="chatDropText">Dépose une image ici</span><span class="wa-drop-sub" data-i18n="chatDropSub">JPG, PNG, WEBP, GIF — max 8 Mo</span></div>
-
     <!-- Profile panel -->
     <div class="wa-profile" id="waProfile">
       <div class="wa-prof-head"><button class="wa-icon-btn" onclick="W.toggleProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button><h3 data-i18n="chatContactInfo">Infos du contact</h3></div>
       <div class="wa-prof-body">
         <div class="wa-prof-avatar"><img id="waProfAv" src=""><div class="name" id="waProfName"></div><div class="status" id="waProfStatus"></div></div>
         <div class="wa-prof-actions">
-          
-          
           <button class="wa-prof-action" onclick="W.toggleStarred()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span data-i18n="chatStarAction">Épingler</span></button>
-          
         </div>
         <div class="wa-prof-section"><h4 data-i18n="chatAboutLabel">À propos</h4><p id="waProfAbout" data-i18n="profileAbout">Salut 👋 Je suis sur JobMarket.</p></div>
         <div class="wa-prof-section"><h4 data-i18n="chatMediaSection">Médias, liens et documents</h4><div class="wa-prof-media" id="waProfMedia"></div></div>
@@ -2980,8 +2777,6 @@ function previewImage(event) {
     </div>
   </div>
 </div>
-
-
 </div>
 <!-- Lightbox -->
 <div class="wa-lightbox" id="waLB" onclick="W.closeLB()"><button class="wa-lightbox-close">&times;</button><img id="waLBImg" src=""></div>
@@ -2995,10 +2790,6 @@ function previewImage(event) {
 <div class="wa-toast" id="waToast"><img id="waToastAv" src=""><div class="wa-toast-body"><div class="wa-toast-name" id="waToastName"></div><div class="wa-toast-text" id="waToastText"></div></div></div>
 <!-- Hidden file input -->
 <input type="file" id="waFileIn" accept="image/*" multiple style="display:none" onchange="W.onFile(this)">
-
-
-
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
 <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a316c12ece7cbd85',t:'MTc4Nzc4ODM5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-
 </html>
