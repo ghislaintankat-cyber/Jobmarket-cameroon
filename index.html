@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905v">
+<html lang="fr" data-app-build="20260905y">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -9,8 +9,14 @@
   // topbar, et parfois en bas selon l'appareil) restait toujours sombre
   // même en thème clair, puisque cette balise est indépendante du CSS.
   try {
+    // (20260905x) 3 états : 'dark' | 'light' | 'auto' (suit le système).
     var savedTheme = localStorage.getItem('jmc_theme');
-    if (savedTheme === 'light') {
+    var useLight = false;
+    try {
+      if (savedTheme === 'light') useLight = true;
+      else if (savedTheme === 'auto') useLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    } catch (e2) {}
+    if (useLight) {
       document.documentElement.setAttribute('data-theme', 'light');
       document.write('<meta name="theme-color" content="#FFFFFF"/>');
     } else {
@@ -1177,6 +1183,22 @@ body{
 }
 #previewOwnerActions{margin-bottom:10px;}
 </style>
+<!-- (20260905x) ACCESSIBILITÉ + PERFORMANCE — règles globales -->
+<style>
+/* Focus clavier visible (souris non affectée) : les users clavier/navigateur
+   vocal peuvent enfin suivre où ils sont dans l'app. */
+:focus-visible{outline:2px solid var(--gold,#FFD700);outline-offset:2px;border-radius:4px;}
+/* Respect de « réduire les animations » (accessibilité + économie batterie :
+   les 500 cartes de la liste n'ont plus toutes leur slide-up). */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.001s !important;animation-iteration-count:1 !important;transition-duration:0.001s !important;scroll-behavior:auto !important;}
+}
+/* PERFORMANCE — listes longues : les cartes HORS viewport ne sont plus
+   rendues ni peintes (content-visibility, supporté Chrome/Edge/Safari récents
+   ; sinon aucun effet). Le hauteur réservée (contain-intrinsic-size) évite
+   les sauts au scroll. */
+.job-card{content-visibility:auto;contain-intrinsic-size:auto 88px;}
+</style>
 </head>
 <body>
 <!-- ===== SPLASH ===== -->
@@ -1438,9 +1460,12 @@ body{
 <!-- ===== SEARCH PANEL (recherche par nom + filtre par rayon) ===== -->
 <div class="search-panel" id="searchPanel">
   <div style="display:flex;gap:8px;align-items:center;">
-    <input type="text" class="search-input" id="jobSearchInput" data-i18n-placeholder="searchJobPlaceholder" placeholder="Rechercher un job (ex: plombier, menage...)">
+    <input type="text" class="search-input" id="jobSearchInput" data-i18n-placeholder="searchJobPlaceholder" placeholder="Rechercher un job (ex: plombier, menage...)" aria-label="Rechercher un job">
     <button type="button" class="search-close-btn" onclick="toggleSearchPanel()" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">✕</button>
   </div>
+  <!-- (20260905x) SUGGESTIONS MÉTIERS pendant la frappe (chips cliquables,
+       remplies par renderSearchSuggestions — tap = applique le filtre métier) -->
+  <div id="searchSuggestRow" style="display:none;gap:6px;flex-wrap:wrap;margin-top:8px;"></div>
   <div class="filter-chips" id="radiusFilters">
     <button type="button" class="filter-chip active" data-radius="0">Tout</button>
     <button type="button" class="filter-chip" data-radius="0.5">500 m</button>
@@ -1574,6 +1599,10 @@ body{
   <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:0 16px 10px 16px;">
     <button type="button" id="availFilterBtn" class="avail-filter-btn" data-i18n="availNowBadge" data-i18n-title="availFilterTip" data-i18n-aria-label="availFilterTip" aria-label="N'afficher que les artisans disponibles maintenant" onclick="toggleAvailFilter()">🟢 Dispo</button>
     <button type="button" id="companyFilterBtn" class="avail-filter-btn" data-i18n="companyFilterLabel" data-i18n-title="companyFilterTip" data-i18n-aria-label="companyFilterTip" aria-label="N'afficher que les annonces d'entreprises" onclick="toggleCompanyFilter()">🏢 Entreprises</button>
+    <!-- (20260905x) filtre « ✓ Vérifiés » : annonces de profils vérifiés
+         (badge ✓ identité OU 🏢 entreprise vérifiée) — l'avantage concret
+         du badge pour le posteur, le filtre de confiance pour le client. -->
+    <button type="button" id="verifiedFilterBtn" class="avail-filter-btn" data-i18n="verifiedFilterLabel" data-i18n-title="verifiedFilterTip" data-i18n-aria-label="verifiedFilterTip" aria-label="N'afficher que les annonces de profils vérifiés" onclick="toggleVerifiedFilter()">✓ Vérifiés</button>
     <span style="font-size:11px;color:var(--text-dim);" data-i18n="sortLabel">Trier :</span>
     <select id="jobSortSel" onchange="setJobSort(this.value)" data-i18n-aria-label="sortLabel" aria-label="Trier :" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:12px;cursor:pointer;">
       <option value="dist" data-i18n="sortNearest">Le plus proche</option>
@@ -1795,10 +1824,24 @@ body{
     <div class="section-title" data-i18n="adminReportsTitle">Signalements en attente</div>
     <div id="adminReportsList"></div>
     <div class="section-title" data-i18n="adminVerificationsTitle">Vérifications en attente</div>
+    <!-- (20260905y) recherche INSTANTANÉE sur la file (déjà chargée — 0 réseau) -->
+    <input type="text" id="adminVerificationsSearch" oninput="renderAdminVerificationsList()" data-i18n-placeholder="adminSearchVerifPh" placeholder="Chercher (nom, métier, n° WhatsApp)…"
+      style="width:100%;box-sizing:border-box;margin-bottom:10px;background:var(--dark3,rgba(255,255,255,0.05));border:1px solid var(--border,#333);color:var(--text,#fff);padding:9px 12px;border-radius:10px;font-size:13px;">
     <div id="adminVerificationsList"></div>
     <div class="section-title" data-i18n="adminReferralsTitle">Crédits parrainage à attribuer</div>
     <div id="adminReferralsList"></div>
+    <!-- (20260905w) Revenus & paiements : les 30 derniers paiements + totaux
+         (complets / 30 j / en attente / échoués) + export CSV (100 derniers)
+         — rempli par loadAdminPayments() à l'ouverture du dashboard. -->
+    <div class="section-title" data-i18n="adminPaymentsTitle">Revenus &amp; paiements</div>
+    <div id="adminPaymentsSummary"></div>
+    <button type="button" onclick="exportAdminPaymentsCsv()" data-i18n="adminPaymentsExport"
+      style="width:100%;margin-bottom:10px;padding:10px;background:none;border:1px solid var(--border,#333);border-radius:10px;color:var(--text,#e9edef);font-size:12.5px;font-weight:700;cursor:pointer;">📤 Exporter le CSV (100 derniers)</button>
+    <div id="adminPaymentsList"></div>
     <div class="section-title" data-i18n="adminAllJobsTitle">Tous les jobs</div>
+    <!-- (20260905y) recherche INSTANTANÉE sur les jobs (allJobs en mémoire — 0 réseau) -->
+    <input type="text" id="adminJobsSearch" oninput="renderAdminJobsList()" data-i18n-placeholder="adminSearchJobsPh" placeholder="Chercher un job (titre, posteur, métier)…"
+      style="width:100%;box-sizing:border-box;margin-bottom:10px;background:var(--dark3,rgba(255,255,255,0.05));border:1px solid var(--border,#333);color:var(--text,#fff);padding:9px 12px;border-radius:10px;font-size:13px;">
     <div id="adminJobsList"></div>
   </div>
 </div>
@@ -1885,8 +1928,8 @@ body{
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905v" defer></script>
-<script src="app.js?v=20260905v" defer></script>
+<script src="chat-widget.js?v=20260905y" defer></script>
+<script src="app.js?v=20260905y" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -1924,6 +1967,9 @@ body{
         <div id="previewReviewAction"></div>
         <!-- NOUVEAU : Conteneur pour afficher les personnes intéressées -->
         <div id="previewContactsContainer"></div>
+        <!-- (20260905y) « D'autres annonces de X » : cross-vitrine du posteur
+             (tap = ouvre cette annonce) — rempli par renderPosterOtherJobs -->
+        <div id="posterOtherJobsBox" style="display:none;"></div>
     </div>
     <div class="drawer-footer">
         <div id="previewOwnerActions" class="hidden">
@@ -1948,6 +1994,11 @@ body{
         </button>
         <button class="btn btn-blue" onclick="shareJobViaWhatsApp()">
             <span style="font-size:16px;">🔗</span> <span data-i18n="shareWhatsApp">Partager sur WhatsApp</span>
+        </button>
+        <!-- (20260905x) copier le lien DIRECT de l'annonce (fonctionnait déjà
+             dans le popup carte — maintenant aussi ici, pour SMS/FB/Telegram) -->
+        <button class="btn btn-blue" onclick="copyJobLink(window.currentPreviewJob && window.currentPreviewJob.id)">
+            <span style="font-size:16px;">📋</span> <span data-i18n="copyLinkBtn">Copier le lien</span>
         </button>
         <button class="btn btn-blue" onclick="drawRouteFromPreview()">
             <span data-i18n="seeItinerary">Voir l'itinéraire</span>
@@ -2480,6 +2531,8 @@ body{
 <div id="profileSheet" class="profile-sheet">
     <div class="profile-sheet-header">
         <h2 data-i18n="myProProfile">Mon Profil Pro</h2>
+        <!-- (20260905x) slot bouton « Partager ce profil » (visuel public uniquement) -->
+        <div id="profileShareSlot" style="display:none;align-items:center;"></div>
       <div class="profile-form-group" style="text-align: center; margin-bottom: 20px;">
     <div id="profileImagePreview" style="width: 100px; height: 100px; border-radius: 50%; background: #222; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid var(--gold,#FFD700);">
         <span style="color: #666; font-size: 12px;" data-i18n="photoWord">Photo</span>
@@ -2631,10 +2684,16 @@ body{
             style="width:100%; padding:12px; margin-bottom:8px; border:1px solid #2EA067; border-radius:12px; background:none; color:#2EA067; font-weight:700; font-size:14px; cursor:pointer;">
             ✅ Badge Identité vérifiée — 500 FCFA
           </button>
+          <!-- (20260905x) ligne d'avantages du badge (suit la carte active,
+               remplie par renderPaymentButtons → visible au moment du prix) -->
+          <div id="verifiedPerksLine" style="display:none;font-size:11.5px;color:var(--text-dim,#999);line-height:1.4;margin:0 2px 10px;"></div>
           <button onclick="startPayment('boost_pack')" data-i18n="payBoostButton"
             style="width:100%; padding:12px; border:1px solid #2D6CDF; border-radius:12px; background:none; color:#2D6CDF; font-weight:700; font-size:14px; cursor:pointer;">
             🚀 Pack 3 boosts — 500 FCFA
           </button>
+          <!-- (20260905y) mode de paiement VISIBLE avant de cliquer (MoMo /
+               Orange Money) — la 1ʳᵉ fois, savoir CE qui va payer est crucial -->
+          <div data-i18n="payMobileMoneyNote" style="font-size:11.5px;color:var(--text-dim,#999);line-height:1.4;margin:0 2px 10px;">💳 Paiement par MTN MoMo ou Orange Money (NotchPay) — ton compte s'active tout seul.</div>
           <!-- (20260905p) Historique de MES paiements : dernier lot de 10,
                lu depuis payments_by_user/<uid> (maintenu par le worker
                payment — l'utilisateur ne voit QUE ses lignes). Rempli par
