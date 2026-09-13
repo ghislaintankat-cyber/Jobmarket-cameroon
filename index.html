@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905y">
+<html lang="fr" data-app-build="20260905t">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -424,6 +424,15 @@ body{
 .wa-file-ico svg{color:#fff;width:20px;height:20px}
 .wa-file-name{font-size:14px;color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
 .wa-file-size{font-size:12px;color:var(--text-secondary)}
+/* (20260905o) documents + vidéos dans le chat sécurisé */
+a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap:10px}
+.wa-file-dl{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:28px;height:28px;border-radius:50%;color:var(--pri)}
+.wa-file-dl svg{width:18px;height:18px}
+.wa-video{max-width:260px;min-width:200px;background:rgba(0,0,0,.05);border-radius:8px;overflow:hidden}
+.wa-video video{display:block;width:100%;max-height:220px;background:#000;object-fit:contain}
+.wa-video-meta{display:flex;align-items:center;gap:8px;padding:7px 9px}
+.wa-prof-file{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-primary);text-decoration:none;background:var(--bg-hover);border-radius:8px;padding:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wa-prof-file span{overflow:hidden;text-overflow:ellipsis}
 /* Link preview */
 .wa-linkprev{background:rgba(0,0,0,.04);border-radius:6px;margin-bottom:6px;overflow:hidden;cursor:pointer;border-left:3px solid var(--pri)}
 .wa-linkprev-body{padding:8px 10px}
@@ -509,6 +518,7 @@ body{
 .wa-att-ico.photos{background:#bf59cf}
 .wa-att-ico.camera{background:#ec4c78}
 .wa-att-ico.doc{background:#5157ae}
+.wa-att-ico.video{background:#e52521}
 .wa-att-ico.contact{background:#009de2}
 .wa-att-ico.poll{background:#ff9800}
 .wa-att-ico svg{color:#fff;width:20px;height:20px}
@@ -1267,6 +1277,30 @@ body{
     <button onclick="document.getElementById('shareNewJobModal').style.display='none';" style="width:100%;background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;padding:8px;" data-i18n="notifPrimerLater">Plus tard</button>
   </div>
 </div>
+<!-- (20260905g) ONBOARDING 1ER JOB : « que se passe-t-il maintenant » —
+     affiché UNE seule fois, après la toute première publication. -->
+<div id="firstJobSuccessModal" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(10,10,15,0.75);align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:360px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);text-align:center;">
+    <div style="font-size:40px;margin-bottom:12px;">🎉</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--text);margin-bottom:10px;" data-i18n="firstJobSuccessTitle">Ton premier job est en ligne !</div>
+    <div style="color:var(--text-dim);font-size:13px;line-height:1.6;margin-bottom:18px;text-align:left;" data-i18n="firstJobSuccessBody">C'est visible sur la carte et dans la liste. Les artisans t'écriront dans le chat sécurisé. Réponds vite : ta réactivité inspire confiance. Et partage sur WhatsApp pour toucher plus de monde dès maintenant.</div>
+    <button id="firstJobShareBtn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:white;padding:13px;border-radius:14px;border:none;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:10px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+      <span data-i18n="shareNewJobBtn">Partager sur WhatsApp</span>
+    </button>
+    <button id="firstJobGoBtn" style="width:100%;background:none;border:none;color:var(--gold,#FFD700);font-size:14px;font-weight:700;cursor:pointer;padding:8px;" data-i18n="firstJobSuccessGoBtn">C'est noté ✅</button>
+  </div>
+</div>
+<!-- (20260905h) SUIVI DE MÉTIERS : sélection des catégories suivies (rétention
+     — alerte des nouveaux jobs + filtre « Mes métiers ») -->
+<div id="followedCatsModal" style="display:none;position:fixed;inset:0;z-index:9250;background:rgba(10,10,15,0.75);align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:380px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:22px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--text);margin-bottom:6px;" data-i18n="followedSelectTitle">Suis tes métiers</div>
+    <div style="color:var(--text-dim);font-size:13px;line-height:1.5;margin-bottom:16px;" data-i18n="followedSelectBody">Reçois une alerte quand un nouveau job apparaît dans un métier que tu suis. Et filtre ta liste en 1 tap.</div>
+    <div id="followedCatsBody" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;"></div>
+    <button onclick="closeFollowedCatsModal()" style="width:100%;background:var(--gold,#FFD700);color:#0A0A0F;padding:13px;border-radius:14px;border:none;font-weight:800;font-size:14px;cursor:pointer;">Fermer</button>
+  </div>
+</div>
 <!-- ===== ÉCRAN D'ACCUEIL (onboarding, affiché une seule fois au tout premier lancement,
      juste après le choix de la langue, tant que 'jmc_onboarding_seen' n'est pas mémorisé) ===== -->
 <style>
@@ -1514,6 +1548,13 @@ body{
   <div class="sheet-body">
     <input type="hidden" id="jobLat" value="">
     <input type="hidden" id="jobLng" value="">
+    <!-- (20260905q) bannière « plafond d'annonces atteint » par type de
+         profil (nouvelle annonce uniquement) — remplie par
+         renderJobLimitBanner, masquée sinon (levier d'upgrade visible) -->
+    <div id="jobLimitBanner" style="display:none;margin:0 16px 10px 16px;padding:10px 12px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.35);border-radius:10px;"></div>
+    <!-- (20260905g) conseils du 1er job (remplis par renderFirstJobTips,
+         affiché UNE seule fois, au tout premier job publié) -->
+    <div id="firstJobTipsBox" style="display:none;margin:0 0 14px 0;padding:14px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.25);border-radius:14px;"></div>
     <div class="form-group">
       <label class="form-label" data-i18n="fieldCategory">Categorie</label>
       <select class="form-select" id="category">
@@ -1596,6 +1637,10 @@ body{
     <button type="button" id="jobsFilterSavedBtn" class="jobs-filter-seg" onclick="showSavedJobsInSheet()" data-i18n="filterSavedJobs">Sauvegardés</button>
     <button type="button" id="jobsFilterMineBtn" class="jobs-filter-seg" onclick="showMyJobsInSheet()" data-i18n="filterMyJobs">Mes annonces</button>
   </div>
+  <!-- (20260905q) ligne « X/Y annonces actives » par type de profil (onglet
+       « Mes annonces ») + hint d'upgrade quand le plafond est atteint —
+       rempli par renderJobsTierLimitLine (masqué sinon) -->
+  <div id="jobsTierLimitLine" style="display:none;align-items:center;padding:0 16px 6px 16px;"></div>
   <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:0 16px 10px 16px;">
     <button type="button" id="availFilterBtn" class="avail-filter-btn" data-i18n="availNowBadge" data-i18n-title="availFilterTip" data-i18n-aria-label="availFilterTip" aria-label="N'afficher que les artisans disponibles maintenant" onclick="toggleAvailFilter()">🟢 Dispo</button>
     <button type="button" id="companyFilterBtn" class="avail-filter-btn" data-i18n="companyFilterLabel" data-i18n-title="companyFilterTip" data-i18n-aria-label="companyFilterTip" aria-label="N'afficher que les annonces d'entreprises" onclick="toggleCompanyFilter()">🏢 Entreprises</button>
@@ -1603,6 +1648,13 @@ body{
          (badge ✓ identité OU 🏢 entreprise vérifiée) — l'avantage concret
          du badge pour le posteur, le filtre de confiance pour le client. -->
     <button type="button" id="verifiedFilterBtn" class="avail-filter-btn" data-i18n="verifiedFilterLabel" data-i18n-title="verifiedFilterTip" data-i18n-aria-label="verifiedFilterTip" aria-label="N'afficher que les annonces de profils vérifiés" onclick="toggleVerifiedFilter()">✓ Vérifiés</button>
+    <!-- (20260905h) filtre « Mes métiers » : jobs des catégories suivies
+         (retention — l'artisan est aussi alerté des nouveaux jobs dedans) -->
+    <button type="button" id="followedFilterBtn" class="avail-filter-btn" data-i18n="followedFilterLabel" data-i18n-title="followedFilterTip" data-i18n-aria-label="followedFilterTip" aria-label="N'afficher que les jobs de mes métiers suivis" onclick="toggleFollowedFilter()">🔔 Mes métiers</button>
+    <button type="button" onclick="openFollowedCatsModal()" data-i18n-title="followedSelectTitle" title="Suis tes métiers" aria-label="Suis tes métiers" style="background:none;border:1px solid var(--border,#333);border-radius:10px;color:var(--text,#e9edef);font-size:12px;padding:5px 8px;cursor:pointer;">✚</button>
+    <!-- (20260905f) filtre BUDGET : « ≤ X FCFA » — options remplies par
+         renderJobBudgetSelect (persistance jobBudget) -->
+    <select id="jobBudgetSel" onchange="setJobBudget(this.value)" data-i18n-aria-label="budgetLabel" aria-label="Budget :" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:12px;cursor:pointer;"></select>
     <span style="font-size:11px;color:var(--text-dim);" data-i18n="sortLabel">Trier :</span>
     <select id="jobSortSel" onchange="setJobSort(this.value)" data-i18n-aria-label="sortLabel" aria-label="Trier :" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:5px 10px;font-size:12px;cursor:pointer;">
       <option value="dist" data-i18n="sortNearest">Le plus proche</option>
@@ -1713,6 +1765,9 @@ body{
     </div>
     <!-- User dashboard (shown when logged in) -->
    <div id="userDashboard" class="hidden">
+    <!-- (20260905k) nudge « À traiter » : surfacer les artisans qui attendent
+         la réponse de l'employeur (rempli par loadAccountNeedsAction) -->
+    <div id="accountNeedsAction" style="display:none;margin-bottom:12px;padding:14px;background:linear-gradient(135deg,rgba(37,211,102,0.14),rgba(45,108,223,0.08));border:1px solid rgba(37,211,102,0.4);border-radius:12px;color:var(--text,#e9edef);"></div>
   <div class="account-card">
     <!-- (20260905e) Nudge de complétude : incite à compléter le profil pour
          être vu plus souvent (masqué à 100 %). Rempli par updateAccountUI. -->
@@ -1745,12 +1800,34 @@ body{
       <span data-i18n="myListings">Mes publications</span>
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
+    <!-- (20260905i) « Qui m'a contacté » : triage des contacts entrants (employeur) -->
+    <a class="account-item" href="#" onclick="openContactsTriage(); return false;">
+      <div class="account-item-icon" style="background:rgba(45,108,223,0.15);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <span data-i18n="contactsTriageAccountItem">Qui m'a contacté</span>
+      <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </a>
   </div>
    <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     <span data-i18n="logout">Déconnexion</span>
   </button>
 </div>
+  </div>
+</div>
+<!-- ===== (20260905i) QUI M'A CONTACTÉ — triage des contacts entrants (employeur) ===== -->
+<div class="overlay-page" id="contactsTriagePage">
+  <div class="overlay-header">
+    <button class="back-btn" onclick="closeOverlay('contactsTriagePage')" data-i18n-aria-label="backAriaLabel" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="overlay-title" data-i18n="contactsTriageTitle">Qui m'a contacté</div>
+  </div>
+  <div class="overlay-body">
+    <p style="color:var(--text-dim,#9999BC);font-size:13px;line-height:1.5;margin:0 0 6px;" data-i18n="contactsTriageSubtitle">Les artisans qui ont postulé à vos annonces, du plus récent au plus ancien.</p>
+    <div id="contactsTriageCount" style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:12px;"></div>
+    <div id="contactsTriageList"></div>
   </div>
 </div>
 <!-- ===== NOTIFICATION PREFS ===== -->
@@ -1838,6 +1915,13 @@ body{
     <button type="button" onclick="exportAdminPaymentsCsv()" data-i18n="adminPaymentsExport"
       style="width:100%;margin-bottom:10px;padding:10px;background:none;border:1px solid var(--border,#333);border-radius:10px;color:var(--text,#e9edef);font-size:12.5px;font-weight:700;cursor:pointer;">📤 Exporter le CSV (100 derniers)</button>
     <div id="adminPaymentsList"></div>
+    <!-- (20260905s) PUBS ENTREPRISES : qui est sponsorisé, qui expire bientôt
+         (à relancer), performance (vues/clics/CTR) + revenu pub 30 j —
+         100% en mémoire (profilesCache + cache paiements), rendu par
+         renderAdminAds() à la suite de loadAdminPayments() -->
+    <div class="section-title" data-i18n="adminAdsTitle">📢 Publicités entreprises</div>
+    <div id="adminAdsSummary"></div>
+    <div id="adminAdsList"></div>
     <div class="section-title" data-i18n="adminAllJobsTitle">Tous les jobs</div>
     <!-- (20260905y) recherche INSTANTANÉE sur les jobs (allJobs en mémoire — 0 réseau) -->
     <input type="text" id="adminJobsSearch" oninput="renderAdminJobsList()" data-i18n-placeholder="adminSearchJobsPh" placeholder="Chercher un job (titre, posteur, métier)…"
@@ -1928,8 +2012,8 @@ body{
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905y" defer></script>
-<script src="app.js?v=20260905y" defer></script>
+<script src="chat-widget.js?v=20260905q" defer></script>
+<script src="app.js?v=20260905q" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -1970,6 +2054,10 @@ body{
         <!-- (20260905y) « D'autres annonces de X » : cross-vitrine du posteur
              (tap = ouvre cette annonce) — rempli par renderPosterOtherJobs -->
         <div id="posterOtherJobsBox" style="display:none;"></div>
+        <!-- (20260905p) PUBLICITÉ ENTREPRISE : encart « Dans ce métier » —
+             rempli par renderSponsoredInPreview (pub ciblée sur la catégorie
+             du job, jamais le posteur lui-même) -->
+        <div id="previewSponsoredBox" style="display:none;"></div>
     </div>
     <div class="drawer-footer">
         <div id="previewOwnerActions" class="hidden">
@@ -2665,8 +2753,10 @@ body{
         <div id="referralBox" style="margin: 16px 0; padding: 14px; background: var(--surface,#1a1a1a); border: 1px solid var(--border,#333); border-radius: 12px;">
             <!-- Rempli dynamiquement par renderReferralBox() -->
         </div>
-        <!-- ====== BLOC PAIEMENT : DEVENIR PRO (NotchPay) ====== -->
-        <div style="margin:16px 0; padding:16px; border:1px solid rgba(255,215,0,0.25); border-radius:16px; background:var(--dark2,#14213a);">
+        <!-- ====== BLOC PAIEMENT : DEVENIR PRO (NotchPay) ======
+             (20260905l) id ajouté : ce bloc concerne TOUJOURS l'utilisateur
+             courant → masqué sur un profil public (viewUserProfile). -->
+        <div id="paymentBlockBox" style="margin:16px 0; padding:16px; border:1px solid rgba(255,215,0,0.25); border-radius:16px; background:var(--dark2,#14213a);">
           <div style="font-weight:800; font-size:15px; color:var(--gold,#FFD700); margin-bottom:6px;" data-i18n="payProTitle">
             ⭐ Passer au compte PRO
           </div>
@@ -2691,6 +2781,18 @@ body{
             style="width:100%; padding:12px; border:1px solid #2D6CDF; border-radius:12px; background:none; color:#2D6CDF; font-weight:700; font-size:14px; cursor:pointer;">
             🚀 Pack 3 boosts — 500 FCFA
           </button>
+          <!-- (20260905p) PUBLICITÉ ENTREPRISE : visible UNIQUEMENT pour les
+               profils avec une carte entreprise renseignée — géré par
+               renderPaymentButtons (libellé actif/inactif + prolongation). -->
+          <button id="payAdBtn" onclick="startPayment('company_ad')" style="display:none;width:100%; padding:12px; margin-top:8px; border:1px solid #2D6CDF; border-radius:12px; background:none; color:#2D6CDF; font-weight:700; font-size:14px; cursor:pointer;">
+            📢 Publicité entreprise — 5 000 FCFA / mois
+          </button>
+          <div id="payAdPerks" style="display:none;font-size:11.5px;color:var(--text-dim,#999);line-height:1.4;margin:4px 2px 0;"></div>
+          <!-- (20260905r) MON ESPACE PUB : statut de la pub (active jusqu'au /
+               expirée) + ciblage + stats vues/clics/CTR + alerte d'expiration
+               ≤ 3 jours — le contenu est posé par renderAdSpace() (mon profil
+               + carte entreprise seulement) -->
+          <div id="adStatsBox" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid rgba(45,108,223,0.35);border-radius:12px;background:rgba(45,108,223,0.07);font-size:12px;color:var(--text,#e9edef);line-height:1.5;"></div>
           <!-- (20260905y) mode de paiement VISIBLE avant de cliquer (MoMo /
                Orange Money) — la 1ʳᵉ fois, savoir CE qui va payer est crucial -->
           <div data-i18n="payMobileMoneyNote" style="font-size:11.5px;color:var(--text-dim,#999);line-height:1.4;margin:0 2px 10px;">💳 Paiement par MTN MoMo ou Orange Money (NotchPay) — ton compte s'active tout seul.</div>
@@ -2701,6 +2803,12 @@ body{
           <div id="paymentHistoryBox" style="display:none;margin-top:12px;border-top:1px solid rgba(255,215,0,0.18);padding-top:12px;"></div>
         </div>
         <!-- ====== FIN BLOC PAIEMENT ====== -->
+        <!-- (20260905t) COMPARATEUR DE PALIERS Simple / ✓ Vérifié / ⭐ PRO —
+             matrice des avantages (plafonds de la vague q + badge + tri +
+             stats), colonne « tu es ici » dorée, CTA d'upgrade en 1 tap
+             (startPayment). Rempli par renderTierComparison() (mon profil
+             seulement — jamais sur un profil public). -->
+        <div id="tierCompareBox" style="display:none;margin:12px 0;padding:12px 14px;border:1px solid var(--border,#333);border-radius:14px;background:var(--dark3,rgba(255,255,255,0.03));"></div>
         <div style="margin-top: 10px;">
             <button onclick="saveProfile()" id="saveProfileBtn" class="profile-save-btn" data-i18n="saveChanges">Enregistrer les modifications</button>
         </div>
@@ -2817,8 +2925,13 @@ function previewImage(event) {
     <!-- Emoji picker -->
     <div class="wa-emoji" id="waEmoji"></div>
     <!-- Attach popup -->
+    <!-- (20260905o) Vidéos (≤ 50 Mo) + Documents (≤ 15 Mo) dans le chat
+         sécurisé : upload Cloudinary (video/upload, raw/upload) + bulle
+         <video> / 📄 avec ouverture + téléchargement -->
     <div class="wa-attach" id="waAttach">
       <button class="wa-att-opt" onclick="W.attach('photos')"><span class="wa-att-ico photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span data-i18n="chatPhotosAtt">Photos</span></button>
+      <button class="wa-att-opt" onclick="W.attach('video')"><span class="wa-att-ico video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span><span data-i18n="chatVideosAtt">Vidéos</span></button>
+      <button class="wa-att-opt" onclick="W.attach('doc')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span data-i18n="chatDocAtt">Documents</span></button>
     </div>
     <!-- Drag & drop -->
     <div class="wa-drop" id="waDrop"><svg style="width:48px;height:48px;color:var(--pri)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="wa-drop-text" data-i18n="chatDropText">Dépose une image ici</span><span class="wa-drop-sub" data-i18n="chatDropSub">JPG, PNG, WEBP, GIF — max 8 Mo</span></div>
