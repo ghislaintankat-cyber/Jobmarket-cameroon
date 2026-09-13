@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905t">
+<html lang="fr" data-app-build="20260905w">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1552,6 +1552,10 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
          profil (nouvelle annonce uniquement) — remplie par
          renderJobLimitBanner, masquée sinon (levier d'upgrade visible) -->
     <div id="jobLimitBanner" style="display:none;margin:0 16px 10px 16px;padding:10px 12px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.35);border-radius:10px;"></div>
+    <!-- (20260905w) cross-sell : nudge pub (carte entreprise SANS pub active,
+         nouvelle annonce) — rempli par renderJobAdNudge, masqué sinon.
+         Jamais bloquant : le CTA ouvre Mon profil (bouton pub). -->
+    <div id="jobAdNudgeBox" style="display:none;margin:0 16px 10px 16px;padding:10px 12px;background:rgba(45,108,223,0.08);border:1px solid rgba(45,108,223,0.35);border-radius:10px;"></div>
     <!-- (20260905g) conseils du 1er job (remplis par renderFirstJobTips,
          affiché UNE seule fois, au tout premier job publié) -->
     <div id="firstJobTipsBox" style="display:none;margin:0 0 14px 0;padding:14px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.25);border-radius:14px;"></div>
@@ -1915,6 +1919,12 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
     <button type="button" onclick="exportAdminPaymentsCsv()" data-i18n="adminPaymentsExport"
       style="width:100%;margin-bottom:10px;padding:10px;background:none;border:1px solid var(--border,#333);border-radius:10px;color:var(--text,#e9edef);font-size:12.5px;font-weight:700;cursor:pointer;">📤 Exporter le CSV (100 derniers)</button>
     <div id="adminPaymentsList"></div>
+    <!-- (20260905v) RADAR DES RENOUVELLEMENTS : PRO + pubs qui expirent dans
+         ≤ 7 j (à relancer) + expirés depuis ≤ 7 j (à re-convertir), avec
+         prolongation en 1 tap — 100% en mémoire (profilesCache), rendu par
+         renderAdminRenewalRadar() à l'ouverture du dashboard -->
+    <div class="section-title" data-i18n="adminRenewalTitle">⚠️ À relancer (≤ 7 jours)</div>
+    <div id="adminRenewalList"></div>
     <!-- (20260905s) PUBS ENTREPRISES : qui est sponsorisé, qui expire bientôt
          (à relancer), performance (vues/clics/CTR) + revenu pub 30 j —
          100% en mémoire (profilesCache + cache paiements), rendu par

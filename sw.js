@@ -162,7 +162,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v132'; // 20260905t : comparateur de paliers Simple/Vérifié/PRO dans Mon profil (conversion)
+const CACHE_VERSION = 'v135'; // 20260905w : revenu admin par produit (30 j) + nudge pub dans le formulaire de publication
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
