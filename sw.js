@@ -162,7 +162,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v148'; // 20260905j : 🏅 Top de la semaine (badge + stats PRO)
+const CACHE_VERSION = 'v149'; // 20260905k : fix échec 99% (retry upload) + bouton ↻ Réessayer sur bulle échouée
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
