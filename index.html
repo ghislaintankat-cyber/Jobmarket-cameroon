@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905w">
+<html lang="fr" data-app-build="20260905j">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -370,6 +370,9 @@ body{
 .wa-sys span.wa-newmsg{background:var(--unread);color:#fff;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:5px 14px;border-radius:12px}
 /* Message row */
 .wa-mrow{display:flex;margin-bottom:2px;position:relative;animation:wamsgIn .25s var(--anim) both;touch-action:manipulation}
+/* (20260905i) sur tactile : long-press = menu contextuel (réagir/modifier/…) —
+   sans user-select:none, le téléphone sélectionne le texte au lieu d'ouvrir le menu. */
+.touchdev .wa-mrow{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .wa-mrow.sent{justify-content:flex-end}
 .wa-mrow.recv{justify-content:flex-start}
 .wa-mrow.no-anim{animation:none}
@@ -424,6 +427,7 @@ body{
 .wa-file-ico svg{color:#fff;width:20px;height:20px}
 .wa-file-name{font-size:14px;color:var(--text-primary);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
 .wa-file-size{font-size:12px;color:var(--text-secondary)}
+.wa-file-sec{font-size:10px;color:var(--text-secondary);opacity:.8;margin-top:1px}
 /* (20260905o) documents + vidéos dans le chat sécurisé */
 a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap:10px}
 .wa-file-dl{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:28px;height:28px;border-radius:50%;color:var(--pri)}
@@ -431,6 +435,16 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 .wa-video{max-width:260px;min-width:200px;background:rgba(0,0,0,.05);border-radius:8px;overflow:hidden}
 .wa-video video{display:block;width:100%;max-height:220px;background:#000;object-fit:contain}
 .wa-video-meta{display:flex;align-items:center;gap:8px;padding:7px 9px}
+/* (20260905z) Envoi doc/vidéo façon WhatsApp : barre de progression +
+   POURCENTAGE au-dessus du média, aperçu local pendant l'upload. */
+.wa-up{position:relative;display:flex;align-items:center;gap:8px;padding:6px 9px;background:rgba(0,0,0,.55);color:#fff}
+.wa-video .wa-up{position:absolute;top:0;left:0;right:0;padding:6px 9px;background:linear-gradient(rgba(0,0,0,.65),transparent)}
+.wa-up-track{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.28);overflow:hidden}
+.wa-up-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#25D366,#128C7E);transition:width .18s ease}
+.wa-up-pct{flex-shrink:0;font-size:12px;font-weight:700;min-width:38px;text-align:right}
+.wa-up-fail{background:rgba(200,40,40,.85);font-size:12px;font-weight:700;justify-content:center}
+.wa-video-loading video{pointer-events:none;opacity:.55}
+.wa-file-loading{opacity:.85;pointer-events:none}
 .wa-prof-file{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-primary);text-decoration:none;background:var(--bg-hover);border-radius:8px;padding:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wa-prof-file span{overflow:hidden;text-overflow:ellipsis}
 /* Link preview */
@@ -481,6 +495,10 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 /* Reply preview */
 .wa-reply-prev{display:none;background:var(--bg-input);border-radius:var(--radius);padding:8px 12px;margin:0 16px;border-left:4px solid var(--pri);position:relative;z-index:2;animation:waslideUp .2s var(--anim)}
 .wa-reply-prev.active{display:flex;align-items:center;justify-content:space-between}
+/* (20260905i) mode ÉDITION : bordure dorée (vs bleue pour une réponse) pour
+   que l'utilisateur voie immédiatement qu'il MODIFIE un message existant. */
+.wa-reply-prev.editing{border-left-color:var(--gold,#FFD700)}
+.wa-reply-prev.editing .wa-reply-prev-name{color:var(--gold,#FFD700)}
 .wa-reply-prev-name{font-size:13px;font-weight:600;color:var(--pri-dark)}
 .wa-reply-prev-text{font-size:13px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px}
 .wa-reply-prev-close{background:0 0;border:0;color:var(--text-secondary);cursor:pointer;padding:4px;font-size:20px;line-height:1}
@@ -854,19 +872,19 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 }
 .nav-item.active{color:var(--gold);}
 .nav-item svg{width:22px;height:22px;}
-.nav-center-wrap{flex:0 0 80px;display:flex;justify-content:center;}
+.nav-center-wrap{flex:0 0 64px;display:flex;justify-content:center;}
 .nav-center{
-  width:62px;height:62px;
+  width:52px;height:52px;
   background:linear-gradient(135deg,var(--gold),#E6B800);
   border-radius:50%;border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 0 4px rgba(255,215,0,0.2),0 8px 25px rgba(255,215,0,0.4);
-  transform:translateY(-12px);
+  box-shadow:0 0 0 3px rgba(255,215,0,0.2),0 6px 18px rgba(255,215,0,0.35);
+  transform:translateY(-10px);
   transition:transform 0.2s var(--transition),box-shadow 0.2s;
   color:#0A0A0F;
 }
-.nav-center:active{transform:translateY(-8px) scale(0.95);}
-.nav-center svg{width:26px;height:26px;}
+.nav-center:active{transform:translateY(-6px) scale(0.95);}
+.nav-center svg{width:22px;height:22px;}
 /* ===== JOB LIST ===== */
 .jobs-sheet .sheet-body{padding-bottom:100px;}
 .job-card{
@@ -996,6 +1014,14 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   flex-shrink:0;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
+/* (20260905z) Overlay Loading global : voile sombre centré + spinner + texte
+   « Chargement… » partout où l'utilisateur doit patienter (sécurité :
+   auto-hide 20 s côté app). */
+#globalLoadingOverlay{position:fixed;inset:0;z-index:20000;background:rgba(6,8,12,.55);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s ease}
+#globalLoadingOverlay.show{opacity:1;pointer-events:auto}
+.global-loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:var(--surface,#1a1a1a);border:1px solid var(--border,#333);border-radius:16px;padding:22px 30px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.global-spinner{width:30px;height:30px;border-width:3px;border-color:rgba(255,255,255,.18);border-top-color:var(--gold,#FFD700)}
+.global-loading-text{font-size:14px;font-weight:600;color:var(--text,#e9edef);max-width:240px;text-align:center;line-height:1.4}
 /* ===== CHAT UI ===== */
 .chat-messages{
   padding:16px;display:flex;flex-direction:column;gap:10px;
@@ -2018,12 +2044,12 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
   <button class="nav-item" id="navAccount" onclick="activateNav('account')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    <span data-i18n="navAccount">Compte</span>
+    <span data-i18n="navAccount">Profil</span>
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905q" defer></script>
-<script src="app.js?v=20260905q" defer></script>
+<script src="chat-widget.js?v=20260905j" defer></script>
+<script src="app.js?v=20260905j" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -2142,6 +2168,12 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
     font-size: 20px;
     color: var(--text, white);
     font-weight: 700;
+    /* (20260905y) le titre SE RÉTRÉCIT (ellipsis) au lieu de pousser le
+       bouton ✕ hors de l'écran sur mobile (le header est une rangée flex). */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .sheet-close-btn {
     background: rgba(128,128,145,0.18); /* neutre : visible sur sombre ET clair */
@@ -2156,6 +2188,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
     align-items: center;
     justify-content: center;
     transition: 0.2s;
+    /* (20260905y) jamais compressé par le flex : le ✕ reste tou-jours tappable */
+    flex-shrink: 0;
   }
   .sheet-close-btn:hover {
     background: rgba(128,128,145,0.3);
@@ -2630,19 +2664,24 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
     <div class="profile-sheet-header">
         <h2 data-i18n="myProProfile">Mon Profil Pro</h2>
         <!-- (20260905x) slot bouton « Partager ce profil » (visuel public uniquement) -->
-        <div id="profileShareSlot" style="display:none;align-items:center;"></div>
-      <div class="profile-form-group" style="text-align: center; margin-bottom: 20px;">
-    <div id="profileImagePreview" style="width: 100px; height: 100px; border-radius: 50%; background: #222; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid var(--gold,#FFD700);">
-        <span style="color: #666; font-size: 12px;" data-i18n="photoWord">Photo</span>
-    </div>
-    <input type="file" id="profileImageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
-    <button type="button" onclick="document.getElementById('profileImageInput').click()" style="background:none; border:1px solid var(--gold,#FFD700); color:var(--gold,#FFD700); padding:5px 15px; border-radius:20px; cursor:pointer; font-size: 12px;" data-i18n="changePhoto">
-        Changer photo
-    </button>
-</div>
+        <!-- (20260905y) flex-shrink:0 : c'est le titre (h2) qui cède, jamais ce slot ni le ✕ -->
+        <div id="profileShareSlot" style="display:none;align-items:center;flex-shrink:0;"></div>
+        <!-- (20260905y) FIX mobile : le bloc photo était DANS ce header (rangée
+             flex sans wrap) → sur téléphone il déborderait et poussait le ✕
+             HORS écran, rendant la fiche plein écran impossible à fermer.
+             La photo est maintenant en haut du .sheet-content (scrollable). -->
         <button onclick="closeSheet('profileSheet')" class="sheet-close-btn" data-i18n-aria-label="closeAriaLabel" aria-label="Fermer">✕</button>
     </div>
     <div class="sheet-content" style="padding: 24px; flex: 1; overflow-y: auto;">
+        <div class="profile-form-group" style="text-align: center; margin-bottom: 20px;">
+            <div id="profileImagePreview" style="width: 100px; height: 100px; border-radius: 50%; background: #222; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid var(--gold,#FFD700);">
+                <span style="color: #666; font-size: 12px;" data-i18n="photoWord">Photo</span>
+            </div>
+            <input type="file" id="profileImageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
+            <button type="button" onclick="document.getElementById('profileImageInput').click()" style="background:none; border:1px solid var(--gold,#FFD700); color:var(--gold,#FFD700); padding:5px 15px; border-radius:20px; cursor:pointer; font-size: 12px;" data-i18n="changePhoto">
+                Changer photo
+            </button>
+        </div>
         <div id="profileCompletenessBox" style="margin:0 0 16px 0;padding:14px;background:var(--surface,#1a1a1a);border:1px solid var(--border,#333);border-radius:12px;display:none;"></div>
         <div class="profile-form-group">
             <label data-i18n="profileTypeLabel">Type de profil</label>
@@ -2906,7 +2945,7 @@ function previewImage(event) {
     <!-- Reply preview -->
     <div class="wa-reply-prev" id="waReplyPrev">
       <div><div class="wa-reply-prev-name" id="waReplyName"></div><div class="wa-reply-prev-text" id="waReplyText"></div></div>
-      <button class="wa-reply-prev-close" onclick="W.cancelReply()">&times;</button>
+      <button class="wa-reply-prev-close" onclick="W.cancelPreview()">&times;</button>
     </div>
     <!-- Suggestions de réponse IA (20260905g) : 1-2 réponses prêtes à envoyer, dans la voix de l'artisan -->
     <div class="wa-quick" id="waAiSuggest" style="background:linear-gradient(135deg,rgba(122,78,194,.06),rgba(255,215,0,.05))">
@@ -2975,3 +3014,4 @@ function previewImage(event) {
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
 <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a316c12ece7cbd85',t:'MTc4Nzc4ODM5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
