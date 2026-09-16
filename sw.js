@@ -162,7 +162,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v149'; // 20260905k : fix échec 99% (retry upload) + bouton ↻ Réessayer sur bulle échouée
+const CACHE_VERSION = 'v154'; // 20260905p : fix critique doc/vidéo (fileUrl perdu) // 20260905o : ⭐ badge PRO dans le chat // 20260905n : dictée vocale (parle, l'app écrit)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
