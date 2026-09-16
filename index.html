@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905q">
+<html lang="fr" data-app-build="20260905s">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -295,6 +295,17 @@ body{
 /* (20260905n) dictée : état « en écoute » (rouge pulsé) */
 .wa-dictating{color:#e17076 !important;animation:wadictPulse 1.2s ease-in-out infinite}
 @keyframes wadictPulse{0%,100%{opacity:1}50%{opacity:.45}}
+/* (20260905s) barre des messages épinglés (devis/contrat toujours visibles) */
+.wa-pinned-bar{display:flex;gap:6px;overflow-x:auto;padding:6px 10px;background:var(--bg-sidebar,rgba(255,255,255,.04));border-bottom:1px solid var(--border,rgba(255,255,255,.07))}
+.wa-pin-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;background:rgba(255,215,0,.14);border:1px solid rgba(255,215,0,.45);color:var(--text,#e9edef);border-radius:12px;padding:3px 8px;cursor:pointer;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.wa-pin-x{flex-shrink:0;background:rgba(0,0,0,.25);border:0;color:inherit;width:16px;height:16px;border-radius:50%;font-size:10px;line-height:1;cursor:pointer;padding:0}
+/* (20260905s) rangée fichier du profil contact (nom + taille + ⬇) */
+.wa-prof-file-row{display:flex;align-items:center;min-width:100%}
+.wa-prof-file-row .wa-prof-file{flex:1}
+.wa-prof-file-row .wa-prof-file em{font-style:normal;font-size:10px;color:var(--text-secondary,#888)}
+.wa-prof-dlall{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--text,#e9edef);background:var(--bg-hover);border:1px solid var(--border,rgba(255,255,255,.1));border-radius:8px;padding:7px;cursor:pointer}
+/* (20260905r 3ᵉ) fallback : vidéo non lisible par le navigateur → message clair + téléchargement */
+.wa-vid-err{font-size:11px;line-height:1.35;color:var(--text,#e9edef);background:rgba(255,196,0,.12);border:1px solid rgba(255,196,0,.4);border-radius:8px;padding:6px 8px;margin-bottom:4px}
 /* (20260905o 3ᵉ) badge doré ⭐ PRO dans le chat (en-tête + liste des convs) */
 .wa-pro-badge{display:inline-flex;align-items:center;gap:2px;font-size:9px;font-weight:800;line-height:1.5;color:#0A0A0F;background:linear-gradient(135deg,#FFD700,#E6B800);padding:1px 6px;border-radius:8px;margin-left:6px;white-space:nowrap;vertical-align:1px;flex-shrink:0}
 .wa-pro-badge-mini{padding:0 4px;margin-left:4px;font-size:10px;line-height:1.4}
@@ -2070,8 +2081,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905q" defer></script>
-<script src="app.js?v=20260905q" defer></script>
+<script src="chat-widget.js?v=20260905s" defer></script>
+<script src="app.js?v=20260905s" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -2959,6 +2970,7 @@ function previewImage(event) {
       <button class="wa-icon-btn" onclick="W.toggleSearch()"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <!-- Messages -->
+    <div class="wa-pinned-bar" id="waPinnedBar" style="display:none"></div>
     <div class="wa-msgs" id="waMsgs" style="display:none"></div>
     <!-- Scroll to bottom -->
     <button class="wa-scroll-btn" id="waScrollBtn" onclick="W.scrollToBottom(true)">
@@ -3005,6 +3017,7 @@ function previewImage(event) {
       <button class="wa-att-opt" onclick="W.attach('photos')"><span class="wa-att-ico photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span data-i18n="chatPhotosAtt">Photos</span></button>
       <button class="wa-att-opt" onclick="W.attach('video')"><span class="wa-att-ico video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span><span data-i18n="chatVideosAtt">Vidéos</span></button>
       <button class="wa-att-opt" onclick="W.attach('doc')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span data-i18n="chatDocAtt">Documents</span></button>
+      <button class="wa-att-opt" onclick="W.attach('lastfiles')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg></span><span data-i18n="chatLastFilesAtt">📎 Dernier fichier</span></button>
     </div>
     <!-- Drag & drop -->
     <div class="wa-drop" id="waDrop"><svg style="width:48px;height:48px;color:var(--pri)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="wa-drop-text" data-i18n="chatDropText">Dépose une image ici</span><span class="wa-drop-sub" data-i18n="chatDropSub">JPG, PNG, WEBP, GIF — max 8 Mo</span></div>
