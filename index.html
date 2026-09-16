@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905t">
+<html lang="fr" data-app-build="20260905x">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -329,6 +329,18 @@ body{
 .wa-tab-badge{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 5px;margin-left:6px;background:var(--danger,#FF3B30);color:#fff;border-radius:9px;font-size:10.5px;font-weight:800;line-height:1;vertical-align:1px}
 /* Chat list */
 .wa-chats{flex:1;overflow-y:auto;overflow-x:hidden}
+/* (20260905x) recherche dans les messages + fichiers */
+.wa-srch-global{display:none;flex-shrink:0;max-height:34vh;overflow-y:auto;border-top:1px solid var(--border);background:var(--bg-panel)}
+.wa-srch-title{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--text-secondary);padding:8px 14px 4px;position:sticky;top:0;background:var(--bg-panel)}
+.wa-srch-count{font-weight:600;opacity:.7}
+.wa-srch-item{padding:8px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.wa-srch-item:hover{background:var(--bg-hover)}
+.wa-srch-name{font-size:12.5px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wa-srch-snip{font-size:12px;color:var(--text-secondary);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wa-srch-time{font-size:10px;color:var(--text-secondary);opacity:.7;margin-top:1px}
+.wa-srch-none{padding:14px;text-align:center;font-size:12.5px;color:var(--text-secondary)}
+.wa-srch-flash{animation:wasrchFlash 1.6s ease}
+@keyframes wasrchFlash{0%,60%{background:rgba(45,108,219,.28)}100%{background:transparent}}
 .wa-chat{display:flex;align-items:center;padding:12px 16px;gap:14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;position:relative;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .wa-chat:hover{background:var(--bg-hover)}
 .wa-chat.active{background:var(--bg-active)}
@@ -653,6 +665,20 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 @keyframes waslideDown{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 /* ===== POLL MODAL ===== */
 .wa-poll-modal{padding:16px}
+/* (20260905w) réponses prêtes */
+.wa-tpl-modal{padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-height:80vh}
+.wa-tpl-modal h3{font-size:16px;font-weight:700;margin:0;color:var(--text-primary)}
+.wa-tpl-hint{font-size:12px;color:var(--text-secondary,#999);margin:0}
+.wa-tpl-list{flex:1;overflow-y:auto;min-height:60px;max-height:38vh;display:flex;flex-direction:column;gap:6px}
+.wa-tpl-item{display:flex;align-items:center;gap:8px;background:var(--bg-hover);border:1px solid var(--border);border-radius:10px;padding:9px 10px;cursor:pointer;font-size:13px;line-height:1.35;transition:background .1s}
+.wa-tpl-item:hover{background:var(--bg-hover);border-color:var(--pri)}
+.wa-tpl-text{flex:1;color:var(--text-primary);word-break:break-word}
+.wa-tpl-del{flex-shrink:0;background:none;border:0;color:var(--text-secondary,#999);font-size:13px;cursor:pointer;padding:2px 4px;border-radius:6px}
+.wa-tpl-del:hover{color:#C03939;background:rgba(192,57,57,.12)}
+.wa-tpl-none{color:var(--text-secondary,#999);font-size:13px;text-align:center;padding:18px 0;margin:0}
+.wa-tpl-add{display:flex;gap:8px}
+.wa-tpl-add input{flex:1;background:var(--bg-input,rgba(255,255,255,.06));border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text-primary);outline:none}
+.wa-tpl-add button{background:var(--pri,#2D6CDF);color:#fff;border:0;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
 .wa-poll-modal h3{font-size:16px;font-weight:500;color:var(--text-primary);margin-bottom:16px}
 .wa-poll-modal input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--text-primary);background:var(--bg-input);outline:0;margin-bottom:8px}
 .wa-poll-modal input:focus{border-color:var(--pri)}
@@ -2083,8 +2109,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905t" defer></script>
-<script src="app.js?v=20260905t" defer></script>
+<script src="chat-widget.js?v=20260905x" defer></script>
+<script src="app.js?v=20260905x" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -2929,6 +2955,7 @@ function previewImage(event) {
       <button class="wa-tab" data-tab="archived" data-i18n="chatTabArchived" onclick="W.setTab('archived')">Archivées</button>
     </div>
     <div class="wa-chats" id="waChats"></div>
+    <div class="wa-srch-global" id="waSrGlobal"></div>
   </div>
   <!-- MAIN -->
   <div class="wa-main" id="waMain">
@@ -3020,6 +3047,7 @@ function previewImage(event) {
       <button class="wa-att-opt" onclick="W.attach('video')"><span class="wa-att-ico video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span><span data-i18n="chatVideosAtt">Vidéos</span></button>
       <button class="wa-att-opt" onclick="W.attach('doc')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span data-i18n="chatDocAtt">Documents</span></button>
       <button class="wa-att-opt" onclick="W.attach('lastfiles')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg></span><span data-i18n="chatLastFilesAtt">📎 Dernier fichier</span></button>
+      <button class="wa-att-opt" onclick="W.attach('templates')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span data-i18n="tplMenu">⚡ Mes réponses</span></button>
     </div>
     <!-- Drag & drop -->
     <div class="wa-drop" id="waDrop"><svg style="width:48px;height:48px;color:var(--pri)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="wa-drop-text" data-i18n="chatDropText">Dépose une image ici</span><span class="wa-drop-sub" data-i18n="chatDropSub">JPG, PNG, WEBP, GIF — max 8 Mo</span></div>
@@ -3054,6 +3082,8 @@ function previewImage(event) {
 <div class="wa-modal" id="waFwdModal"><div class="wa-modal-box"><div class="wa-modal-head"><button class="wa-icon-btn" onclick="W.closeFwd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button><h3 data-i18n="chatFwdTitle">Transférer le message à…</h3></div><div class="wa-modal-list" id="waFwdList"></div></div></div>
 <!-- Poll modal -->
 <div class="wa-modal" id="waPollModal"><div class="wa-modal-box"><div class="wa-poll-modal"><h3 data-i18n="chatPollTitle">Créer un sondage</h3><input id="waPollQ" placeholder="Pose une question…" data-i18n-placeholder="chatPollQPh"><div id="waPollOpts"><input placeholder="Option 1" class="poll-opt"><input placeholder="Option 2" class="poll-opt"></div><button class="add-opt" data-i18n="chatPollAddOpt" onclick="W.addPollOpt()">+ Ajouter une option</button><button class="send-poll" data-i18n="chatPollSend" onclick="W.sendPoll()">Envoyer le sondage</button></div></div></div>
+    <!-- Réponses prêtes (phrases types, stockées sur l'appareil) -->
+    <div class="wa-modal" id="waTplModal"><div class="wa-modal-box"><div class="wa-tpl-modal"><h3 data-i18n="tplTitle">⚡ Mes réponses prêtes</h3><p class="wa-tpl-hint" data-i18n="tplHint">1 tap = insérée dans le message (modifiable avant l’envoi).</p><div id="waTplList" class="wa-tpl-list"></div><div class="wa-tpl-add"><input id="waTplIn" placeholder="Nouvelle réponse… (ex : Bonjour, je suis disponible)" data-i18n-placeholder="tplPlaceholder"><button onclick="W.addTemplate()" data-i18n="tplAdd">Ajouter</button></div></div></div></div>
 <!-- Toast -->
 <div class="wa-toast" id="waToast"><img id="waToastAv" src=""><div class="wa-toast-body"><div class="wa-toast-name" id="waToastName"></div><div class="wa-toast-text" id="waToastText"></div></div></div>
 <!-- Hidden file input -->
