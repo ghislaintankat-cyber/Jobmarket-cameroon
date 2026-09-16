@@ -162,7 +162,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v157'; // 20260905s : 10 améliorations chat // 20260905r : fix doublon + fallback vidéo // 20260905q : mode 3G
+const CACHE_VERSION = 'v158'; // 20260905t : photo échec visible + retry // 20260905s : 10 améliorations chat // 20260905r : fix doublon + fallback vidéo
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;

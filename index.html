@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905s">
+<html lang="fr" data-app-build="20260905t">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -295,6 +295,8 @@ body{
 /* (20260905n) dictée : état « en écoute » (rouge pulsé) */
 .wa-dictating{color:#e17076 !important;animation:wadictPulse 1.2s ease-in-out infinite}
 @keyframes wadictPulse{0%,100%{opacity:1}50%{opacity:.45}}
+/* (20260905t) bulle photo en échec : cadre + pastille ✕ + ↻ Réessayer */
+.wa-img-fail{display:inline-block;padding:6px;background:rgba(192,57,57,.10);border:1px solid rgba(192,57,57,.45);border-radius:10px}
 /* (20260905s) barre des messages épinglés (devis/contrat toujours visibles) */
 .wa-pinned-bar{display:flex;gap:6px;overflow-x:auto;padding:6px 10px;background:var(--bg-sidebar,rgba(255,255,255,.04));border-bottom:1px solid var(--border,rgba(255,255,255,.07))}
 .wa-pin-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;background:rgba(255,215,0,.14);border:1px solid rgba(255,215,0,.45);color:var(--text,#e9edef);border-radius:12px;padding:3px 8px;cursor:pointer;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
@@ -2081,8 +2083,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905s" defer></script>
-<script src="app.js?v=20260905s" defer></script>
+<script src="chat-widget.js?v=20260905t" defer></script>
+<script src="app.js?v=20260905t" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
