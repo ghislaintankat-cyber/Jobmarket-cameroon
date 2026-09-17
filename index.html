@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905x">
+<html lang="fr" data-app-build="20260905c">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -363,6 +363,8 @@ body{
 .wa-check{display:inline-flex;align-items:center;flex-shrink:0}
 .wa-check svg{width:16px;height:16px}
 .wa-check.read svg{color:var(--check)}
+.wa-check.pending svg{color:#E88A2A;animation:waaPendPulse 1.5s ease-in-out infinite}
+@keyframes waaPendPulse{0%,100%{opacity:1}50%{opacity:.35}}
 /* ===== MAIN ===== */
 .wa-main{flex:1;display:flex;flex-direction:column;background:var(--bg-deep);position:relative;min-width:0;overflow:hidden}
 .wa-wall{position:absolute;inset:0;background:var(--bg-chat-wall);z-index:0;pointer-events:none}
@@ -644,9 +646,9 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 .wa-mrow.sel .wa-bub{outline:2px solid var(--pri);outline-offset:-2px}
 #wa.selmode .wa-mrow{cursor:pointer}
 /* ===== FORWARD MODAL ===== */
-.wa-modal{display:none;position:fixed;inset:0;background:var(--bg-overlay);z-index:12700;align-items:center;justify-content:center;animation:wafadeIn .2s}
+.wa-modal{display:none;position:fixed;top:0;right:0;bottom:0;left:0;background:var(--bg-overlay);z-index:12700;align-items:center;justify-content:center;animation:wafadeIn .2s}
 .wa-modal.active{display:flex}
-.wa-modal-box{background:var(--bg-sidebar);border-radius:var(--radius-lg);width:420px;max-height:80vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:wapopIn .2s var(--anim)}
+.wa-modal-box{background:var(--bg-sidebar);border-radius:var(--radius-lg);width:min(420px,92vw);max-height:80vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:wapopIn .2s var(--anim)}
 .wa-modal-head{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--border)}
 .wa-modal-head h3{font-size:16px;font-weight:500;color:var(--text-primary);flex:1}
 .wa-modal-list{flex:1;overflow-y:auto;padding:8px 0}
@@ -667,6 +669,10 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 .wa-poll-modal{padding:16px}
 /* (20260905w) réponses prêtes */
 .wa-tpl-modal{padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-height:80vh}
+.wa-tpl-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.wa-tpl-close{flex-shrink:0;width:30px;height:30px;border:none;border-radius:50%;background:var(--bg-hover);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s}
+.wa-tpl-close svg{width:16px;height:16px}
+.wa-tpl-close:hover{background:var(--bg-active);color:var(--text-primary)}
 .wa-tpl-modal h3{font-size:16px;font-weight:700;margin:0;color:var(--text-primary)}
 .wa-tpl-hint{font-size:12px;color:var(--text-secondary,#999);margin:0}
 .wa-tpl-list{flex:1;overflow-y:auto;min-height:60px;max-height:38vh;display:flex;flex-direction:column;gap:6px}
@@ -1320,14 +1326,38 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
      quand le réseau tombe, on prévient tout de suite et clairement — voir
      initOfflineDetection() plus bas, qui écoute les événements
      online/offline du navigateur. -->
-<div id="offlineBanner" style="position:fixed;top:0;left:0;right:0;z-index:1100;background:#FF3B30;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:6px 12px;transform:translateY(-100%);transition:transform 0.3s var(--ease,ease);">
+<div id="offlineBanner" style="position:fixed;top:0;left:0;right:0;z-index:13000;background:#FF3B30;color:#fff;text-align:center;font-size:12px;font-weight:700;padding:6px 12px;transform:translateY(-100%);transition:transform 0.3s var(--ease,ease);">
   📡 <span data-i18n="offlineBannerText">Pas de connexion internet — certaines actions peuvent échouer</span>
+</div>
+<!-- (20260905c 4ᵉ) ÉCRAN D'APPEL vocal/vidéo (WebRTC) : phases call-in /
+     call-out / call-active(+ -video) — piloté par le module d'appels
+     d'app.js (startOutgoingCall / onIncomingCallSignal / endCallLocal) -->
+<div id="callOverlay">
+  <div class="call-remote-video-wrap"><video id="callRemoteVideo" autoplay playsinline></video></div>
+  <video id="callSelfVideo" autoplay playsinline muted></video>
+  <div class="call-center">
+    <img class="call-avatar" id="callAvatar" src="" alt="">
+    <div class="call-name" id="callName"></div>
+    <div class="call-kind" id="callKind"></div>
+    <div class="call-status" id="callStatus"></div>
+  </div>
+  <div class="call-actions">
+    <div class="call-rows-in">
+      <button type="button" class="call-btn red" id="callDeclineBtn" title="Refuser" data-i18n-title="callDecline" onclick="declineIncomingCall()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="17" y2="7"/></svg></button>
+      <button type="button" class="call-btn green" id="callAcceptBtn" title="Répondre" data-i18n-title="callAccept" onclick="acceptIncomingCall()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+    </div>
+    <div class="call-rows-out">
+      <button type="button" class="call-btn gray" id="callMuteBtn" title="Micro" data-i18n-title="callMute" onclick="callToggleMute()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+      <button type="button" class="call-btn gray" id="callCamBtn" title="Caméra" data-i18n-title="callCam" onclick="callToggleCam()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
+      <button type="button" class="call-btn red" id="callEndBtn" title="Raccrocher" data-i18n-title="callEnd" onclick="endCallLocal('end')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(135 12 12)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></g></svg></button>
+    </div>
+  </div>
 </div>
 <!-- Popup « hors ligne » : quand la connexion tombe, on le dit CLAIREMENT et
      on propose le plan de la carte — les tuiles des zones déjà visitées sont
      en cache (keepBuffer du layer satellite) et restent consultables sans
      réseau. Voir initOfflineDetection() dans app.js. -->
-<div id="offlinePopup" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;padding:20px;">
+<div id="offlinePopup" style="display:none;position:fixed;inset:0;z-index:12900;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--surface,#1a1a1a);border:1px solid var(--border,#333);border-radius:16px;padding:22px 20px;max-width:340px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.5);">
     <div style="font-size:42px;margin-bottom:10px;">📡</div>
     <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:8px;color:var(--text,#fff);" data-i18n="offlinePopTitle">Vous êtes hors ligne</div>
@@ -1757,10 +1787,11 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </div>
   <div class="sheet-body">
     <div id="listContent">
-      <div class="skeleton skeleton-card"></div>
-      <div class="skeleton skeleton-card"></div>
-      <div class="skeleton skeleton-card"></div>
-      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"><div class="skeleton-line" style="width:55%"></div><div class="skeleton-line" style="width:80%;margin-top:8px"></div><div class="skeleton-line" style="width:35%;margin-top:8px"></div></div>
+      <div class="skeleton skeleton-card"><div class="skeleton-line" style="width:55%"></div><div class="skeleton-line" style="width:80%;margin-top:8px"></div><div class="skeleton-line" style="width:35%;margin-top:8px"></div></div>
+      <div class="skeleton skeleton-card"><div class="skeleton-line" style="width:55%"></div><div class="skeleton-line" style="width:80%;margin-top:8px"></div><div class="skeleton-line" style="width:35%;margin-top:8px"></div></div>
+      <div class="skeleton skeleton-card"><div class="skeleton-line" style="width:55%"></div><div class="skeleton-line" style="width:80%;margin-top:8px"></div><div class="skeleton-line" style="width:35%;margin-top:8px"></div></div>
+      <div class="skeleton-caption" data-i18n="jobsLoading">Chargement des annonces…</div>
     </div>
     <!-- Les « du mois » passent APRÈS les jobs : la liste est l'essentiel, la vitrine en dessous -->
     <div id="artisanOfMonthBox" style="margin:12px 16px 8px 16px;"></div>
@@ -2109,8 +2140,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905x" defer></script>
-<script src="app.js?v=20260905x" defer></script>
+<script src="chat-widget.js?v=20260905y" defer></script>
+<script src="app.js?v=20260905y" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -2456,9 +2487,13 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 }
 /* FEATURE 3: Loading Skeleton */
 .skeleton {
-  background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+  /* (20260905y) shimmer CLAIREMENT visible : base gris neutre + bande blanche
+     qui balaie — visible en thème SOMBRE comme en thème CLAIR (avant :
+     couleurs trop proches = shimmer quasi invisible, surtout en thème clair). */
+  background-color: rgba(125,125,150,0.22);
+  background-image: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.6) 50%, transparent 75%);
   background-size: 200% 100%;
-  animation: skeleton-loading 2s infinite;
+  animation: skeleton-loading 1.4s ease-in-out infinite;
 }
 @keyframes skeleton-loading {
   0% { background-position: 200% 0; }
@@ -2468,7 +2503,54 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   height: 80px;
   border-radius: var(--radius-md);
   margin-bottom: 10px;
+  padding: 14px 12px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
+/* (20260905y) lignes fantômes + caption du skeleton */
+.skeleton-line {
+  height: 9px;
+  border-radius: 5px;
+  background-color: rgba(130,130,155,0.20);
+  background-image: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.4s ease-in-out infinite;
+}
+.skeleton-caption {
+  font-size: 12px;
+  color: var(--text-secondary, #999);
+  text-align: center;
+  padding: 6px 0 2px;
+}
+/* (20260905c 4ᵉ) Écran d'appel vocal/vidéo */
+#callOverlay{position:fixed;top:0;right:0;bottom:0;left:0;z-index:12950;background:linear-gradient(180deg,#0b141a 0%,#111b21 100%);display:none;flex-direction:column;align-items:center;justify-content:space-between;color:#e9edef}
+#callOverlay.show{display:flex}
+.call-remote-video-wrap{position:absolute;top:0;right:0;bottom:0;left:0;display:none}
+#callOverlay.call-active-video .call-remote-video-wrap{display:block}
+#callRemoteVideo{width:100%;height:100%;object-fit:contain;background:#000}
+#callSelfVideo{position:absolute;right:12px;top:14px;width:30%;max-width:140px;border-radius:12px;transform:scaleX(-1);background:#000;z-index:2;display:none;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+#callOverlay.call-active-video #callSelfVideo{display:block}
+.call-center{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px;text-align:center}
+.call-avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.22);background:#1f2c34}
+.call-name{font-size:22px;font-weight:700}
+.call-kind{font-size:13px;opacity:.75}
+.call-status{font-size:15px;opacity:.85;font-variant-numeric:tabular-nums;min-height:18px}
+.call-actions{position:relative;z-index:1;display:flex;gap:18px;padding:28px 16px calc(40px + env(safe-area-inset-bottom,0px));justify-content:center}
+.call-rows-in,.call-rows-out{display:none;gap:26px;align-items:center}
+#callOverlay.call-in .call-rows-in{display:flex}
+#callOverlay.call-out .call-rows-out{display:flex}
+#callOverlay.call-active .call-rows-out{display:flex}
+.call-btn{width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:transform .12s,background .15s}
+.call-btn:active{transform:scale(.92)}
+.call-btn svg{width:26px;height:26px}
+.call-btn.green{background:#25D366}
+.call-btn.red{background:#ea0038}
+.call-btn.gray{background:rgba(255,255,255,.16)}
+.call-btn.on{background:rgba(234,0,56,.9)}
+/* (20260905z 3ᵉ) skeleton « ombre animée » — liste des conversations */
+.wa-conv-sk { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+.skeleton-av { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; }
+.sk-lines { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 /* FEATURE 4: Radius Filters */
 .radius-filters {
   display: flex;
@@ -2840,6 +2922,14 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
             style="width:100%; padding:10px; border:1px dashed var(--gold,#FFD700); border-radius:10px; background:none; color:var(--gold,#FFD700); font-weight:700; font-size:13px; cursor:pointer;">
             ➕ Ajouter une photo
           </button>
+          <!-- (20260905z 3ᵉ) VIDEOS de travaux accomplis (max 4, upload Cloudinary) -->
+          <div id="portfolioVideoSection" style="display:none; margin-top:12px; border-top:1px dashed var(--border,#333); padding-top:10px;">
+            <div style="font-weight:700; font-size:13px; color:var(--text,#e9edef); margin-bottom:6px;" data-i18n="portfolioVideoTitle">🎬 Vidéos de mes travaux</div>
+            <div id="portfolioVideoGallery" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;"></div>
+            <button type="button" id="portfolioVideoAddBtn" onclick="document.getElementById('portfolioVideoInput').click()"
+              style="width:100%; padding:10px; border:1px dashed var(--gold,#FFD700); border-radius:10px; background:none; color:var(--gold,#FFD700); font-weight:700; font-size:13px; cursor:pointer;" data-i18n="portfolioVideoAdd">🎬 Ajouter une vidéo (max 100 Mo)</button>
+            <input type="file" id="portfolioVideoInput" accept="video/*" style="display:none;" onchange="uploadPortfolioVideo(event)">
+          </div>
         </div>
         <!-- ====== FIN PORTFOLIO ====== -->
         <!-- ====== DISPONIBILITÉ EN TEMPS RÉEL ====== -->
@@ -2954,7 +3044,15 @@ function previewImage(event) {
       <button class="wa-tab" data-tab="action" onclick="W.setTab('action')"><span data-i18n="chatTabAction">À traiter</span><span class="wa-tab-badge" id="waTabActionBadge" style="display:none"></span></button>
       <button class="wa-tab" data-tab="archived" data-i18n="chatTabArchived" onclick="W.setTab('archived')">Archivées</button>
     </div>
-    <div class="wa-chats" id="waChats"></div>
+    <div class="wa-chats" id="waChats">
+      <!-- (20260905z 3ᵉ) SKELETON « ombre animée » du chargement des discussions (remplacé par la vraie liste dès que Firebase a répondu) -->
+      <div class="wa-conv-sk"><div class="skeleton skeleton-av"></div><div class="sk-lines"><div class="skeleton skeleton-line" style="width:45%;height:10px"></div><div class="skeleton skeleton-line" style="width:72%;height:8px"></div></div></div>
+      <div class="wa-conv-sk"><div class="skeleton skeleton-av"></div><div class="sk-lines"><div class="skeleton skeleton-line" style="width:45%;height:10px"></div><div class="skeleton skeleton-line" style="width:72%;height:8px"></div></div></div>
+      <div class="wa-conv-sk"><div class="skeleton skeleton-av"></div><div class="sk-lines"><div class="skeleton skeleton-line" style="width:45%;height:10px"></div><div class="skeleton skeleton-line" style="width:72%;height:8px"></div></div></div>
+      <div class="wa-conv-sk"><div class="skeleton skeleton-av"></div><div class="sk-lines"><div class="skeleton skeleton-line" style="width:45%;height:10px"></div><div class="skeleton skeleton-line" style="width:72%;height:8px"></div></div></div>
+      <div class="wa-conv-sk"><div class="skeleton skeleton-av"></div><div class="sk-lines"><div class="skeleton skeleton-line" style="width:45%;height:10px"></div><div class="skeleton skeleton-line" style="width:72%;height:8px"></div></div></div>
+      <div class="wa-conv-sk"><div class="skeleton skeleton-av"></div><div class="sk-lines"><div class="skeleton skeleton-line" style="width:45%;height:10px"></div><div class="skeleton skeleton-line" style="width:72%;height:8px"></div></div></div>
+    </div>
     <div class="wa-srch-global" id="waSrGlobal"></div>
   </div>
   <!-- MAIN -->
@@ -2977,6 +3075,9 @@ function previewImage(event) {
         <div class="wa-chead-status" id="waHeadStatus"></div>
       </div>
       <div class="wa-chead-acts">
+        <!-- (20260905c 4ᵉ) Appels vocaux / vidéo (WebRTC, signal Firebase) -->
+        <button class="wa-icon-btn" id="waCallAudioBtn" title="Appel vocal" data-i18n-title="callAudioBtn" onclick="startOutgoingCall('audio')" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+        <button class="wa-icon-btn" id="waCallVideoBtn" title="Appel vidéo" data-i18n-title="callVideoBtn" onclick="startOutgoingCall('video')" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button>
         <button class="wa-icon-btn" title="Rechercher" data-i18n-title="chatSearchTitle" onclick="W.toggleSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
       </div>
     </div>
@@ -3023,9 +3124,9 @@ function previewImage(event) {
     </div>
     <!-- Input -->
     <div class="wa-input-area" id="waInputArea" style="display:none">
-      <button class="wa-icon-btn" title="Emoji" data-i18n-title="chatEmojiTitle" onclick="W.toggleEmoji()" id="waEmojiBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></button>
-      <button class="wa-icon-btn" title="Joindre" data-i18n-title="chatAttachTitle" onclick="W.toggleAttach()" id="waAttachBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></button>
-      <button class="wa-icon-btn" title="Dictée — parle, l'app écrit" data-i18n-title="dictateTitle" onclick="W.dictateToggle && W.dictateToggle()" id="waDictateBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M19 11c0 3-2.54 5.1-5.3 5.1S8.3 14 8.3 11H7c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1z"/></svg></button>
+      <button class="wa-icon-btn" title="Emoji" data-i18n-title="chatEmojiTitle" onclick="W.toggleEmoji()" id="waEmojiBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.2a4.6 4.6 0 0 0 7 0"/><path d="M9.2 9.3v.9M14.8 9.3v.9"/></svg></button>
+      <button class="wa-icon-btn" title="Joindre" data-i18n-title="chatAttachTitle" onclick="W.toggleAttach()" id="waAttachBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></button>
+      <button class="wa-icon-btn" title="Dictée — parle, l'app écrit" data-i18n-title="dictateTitle" onclick="W.dictateToggle && W.dictateToggle()" id="waDictateBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="8.5" y1="21" x2="15.5" y2="21"/></svg></button>
       <div class="wa-txt-wrap" id="waTxtWrap"><textarea class="wa-txt" id="waTxt" placeholder="Écris ton message…" data-i18n-placeholder="chatMsgPh" rows="1" oninput="W.autoResize(this)" onkeydown="W.onKey(event)"></textarea></div>
       <button class="wa-icon-btn wa-send" title="Envoyer" data-i18n-title="chatSendTitle" onclick="W.onSendBtn()" id="waSendBtn"><svg viewBox="0 0 24 24" fill="currentColor" id="waSendIco"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg><svg viewBox="0 0 24 24" fill="currentColor" id="waMicIco" style="display:none"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.41 2.72 6.23 6 6.72V22h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg></button>
       <!-- Barre d'enregistrement vocale (comme WhatsApp) : annuler / minuteur / envoyer -->
@@ -3064,8 +3165,6 @@ function previewImage(event) {
       </div>
     </div>
   </div>
-</div>
-</div>
 <!-- Lightbox -->
 <div class="wa-lightbox" id="waLB" onclick="W.closeLB()"><button class="wa-lightbox-close">&times;</button><img id="waLBImg" src=""></div>
 <!-- Context menu -->
@@ -3083,9 +3182,12 @@ function previewImage(event) {
 <!-- Poll modal -->
 <div class="wa-modal" id="waPollModal"><div class="wa-modal-box"><div class="wa-poll-modal"><h3 data-i18n="chatPollTitle">Créer un sondage</h3><input id="waPollQ" placeholder="Pose une question…" data-i18n-placeholder="chatPollQPh"><div id="waPollOpts"><input placeholder="Option 1" class="poll-opt"><input placeholder="Option 2" class="poll-opt"></div><button class="add-opt" data-i18n="chatPollAddOpt" onclick="W.addPollOpt()">+ Ajouter une option</button><button class="send-poll" data-i18n="chatPollSend" onclick="W.sendPoll()">Envoyer le sondage</button></div></div></div>
     <!-- Réponses prêtes (phrases types, stockées sur l'appareil) -->
-    <div class="wa-modal" id="waTplModal"><div class="wa-modal-box"><div class="wa-tpl-modal"><h3 data-i18n="tplTitle">⚡ Mes réponses prêtes</h3><p class="wa-tpl-hint" data-i18n="tplHint">1 tap = insérée dans le message (modifiable avant l’envoi).</p><div id="waTplList" class="wa-tpl-list"></div><div class="wa-tpl-add"><input id="waTplIn" placeholder="Nouvelle réponse… (ex : Bonjour, je suis disponible)" data-i18n-placeholder="tplPlaceholder"><button onclick="W.addTemplate()" data-i18n="tplAdd">Ajouter</button></div></div></div></div>
+    <div class="wa-modal" id="waTplModal"><div class="wa-modal-box"><div class="wa-tpl-modal"><div class="wa-tpl-head"><h3 data-i18n="tplTitle">⚡ Mes réponses prêtes</h3><button type="button" class="wa-tpl-close" onclick="W.closeTemplates()" title="Fermer" data-i18n-title="chatCloseTitle" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><p class="wa-tpl-hint" data-i18n="tplHint">1 tap = insérée dans le message (modifiable avant l’envoi).</p><div id="waTplList" class="wa-tpl-list"></div><div class="wa-tpl-add"><input id="waTplIn" placeholder="Nouvelle réponse… (ex : Bonjour, je suis disponible)" data-i18n-placeholder="tplPlaceholder"><button onclick="W.addTemplate()" data-i18n="tplAdd">Ajouter</button></div></div></div></div>
 <!-- Toast -->
 <div class="wa-toast" id="waToast"><img id="waToastAv" src=""><div class="wa-toast-body"><div class="wa-toast-name" id="waToastName"></div><div class="wa-toast-text" id="waToastText"></div></div></div>
+
+</div>
+</div>
 <!-- Hidden file input -->
 <input type="file" id="waFileIn" accept="image/*" multiple style="display:none" onchange="W.onFile(this)">
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>

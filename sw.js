@@ -162,7 +162,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v162'; // 20260905x : recherche dans les messages + fichiers // 20260905w : réponses prêtes // 20260905v : partage de conversation
+const CACHE_VERSION = 'v167'; // 20260905c 4ᵉ : appels vocaux simples + appels vidéo (WebRTC, signal Firebase) // 20260905b 4ᵉ : amélioration existant // 20260905a 4ᵉ : mode hors-ligne
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
@@ -180,7 +180,24 @@ const SHELL_ASSETS = [
   'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js',
+  // (20260905b 4ᵉ) le CODE de l'app lui-même (avant : jamais pré-caché →
+  // hors-ligne, app.js échouait et l'app ne démarrait pas)
+  './app.js',
+  './chat-widget.js',
+  './trouver-artisan.html',
+  './privee.html',
+  './favicon-32.png',
+  './apple-touch-icon.png',
+  './icon-maskable-192.png',
+  './icon-maskable-512.png',
+  // SDK Firebase (chargés par des <script> — hors-ligne, ils doivent venir
+  // du cache sinon l'app ne peut ni lire ni écrire les données)
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js'
 ];
 
 self.addEventListener('install', (event) => {
