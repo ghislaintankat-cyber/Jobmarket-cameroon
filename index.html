@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905c">
+<html lang="fr" data-app-build="20260905i">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -364,6 +364,8 @@ body{
 .wa-check svg{width:16px;height:16px}
 .wa-check.read svg{color:var(--check)}
 .wa-check.pending svg{color:#E88A2A;animation:waaPendPulse 1.5s ease-in-out infinite}
+/* (20260905g 4ᵉ) puce « appel manqué » dans la liste des conversations */
+.wa-missed{font-size:11px;margin-left:5px;filter:drop-shadow(0 0 3px rgba(234,0,56,.7))}
 @keyframes waaPendPulse{0%,100%{opacity:1}50%{opacity:.35}}
 /* ===== MAIN ===== */
 .wa-main{flex:1;display:flex;flex-direction:column;background:var(--bg-deep);position:relative;min-width:0;overflow:hidden}
@@ -1332,14 +1334,21 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 <!-- (20260905c 4ᵉ) ÉCRAN D'APPEL vocal/vidéo (WebRTC) : phases call-in /
      call-out / call-active(+ -video) — piloté par le module d'appels
      d'app.js (startOutgoingCall / onIncomingCallSignal / endCallLocal) -->
-<div id="callOverlay">
-  <div class="call-remote-video-wrap"><video id="callRemoteVideo" autoplay playsinline></video></div>
+<div id="callOverlay" onclick="callOnOverlayTap()">
+  <!-- (20260905e 4ᵉ) muted au départ : le navigateur bloque l'autoplay AVEC
+       son sans geste utilisateur → on démarre muet puis on dé-mute (auto ou
+       au 1er tap sur l'écran). L'appel vocal joue le son dans <audio> dédié
+       (avant : AUCUN élément ne jouait le son de l'autre en vocal = silence). -->
+  <div class="call-remote-video-wrap"><video id="callRemoteVideo" autoplay playsinline muted></video></div>
+  <audio id="callRemoteAudio" autoplay playsinline muted style="display:none"></audio>
   <video id="callSelfVideo" autoplay playsinline muted></video>
   <div class="call-center">
     <img class="call-avatar" id="callAvatar" src="" alt="">
     <div class="call-name" id="callName"></div>
     <div class="call-kind" id="callKind"></div>
     <div class="call-status" id="callStatus"></div>
+    <!-- (20260905e 4ᵉ) visible tant que le son de l'autre n'est pas activé -->
+    <div id="callSoundHint" class="call-sound-hint" data-i18n="callTapForSound" style="display:none">🔊 Touche l'écran pour activer le son</div>
   </div>
   <div class="call-actions">
     <div class="call-rows-in">
@@ -1931,6 +1940,20 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
       <div class="account-item-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
     </a>
   </div>
+   <!-- (20260905i 4ᵉ) AUTO-TEST DES APPELS : 10 s pour savoir ce qui passe /
+         ne passe pas sur CE téléphone (WebRTC, HTTPS, réseau, micro,
+         caméra, push) — très utile pour remonter un problème précis. -->
+   <div class="account-card" id="callDiagCard" style="margin-top:15px;">
+     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+       <span style="font-size:20px;">🩺</span>
+       <div>
+         <div style="font-weight:800;font-size:14px;" data-i18n="callDiagTitle">Test de mes appels</div>
+         <div style="font-size:11.5px;color:var(--text-dim,#999);" data-i18n="callDiagSub">10 secondes pour vérifier WebRTC, réseau, micro, caméra et notification</div>
+       </div>
+     </div>
+     <div id="callDiagResults" style="display:none;font-size:12.5px;line-height:1.5;margin-top:6px;"></div>
+     <button class="btn btn-primary" onclick="runCallDiag()" style="width:100%;margin-top:10px;" data-i18n="callDiagRun">🩺 Lancer le test</button>
+   </div>
    <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
     <span data-i18n="logout">Déconnexion</span>
@@ -2535,6 +2558,7 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 .call-name{font-size:22px;font-weight:700}
 .call-kind{font-size:13px;opacity:.75}
 .call-status{font-size:15px;opacity:.85;font-variant-numeric:tabular-nums;min-height:18px}
+.call-sound-hint{font-size:12.5px;font-weight:700;color:#FFD700;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.4);padding:7px 14px;border-radius:18px;animation:waaPendPulse 1.6s ease-in-out infinite}
 .call-actions{position:relative;z-index:1;display:flex;gap:18px;padding:28px 16px calc(40px + env(safe-area-inset-bottom,0px));justify-content:center}
 .call-rows-in,.call-rows-out{display:none;gap:26px;align-items:center}
 #callOverlay.call-in .call-rows-in{display:flex}

@@ -35,8 +35,8 @@ const messaging = firebase.messaging();
 // "view" = libellé par défaut (job). "viewMessage"/"viewQuote" = libellés
 // spécifiques aux notifs de message / devis (voir data.type plus bas).
 const ACTION_I18N = {
-  fr: { view: '👀 Voir le job', viewMessage: '💬 Voir le message', viewQuote: '💰 Voir le devis', dismiss: 'Fermer' },
-  en: { view: '👀 View job', viewMessage: '💬 View message', viewQuote: '💰 View quote', dismiss: 'Dismiss' },
+  fr: { view: '👀 Voir le job', viewMessage: '💬 Voir le message', viewQuote: '💰 Voir le devis', dismiss: 'Fermer', callAccept: '📞 Répondre', callDecline: '✕ Refuser' }, // (20260905f 4ᵉ)
+  en: { view: '👀 View job', viewMessage: '💬 View message', viewQuote: '💰 View quote', dismiss: 'Dismiss', callAccept: '📞 Answer', callDecline: '✕ Decline' },
   it: { view: '👀 Vedi lavoro', viewMessage: '💬 Vedi messaggio', viewQuote: '💰 Vedi preventivo', dismiss: 'Chiudi' },
   de: { view: '👀 Job ansehen', viewMessage: '💬 Nachricht ansehen', viewQuote: '💰 Angebot ansehen', dismiss: 'Schließen' },
   zh: { view: '👀 查看工作', viewMessage: '💬 查看消息', viewQuote: '💰 查看报价', dismiss: '关闭' }
@@ -67,6 +67,8 @@ messaging.onBackgroundMessage((payload) => {
   let tag;
   if (type === 'message' || type === 'message-admin') {
     tag = data.threadId ? 'thread-' + data.threadId : undefined;
+  } else if (type === 'call') { // (20260905f 4ᵉ) un seul sonnerie active par thread
+    tag = data.threadId ? 'call-' + data.threadId : undefined;
   } else if (type === 'quote' || type === 'quote-admin') {
     tag = data.quoteId ? 'quote-' + data.quoteId : undefined;
   } else {
@@ -89,7 +91,13 @@ messaging.onBackgroundMessage((payload) => {
     data,
     // Boutons d'action directement dans la notification : gagne un clic et
     // accélère la mise en contact.
-    actions: [
+    // (20260905f 4ᵉ) appel : boutons « Répondre » / « Refuser » (au lieu de
+    // « Voir » / « Fermer ») — « Répondre » ouvre l'app et le watcher d'inbox
+    // affiche l'écran d'appel entrant (sonnerie toujours en cours = ≤ 90 s).
+    actions: type === 'call' ? [
+      { action: 'accept', title: actionLabels.callAccept || '📞 Répondre' },
+      { action: 'decline', title: actionLabels.callDecline || '✕ Refuser' }
+    ] : [
       { action: 'view', title: pickViewLabel(actionLabels, type) },
       { action: 'dismiss', title: actionLabels.dismiss }
     ]
@@ -114,8 +122,9 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  // Clic sur le bouton "Fermer" : rien de plus à faire.
-  if (event.action === 'dismiss') return;
+  // Clic sur "Fermer" (ou "Refuser" un appel : on laisse la sonnerie expirer
+  // côté appelant → « Personne ne répond ») : rien de plus à faire.
+  if (event.action === 'dismiss' || event.action === 'decline') return;
 
   const d = event.notification.data || {};
   const type = d.type || 'job';
@@ -126,7 +135,7 @@ self.addEventListener('notificationclick', (event) => {
 
   // Construit le hash de destination selon le type.
   let hashPart;
-  if ((type === 'message' || type === 'message-admin') && threadId) {
+  if ((type === 'message' || type === 'message-admin' || type === 'call') && threadId) { // (20260905f 4ᵉ)
     hashPart = '#thread=' + encodeURIComponent(threadId) + '&src=push' + variantParam;
   } else if (jobId) {
     hashPart = '#job=' + jobId + '&src=push' + variantParam;
@@ -162,7 +171,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v167'; // 20260905c 4ᵉ : appels vocaux simples + appels vidéo (WebRTC, signal Firebase) // 20260905b 4ᵉ : amélioration existant // 20260905a 4ᵉ : mode hors-ligne
+const CACHE_VERSION = 'v173'; // 20260905i 4ᵉ : auto-test des appels (diagnostic) // 20260905h 4ᵉ : trace d'appel dans la conversation // 20260905g 4ᵉ : appel manqué
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
