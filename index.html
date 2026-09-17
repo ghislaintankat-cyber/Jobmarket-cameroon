@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905i">
+<html lang="fr" data-app-build="20260905q">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -87,10 +87,14 @@
 <link rel="preconnect" href="https://unpkg.com"/>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
 <link rel="preconnect" href="https://www.gstatic.com"/>
+<!-- (20260905k 4ᵉ) pré-connexion vers les 2 services de données : sur 3G,
+     chaque connexion TCP/TLS économisée = 0,5 à 2 s d'affichage avancé. -->
+<link rel="preconnect" href="https://jobmarketfuture-default-rtdb.firebaseio.com"/>
+<link rel="preconnect" href="https://res.cloudinary.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" media="print" onload="this.media='all'"/><noscript><link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/></noscript>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <!-- leaflet-routing-machine.min.js n'est PLUS chargé ici : il est injecté à
      la demande (ensureRoutingMachineLoaded dans app.js) uniquement quand
@@ -687,6 +691,18 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 .wa-tpl-add{display:flex;gap:8px}
 .wa-tpl-add input{flex:1;background:var(--bg-input,rgba(255,255,255,.06));border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--text-primary);outline:none}
 .wa-tpl-add button{background:var(--pri,#2D6CDF);color:#fff;border:0;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
+/* (20260905n 4ᵉ) modal + carte DEVIS */
+.wa-quote-modal{padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-height:80vh}
+.wa-quote-modal input,.wa-quote-modal textarea{background:var(--bg-input,rgba(255,255,255,.06));border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--text-primary);outline:none;font-family:inherit}
+.wa-quote-modal textarea{resize:vertical;min-height:44px}
+.wa-quote-send{background:var(--pri,#2D6CDF);color:#fff;border:0;border-radius:10px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;margin-top:2px}
+.wa-quote-card{background:var(--bg-panel,rgba(255,255,255,.05));border:1px solid rgba(255,215,0,.45);border-left:3px solid var(--gold,#FFD700);border-radius:10px;padding:10px 12px;margin:4px 0;max-width:320px}
+.wa-quote-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.wa-quote-head span:first-child{font-size:11.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--gold,#FFD700)}
+.wa-quote-price{font-size:15px;font-weight:800;color:var(--text-primary);white-space:nowrap}
+.wa-quote-title{font-size:13.5px;font-weight:700;color:var(--text-primary);margin-bottom:2px}
+.wa-quote-meta{font-size:12px;color:var(--text-secondary,#999)}
+.wa-quote-notes{font-size:12.5px;color:var(--text-secondary,#999);margin-top:4px;line-height:1.4}
 .wa-poll-modal h3{font-size:16px;font-weight:500;color:var(--text-primary);margin-bottom:16px}
 .wa-poll-modal input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;color:var(--text-primary);background:var(--bg-input);outline:0;margin-bottom:8px}
 .wa-poll-modal input:focus{border-color:var(--pri)}
@@ -1347,6 +1363,21 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
     <div class="call-name" id="callName"></div>
     <div class="call-kind" id="callKind"></div>
     <div class="call-status" id="callStatus"></div>
+    <!-- (20260905p 4ᵉ) état de connexion : « Connexion… » / « ✅ Appel établi » -->
+    <div id="callConnState" style="font-size:11.5px;color:var(--text-dim,#999);min-height:14px;"></div>
+    <!-- (20260905q 4ᵉ) INDICATEUR « l'autre parle » : 5 barres qui bougent
+         avec la voix de l'autre (analyse du flux distant) = preuve que le
+         son arrive bien. + badge « 🔇 Micro coupé » quand on coupe son micro. -->
+    <div id="callVoiceMeter" style="display:none;align-items:center;gap:8px;margin-top:4px;">
+      <span id="callMicState" style="display:none;font-size:11px;color:var(--text-dim,#999);"></span>
+      <div id="callVoiceBars" style="display:flex;align-items:flex-end;gap:3px;height:15px;" title="La voix de l'autre">
+        <div style="width:4px;height:35%;background:#2EA067;border-radius:2px;opacity:0.22;"></div>
+        <div style="width:4px;height:60%;background:#2EA067;border-radius:2px;opacity:0.22;"></div>
+        <div style="width:4px;height:85%;background:#2EA067;border-radius:2px;opacity:0.22;"></div>
+        <div style="width:4px;height:100%;background:#2EA067;border-radius:2px;opacity:0.22;"></div>
+        <div style="width:4px;height:55%;background:#2EA067;border-radius:2px;opacity:0.22;"></div>
+      </div>
+    </div>
     <!-- (20260905e 4ᵉ) visible tant que le son de l'autre n'est pas activé -->
     <div id="callSoundHint" class="call-sound-hint" data-i18n="callTapForSound" style="display:none">🔊 Touche l'écran pour activer le son</div>
   </div>
@@ -2163,8 +2194,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905y" defer></script>
-<script src="app.js?v=20260905y" defer></script>
+<script src="chat-widget.js?v=20260905q" defer></script>
+<script src="app.js?v=20260905q" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -2180,9 +2211,18 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
         <!-- (20260905x) Identité du posteur : société 🏢 / personne 👤 +
              signaux de confiance (✓ Vérifié, PRO) — l'entreprise se démarque. -->
         <div id="previewPosterRow" style="display:none;align-items:center;gap:8px;margin:0 0 10px;font-size:13px;flex-wrap:wrap;"></div>
+        <!-- (20260905m 4ᵉ) RÉALISATIONS DE L'ARTISAN dans la fiche (les 3
+             premières photos + nb de vidéos) — le client voit le travail
+             AVANT de contacter ; tap = profil complet. -->
+        <div id="previewPortfolioBox" style="display:none;margin:0 0 12px;padding:10px;background:var(--surface,rgba(255,255,255,0.04));border:1px solid var(--border,#333);border-radius:12px;cursor:pointer;" onclick="openPublicProfile(currentPreviewJob && currentPreviewJob.user)"></div>
         <div class="drawer-info-row">
             <span>📧</span>
             <span id="previewEmail">Non spécifié</span>
+        </div>
+        <!-- (20260905m 4ᵉ) distance de l'annonce (calculée côté liste) -->
+        <div class="drawer-info-row" id="previewDistanceRow" style="display:none;">
+            <span>📍</span>
+            <span id="previewDistance"></span>
         </div>
         <hr class="drawer-divider">
                 <h3 data-i18n="descNeed">Description du besoin :</h3>
@@ -2553,6 +2593,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 #callRemoteVideo{width:100%;height:100%;object-fit:contain;background:#000}
 #callSelfVideo{position:absolute;right:12px;top:14px;width:30%;max-width:140px;border-radius:12px;transform:scaleX(-1);background:#000;z-index:2;display:none;box-shadow:0 4px 18px rgba(0,0,0,.5)}
 #callOverlay.call-active-video #callSelfVideo{display:block}
+/* (20260905j 4ᵉ) aperçu local déjà visible PENDANT la sonnerie (appel vidéo) */
+#callOverlay.call-local-video #callSelfVideo{display:block}
 .call-center{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px;text-align:center}
 .call-avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.22);background:#1f2c34}
 .call-name{font-size:22px;font-weight:700}
@@ -2968,6 +3010,11 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
             <button type="button" id="availBtnBusy" onclick="setAvailability('busy')"
               style="flex:1; min-width:90px; padding:10px; border:1px solid #C03939; border-radius:10px; background:none; color:#C03939; font-weight:700; font-size:12.5px; cursor:pointer;">🔴 Occupé</button>
           </div>
+          <!-- (20260905o 4ᵉ) DISPONIBILITÉ DE LA SEMAINE : vue (publique +
+               privée) + éditeur par jour (privée). Le client sait à l'avance
+               QUEL JOUR passer — la question n°1 des artisans. -->
+          <div id="availWeekView" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--border,#333);"></div>
+          <div id="availWeekEditor" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--border,#333);"></div>
         </div>
         <!-- ====== FIN DISPONIBILITÉ ====== -->
         <!-- ====== STATISTIQUES (réservé PRO) ====== -->
@@ -3173,6 +3220,8 @@ function previewImage(event) {
       <button class="wa-att-opt" onclick="W.attach('doc')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span data-i18n="chatDocAtt">Documents</span></button>
       <button class="wa-att-opt" onclick="W.attach('lastfiles')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 014-4h12"/></svg></span><span data-i18n="chatLastFilesAtt">📎 Dernier fichier</span></button>
       <button class="wa-att-opt" onclick="W.attach('templates')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span data-i18n="tplMenu">⚡ Mes réponses</span></button>
+      <!-- (20260905n 4ᵉ) DEVIS structuré : titre + prix + délai + notes → carte dans la conv -->
+      <button class="wa-att-opt" onclick="W.attach('quote')"><span class="wa-att-ico doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 7h6M9 11h6M9 15h4"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span data-i18n="quoteBtn">📋 Devis</span></button>
     </div>
     <!-- Drag & drop -->
     <div class="wa-drop" id="waDrop"><svg style="width:48px;height:48px;color:var(--pri)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="wa-drop-text" data-i18n="chatDropText">Dépose une image ici</span><span class="wa-drop-sub" data-i18n="chatDropSub">JPG, PNG, WEBP, GIF — max 8 Mo</span></div>
@@ -3207,6 +3256,18 @@ function previewImage(event) {
 <div class="wa-modal" id="waPollModal"><div class="wa-modal-box"><div class="wa-poll-modal"><h3 data-i18n="chatPollTitle">Créer un sondage</h3><input id="waPollQ" placeholder="Pose une question…" data-i18n-placeholder="chatPollQPh"><div id="waPollOpts"><input placeholder="Option 1" class="poll-opt"><input placeholder="Option 2" class="poll-opt"></div><button class="add-opt" data-i18n="chatPollAddOpt" onclick="W.addPollOpt()">+ Ajouter une option</button><button class="send-poll" data-i18n="chatPollSend" onclick="W.sendPoll()">Envoyer le sondage</button></div></div></div>
     <!-- Réponses prêtes (phrases types, stockées sur l'appareil) -->
     <div class="wa-modal" id="waTplModal"><div class="wa-modal-box"><div class="wa-tpl-modal"><div class="wa-tpl-head"><h3 data-i18n="tplTitle">⚡ Mes réponses prêtes</h3><button type="button" class="wa-tpl-close" onclick="W.closeTemplates()" title="Fermer" data-i18n-title="chatCloseTitle" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><p class="wa-tpl-hint" data-i18n="tplHint">1 tap = insérée dans le message (modifiable avant l’envoi).</p><div id="waTplList" class="wa-tpl-list"></div><div class="wa-tpl-add"><input id="waTplIn" placeholder="Nouvelle réponse… (ex : Bonjour, je suis disponible)" data-i18n-placeholder="tplPlaceholder"><button onclick="W.addTemplate()" data-i18n="tplAdd">Ajouter</button></div></div></div></div>
+    <!-- (20260905n 4ᵉ) DEVIS structuré : le devis part comme une CARTE dans la
+         conversation (titre, prix FCFA, délai, notes) — lisible, partageable
+         (export .txt / WhatsApp), visible dans l'aperçu de la liste. -->
+    <div class="wa-modal" id="waQuoteModal"><div class="wa-modal-box"><div class="wa-quote-modal">
+      <div class="wa-tpl-head"><h3 data-i18n="quoteModalTitle">📋 Envoyer un devis</h3><button type="button" class="wa-tpl-close" onclick="W.closeQuote()" title="Fermer" data-i18n-title="chatCloseTitle" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+      <p class="wa-tpl-hint" data-i18n="quoteHint">Le devis apparaît comme une carte dans la conversation — lisible et partageable.</p>
+      <input id="waQuoteTitle" placeholder="Travaux (ex : Plomberie salle de bain)" data-i18n-placeholder="quoteTitlePh">
+      <input id="waQuotePrice" type="number" inputmode="numeric" min="0" step="100" placeholder="Prix en FCFA (vide = à discuter)" data-i18n-placeholder="quotePricePh">
+      <input id="waQuoteTimeline" placeholder="Délai (ex : 3 jours)" data-i18n-placeholder="quoteTimelinePh">
+      <textarea id="waQuoteNotes" rows="2" placeholder="Notes : ce qui est inclus, garantie…" data-i18n-placeholder="quoteNotesPh"></textarea>
+      <button type="button" class="wa-quote-send" onclick="W.sendQuote()"><span data-i18n="quoteSend">Envoyer le devis</span></button>
+    </div></div></div>
 <!-- Toast -->
 <div class="wa-toast" id="waToast"><img id="waToastAv" src=""><div class="wa-toast-body"><div class="wa-toast-name" id="waToastName"></div><div class="wa-toast-text" id="waToastText"></div></div></div>
 

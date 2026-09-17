@@ -171,7 +171,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v173'; // 20260905i 4ᵉ : auto-test des appels (diagnostic) // 20260905h 4ᵉ : trace d'appel dans la conversation // 20260905g 4ᵉ : appel manqué
+const CACHE_VERSION = 'v181'; // 20260905q 4ᵉ : indicateur « l'autre parle » + badge micro // 20260905p 4ᵉ : état connexion + règles // 20260905o 4ᵉ : dispo semaine
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
@@ -286,10 +286,19 @@ self.addEventListener('fetch', (event) => {
   if (isCloudinaryImage(url)) {
     event.respondWith(
       caches.open(IMAGE_CACHE).then(async (cache) => {
-        const cached = await cache.match(req);
+        let cached = await cache.match(req);
+        if (cached && cached.ok) {
+          // (20260905j 4ᵉ) une copie en cache peut être CORROMPUE (écriture
+          // partielle) → « Image corrupt or truncated » dans la console. On
+          // vérifie que le corps se lit ; sinon on la supprime et on repasse
+          // par le réseau (qui recache la bonne version).
+          let corrupt = false;
+          try { await cached.clone().blob(); } catch (e) { corrupt = true; }
+          if (corrupt) { try { await cache.delete(req); } catch (e) {} cached = null; }
+        }
         if (cached) {
-          // Déjà en cache : réponse immédiate + revalidation silencieuse
-          // en arrière-plan (l'image peut évoluer — ex : nouvelle photo).
+          // Déjà en cache (et valide) : réponse immédiate + revalidation
+          // silencieuse en arrière-plan (l'image peut évoluer — ex : nouvelle photo).
           fetch(req).then((res) => {
             if (res && res.ok) { cache.put(req, res.clone()); trimImageCache(); }
           }).catch(() => {});
