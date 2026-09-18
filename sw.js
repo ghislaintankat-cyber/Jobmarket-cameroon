@@ -171,7 +171,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v190'; // 20260905a 5ᵉ : images figées — onerror + anti-rémanence + Réessayer (visionneuse et vignettes) // 20260905z : bulles vides + Aujourd'hui traduit // 20260905y : modération chat // 20260905x : workers
+const CACHE_VERSION = 'v191'; // 20260905b 5ᵉ : images figées — cache SW durci (corps vide/partiel/opaque jamais servi ni mis en cache) // 20260905a : onerror + Réessayer // 20260905z : bulles vides
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
@@ -287,30 +287,45 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(IMAGE_CACHE).then(async (cache) => {
         let cached = await cache.match(req);
-        if (cached && cached.ok) {
-          // (20260905j 4ᵉ) une copie en cache peut être CORROMPUE (écriture
-          // partielle) → « Image corrupt or truncated » dans la console. On
-          // vérifie que le corps se lit ; sinon on la supprime et on repasse
-          // par le réseau (qui recache la bonne version).
-          let corrupt = false;
-          try { await cached.clone().blob(); } catch (e) { corrupt = true; }
-          if (corrupt) { try { await cache.delete(req); } catch (e) {} cached = null; }
+        if (cached) {
+          // (20260905b 5ᵉ) RETOUR TERRAIN « images figées » (wifi ET 3G) :
+          // une copie en cache pouvait être VIDE ou PARTIELLE (coupure
+          // pendant le téléchargement, réponse opaque/0 octet). L'ancien
+          // contrôle ne testait que la lisibilité du corps (.blob() réussit
+          // sur un corps VIDE) → l'image cassée était servie indéfiniment
+          // pour cette URL, quelle que soit la qualité du réseau. C'est ça
+          // qui « figeait » les images tant que le cache n'était pas vidé.
+          // Maintenant : on valide aussi le TYPE et la TAILLE du corps.
+          let bad = !cached.ok || cached.status !== 200 || cached.type === 'opaque';
+          if (!bad) {
+            try {
+              const b = await cached.clone().blob();
+              // une vraie image fait forcément plus de quelques octets
+              if (!b || b.size < 100) bad = true;
+              else if (b.type && b.type.indexOf('image') === -1) bad = true;
+            } catch (e) { bad = true; }
+          }
+          if (bad) { try { await cache.delete(req); } catch (e) {} cached = null; }
         }
         if (cached) {
           // Déjà en cache (et valide) : réponse immédiate + revalidation
           // silencieuse en arrière-plan (l'image peut évoluer — ex : nouvelle photo).
           fetch(req).then((res) => {
-            if (res && res.ok) { cache.put(req, res.clone()); trimImageCache(); }
+            if (res && res.ok && res.status === 200 && res.type !== 'opaque') { cache.put(req, res.clone()); trimImageCache(); }
           }).catch(() => {});
           return cached;
         }
-        // Pas encore en cache : réseau. En cas d'échec (hors-ligne), on
-        // renvoie une réponse vide plutôt qu'une erreur qui casserait l'image.
+        // Pas encore en cache : réseau. On ne met en cache QUE des réponses
+        // complètes et non opaques (une réponse partielle mise en cache
+        // condamnerait l'URL).
         try {
           const res = await fetch(req);
-          if (res && res.ok) { cache.put(req, res.clone()); trimImageCache(); }
+          if (res && res.ok && res.status === 200 && res.type !== 'opaque') { cache.put(req, res.clone()); trimImageCache(); }
           return res;
         } catch (err) {
+          // (20260905b 5ᵉ) 504 avec corps vide : l'<img> déclenche son
+          // onerror → l'app affiche « ↻ Réessayer » (vague a) au lieu d'un
+          // cadre vide silencieux. Cette réponse n'est JAMAIS mise en cache.
           return new Response('', { status: 504, statusText: 'Image indisponible hors-ligne' });
         }
       })
