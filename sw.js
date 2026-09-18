@@ -171,7 +171,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v181'; // 20260905q 4ᵉ : indicateur « l'autre parle » + badge micro // 20260905p 4ᵉ : état connexion + règles // 20260905o 4ᵉ : dispo semaine
+const CACHE_VERSION = 'v188'; // 20260905y 4ᵉ : 8ᵉ passe d'audit — MODÉRATION CHAT branchée (worker chat-moderate mort depuis les débuts) // 20260905x : 7ᵉ passe d'audit (workers) // 20260905w : 6ᵉ passe d'audit // 20260905v : 5ᵉ passe d'audit // 20260905u : 4ᵉ passe d'audit // 20260905t : 3ᵉ passe d'audit // 20260905s : 2ᵉ passe d'audit // 20260905r : photos rapides + anti-écho + vidéo fluide 3G // 20260905q : indicateur voix // 20260905p : état connexion
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
