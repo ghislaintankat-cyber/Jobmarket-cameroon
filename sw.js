@@ -171,7 +171,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v195'; // 20260905f 5ᵉ : messages invisibles après un appel — CAUSE RACINE défilement (verrou _userScrolled armé à tort + re-rendu qui laissait la vue en haut) // 20260905e : tri chronologique du fil // 20260905d : migration sécurisée
+const CACHE_VERSION = 'v198'; // 20260905i 5ᵉ (audit 10) : double-clic sur « Booster » ne débite plus 2 crédits, bouton « Confirmer la mission » verrouillé pendant l'envoi // 20260905h : sonnerie + vibration, reconnexion 35 s, écran allumé // 20260905g : appelé occupé, file d'attente vérifiée
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
