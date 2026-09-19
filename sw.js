@@ -171,7 +171,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v193'; // 20260905d 5ᵉ : migration conversations sécurisée (plus de suppression sans vérification) // 20260905c : modération n'efface plus // 20260905b : cache images durci
+const CACHE_VERSION = 'v195'; // 20260905f 5ᵉ : messages invisibles après un appel — CAUSE RACINE défilement (verrou _userScrolled armé à tort + re-rendu qui laissait la vue en haut) // 20260905e : tri chronologique du fil // 20260905d : migration sécurisée
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
