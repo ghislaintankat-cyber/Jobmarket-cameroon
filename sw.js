@@ -171,7 +171,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v191'; // 20260905b 5ᵉ : images figées — cache SW durci (corps vide/partiel/opaque jamais servi ni mis en cache) // 20260905a : onerror + Réessayer // 20260905z : bulles vides
+const CACHE_VERSION = 'v193'; // 20260905d 5ᵉ : migration conversations sécurisée (plus de suppression sans vérification) // 20260905c : modération n'efface plus // 20260905b : cache images durci
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
