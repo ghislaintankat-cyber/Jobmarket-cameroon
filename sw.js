@@ -199,7 +199,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v206'; // 20260905q 5ᵉ : enregistrement vocal ne reste plus bloqué (onerror + appel entrant) // 20260905p : garde GPS + presse-papier // 20260905o : stockage plein
+const CACHE_VERSION = 'v207'; // 20260905r 5e : PERMISSION_DENIED au 1er message corrige (participants) + notif appel data-only (les 2 boutons) 
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
