@@ -122,9 +122,31 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  // Clic sur "Fermer" (ou "Refuser" un appel : on laisse la sonnerie expirer
-  // côté appelant → « Personne ne répond ») : rien de plus à faire.
-  if (event.action === 'dismiss' || event.action === 'decline') return;
+  // Clic sur "Fermer" : rien de plus à faire.
+  if (event.action === 'dismiss') return;
+
+  // (20260905l 5ᵉ) BOUTON « REFUSER » D'UN APPEL — avant : on ne faisait
+  // RIEN du tout. L'appelant continuait de sonner 90 SECONDES dans le vide,
+  // puis lisait « Personne ne répond ». Refuser un appel n'avait donc
+  // strictement aucun effet visible pour l'autre : le bouton était décoratif.
+  // Maintenant : on prévient l'app ouverte (elle écrit l'état « declined »
+  // sur le nœud d'appel, ce qui coupe la sonnerie de l'appelant tout de
+  // suite). Si aucun onglet n'est ouvert, on ne peut pas écrire dans la base
+  // depuis le service worker (pas d'authentification ici) : la sonnerie
+  // expire alors normalement, comme avant.
+  if (event.action === 'decline') {
+    const dd = event.notification.data || {};
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+        for (const client of list) {
+          if ('postMessage' in client) {
+            client.postMessage({ type: 'call-decline', threadId: dd.threadId || null });
+          }
+        }
+      }).catch(() => {})
+    );
+    return;
+  }
 
   const d = event.notification.data || {};
   const type = d.type || 'job';
@@ -134,9 +156,15 @@ self.addEventListener('notificationclick', (event) => {
   const variantParam = variant ? '&variant=' + encodeURIComponent(variant) : '';
 
   // Construit le hash de destination selon le type.
+  // (20260905m 5ᵉ) APPLI FERMÉE + clic sur « Répondre » : on ajoute le
+  // marqueur « &call=1 ». Avant, le lien d'un appel était IDENTIQUE à celui
+  // d'un message : l'app rouvrait, affichait la conversation… et ne
+  // décrochait JAMAIS. L'appelant continuait de sonner. Avec ce marqueur,
+  // l'app sait qu'elle doit décrocher et non ouvrir un fil de discussion.
   let hashPart;
   if ((type === 'message' || type === 'message-admin' || type === 'call') && threadId) { // (20260905f 4ᵉ)
-    hashPart = '#thread=' + encodeURIComponent(threadId) + '&src=push' + variantParam;
+    hashPart = '#thread=' + encodeURIComponent(threadId) + '&src=push' + variantParam
+      + (type === 'call' ? '&call=1' : '');
   } else if (jobId) {
     hashPart = '#job=' + jobId + '&src=push' + variantParam;
   } else {
@@ -171,7 +199,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v198'; // 20260905i 5ᵉ (audit 10) : double-clic sur « Booster » ne débite plus 2 crédits, bouton « Confirmer la mission » verrouillé pendant l'envoi // 20260905h : sonnerie + vibration, reconnexion 35 s, écran allumé // 20260905g : appelé occupé, file d'attente vérifiée
+const CACHE_VERSION = 'v206'; // 20260905q 5ᵉ : enregistrement vocal ne reste plus bloqué (onerror + appel entrant) // 20260905p : garde GPS + presse-papier // 20260905o : stockage plein
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
