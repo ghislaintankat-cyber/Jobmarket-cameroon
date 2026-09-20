@@ -199,7 +199,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v207'; // 20260905r 5e : PERMISSION_DENIED au 1er message corrige (participants) + notif appel data-only (les 2 boutons) 
+const CACHE_VERSION = 'v208'; // 20260905s 5e : notifications sur TOUS les appareils (tel + ordi) + barre de filtres accessible sur mobile
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
