@@ -205,7 +205,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v211'; // 20260905v 5e : menu message defilable, vocal avec indicateur, videos en cache, retard audio appels corrige
+const CACHE_VERSION = 'v212'; // 20260905w 5e : notification d'appel en cours (n'est plus bloquee par l'ecriture Firebase)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
