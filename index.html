@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905z">
+<html lang="fr" data-app-build="20260906a">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -2015,6 +2015,11 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
      </div>
      <div id="callDiagResults" style="display:none;font-size:12.5px;line-height:1.5;margin-top:6px;"></div>
      <button class="btn btn-primary" onclick="runCallDiag()" style="width:100%;margin-top:10px;" data-i18n="callDiagRun">🩺 Lancer le test</button>
+     <!-- (20260906a) Réparation des notifications : refait toute la chaîne
+          (service worker → autorisation → jeton → écriture en base) et
+          AFFICHE le résultat. Ajouté après un cas terrain où le worker
+          répondait « aucun appareil enregistré » sans aucune explication. -->
+     <button class="btn" onclick="fixNotifications()" style="width:100%;margin-top:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);" data-i18n="notifFixBtn">🔧 Réparer les notifications</button>
    </div>
    <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -2225,8 +2230,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905z" defer></script>
-<script src="app.js?v=20260905z" defer></script>
+<script src="chat-widget.js?v=20260906a" defer></script>
+<script src="app.js?v=20260906a" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">

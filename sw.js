@@ -205,7 +205,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v215'; // 20260905z 5e : notifications refusees -> aide affichee + re-enregistrement auto du jeton
+const CACHE_VERSION = 'v216'; // 20260906a : bouton Reparer les notifications + echecs d'enregistrement rendus visibles
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
