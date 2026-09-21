@@ -205,12 +205,15 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v209'; // 20260905t 5e : PERMISSION_DENIED conversations existantes (regle Firebase) + notification d'appel manque
+const CACHE_VERSION = 'v211'; // 20260905v 5e : menu message defilable, vocal avec indicateur, videos en cache, retard audio appels corrige
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
 const IMAGE_CACHE = `jobmarket-images-${CACHE_VERSION}`;
 const MAX_IMAGE_ENTRIES = 250;
+// (20260905v 5ᵉ) cache vidéo séparé : peu d'entrées (fichiers lourds)
+const VIDEO_CACHE = `jobmarket-videos-${CACHE_VERSION}`;
+const MAX_VIDEO_ENTRIES = 12;
 
 const SHELL_ASSETS = [
   './',
@@ -260,7 +263,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== SHELL_CACHE && key !== TILE_CACHE && key !== IMAGE_CACHE)
+          .filter((key) => key !== SHELL_CACHE && key !== TILE_CACHE && key !== IMAGE_CACHE && key !== VIDEO_CACHE)
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
@@ -291,7 +294,27 @@ function isFirebaseOrUploadCall(url) {
 // un vrai poids sur 3G/4G. Mêmes URL = mêmes images, donc cache-first +
 // revalidation silencieuse en arrière-plan (comme les tuiles de carte).
 function isCloudinaryImage(url) {
-  return url.hostname.includes('cloudinary.com') && url.pathname.includes('/upload/');
+  return url.hostname.includes('cloudinary.com') && url.pathname.includes('/upload/')
+    && !url.pathname.includes('/video/upload/');
+}
+
+// (20260905v 5ᵉ) VIDÉOS : conservées après le 1er téléchargement (façon
+// WhatsApp). Avant : elles n'étaient PAS mises en cache — chaque ouverture
+// la retéléchargeait entièrement, coûteux en données et très lent en 3G.
+// Retour terrain : « quand tu reçois une vidéo tu dois d'abord la
+// télécharger, puis pouvoir la revoir sans la recharger ».
+function isCloudinaryVideo(url) {
+  return url.hostname.includes('cloudinary.com') && url.pathname.includes('/video/upload/');
+}
+
+async function trimVideoCache() {
+  const cache = await caches.open(VIDEO_CACHE);
+  const keys = await cache.keys();
+  if (keys.length > MAX_VIDEO_ENTRIES) {
+    for (let i = 0; i < keys.length - MAX_VIDEO_ENTRIES; i++) {
+      try { await cache.delete(keys[i]); } catch (e) {}
+    }
+  }
 }
 
 async function trimTileCache() {
@@ -316,6 +339,46 @@ self.addEventListener('fetch', (event) => {
   if (req.url.startsWith('blob:') || req.url.startsWith('data:')) return;
 
   const url = new URL(req.url);
+
+  // (20260905v 5ᵉ) VIDÉOS DU CHAT — téléchargées UNE FOIS, puis relues
+  // depuis l'appareil (comportement WhatsApp).
+  // Subtilité importante : le lecteur vidéo demande le fichier par MORCEAUX
+  // (en-tête « Range »), et la réponse est alors un 206 « contenu partiel ».
+  // Mettre un morceau en cache condamnerait la vidéo (on resservirait
+  // toujours le même fragment). On ne met donc en cache QUE la réponse
+  // COMPLÈTE (200), et on ne sert le cache que pour une demande entière.
+  if (isCloudinaryVideo(url)) {
+    const hasRange = req.headers && req.headers.get && req.headers.get('range');
+    if (hasRange) return; // morceau : on laisse passer vers le réseau, sans cache
+    event.respondWith(
+      caches.open(VIDEO_CACHE).then(async (cache) => {
+        let cached = await cache.match(req);
+        if (cached) {
+          // Même garde anti-corruption que pour les images : une copie vide
+          // ou tronquée resterait servie à vie.
+          let bad = !cached.ok || cached.status !== 200 || cached.type === 'opaque';
+          if (!bad) {
+            try {
+              const b = await cached.clone().blob();
+              if (!b || b.size < 1000) bad = true;
+            } catch (e) { bad = true; }
+          }
+          if (bad) { try { await cache.delete(req); } catch (e) {} cached = null; }
+        }
+        if (cached) return cached; // déjà téléchargée : lecture immédiate
+        try {
+          const res = await fetch(req);
+          if (res && res.ok && res.status === 200 && res.type !== 'opaque') {
+            cache.put(req, res.clone()); trimVideoCache();
+          }
+          return res;
+        } catch (err) {
+          return new Response('', { status: 504, statusText: 'Vidéo indisponible hors-ligne' });
+        }
+      })
+    );
+    return;
+  }
 
   if (isCloudinaryImage(url)) {
     event.respondWith(

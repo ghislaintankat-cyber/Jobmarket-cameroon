@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260905t">
+<html lang="fr" data-app-build="20260905v">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -641,6 +641,15 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 .ptype-btn.active{border-color:var(--gold,#FFD700);color:var(--gold,#FFD700);background:rgba(255,215,0,0.08)}
 .ptype-btn:active{transform:scale(0.97)}
 /* Bouton filtre « 🟢 Dispo maintenant » (panneau liste) */
+/* (20260905u 5ᵉ) Micro de DICTÉE retiré de la barre de saisie (demande
+   utilisateur : « retire le micro près des emojis, ça n'aide pas pour le
+   moment »). On le MASQUE au lieu de supprimer la ligne HTML : le code qui
+   le manipule (affichage pendant l'enregistrement vocal) continue de
+   fonctionner sans erreur, et le réactiver plus tard ne demandera que de
+   retirer ces 2 lignes.
+   ⚠️ À ne pas confondre avec le micro d'ENVOI DE VOCAL, à droite (waSendBtn),
+   qui reste en place. */
+#waDictateBtn{display:none !important}
 .avail-filter-btn{flex:none;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text-dim);font-size:11px;font-weight:700;cursor:pointer;transition:0.15s}
 /* (20260905s 5ᵉ) barre de filtres : défilement horizontal sur petit écran
    (sinon les premiers filtres sortaient de l'écran, inaccessibles) */
@@ -2216,8 +2225,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260905t" defer></script>
-<script src="app.js?v=20260905t" defer></script>
+<script src="chat-widget.js?v=20260905v" defer></script>
+<script src="app.js?v=20260905v" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -2848,6 +2857,19 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 .wa-autoreply{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:var(--text-secondary);margin-top:3px;padding-left:2px;opacity:.9}
 /* ===== 20260905f : menu contextuel des messages — OPTIONS VISIBLES ===== */
 .wa-ctx{min-width:224px;border-radius:12px;box-shadow:0 16px 44px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.3)}
+/* (20260905v 5ᵉ) MENU DU MESSAGE COUPÉ → « Supprimer » inaccessible.
+   Le menu compte jusqu'à 15 entrées : sur un téléphone il dépassait le bas
+   de l'écran, et comme il ne défilait pas, les dernières options (dont
+   Supprimer) étaient INATTEIGNABLES. Retour terrain : « je n'arrive pas à
+   supprimer ma dernière vidéo ».
+   Fix : hauteur plafonnée à 70 % de l'écran + défilement interne. */
+.wa-ctx{max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+/* (20260905v 5ᵉ) VOCAL : anneau qui tourne pendant le chargement du son
+   (avant : le bouton affichait « pause » alors que rien ne jouait encore) */
+.wa-voice-play.wa-voice-loading svg{animation:waVoiceSpin .8s linear infinite;opacity:.85}
+@keyframes waVoiceSpin{to{transform:rotate(360deg)}}
+.wa-ctx::-webkit-scrollbar{width:4px}
+.wa-ctx::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:4px}
 .wa-ctx button{padding:12px 18px;font-size:15px;font-weight:600;gap:14px}
 .wa-ctx button svg{width:19px;height:19px}
 .wa-ctx-sep{margin:5px 10px}
