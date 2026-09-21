@@ -205,7 +205,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v212'; // 20260905w 5e : notification d'appel en cours (n'est plus bloquee par l'ecriture Firebase)
+const CACHE_VERSION = 'v214'; // 20260905y 5e : journal du worker precis (nombre reel d'appareils notifies)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
@@ -462,7 +462,15 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req).then((res) => {
-        caches.open(SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
+        // (20260905x 5ᵉ) NE JAMAIS METTRE EN CACHE UNE PAGE D'ERREUR.
+        // Avant : toute réponse était mise en cache, y compris un 404. Si une
+        // page était ouverte AVANT d'être publiée sur GitHub, le 404 restait
+        // en mémoire et était resservi À VIE — même une fois le fichier en
+        // ligne. Symptôme vécu : « ça montre toujours 404 » alors que le
+        // fichier est bien sur GitHub.
+        if (res && res.ok && res.status === 200) {
+          caches.open(SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
+        }
         return res;
       }).catch(() => caches.match('./index.html'))
     );
@@ -472,7 +480,8 @@ self.addEventListener('fetch', (event) => {
   if (SHELL_ASSETS.includes(req.url) || url.origin !== self.location.origin) {
     event.respondWith(
       caches.match(req).then((cached) => cached || fetch(req).then((res) => {
-        if (res && res.ok) caches.open(SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
+        // même garde : une erreur ne doit jamais être conservée
+        if (res && res.ok && res.status === 200) caches.open(SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
         return res;
       }))
     );
