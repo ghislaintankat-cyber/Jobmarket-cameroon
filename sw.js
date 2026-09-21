@@ -69,6 +69,10 @@ messaging.onBackgroundMessage((payload) => {
     tag = data.threadId ? 'thread-' + data.threadId : undefined;
   } else if (type === 'call') { // (20260905f 4ᵉ) un seul sonnerie active par thread
     tag = data.threadId ? 'call-' + data.threadId : undefined;
+  } else if (type === 'missed-call') { // (20260905t 5ᵉ) appel manqué
+    // tag distinct de l'appel en cours : la notif « appel manqué » ne doit
+    // pas remplacer une sonnerie active, ni l'inverse.
+    tag = data.threadId ? 'missed-' + data.threadId : undefined;
   } else if (type === 'quote' || type === 'quote-admin') {
     tag = data.quoteId ? 'quote-' + data.quoteId : undefined;
   } else {
@@ -162,7 +166,9 @@ self.addEventListener('notificationclick', (event) => {
   // décrochait JAMAIS. L'appelant continuait de sonner. Avec ce marqueur,
   // l'app sait qu'elle doit décrocher et non ouvrir un fil de discussion.
   let hashPart;
-  if ((type === 'message' || type === 'message-admin' || type === 'call') && threadId) { // (20260905f 4ᵉ)
+  // (20260905t 5ᵉ) « missed-call » ouvre la CONVERSATION (pour rappeler ou
+  // écrire) — mais SANS « call=1 » : on ne décroche pas un appel terminé.
+  if ((type === 'message' || type === 'message-admin' || type === 'call' || type === 'missed-call') && threadId) { // (20260905f 4ᵉ)
     hashPart = '#thread=' + encodeURIComponent(threadId) + '&src=push' + variantParam
       + (type === 'call' ? '&call=1' : '');
   } else if (jobId) {
@@ -199,7 +205,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v208'; // 20260905s 5e : notifications sur TOUS les appareils (tel + ordi) + barre de filtres accessible sur mobile
+const CACHE_VERSION = 'v209'; // 20260905t 5e : PERMISSION_DENIED conversations existantes (regle Firebase) + notification d'appel manque
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
