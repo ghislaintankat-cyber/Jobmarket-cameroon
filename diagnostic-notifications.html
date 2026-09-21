@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagnostic notifications — JobMarket</title>
+<style>
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#0d1117;color:#e6edf3;
+       margin:0;padding:16px;line-height:1.5}
+  h1{font-size:19px;margin:0 0 4px}
+  .sub{color:#8b949e;font-size:13px;margin-bottom:18px}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;margin-bottom:10px}
+  .row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #21262d}
+  .row:last-child{border-bottom:none}
+  .ico{font-size:17px;width:22px;flex:none;text-align:center}
+  .txt{flex:1;min-width:0}
+  .name{font-weight:600;font-size:14px}
+  .det{color:#8b949e;font-size:12.5px;margin-top:2px;word-break:break-word}
+  .ok{color:#3fb950}.ko{color:#f85149}.wa{color:#d29922}
+  button{width:100%;padding:13px;border:none;border-radius:9px;background:#238636;color:#fff;
+         font-size:15px;font-weight:600;cursor:pointer;margin-top:6px}
+  button:disabled{opacity:.5}
+  .sec{background:#1f6feb}
+  pre{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px;font-size:11.5px;
+      overflow-x:auto;white-space:pre-wrap;word-break:break-all;color:#8b949e;max-height:220px;overflow-y:auto}
+  .verdict{padding:13px;border-radius:9px;margin-top:12px;font-size:14px;display:none}
+  .v-ok{background:rgba(63,185,80,.15);border:1px solid #3fb950}
+  .v-ko{background:rgba(248,81,73,.15);border:1px solid #f85149}
+</style>
+</head>
+<body>
+
+<h1>🔍 Diagnostic des notifications</h1>
+<div class="sub">Ouvre cette page <b>sur le téléphone qui ne reçoit rien</b>, connecté à ton compte JobMarket.</div>
+
+<div class="card">
+  <button id="go">▶ Lancer le diagnostic</button>
+  <div id="rows"></div>
+  <div id="verdict" class="verdict"></div>
+</div>
+
+<div class="card">
+  <div class="name" style="margin-bottom:8px">Détails techniques</div>
+  <pre id="log">En attente…</pre>
+  <button class="sec" id="copy">📋 Copier ce rapport</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+<script>
+const CFG={apiKey:"AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",authDomain:"jobmarketfuture.firebaseapp.com",
+  databaseURL:"https://jobmarketfuture-default-rtdb.firebaseio.com",projectId:"jobmarketfuture",
+  storageBucket:"jobmarketfuture.firebasestorage.app",messagingSenderId:"351669024349",
+  appId:"1:351669024349:web:d4d4d08727ccc6012b7fb4"};
+const VAPID="BDjptctrpoeyowsCJT_qcpnUzy15FJm6lCcmq6rtNlCh9BpqS1MpQMSuQsvoMsIA_PIreqDR3PAS1ZxvsgbvRAg";
+const WURL="https://jobmarket-direct-notify.ghislaintankat.workers.dev";
+const WSECRET="34ddbbb4794c7fcc0c2726765d4f8ed832e85fcb6012d04b68521c5131ee9716";
+
+const L=[],rows=document.getElementById('rows'),logEl=document.getElementById('log');
+function log(s){L.push(s);logEl.textContent=L.join('\n');}
+function row(ico,cls,name,det){
+  const d=document.createElement('div');d.className='row';
+  d.innerHTML='<div class="ico '+cls+'">'+ico+'</div><div class="txt"><div class="name">'+name+
+              '</div><div class="det">'+(det||'')+'</div></div>';
+  rows.appendChild(d);
+}
+const OK=(n,d)=>{row('✅','ok',n,d);log('OK   | '+n+(d?' | '+d:''));};
+const KO=(n,d)=>{row('❌','ko',n,d);log('ECHEC| '+n+(d?' | '+d:''));};
+const WA=(n,d)=>{row('⚠️','wa',n,d);log('ATTN | '+n+(d?' | '+d:''));};
+
+document.getElementById('copy').onclick=()=>{
+  navigator.clipboard.writeText(L.join('\n')).then(()=>alert('Rapport copié !'))
+   .catch(()=>alert('Sélectionne le texte et copie-le à la main.'));
+};
+
+document.getElementById('go').onclick=async()=>{
+  const btn=document.getElementById('go');btn.disabled=true;btn.textContent='⏳ Diagnostic en cours…';
+  rows.innerHTML='';L.length=0;
+  const V=document.getElementById('verdict');V.style.display='none';
+  let blocking=null;
+
+  log('=== DIAGNOSTIC '+new Date().toLocaleString('fr-FR')+' ===');
+  log('Navigateur: '+navigator.userAgent);
+
+  // 1 — HTTPS
+  if(location.protocol==='https:') OK('Connexion sécurisée (HTTPS)');
+  else {KO('Pas en HTTPS','Les notifications sont impossibles.');blocking=blocking||'HTTPS';}
+
+  // 2 — Support navigateur
+  if('Notification' in window && 'serviceWorker' in navigator) OK('Navigateur compatible');
+  else {KO('Navigateur incompatible','Utilise Chrome sur Android.');blocking=blocking||'NAVIGATEUR';}
+
+  // 3 — Autorisation
+  let perm=(typeof Notification!=='undefined')?Notification.permission:'unsupported';
+  if(perm==='default'){try{perm=await Notification.requestPermission();}catch(e){}}
+  if(perm==='granted') OK('Notifications autorisées');
+  else if(perm==='denied'){KO('Notifications BLOQUÉES pour ce site',
+      'Chrome → ⋮ → Paramètres → Paramètres des sites → Notifications → autorise ce site.');
+      blocking=blocking||'PERMISSION';}
+  else {WA('Autorisation non accordée',perm);blocking=blocking||'PERMISSION';}
+
+  // 4 — Application installée (PWA) ?
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
+  if(standalone) OK('Application installée sur l\'écran d\'accueil');
+  else WA('Ouverte dans le navigateur (pas installée)',
+          'Sur Android, une appli INSTALLÉE reçoit bien mieux les notifications. ⋮ → « Installer l\'application ».');
+
+  // 5 — Firebase
+  try{firebase.initializeApp(CFG);OK('Connexion à Firebase');}
+  catch(e){if(!/already exists/.test(e.message)){KO('Firebase',e.message);blocking=blocking||'FIREBASE';}else OK('Connexion à Firebase');}
+
+  // 6 — Compte connecté
+  const auth=firebase.auth();
+  const user=await new Promise(r=>{const u=auth.onAuthStateChanged(x=>{u();r(x);});setTimeout(()=>r(auth.currentUser),4000);});
+  if(user&&!user.isAnonymous){OK('Connecté à ton compte',user.email||user.uid);}
+  else {KO('Pas connecté sur ce téléphone',
+       'Ouvre JobMarket, connecte-toi, PUIS relance ce diagnostic.');blocking=blocking||'CONNEXION';
+       V.className='verdict v-ko';V.style.display='block';
+       V.innerHTML='<b>🚫 Connecte-toi d\'abord</b><br>Ouvre JobMarket sur ce téléphone, connecte-toi, puis reviens ici.';
+       btn.disabled=false;btn.textContent='▶ Relancer';return;}
+
+  // 7 — Service worker
+  let reg=null;
+  try{reg=await navigator.serviceWorker.register('sw.js');await navigator.serviceWorker.ready;
+      OK('Service worker actif');}
+  catch(e){KO('Service worker non enregistré',e.message);blocking=blocking||'SW';}
+
+  // 8 — Jeton FCM
+  let token=null;
+  if(reg&&perm==='granted'){
+    try{token=await firebase.messaging().getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});
+        token?OK('Jeton de notification obtenu',token.slice(0,28)+'…')
+              :KO('Aucun jeton obtenu','Firebase a refusé.');
+        if(!token)blocking=blocking||'JETON';}
+    catch(e){KO('Impossible d\'obtenir le jeton',e.message);blocking=blocking||'JETON';}
+  }
+
+  // 9 — Jeton enregistré en base
+  const db=firebase.database();
+  if(token){
+    try{
+      await db.ref('notificationTokens/'+user.uid).set(token);
+      await db.ref('notificationTokens_v2/'+user.uid+'/diag').set({token:token,ua:'diagnostic',ts:Date.now()});
+      OK('Jeton enregistré dans la base','ancien + nouveau format');
+    }catch(e){
+      KO('Écriture du jeton REFUSÉE',e.message+' → publie database.rules.json dans Firebase.');
+      blocking=blocking||'REGLES';
+    }
+  }
+
+  // 10 — Le worker répond-il ?
+  let wReach=false;
+  try{
+    const r=await fetch(WURL,{method:'POST',headers:{'Content-Type':'application/json','X-Direct-Secret':WSECRET},
+        body:JSON.stringify({event_type:'__ping__'})});
+    const t=await r.text();wReach=true;
+    log('Worker HTTP '+r.status+' → '+t.slice(0,160));
+    if(r.status===403&&/secret/i.test(t)){KO('Le worker refuse le mot de passe',
+        'La variable DIRECT_NOTIFY_SECRET de Cloudflare ne correspond pas.');blocking=blocking||'SECRET';}
+    else if(r.status===400&&/unknown_event/.test(t)) OK('Worker joignable et mot de passe correct');
+    else if(r.status===0||r.status>=500){KO('Le worker répond mal','HTTP '+r.status+' — '+t.slice(0,90));
+        blocking=blocking||'WORKER';}
+    else OK('Worker joignable','HTTP '+r.status);
+  }catch(e){KO('Worker INJOIGNABLE',e.message+' — vérifie qu\'il est déployé.');blocking=blocking||'WORKER';}
+
+  // 11 — Vrai appel de bout en bout
+  if(token&&wReach){
+    try{
+      const idToken=await user.getIdToken();
+      const tid=user.uid+'_'+user.uid; // conversation avec soi-même (test)
+      const r=await fetch(WURL,{method:'POST',headers:{'Content-Type':'application/json','X-Direct-Secret':WSECRET},
+          body:JSON.stringify({event_type:'call-ring',idToken:idToken,calleeUid:user.uid,threadId:tid,kind:'audio'})});
+      const t=await r.text();
+      log('Test appel → HTTP '+r.status+' | '+t.slice(0,200));
+      if(/self_call|not_participants/.test(t))
+        OK('Le worker traite bien les appels','(refus normal : test sur soi-même)');
+      else if(/notified.*1/.test(t)) OK('Notification envoyée !','Tu devrais la voir apparaître.');
+      else if(/invalid_token/.test(t)){KO('Identité refusée par le worker',
+          'FIREBASE_SERVICE_ACCOUNT est absente ou périmée dans Cloudflare.');blocking=blocking||'SERVICE_ACCOUNT';}
+      else if(/internal_error/.test(t)){KO('Erreur interne du worker',
+          'Regarde l\'onglet Logs du worker dans Cloudflare.');blocking=blocking||'WORKER_ERR';}
+      else WA('Réponse du worker','HTTP '+r.status+' — '+t.slice(0,120));
+    }catch(e){KO('Test d\'appel impossible',e.message);}
+  }
+
+  // 12 — Notification locale (le téléphone sait-il afficher ?)
+  if(perm==='granted'&&reg){
+    try{
+      await reg.showNotification('✅ Test JobMarket',{body:'Si tu vois ceci, ton téléphone peut afficher les notifications.',
+        icon:'icon-192.png',tag:'diag',vibrate:[200,100,200]});
+      OK('Notification de test affichée','Tu dois la voir maintenant.');
+    }catch(e){KO('Affichage impossible',e.message);}
+  }
+
+  // Verdict
+  const M={
+    HTTPS:'Le site doit être en HTTPS.',
+    NAVIGATEUR:'Utilise Chrome sur Android.',
+    PERMISSION:'Les notifications sont bloquées pour ce site.<br>Chrome → ⋮ → Paramètres → Paramètres des sites → Notifications → autorise JobMarket.',
+    CONNEXION:'Connecte-toi sur ce téléphone.',
+    SW:'Le service worker ne s\'installe pas. Vide le cache et recharge.',
+    JETON:'Firebase refuse de délivrer un jeton. Vérifie que les notifications sont autorisées au niveau d\'Android aussi.',
+    REGLES:'⚠️ Les règles Firebase ne sont pas publiées.<br>Console Firebase → Realtime Database → Règles → colle <b>database.rules.json</b> → Publier.',
+    SECRET:'La variable <b>DIRECT_NOTIFY_SECRET</b> dans Cloudflare ne correspond pas à celle de l\'app.',
+    WORKER:'Le worker <b>jobmarket-direct-notify</b> n\'est pas joignable.',
+    SERVICE_ACCOUNT:'La variable <b>FIREBASE_SERVICE_ACCOUNT</b> manque ou est périmée dans Cloudflare.',
+    WORKER_ERR:'Le worker plante. Ouvre son onglet <b>Logs</b> dans Cloudflare pendant un appel.'
+  };
+  V.style.display='block';
+  if(blocking){V.className='verdict v-ko';
+    V.innerHTML='<b>🚫 Cause trouvée : '+blocking+'</b><br><br>'+(M[blocking]||'');}
+  else{V.className='verdict v-ok';
+    V.innerHTML='<b>✅ Tout est correct de ce côté.</b><br><br>Si tu ne reçois toujours rien : vérifie dans les réglages <b>Android</b> que les notifications sont autorisées pour Chrome (ou pour l\'appli installée), et désactive l\'économiseur de batterie pour elle.';}
+
+  btn.disabled=false;btn.textContent='▶ Relancer le diagnostic';
+};
+</script>
+</body>
+</html>
