@@ -207,7 +207,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v220'; // 20260906e : ecriture du jeton confirmee par le serveur (fin des faux succes)
+const CACHE_VERSION = 'v224'; // 20260906j : les 9 crons GitHub partagent pushTokens.js (plus aucune suppression aveugle)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
