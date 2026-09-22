@@ -207,7 +207,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v219'; // 20260906d : notification affichable par Android seul (regression vague r corrigee)
+const CACHE_VERSION = 'v220'; // 20260906e : ecriture du jeton confirmee par le serveur (fin des faux succes)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
