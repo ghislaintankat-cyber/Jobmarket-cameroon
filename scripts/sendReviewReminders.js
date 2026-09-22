@@ -21,6 +21,62 @@ admin.initializeApp({
 
 const db = admin.database();
 const messaging = admin.messaging();
+// (20260906l) CHARGEMENT TOLERANT DE LA SOURCE UNIQUE.
+// pushTokens.js est un fichier NOUVEAU : s'il est oublie lors du depot sur
+// GitHub, un `require` sec ferait planter ce script au demarrage — y compris
+// les notifications qui fonctionnent aujourd'hui. On degrade donc en securite
+// plutot que de tomber : lecture des deux emplacements, envoi a tous les
+// appareils, et SURTOUT aucune suppression de jeton (c'est la suppression qui
+// a bloque les appels pendant 16 vagues ; en mode degrade on n'y touche pas).
+const { loadTokensMap, tokensFor, sendToUid } = (() => {
+  try {
+    return require("./pushTokens");
+  } catch (e) {
+    console.warn("⚠️ scripts/pushTokens.js INTROUVABLE — mode degrade : " +
+                 "les notifications partent, mais aucun jeton ne sera nettoye. " +
+                 "Depose pushTokens.js dans scripts/ pour retablir le mode normal.");
+    const tokensFor = (map, uid) => {
+      const v = map && uid ? map[uid] : null;
+      if (!v) return [];
+      return Array.isArray(v) ? v : [v];
+    };
+    return {
+      tokensFor,
+      countUsers: (map) => Object.keys(map || {}).length,
+      loadTokensMap: async (db) => {
+        const out = Object.create(null);
+        const add = (uid, tk) => {
+          if (!uid || typeof tk !== "string" || !tk.length) return;
+          if (!out[uid]) out[uid] = [];
+          if (!out[uid].includes(tk)) out[uid].push(tk);
+        };
+        const [a, b] = await Promise.all([
+          db.ref("notificationTokens").once("value"),
+          db.ref("notificationTokens_v2").once("value")
+        ]);
+        Object.entries(a.val() || {}).forEach(([uid, tk]) => add(uid, tk));
+        Object.entries(b.val() || {}).forEach(([uid, devs]) => {
+          if (!devs || typeof devs !== "object") return;
+          Object.values(devs).forEach((d) => add(uid, d && typeof d === "object" ? d.token : d));
+        });
+        return out;
+      },
+      sendToUid: async (messaging, db, uid, map, data) => {
+        const tokens = tokensFor(map, uid);
+        if (!tokens.length) return "no-token";
+        try {
+          const r = await messaging.sendEachForMulticast({
+            tokens, data, webpush: { headers: { Urgency: "high" } }
+          });
+          return (r.responses || []).some((x) => x && x.success) ? "sent" : "error";
+        } catch (err) {
+          console.error(`❌ Exception envoi à ${uid} :`, err);
+          return "error";
+        }
+      }
+    };
+  }
+})();
 
 // Même délai que côté client (index.html, REVIEW_DELAY_MS) : on ne
 // dérange pas avant que la personne ait eu le temps de vraiment échanger
@@ -72,13 +128,13 @@ async function sendReviewReminders() {
 
     const [contactsSnap, tokensSnap, profilesSnap, jobsSnap] = await Promise.all([
       db.ref("job_contacts").once("value"),
-      db.ref("notificationTokens").once("value"),
+      loadTokensMap(db),
       db.ref("profiles").once("value"),
       db.ref("jobs").once("value")
     ]);
 
     const contacts = contactsSnap.val() || {};
-    const tokensMap = tokensSnap.val() || {};
+    const tokensMap = tokensSnap;
     const profilesMap = profilesSnap.val() || {};
     const jobsMap = jobsSnap.val() || {};
 
@@ -98,8 +154,8 @@ async function sendReviewReminders() {
     let sentCount = 0;
 
     for (const [contactId, contact] of candidates) {
-      const token = tokensMap[contact.contactUid];
-      if (!token) {
+      const token = tokensFor(tokensMap, contact.contactUid);
+      if (!token.length) {
         updates[`job_contacts/${contactId}/reviewReminderSent`] = true; // pas de token = inutile de rescanner
         continue;
       }
@@ -112,25 +168,18 @@ async function sendReviewReminders() {
       const data = buildReviewReminderData(providerName, jobTitle, contact.jobId, lang);
 
       try {
-        const response = await messaging.sendEachForMulticast({
-          tokens: [token],
-          data,
-          webpush: { headers: { Urgency: "high" } }
-        });
-        const res = response.responses[0];
-        if (res.success) {
+        // (20260906j) envoi multi-appareils + nettoyage chirurgical
+        const outcome = await sendToUid(messaging, db, contact.contactUid, tokensMap, data);
+        if (outcome === "sent") {
           sentCount++;
           updates[`job_contacts/${contactId}/reviewReminderSent`] = true;
         } else {
-          const code = res.error && res.error.code;
-          if (
-            code === "messaging/invalid-registration-token" ||
-            code === "messaging/registration-token-not-registered"
-          ) {
-            updates[`job_contacts/${contactId}/reviewReminderSent`] = true; // token mort, inutile de retenter
-            updates[`notificationTokens/${contact.contactUid}`] = null;
+          // (20260906j) sendToUid a deja retire les appareils reellement
+          // refuses par FCM, apres relecture. Plus de suppression aveugle.
+          if (outcome === "invalid") {
+            updates[`job_contacts/${contactId}/reviewReminderSent`] = true; // tous les appareils sont morts
           } else {
-            console.error(`❌ Erreur d'envoi pour le contact ${contactId} (${code || "inconnue"}):`, res.error && res.error.message);
+            console.error(`❌ Envoi non abouti pour le contact ${contactId} (${outcome}).`);
           }
         }
       } catch (err) {

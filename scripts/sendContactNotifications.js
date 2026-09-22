@@ -22,6 +22,62 @@ admin.initializeApp({
 
 const db = admin.database();
 const messaging = admin.messaging();
+// (20260906l) CHARGEMENT TOLERANT DE LA SOURCE UNIQUE.
+// pushTokens.js est un fichier NOUVEAU : s'il est oublie lors du depot sur
+// GitHub, un `require` sec ferait planter ce script au demarrage — y compris
+// les notifications qui fonctionnent aujourd'hui. On degrade donc en securite
+// plutot que de tomber : lecture des deux emplacements, envoi a tous les
+// appareils, et SURTOUT aucune suppression de jeton (c'est la suppression qui
+// a bloque les appels pendant 16 vagues ; en mode degrade on n'y touche pas).
+const { loadTokensMap, tokensFor, sendToUid } = (() => {
+  try {
+    return require("./pushTokens");
+  } catch (e) {
+    console.warn("⚠️ scripts/pushTokens.js INTROUVABLE — mode degrade : " +
+                 "les notifications partent, mais aucun jeton ne sera nettoye. " +
+                 "Depose pushTokens.js dans scripts/ pour retablir le mode normal.");
+    const tokensFor = (map, uid) => {
+      const v = map && uid ? map[uid] : null;
+      if (!v) return [];
+      return Array.isArray(v) ? v : [v];
+    };
+    return {
+      tokensFor,
+      countUsers: (map) => Object.keys(map || {}).length,
+      loadTokensMap: async (db) => {
+        const out = Object.create(null);
+        const add = (uid, tk) => {
+          if (!uid || typeof tk !== "string" || !tk.length) return;
+          if (!out[uid]) out[uid] = [];
+          if (!out[uid].includes(tk)) out[uid].push(tk);
+        };
+        const [a, b] = await Promise.all([
+          db.ref("notificationTokens").once("value"),
+          db.ref("notificationTokens_v2").once("value")
+        ]);
+        Object.entries(a.val() || {}).forEach(([uid, tk]) => add(uid, tk));
+        Object.entries(b.val() || {}).forEach(([uid, devs]) => {
+          if (!devs || typeof devs !== "object") return;
+          Object.values(devs).forEach((d) => add(uid, d && typeof d === "object" ? d.token : d));
+        });
+        return out;
+      },
+      sendToUid: async (messaging, db, uid, map, data) => {
+        const tokens = tokensFor(map, uid);
+        if (!tokens.length) return "no-token";
+        try {
+          const r = await messaging.sendEachForMulticast({
+            tokens, data, webpush: { headers: { Urgency: "high" } }
+          });
+          return (r.responses || []).some((x) => x && x.success) ? "sent" : "error";
+        } catch (err) {
+          console.error(`❌ Exception envoi à ${uid} :`, err);
+          return "error";
+        }
+      }
+    };
+  }
+})();
 
 // Comme pour les jobs (JOB_WINDOW_MS dans sendNotifications.js) : au-delà
 // de cette fenêtre, un contact non notifié n'est plus assez "frais" pour
@@ -68,12 +124,13 @@ async function sendContactNotifications() {
 
     const [contactsSnap, tokensSnap, profilesSnap] = await Promise.all([
       db.ref("job_contacts").once("value"),
-      db.ref("notificationTokens").once("value"),
+      loadTokensMap(db),
       db.ref("profiles").once("value")
     ]);
 
     const contacts = contactsSnap.val() || {};
-    const tokensMap = tokensSnap.val() || {};
+    // (20260906j) tokensSnap est deja la carte fusionnee (tous les appareils)
+    const tokensMap = tokensSnap;
     const profilesMap = profilesSnap.val() || {};
 
     const pending = Object.entries(contacts).filter(([, c]) => {
@@ -91,8 +148,8 @@ async function sendContactNotifications() {
     let sentCount = 0;
 
     for (const [contactId, contact] of pending) {
-      const token = tokensMap[contact.jobOwnerUid];
-      if (!token) {
+      const token = tokensFor(tokensMap, contact.jobOwnerUid);
+      if (!token.length) {
         // Pas de token = propriétaire n'a pas les notifications activées :
         // on marque quand même comme traité, sinon ce contact reste "en
         // attente" indéfiniment et sera rescanné à chaque run pour rien.
@@ -110,26 +167,22 @@ async function sendContactNotifications() {
       const data = buildContactNotifData(jobTitle, contact.jobId, lang);
 
       try {
-        const response = await messaging.sendEachForMulticast({
-          tokens: [token],
-          data,
-          webpush: { headers: { Urgency: "high" } }
-        });
-        const res = response.responses[0];
-        if (res.success) {
+        // (20260906j) envoi a TOUS les appareils via le module partage.
+        // Le nettoyage des jetons morts y est chirurgical (voir pushTokens.js).
+        const outcome = await sendToUid(messaging, db, contact.jobOwnerUid, tokensMap, data);
+        if (outcome === "sent") {
           sentCount++;
           updates[`job_contacts/${contactId}/notifiedOwner`] = true;
         } else {
-          const code = res.error && res.error.code;
-          if (
-            code === "messaging/invalid-registration-token" ||
-            code === "messaging/registration-token-not-registered"
-          ) {
-            updates[`job_contacts/${contactId}/notifiedOwner`] = true; // token mort, inutile de retenter
-            updates[`notificationTokens/${contact.jobOwnerUid}`] = null;
+          // (20260906j) plus AUCUNE suppression aveugle ici : sendToUid a deja
+          // retire le ou les appareils reellement refuses par FCM, apres
+          // relecture. On se contente de ne pas rescanner indefiniment.
+          if (outcome === "invalid") {
+            updates[`job_contacts/${contactId}/notifiedOwner`] = true; // tous les appareils sont morts
           } else {
-            console.error(`❌ Erreur d'envoi pour le contact ${contactId} (${code || "inconnue"}):`, res.error && res.error.message);
             // Pas invalide, juste raté : ce contact sera retenté au run suivant.
+            // (le détail de l'erreur est déjà journalisé par sendToUid)
+            console.error(`❌ Envoi non abouti pour le contact ${contactId} (${outcome}).`);
           }
         }
       } catch (err) {

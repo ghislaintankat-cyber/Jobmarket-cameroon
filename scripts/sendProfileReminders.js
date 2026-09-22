@@ -22,6 +22,62 @@ admin.initializeApp({
 
 const db = admin.database();
 const messaging = admin.messaging();
+// (20260906l) CHARGEMENT TOLERANT DE LA SOURCE UNIQUE.
+// pushTokens.js est un fichier NOUVEAU : s'il est oublie lors du depot sur
+// GitHub, un `require` sec ferait planter ce script au demarrage — y compris
+// les notifications qui fonctionnent aujourd'hui. On degrade donc en securite
+// plutot que de tomber : lecture des deux emplacements, envoi a tous les
+// appareils, et SURTOUT aucune suppression de jeton (c'est la suppression qui
+// a bloque les appels pendant 16 vagues ; en mode degrade on n'y touche pas).
+const { loadTokensMap, sendToUid } = (() => {
+  try {
+    return require("./pushTokens");
+  } catch (e) {
+    console.warn("⚠️ scripts/pushTokens.js INTROUVABLE — mode degrade : " +
+                 "les notifications partent, mais aucun jeton ne sera nettoye. " +
+                 "Depose pushTokens.js dans scripts/ pour retablir le mode normal.");
+    const tokensFor = (map, uid) => {
+      const v = map && uid ? map[uid] : null;
+      if (!v) return [];
+      return Array.isArray(v) ? v : [v];
+    };
+    return {
+      tokensFor,
+      countUsers: (map) => Object.keys(map || {}).length,
+      loadTokensMap: async (db) => {
+        const out = Object.create(null);
+        const add = (uid, tk) => {
+          if (!uid || typeof tk !== "string" || !tk.length) return;
+          if (!out[uid]) out[uid] = [];
+          if (!out[uid].includes(tk)) out[uid].push(tk);
+        };
+        const [a, b] = await Promise.all([
+          db.ref("notificationTokens").once("value"),
+          db.ref("notificationTokens_v2").once("value")
+        ]);
+        Object.entries(a.val() || {}).forEach(([uid, tk]) => add(uid, tk));
+        Object.entries(b.val() || {}).forEach(([uid, devs]) => {
+          if (!devs || typeof devs !== "object") return;
+          Object.values(devs).forEach((d) => add(uid, d && typeof d === "object" ? d.token : d));
+        });
+        return out;
+      },
+      sendToUid: async (messaging, db, uid, map, data) => {
+        const tokens = tokensFor(map, uid);
+        if (!tokens.length) return "no-token";
+        try {
+          const r = await messaging.sendEachForMulticast({
+            tokens, data, webpush: { headers: { Urgency: "high" } }
+          });
+          return (r.responses || []).some((x) => x && x.success) ? "sent" : "error";
+        } catch (err) {
+          console.error(`❌ Exception envoi à ${uid} :`, err);
+          return "error";
+        }
+      }
+    };
+  }
+})();
 
 // Même règle que isProfileComplete() dans index.html — à garder synchronisée
 // si la définition change côté client.
@@ -66,14 +122,15 @@ async function sendProfileReminders() {
   try {
     const [profilesSnap, tokensSnap] = await Promise.all([
       db.ref("profiles").once("value"),
-      db.ref("notificationTokens").once("value")
+      loadTokensMap(db)
     ]);
 
     const profilesMap = profilesSnap.val() || {};
-    const tokensMap = tokensSnap.val() || {};
+    // (20260906j) carte fusionnee : uid -> [jetons de TOUS les appareils]
+    const tokensMap = tokensSnap;
 
-    const candidates = Object.entries(tokensMap).filter(([uid, token]) => {
-      if (typeof token !== "string" || !token.length) return false;
+    const candidates = Object.entries(tokensMap).filter(([uid, tokens]) => {
+      if (!Array.isArray(tokens) || !tokens.length) return false;
       const profile = profilesMap[uid];
       if (!profile || profile.profileReminderSent) return false;
       return !isProfileComplete(profile);
@@ -87,30 +144,22 @@ async function sendProfileReminders() {
     const updates = {};
     let sentCount = 0;
 
-    for (const [uid, token] of candidates) {
+    for (const [uid] of candidates) {
       const lang = (profilesMap[uid] && profilesMap[uid].lang) || "fr";
       const data = buildProfileReminderData(lang);
 
       try {
-        const response = await messaging.sendEachForMulticast({
-          tokens: [token],
-          data,
-          webpush: { headers: { Urgency: "high" } }
-        });
-        const res = response.responses[0];
-        if (res.success) {
+        // (20260906j) envoi multi-appareils + nettoyage chirurgical
+        const outcome = await sendToUid(messaging, db, uid, tokensMap, data);
+        if (outcome === "sent") {
           sentCount++;
           updates[`profiles/${uid}/profileReminderSent`] = true;
         } else {
-          const code = res.error && res.error.code;
-          if (
-            code === "messaging/invalid-registration-token" ||
-            code === "messaging/registration-token-not-registered"
-          ) {
-            updates[`profiles/${uid}/profileReminderSent`] = true; // token mort, inutile de retenter
-            updates[`notificationTokens/${uid}`] = null;
+          // sendToUid a deja retire les appareils morts (apres relecture).
+          if (outcome === "invalid") {
+            updates[`profiles/${uid}/profileReminderSent`] = true; // tous morts
           } else {
-            console.error(`❌ Erreur d'envoi pour ${uid} (${code || "inconnue"}):`, res.error && res.error.message);
+            console.error(`❌ Envoi non abouti pour ${uid} (${outcome}).`);
           }
         }
       } catch (err) {

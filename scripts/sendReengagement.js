@@ -24,6 +24,62 @@ admin.initializeApp({
 
 const db = admin.database();
 const messaging = admin.messaging();
+// (20260906l) CHARGEMENT TOLERANT DE LA SOURCE UNIQUE.
+// pushTokens.js est un fichier NOUVEAU : s'il est oublie lors du depot sur
+// GitHub, un `require` sec ferait planter ce script au demarrage — y compris
+// les notifications qui fonctionnent aujourd'hui. On degrade donc en securite
+// plutot que de tomber : lecture des deux emplacements, envoi a tous les
+// appareils, et SURTOUT aucune suppression de jeton (c'est la suppression qui
+// a bloque les appels pendant 16 vagues ; en mode degrade on n'y touche pas).
+const { loadTokensMap, sendToUid } = (() => {
+  try {
+    return require("./pushTokens");
+  } catch (e) {
+    console.warn("⚠️ scripts/pushTokens.js INTROUVABLE — mode degrade : " +
+                 "les notifications partent, mais aucun jeton ne sera nettoye. " +
+                 "Depose pushTokens.js dans scripts/ pour retablir le mode normal.");
+    const tokensFor = (map, uid) => {
+      const v = map && uid ? map[uid] : null;
+      if (!v) return [];
+      return Array.isArray(v) ? v : [v];
+    };
+    return {
+      tokensFor,
+      countUsers: (map) => Object.keys(map || {}).length,
+      loadTokensMap: async (db) => {
+        const out = Object.create(null);
+        const add = (uid, tk) => {
+          if (!uid || typeof tk !== "string" || !tk.length) return;
+          if (!out[uid]) out[uid] = [];
+          if (!out[uid].includes(tk)) out[uid].push(tk);
+        };
+        const [a, b] = await Promise.all([
+          db.ref("notificationTokens").once("value"),
+          db.ref("notificationTokens_v2").once("value")
+        ]);
+        Object.entries(a.val() || {}).forEach(([uid, tk]) => add(uid, tk));
+        Object.entries(b.val() || {}).forEach(([uid, devs]) => {
+          if (!devs || typeof devs !== "object") return;
+          Object.values(devs).forEach((d) => add(uid, d && typeof d === "object" ? d.token : d));
+        });
+        return out;
+      },
+      sendToUid: async (messaging, db, uid, map, data) => {
+        const tokens = tokensFor(map, uid);
+        if (!tokens.length) return "no-token";
+        try {
+          const r = await messaging.sendEachForMulticast({
+            tokens, data, webpush: { headers: { Urgency: "high" } }
+          });
+          return (r.responses || []).some((x) => x && x.success) ? "sent" : "error";
+        } catch (err) {
+          console.error(`❌ Exception envoi à ${uid} :`, err);
+          return "error";
+        }
+      }
+    };
+  }
+})();
 
 // En dessous de ce délai sans avoir eu l'app au premier plan, on considère
 // que la personne suit déjà l'app normalement via les push instantanés
@@ -120,22 +176,23 @@ async function sendReengagement() {
     const now = Date.now();
 
     const [tokensSnap, jobsSnap, profilesSnap, prefsSnap, reengageSnap] = await Promise.all([
-      db.ref("notificationTokens").once("value"),
+      loadTokensMap(db),
       db.ref("jobs").once("value"),
       db.ref("profiles").once("value"),
       db.ref("notifyPrefs").once("value"),
       db.ref("reengagement").once("value")
     ]);
 
-    const tokensMap = tokensSnap.val() || {};
+    // (20260906j) carte fusionnee : uid -> [jetons de TOUS les appareils]
+    const tokensMap = tokensSnap;
     const jobs = jobsSnap.val() || {};
     const profilesMap = profilesSnap.val() || {};
     const notifyPrefsMap = prefsSnap.val() || {};
     const reengageMap = reengageSnap.val() || {};
 
     const entries = Object.entries(tokensMap)
-      .filter(([, token]) => typeof token === "string" && token.length > 0)
-      .map(([uid, token]) => ({ uid, token }));
+      .filter(([, tokens]) => Array.isArray(tokens) && tokens.length > 0)
+      .map(([uid]) => ({ uid }));
 
     if (!entries.length) {
       console.log("Aucun token de notification enregistré, rien à faire.");
@@ -157,7 +214,7 @@ async function sendReengagement() {
     let skippedNoMatch = 0;
     let skippedUnknownActivity = 0;
 
-    for (const { uid, token } of entries) {
+    for (const { uid } of entries) {
       const profile = profilesMap[uid] || {};
 
       // Champ récent : les comptes qui n'ont pas encore rouvert l'app depuis
@@ -183,25 +240,14 @@ async function sendReengagement() {
       const data = buildDigestData(matchingJobs.length, lang);
 
       try {
-        const response = await messaging.sendEachForMulticast({
-          tokens: [token],
-          data,
-          webpush: { headers: { Urgency: "high" } }
-        });
-        const res = response.responses[0];
-        if (res.success) {
+        // (20260906j) envoi multi-appareils + nettoyage chirurgical
+        const outcome = await sendToUid(messaging, db, uid, tokensMap, data);
+        if (outcome === "sent") {
           sentCount++;
           updates[`reengagement/${uid}`] = now;
-        } else {
-          const code = res.error && res.error.code;
-          if (
-            code === "messaging/invalid-registration-token" ||
-            code === "messaging/registration-token-not-registered"
-          ) {
-            updates[`notificationTokens/${uid}`] = null; // token mort, nettoyage au passage
-          } else {
-            console.error(`❌ Erreur d'envoi digest pour ${uid} (${code || "inconnue"}):`, res.error && res.error.message);
-          }
+        } else if (outcome !== "invalid") {
+          // "invalid" = appareils morts, deja retires proprement par sendToUid
+          console.error(`❌ Envoi digest non abouti pour ${uid} (${outcome}).`);
         }
       } catch (err) {
         console.error(`❌ Erreur envoi digest pour ${uid}, on retentera au prochain passage:`, err);

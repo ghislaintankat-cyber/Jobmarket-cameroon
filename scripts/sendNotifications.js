@@ -10,6 +10,62 @@ admin.initializeApp({
 
 const db = admin.database();
 const messaging = admin.messaging();
+// (20260906l) CHARGEMENT TOLERANT DE LA SOURCE UNIQUE.
+// pushTokens.js est un fichier NOUVEAU : s'il est oublie lors du depot sur
+// GitHub, un `require` sec ferait planter ce script au demarrage — y compris
+// les notifications qui fonctionnent aujourd'hui. On degrade donc en securite
+// plutot que de tomber : lecture des deux emplacements, envoi a tous les
+// appareils, et SURTOUT aucune suppression de jeton (c'est la suppression qui
+// a bloque les appels pendant 16 vagues ; en mode degrade on n'y touche pas).
+const { loadTokensMap, tokensFor, sendToUid } = (() => {
+  try {
+    return require("./pushTokens");
+  } catch (e) {
+    console.warn("⚠️ scripts/pushTokens.js INTROUVABLE — mode degrade : " +
+                 "les notifications partent, mais aucun jeton ne sera nettoye. " +
+                 "Depose pushTokens.js dans scripts/ pour retablir le mode normal.");
+    const tokensFor = (map, uid) => {
+      const v = map && uid ? map[uid] : null;
+      if (!v) return [];
+      return Array.isArray(v) ? v : [v];
+    };
+    return {
+      tokensFor,
+      countUsers: (map) => Object.keys(map || {}).length,
+      loadTokensMap: async (db) => {
+        const out = Object.create(null);
+        const add = (uid, tk) => {
+          if (!uid || typeof tk !== "string" || !tk.length) return;
+          if (!out[uid]) out[uid] = [];
+          if (!out[uid].includes(tk)) out[uid].push(tk);
+        };
+        const [a, b] = await Promise.all([
+          db.ref("notificationTokens").once("value"),
+          db.ref("notificationTokens_v2").once("value")
+        ]);
+        Object.entries(a.val() || {}).forEach(([uid, tk]) => add(uid, tk));
+        Object.entries(b.val() || {}).forEach(([uid, devs]) => {
+          if (!devs || typeof devs !== "object") return;
+          Object.values(devs).forEach((d) => add(uid, d && typeof d === "object" ? d.token : d));
+        });
+        return out;
+      },
+      sendToUid: async (messaging, db, uid, map, data) => {
+        const tokens = tokensFor(map, uid);
+        if (!tokens.length) return "no-token";
+        try {
+          const r = await messaging.sendEachForMulticast({
+            tokens, data, webpush: { headers: { Urgency: "high" } }
+          });
+          return (r.responses || []).some((x) => x && x.success) ? "sent" : "error";
+        } catch (err) {
+          console.error(`❌ Exception envoi à ${uid} :`, err);
+          return "error";
+        }
+      }
+    };
+  }
+})();
 
 // On ne traite que les jobs publiés dans cette fenêtre. Au-delà, on arrête
 // de "chercher" ce job pour de nouveaux destinataires (ex: quelqu'un qui
@@ -46,13 +102,12 @@ async function bumpSentStat(variant, count) {
   }
 }
 
+// (20260906j) LECTURE MULTI-APPAREILS via le module partage pushTokens.js.
+// Avant : seul le noeud historique etait lu — une seule chaine, donc UN SEUL
+// appareil par compte. Le telephone etait ecrase par l'ordinateur.
 async function getAllTokens() {
-  const snap = await db.ref("notificationTokens").once("value");
-  const data = snap.val() || {};
-  // { uid: token }  ->  [{ uid, token }, ...]
-  return Object.entries(data)
-    .filter(([, token]) => typeof token === "string" && token.length > 0)
-    .map(([uid, token]) => ({ uid, token }));
+  const map = await loadTokensMap(db);
+  return Object.entries(map).map(([uid, tokens]) => ({ uid, tokens }));
 }
 
 async function getProfilesMap() {
@@ -112,15 +167,12 @@ function isCurrentlyActive(uid, presenceMap) {
   return (Date.now() - lastChanged) < PRESENCE_STALE_MS;
 }
 
-async function removeInvalidTokens(uids) {
-  const updates = {};
-  uids.forEach((uid) => {
-    updates[`notificationTokens/${uid}`] = null;
-  });
-  if (Object.keys(updates).length) {
-    await db.ref().update(updates);
-  }
-}
+// (20260906j) SUPPRIMEE — c'etait la cause racine du blocage des
+// notifications pendant ~16 vagues. Cette fonction effacait l'entiere entree
+// `notificationTokens/{uid}` des qu'UN jeton etait refuse : un ordinateur
+// eteint tuait donc les notifications du TELEPHONE du meme compte.
+// Le nettoyage est desormais fait appareil par appareil, apres relecture,
+// par sendToUid()/removeDeadToken() dans pushTokens.js.
 
 // Réservation atomique du job AVANT traitement : si une autre exécution
 // (deux runs qui se chevauchent) l'a déjà réclamé récemment, la
@@ -248,8 +300,9 @@ async function sendNotifications() {
     }
 
     const entries = await getAllTokens();
-    const tokenByUid = new Map(entries.map((e) => [e.uid, e.token]));
-    console.log(`📱 ${entries.length} token(s) de notification enregistré(s).`);
+    const tokensMap = Object.create(null);
+    entries.forEach((e) => { tokensMap[e.uid] = e.tokens; });
+    console.log(`📱 ${entries.length} compte(s) avec au moins un appareil enregistré.`);
     if (!entries.length) {
       console.log("Aucun token de notification enregistré, rien à envoyer.");
       return;
@@ -322,43 +375,29 @@ async function sendNotifications() {
     let pushCount = 0;
     const variantSentCounts = { A: 0, B: 0 };
     for (const [uid, jobsForUid] of pushByUid) {
-      const token = tokenByUid.get(uid);
-      if (!token) continue; // token supprimé entre-temps
+      if (!tokensFor(tokensMap, uid).length) continue; // appareils retires entre-temps
 
       const lang = (profilesMap[uid] && profilesMap[uid].lang) || 'fr';
       const variant = pickVariant();
       const data = buildNotificationData(jobsForUid, lang, variant);
 
       try {
-        const response = await messaging.sendEachForMulticast({
-          tokens: [token],
-          data,
-          // Urgency: high indique au service de push du navigateur de ne
-          // pas retarder la livraison (ex: économie de batterie sur
-          // Android/Chrome) — sans ça, une notif "temps réel" peut en
-          // pratique arriver plusieurs minutes en retard app fermée.
-          webpush: { headers: { Urgency: "high" } }
-        });
-        const res = response.responses[0];
-        if (res.success) {
+        // (20260906j) envoi a TOUS les appareils du compte. Urgency: high est
+        // applique dans pushTokens.js. Le nettoyage des appareils morts y est
+        // chirurgical (relecture avant suppression).
+        const outcome = await sendToUid(messaging, db, uid, tokensMap, data);
+        if (outcome === "sent") {
           pushCount++;
           variantSentCounts[variant]++;
           jobsForUid.forEach(({ jobId }) => { notifiedUpdates[`jobs/${jobId}/notifiedTo/${uid}`] = true; });
+        } else if (outcome === "invalid" || outcome === "no-token") {
+          invalidUids.push(uid);
+          // Tous les appareils sont morts : inutile de rescanner ces jobs pour
+          // ce uid tant que personne n'a reenregistre d'appareil.
+          jobsForUid.forEach(({ jobId }) => { notifiedUpdates[`jobs/${jobId}/notifiedTo/${uid}`] = true; });
         } else {
-          const code = res.error && res.error.code;
-          if (
-            code === "messaging/invalid-registration-token" ||
-            code === "messaging/registration-token-not-registered"
-          ) {
-            invalidUids.push(uid);
-            // Token mort : inutile de réessayer indéfiniment, on marque ces
-            // jobs comme "notifiés" pour ce uid pour ne pas les rescanner
-            // à chaque run tant que personne n'a réenregistré de token.
-            jobsForUid.forEach(({ jobId }) => { notifiedUpdates[`jobs/${jobId}/notifiedTo/${uid}`] = true; });
-          } else {
-            console.error(`❌ Erreur d'envoi (${code || "inconnue"}):`, res.error && res.error.message);
-            // Pas invalide, juste raté : ce uid sera retenté au run suivant.
-          }
+          // Echec transitoire : ce uid sera retente au run suivant.
+          console.error(`❌ Envoi non abouti pour ${uid} (${outcome}).`);
         }
       } catch (err) {
         console.error(`❌ Erreur envoi pour ${jobsForUid.length} job(s), nouvelle tentative au prochain run:`, err);
@@ -367,8 +406,9 @@ async function sendNotifications() {
 
     try {
       if (invalidUids.length) {
-        await removeInvalidTokens(invalidUids);
-        console.log(`🧹 ${invalidUids.length} token(s) invalide(s) supprimé(s).`);
+        // (20260906j) les appareils morts ont deja ete retires un par un par
+        // sendToUid(). On ne fait plus AUCUNE suppression groupee ici.
+        console.log(`🧹 ${invalidUids.length} compte(s) sans appareil joignable.`);
       }
       if (Object.keys(notifiedUpdates).length) await db.ref().update(notifiedUpdates);
       if (variantSentCounts.A > 0) await bumpSentStat("A", variantSentCounts.A);

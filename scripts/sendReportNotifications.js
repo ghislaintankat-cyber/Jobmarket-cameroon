@@ -19,6 +19,62 @@ admin.initializeApp({
 
 const db = admin.database();
 const messaging = admin.messaging();
+// (20260906l) CHARGEMENT TOLERANT DE LA SOURCE UNIQUE.
+// pushTokens.js est un fichier NOUVEAU : s'il est oublie lors du depot sur
+// GitHub, un `require` sec ferait planter ce script au demarrage — y compris
+// les notifications qui fonctionnent aujourd'hui. On degrade donc en securite
+// plutot que de tomber : lecture des deux emplacements, envoi a tous les
+// appareils, et SURTOUT aucune suppression de jeton (c'est la suppression qui
+// a bloque les appels pendant 16 vagues ; en mode degrade on n'y touche pas).
+const { loadTokensMap, tokensFor, sendToUid } = (() => {
+  try {
+    return require("./pushTokens");
+  } catch (e) {
+    console.warn("⚠️ scripts/pushTokens.js INTROUVABLE — mode degrade : " +
+                 "les notifications partent, mais aucun jeton ne sera nettoye. " +
+                 "Depose pushTokens.js dans scripts/ pour retablir le mode normal.");
+    const tokensFor = (map, uid) => {
+      const v = map && uid ? map[uid] : null;
+      if (!v) return [];
+      return Array.isArray(v) ? v : [v];
+    };
+    return {
+      tokensFor,
+      countUsers: (map) => Object.keys(map || {}).length,
+      loadTokensMap: async (db) => {
+        const out = Object.create(null);
+        const add = (uid, tk) => {
+          if (!uid || typeof tk !== "string" || !tk.length) return;
+          if (!out[uid]) out[uid] = [];
+          if (!out[uid].includes(tk)) out[uid].push(tk);
+        };
+        const [a, b] = await Promise.all([
+          db.ref("notificationTokens").once("value"),
+          db.ref("notificationTokens_v2").once("value")
+        ]);
+        Object.entries(a.val() || {}).forEach(([uid, tk]) => add(uid, tk));
+        Object.entries(b.val() || {}).forEach(([uid, devs]) => {
+          if (!devs || typeof devs !== "object") return;
+          Object.values(devs).forEach((d) => add(uid, d && typeof d === "object" ? d.token : d));
+        });
+        return out;
+      },
+      sendToUid: async (messaging, db, uid, map, data) => {
+        const tokens = tokensFor(map, uid);
+        if (!tokens.length) return "no-token";
+        try {
+          const r = await messaging.sendEachForMulticast({
+            tokens, data, webpush: { headers: { Urgency: "high" } }
+          });
+          return (r.responses || []).some((x) => x && x.success) ? "sent" : "error";
+        } catch (err) {
+          console.error(`❌ Exception envoi à ${uid} :`, err);
+          return "error";
+        }
+      }
+    };
+  }
+})();
 
 // Liste dynamique, plus un UID unique codé en dur : voir admins/{uid} dans
 // Firebase (et database.rules.json). Permet d'ajouter un admin de secours
@@ -108,14 +164,15 @@ async function sendReportNotifications() {
     const [reportsSnap, adminsSnap, tokensSnap, jobsSnap, profilesSnap] = await Promise.all([
       db.ref("reports").orderByChild("status").equalTo("pending").once("value"),
       db.ref("admins").once("value"),
-      db.ref("notificationTokens").once("value"),
+      loadTokensMap(db),
       db.ref("jobs").once("value"),
       db.ref("profiles").once("value")
     ]);
 
     const reports = reportsSnap.val() || {};
     const adminUids = Object.keys(adminsSnap.val() || {});
-    const tokensMap = tokensSnap.val() || {};
+    // (20260906j) carte fusionnee : uid -> [jetons de TOUS les appareils]
+    const tokensMap = tokensSnap;
     const jobs = jobsSnap.val() || {};
     const profilesMap = profilesSnap.val() || {};
 
@@ -139,8 +196,8 @@ async function sendReportNotifications() {
     // sendEachForMulticast (un seul texte pour tout le monde), on envoie
     // ici un message individuel par admin pour pouvoir personnaliser.
     const adminsWithTokens = adminUids
-      .map((uid) => ({ uid, token: tokensMap[uid], lang: (profilesMap[uid] && profilesMap[uid].lang) || "fr" }))
-      .filter((a) => typeof a.token === "string" && a.token.length > 0);
+      .map((uid) => ({ uid, tokens: tokensFor(tokensMap, uid), lang: (profilesMap[uid] && profilesMap[uid].lang) || "fr" }))
+      .filter((a) => a.tokens.length > 0);
 
     if (!adminsWithTokens.length) {
       console.log("Aucun admin avec un token de notification, signalements laissés en attente pour le dashboard.");
@@ -154,7 +211,7 @@ async function sendReportNotifications() {
       const job = jobs[report.jobId];
       let atLeastOneSent = false;
 
-      for (const { uid, token, lang } of adminsWithTokens) {
+      for (const { uid, lang } of adminsWithTokens) {
         const s = reportStrings(lang);
         const jobTitle = job ? job.title : s.deletedJob;
         const reasonLabel = s.reasons[report.reason] || report.reason;
@@ -166,24 +223,14 @@ async function sendReportNotifications() {
           type: "new-report"
         };
 
-        try {
-          await messaging.send({
-            token,
-            data,
-            webpush: { headers: { Urgency: "high" } }
-          });
+        // (20260906j) un admin peut avoir plusieurs appareils : on envoie a
+        // tous, et sendToUid retire chirurgicalement ceux qui sont morts.
+        const outcome = await sendToUid(messaging, db, uid, tokensMap, data);
+        if (outcome === "sent") {
           atLeastOneSent = true;
           sentCount += 1;
-        } catch (err) {
-          const code = err && err.code;
-          if (
-            code === "messaging/invalid-registration-token" ||
-            code === "messaging/registration-token-not-registered"
-          ) {
-            updates[`notificationTokens/${uid}`] = null;
-          } else {
-            console.error(`❌ Erreur d'envoi pour le signalement ${reportId} à l'admin ${uid} (${code || "inconnue"}):`, err && err.message);
-          }
+        } else if (outcome !== "invalid") {
+          console.error(`❌ Envoi non abouti pour le signalement ${reportId} a l'admin ${uid} (${outcome}).`);
         }
       }
 

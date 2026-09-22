@@ -36,6 +36,63 @@ admin.initializeApp({
 
 const db = admin.database();
 const messaging = admin.messaging();
+// (20260906j) source unique partagee par les 9 scripts planifies.
+// (20260906l) CHARGEMENT TOLERANT DE LA SOURCE UNIQUE.
+// pushTokens.js est un fichier NOUVEAU : s'il est oublie lors du depot sur
+// GitHub, un `require` sec ferait planter ce script au demarrage — y compris
+// les notifications qui fonctionnent aujourd'hui. On degrade donc en securite
+// plutot que de tomber : lecture des deux emplacements, envoi a tous les
+// appareils, et SURTOUT aucune suppression de jeton (c'est la suppression qui
+// a bloque les appels pendant 16 vagues ; en mode degrade on n'y touche pas).
+const { loadTokensMap, sendToUid } = (() => {
+  try {
+    return require("./pushTokens");
+  } catch (e) {
+    console.warn("⚠️ scripts/pushTokens.js INTROUVABLE — mode degrade : " +
+                 "les notifications partent, mais aucun jeton ne sera nettoye. " +
+                 "Depose pushTokens.js dans scripts/ pour retablir le mode normal.");
+    const tokensFor = (map, uid) => {
+      const v = map && uid ? map[uid] : null;
+      if (!v) return [];
+      return Array.isArray(v) ? v : [v];
+    };
+    return {
+      tokensFor,
+      countUsers: (map) => Object.keys(map || {}).length,
+      loadTokensMap: async (db) => {
+        const out = Object.create(null);
+        const add = (uid, tk) => {
+          if (!uid || typeof tk !== "string" || !tk.length) return;
+          if (!out[uid]) out[uid] = [];
+          if (!out[uid].includes(tk)) out[uid].push(tk);
+        };
+        const [a, b] = await Promise.all([
+          db.ref("notificationTokens").once("value"),
+          db.ref("notificationTokens_v2").once("value")
+        ]);
+        Object.entries(a.val() || {}).forEach(([uid, tk]) => add(uid, tk));
+        Object.entries(b.val() || {}).forEach(([uid, devs]) => {
+          if (!devs || typeof devs !== "object") return;
+          Object.values(devs).forEach((d) => add(uid, d && typeof d === "object" ? d.token : d));
+        });
+        return out;
+      },
+      sendToUid: async (messaging, db, uid, map, data) => {
+        const tokens = tokensFor(map, uid);
+        if (!tokens.length) return "no-token";
+        try {
+          const r = await messaging.sendEachForMulticast({
+            tokens, data, webpush: { headers: { Urgency: "high" } }
+          });
+          return (r.responses || []).some((x) => x && x.success) ? "sent" : "error";
+        } catch (err) {
+          console.error(`❌ Exception envoi à ${uid} :`, err);
+          return "error";
+        }
+      }
+    };
+  }
+})();
 
 // On ne traite que les devis / messages récents. Un devis d'il y a 24h qui
 // n'a jamais été notifié (relais + cron tous deux en panne) n'a plus
@@ -48,14 +105,10 @@ const PRESENCE_STALE_MS = 3 * 60 * 1000; // 3 min
 
 // -------- Helpers Firebase (mêmes conventions que sendNotifications.js) --------
 
+// (20260906j) La lecture multi-appareils vit maintenant dans pushTokens.js,
+// partagee par les 9 scripts planifies (avant : dupliquee ici seulement).
 async function getAllTokensMap() {
-  const snap = await db.ref("notificationTokens").once("value");
-  const data = snap.val() || {};
-  const map = new Map();
-  Object.entries(data).forEach(([uid, token]) => {
-    if (typeof token === "string" && token.length > 0) map.set(uid, token);
-  });
-  return map;
+  return loadTokensMap(db);
 }
 
 async function getProfilesMap() {
@@ -96,9 +149,8 @@ function wantsCategory(uid, category, notifyPrefsMap) {
   return prefs[category] !== false;
 }
 
-async function removeInvalidToken(uid) {
-  await db.ref(`notificationTokens/${uid}`).remove().catch(() => {});
-}
+// (20260906j) La suppression chirurgicale vit dans pushTokens.js
+// (relecture avant effacement = regle anti-destruction).
 
 // -------- Traductions minimales (miroir de sendNotifications.js) --------
 // On ne traduit que ce qui part réellement dans la notif push.
@@ -132,31 +184,10 @@ function notifStrings(lang) {
 
 // -------- Envoi d'une notif à un uid donné --------
 // Retourne "sent" | "skipped" | "no-token" | "invalid" | "error".
+// (20260906j) delegue au module partage : envoi a TOUS les appareils,
+// succes des qu'un seul recoit, nettoyage chirurgical des appareils morts.
 async function pushToUid(uid, tokensMap, data) {
-  const token = tokensMap.get(uid);
-  if (!token) return "no-token";
-  try {
-    const response = await messaging.sendEachForMulticast({
-      tokens: [token],
-      data,
-      webpush: { headers: { Urgency: "high" } }
-    });
-    const res = response.responses[0];
-    if (res.success) return "sent";
-    const code = res.error && res.error.code;
-    if (
-      code === "messaging/invalid-registration-token" ||
-      code === "messaging/registration-token-not-registered"
-    ) {
-      await removeInvalidToken(uid);
-      return "invalid";
-    }
-    console.error(`❌ Erreur d'envoi à ${uid} (${code || "inconnue"}):`, res.error && res.error.message);
-    return "error";
-  } catch (err) {
-    console.error(`❌ Exception envoi à ${uid}:`, err);
-    return "error";
-  }
+  return sendToUid(messaging, db, uid, tokensMap, data);
 }
 
 // Marque un élément comme notifié pour un uid (anti-doublon), sauf en cas de
@@ -489,8 +520,8 @@ async function run() {
     const inboxesFixed = await repairInboxes(ctx);
     console.log(`🔧 ${inboxesFixed} entrée(s) d'inbox créée(s)/réparée(s).`);
 
-    console.log(`📱 ${tokensMap.size} token(s) enregistré(s), ${adminUids.length} admin(s).`);
-    if (tokensMap.size === 0) {
+    console.log(`📱 ${Object.keys(tokensMap).length} compte(s) avec au moins un appareil, ${adminUids.length} admin(s).`);
+    if (Object.keys(tokensMap).length === 0) {
       console.log("Aucun token de notification, rien à envoyer (inbox réparée quand même).");
       return;
     }
@@ -504,6 +535,12 @@ async function run() {
     process.exitCode = 1;
   }
 }
+
+// (20260906j) TESTABILITÉ. Exports conservés pour les tests ; le script
+// s'exécute au chargement, comme les 8 autres scripts planifiés — c'est ce
+// comportement uniforme que le harnais smoke-cron.js exerce.
+module.exports = { getAllTokensMap, pushToUid };
+
 
 // Fermeture propre de la connexion Firebase (sinon le run GitHub Actions
 // resterait bloqué "In progress"), avec filet de sécurité différé — même
