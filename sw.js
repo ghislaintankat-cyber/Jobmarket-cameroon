@@ -69,6 +69,8 @@ messaging.onBackgroundMessage((payload) => {
     tag = data.threadId ? 'thread-' + data.threadId : undefined;
   } else if (type === 'call') { // (20260905f 4ᵉ) un seul sonnerie active par thread
     tag = data.threadId ? 'call-' + data.threadId : undefined;
+  } else if (type === 'self-test') { // (20260906c) notification de test
+    tag = 'self-test';
   } else if (type === 'missed-call') { // (20260905t 5ᵉ) appel manqué
     // tag distinct de l'appel en cours : la notif « appel manqué » ne doit
     // pas remplacer une sonnerie active, ni l'inverse.
@@ -205,7 +207,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v216'; // 20260906a : bouton Reparer les notifications + echecs d'enregistrement rendus visibles
+const CACHE_VERSION = 'v219'; // 20260906d : notification affichable par Android seul (regression vague r corrigee)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
