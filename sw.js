@@ -34,12 +34,20 @@ const messaging = firebase.messaging();
 // transmet explicitement dans le payload (voir data.lang plus bas).
 // "view" = libellé par défaut (job). "viewMessage"/"viewQuote" = libellés
 // spécifiques aux notifs de message / devis (voir data.type plus bas).
+// (20260907f) notifReply / notifReplyHint / notifMarkRead ajoutés dans les 5
+// langues : sans eux, les nouveaux boutons seraient tombés sur le repli
+// français, y compris pour un utilisateur anglophone.
 const ACTION_I18N = {
-  fr: { view: '👀 Voir le job', viewMessage: '💬 Voir le message', viewQuote: '💰 Voir le devis', dismiss: 'Fermer', callAccept: '📞 Répondre', callDecline: '✕ Refuser' }, // (20260905f 4ᵉ)
-  en: { view: '👀 View job', viewMessage: '💬 View message', viewQuote: '💰 View quote', dismiss: 'Dismiss', callAccept: '📞 Answer', callDecline: '✕ Decline' },
-  it: { view: '👀 Vedi lavoro', viewMessage: '💬 Vedi messaggio', viewQuote: '💰 Vedi preventivo', dismiss: 'Chiudi' },
-  de: { view: '👀 Job ansehen', viewMessage: '💬 Nachricht ansehen', viewQuote: '💰 Angebot ansehen', dismiss: 'Schließen' },
-  zh: { view: '👀 查看工作', viewMessage: '💬 查看消息', viewQuote: '💰 查看报价', dismiss: '关闭' }
+  fr: { view: '👀 Voir le job', viewMessage: '💬 Voir le message', viewQuote: '💰 Voir le devis', dismiss: 'Fermer', callAccept: '📞 Répondre', callDecline: '✕ Refuser',
+        notifReply: '↩ Répondre', notifReplyHint: 'Votre réponse…', notifMarkRead: '✓ Lu' }, // (20260905f 4ᵉ)
+  en: { view: '👀 View job', viewMessage: '💬 View message', viewQuote: '💰 View quote', dismiss: 'Dismiss', callAccept: '📞 Answer', callDecline: '✕ Decline',
+        notifReply: '↩ Reply', notifReplyHint: 'Your reply…', notifMarkRead: '✓ Read' },
+  it: { view: '👀 Vedi lavoro', viewMessage: '💬 Vedi messaggio', viewQuote: '💰 Vedi preventivo', dismiss: 'Chiudi',
+        notifReply: '↩ Rispondi', notifReplyHint: 'La tua risposta…', notifMarkRead: '✓ Letto' },
+  de: { view: '👀 Job ansehen', viewMessage: '💬 Nachricht ansehen', viewQuote: '💰 Angebot ansehen', dismiss: 'Schließen',
+        notifReply: '↩ Antworten', notifReplyHint: 'Ihre Antwort…', notifMarkRead: '✓ Gelesen' },
+  zh: { view: '👀 查看工作', viewMessage: '💬 查看消息', viewQuote: '💰 查看报价', dismiss: '关闭',
+        notifReply: '↩ 回复', notifReplyHint: '你的回复…', notifMarkRead: '✓ 已读' }
 };
 
 // Choisit le libellé du bouton "voir" selon le type de notification.
@@ -107,9 +115,19 @@ messaging.onBackgroundMessage((payload) => {
     // (20260905f 4ᵉ) appel : boutons « Répondre » / « Refuser » (au lieu de
     // « Voir » / « Fermer ») — « Répondre » ouvre l'app et le watcher d'inbox
     // affiche l'écran d'appel entrant (sonnerie toujours en cours = ≤ 90 s).
+    // (20260907f) ACTIONS RAPIDES SUR LES MESSAGES — modèle WhatsApp.
+    // Avant : « Voir » / « Fermer ». Il fallait ouvrir l'application pour
+    // répondre, même pour dire « ok j'arrive ». Un artisan sur un chantier
+    // n'ouvre pas une application : il répond depuis la notification.
+    // « Répondre » ouvre un champ de saisie DANS la notification (Android),
+    // « Lu » retire le badge sans rien ouvrir.
     actions: type === 'call' ? [
       { action: 'accept', title: actionLabels.callAccept || '📞 Répondre' },
       { action: 'decline', title: actionLabels.callDecline || '✕ Refuser' }
+    ] : (type === 'message' || type === 'new-message' || type === 'message-admin') ? [
+      { action: 'reply', type: 'text', title: actionLabels.notifReply || '↩ Répondre',
+        placeholder: actionLabels.notifReplyHint || 'Votre réponse…' },
+      { action: 'markread', title: actionLabels.notifMarkRead || '✓ Lu' }
     ] : [
       { action: 'view', title: pickViewLabel(actionLabels, type) },
       { action: 'dismiss', title: actionLabels.dismiss }
@@ -137,6 +155,40 @@ self.addEventListener('notificationclick', (event) => {
 
   // Clic sur "Fermer" : rien de plus à faire.
   if (event.action === 'dismiss') return;
+
+  // (20260907f) RÉPONDRE / MARQUER COMME LU depuis la notification.
+  // Le service worker n'est pas authentifié : il ne peut pas écrire dans
+  // Firebase. Il délègue donc à l'application, exactement comme pour
+  // « Refuser » un appel.
+  //   • application ouverte  → on lui poste l'ordre, rien ne s'affiche ;
+  //   • application fermée   → on l'ouvre avec la consigne dans l'adresse,
+  //     elle l'exécute au démarrage. C'est le seul moyen sans authentifier
+  //     le service worker.
+  if (event.action === 'reply' || event.action === 'markread') {
+    const dd = event.notification.data || {};
+    const tid = dd.threadId || '';
+    const texte = (event.reply || '').trim();
+    if (event.action === 'reply' && !texte) return;   // champ laissé vide
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((liste) => {
+        for (const client of liste) {
+          if (client.url.startsWith(self.registration.scope) && 'postMessage' in client) {
+            client.postMessage({
+              type: event.action === 'reply' ? 'notif-reply' : 'notif-markread',
+              threadId: tid, text: texte
+            });
+            return;   // surtout ne PAS ouvrir l'app : on répond sans quitter
+          }
+        }
+        // aucune fenêtre ouverte : on transmet par l'adresse
+        const suffixe = event.action === 'reply'
+          ? '#thread=' + encodeURIComponent(tid) + '&reply=' + encodeURIComponent(texte)
+          : '#thread=' + encodeURIComponent(tid) + '&markread=1';
+        return self.clients.openWindow(self.registration.scope + suffixe);
+      })
+    );
+    return;
+  }
 
   // (20260905l 5ᵉ) BOUTON « REFUSER » D'UN APPEL — avant : on ne faisait
   // RIEN du tout. L'appelant continuait de sonner 90 SECONDES dans le vide,
@@ -214,7 +266,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v231'; // 20260907d : appels — son stable en 3G (Opus FEC/DTX) + ecran d'appel compact
+const CACHE_VERSION = 'v232'; // 20260907f : repondre et marquer comme lu depuis la notification (modele WhatsApp)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
