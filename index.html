@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260907b">
+<html lang="fr" data-app-build="20260907d">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -2241,8 +2241,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260907b" defer></script>
-<script src="app.js?v=20260907b" defer></script>
+<script src="chat-widget.js?v=20260907d" defer></script>
+<script src="app.js?v=20260907d" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -2642,20 +2642,39 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
 #callOverlay.call-active-video #callSelfVideo{display:block}
 /* (20260905j 4ᵉ) aperçu local déjà visible PENDANT la sonnerie (appel vidéo) */
 #callOverlay.call-local-video #callSelfVideo{display:block}
-.call-center{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px;text-align:center}
-.call-avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.22);background:#1f2c34}
-.call-name{font-size:22px;font-weight:700}
-.call-kind{font-size:13px;opacity:.75}
-.call-status{font-size:15px;opacity:.85;font-variant-numeric:tabular-nums;min-height:18px}
+/* (20260907d) ÉCRAN D'APPEL COMPACTÉ — modèle WhatsApp.
+   Avant : avatar 96 px, boutons 62 px espacés de 26 px, gros remplissages.
+   Sur un téléphone d'entrée de gamme (écran 5"), l'ensemble occupait presque
+   tout l'écran et les boutons débordaient. Tout est resserré d'environ 20 %,
+   et les commandes sont regroupées dans un bandeau arrondi comme WhatsApp. */
+.call-center{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px;text-align:center}
+.call-avatar{width:76px;height:76px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.22);background:#1f2c34}
+.call-name{font-size:19px;font-weight:700}
+.call-kind{font-size:12px;opacity:.75}
+.call-status{font-size:13.5px;opacity:.85;font-variant-numeric:tabular-nums;min-height:16px}
 .call-sound-hint{font-size:12.5px;font-weight:700;color:#FFD700;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.4);padding:7px 14px;border-radius:18px;animation:waaPendPulse 1.6s ease-in-out infinite}
-.call-actions{position:relative;z-index:1;display:flex;gap:18px;padding:28px 16px calc(40px + env(safe-area-inset-bottom,0px));justify-content:center}
-.call-rows-in,.call-rows-out{display:none;gap:26px;align-items:center}
+/* bandeau de commandes arrondi, posé en bas comme dans WhatsApp */
+.call-actions{position:relative;z-index:1;display:flex;gap:12px;
+  margin:0 12px calc(14px + env(safe-area-inset-bottom,0px));
+  padding:12px 14px;justify-content:center;
+  background:rgba(255,255,255,.07);border-radius:26px;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.call-rows-in,.call-rows-out{display:none;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center}
 #callOverlay.call-in .call-rows-in{display:flex}
 #callOverlay.call-out .call-rows-out{display:flex}
 #callOverlay.call-active .call-rows-out{display:flex}
-.call-btn{width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:transform .12s,background .15s}
+.call-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:transform .12s,background .15s}
 .call-btn:active{transform:scale(.92)}
-.call-btn svg{width:26px;height:26px}
+.call-btn svg{width:22px;height:22px}
+/* très petits écrans : on resserre encore pour que rien ne déborde */
+@media (max-height:640px){
+  .call-avatar{width:60px;height:60px}
+  .call-name{font-size:17px}
+  .call-center{gap:5px;padding:10px}
+  .call-btn{width:47px;height:47px}
+  .call-btn svg{width:20px;height:20px}
+  .call-actions{padding:9px 11px;gap:9px}
+}
 .call-btn.green{background:#25D366}
 .call-btn.red{background:#ea0038}
 .call-btn.gray{background:rgba(255,255,255,.16)}
@@ -3337,6 +3356,6 @@ function previewImage(event) {
 <!-- Hidden file input -->
 <input type="file" id="waFileIn" accept="image/*" multiple style="display:none" onchange="W.onFile(this)">
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a316c12ece7cbd85',t:'MTc4Nzc4ODM5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a410e3bbfb5e4193',t:'MTc5MDQxMTI0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a316c12ece7cbd85',t:'MTc4Nzc4ODM5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
 

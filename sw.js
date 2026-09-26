@@ -214,7 +214,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v230'; // 20260907b : telechargement et lecture video sans quitter l'app (plus de Cloudinary visible)
+const CACHE_VERSION = 'v231'; // 20260907d : appels — son stable en 3G (Opus FEC/DTX) + ecran d'appel compact
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
