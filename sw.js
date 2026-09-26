@@ -266,7 +266,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v232'; // 20260907f : repondre et marquer comme lu depuis la notification (modele WhatsApp)
+const CACHE_VERSION = 'v233'; // 20260907g : le debit audio des appels s'adapte au reseau + indicateur connexion faible
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;

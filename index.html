@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260907f">
+<html lang="fr" data-app-build="20260907g">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1395,6 +1395,10 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
     <div class="call-status" id="callStatus"></div>
     <!-- (20260905p 4ᵉ) état de connexion : « Connexion… » / « ✅ Appel établi » -->
     <div id="callConnState" style="font-size:11.5px;color:var(--text-dim,#999);min-height:14px;"></div>
+    <!-- (20260907g) « ⚠️ Connexion faible » — même repère que WhatsApp.
+         Ne s'affiche qu'au niveau 2 (perte ≥ 8 %) : en dessous, la baisse
+         automatique du débit suffit et alerter pour rien ferait raccrocher. -->
+    <div id="callNetWarn" style="display:none;font-size:11.5px;font-weight:700;color:#E8A33D;margin-top:2px;"></div>
     <!-- (20260905q 4ᵉ) INDICATEUR « l'autre parle » : 5 barres qui bougent
          avec la voix de l'autre (analyse du flux distant) = preuve que le
          son arrive bien. + badge « 🔇 Micro coupé » quand on coupe son micro. -->
@@ -2241,8 +2245,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260907f" defer></script>
-<script src="app.js?v=20260907f" defer></script>
+<script src="chat-widget.js?v=20260907g" defer></script>
+<script src="app.js?v=20260907g" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
