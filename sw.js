@@ -89,7 +89,14 @@ messaging.onBackgroundMessage((payload) => {
     // notifs de job) — une notif avec image se remarque beaucoup plus.
     image: data.image || undefined,
     tag,
-    vibrate: [200, 100, 200],
+    // (20260907a) RYTHME DE VIBRATION SIGNATURE JobMarket.
+    // Avant : [200,100,200], le motif générique de n'importe quelle appli.
+    // Maintenant : trois impulsions courtes + une longue (« ta-ta-ta-TAA »),
+    // qui reprend la mélodie de marque LA → DO# → MI → LA. L'utilisateur
+    // reconnaît JobMarket AU TOUCHER, téléphone dans la poche.
+    // Un appel garde un motif long et insistant : on ne doit pas confondre
+    // « quelqu'un m'appelle » avec « j'ai reçu un message ».
+    vibrate: type === 'call' ? [500, 200, 500, 200, 500] : [70, 80, 70, 80, 70, 80, 200],
     // Android : un message NOUVEAU (même sujet/tag) rejoue son + vibration
     // au lieu de remplacer silencieusement la notif existante.
     renotify: true,
@@ -207,7 +214,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v227'; // 20260906y : audio accepte dans le chat + signature sonore JobMarket (LA-DO#-MI-LA)
+const CACHE_VERSION = 'v229'; // 20260907a : notification = son signature + vibration reconnaissable
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
