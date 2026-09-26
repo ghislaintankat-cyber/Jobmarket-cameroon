@@ -207,7 +207,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v225'; // 20260906w : apercu de partage WhatsApp/Facebook en grande banniere 1200x630
+const CACHE_VERSION = 'v227'; // 20260906y : audio accepte dans le chat + signature sonore JobMarket (LA-DO#-MI-LA)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;

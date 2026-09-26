@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260906w">
+<html lang="fr" data-app-build="20260906y">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -471,6 +471,11 @@ body{
 .wa-voice-dur{font-size:11px;color:var(--text-secondary);flex-shrink:0}
 /* File */
 .wa-file{display:flex;align-items:center;gap:10px;min-width:220px;background:rgba(0,0,0,.04);border-radius:6px;padding:10px;cursor:pointer;transition:background .15s}
+/* (20260906x) Bulle AUDIO : lecteur natif intégré à la conversation. */
+.wa-audio{min-width:250px;max-width:320px;background:rgba(0,0,0,.04);border-radius:8px;padding:10px}
+.wa-audio-top{display:flex;align-items:center;gap:10px}
+.wa-audio audio{display:block;border-radius:6px}
+[data-theme="light"] .wa-audio{background:rgba(0,0,0,.05)}
 .wa-file:hover{background:rgba(0,0,0,.08)}
 .wa-file-ico{width:42px;height:42px;border-radius:8px;background:var(--pri);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .wa-file-ico svg{color:#fff;width:20px;height:20px}
@@ -2236,8 +2241,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260906w" defer></script>
-<script src="app.js?v=20260906w" defer></script>
+<script src="chat-widget.js?v=20260906y" defer></script>
+<script src="app.js?v=20260906y" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
