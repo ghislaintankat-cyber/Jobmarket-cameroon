@@ -214,7 +214,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v229'; // 20260907a : notification = son signature + vibration reconnaissable
+const CACHE_VERSION = 'v230'; // 20260907b : telechargement et lecture video sans quitter l'app (plus de Cloudinary visible)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
