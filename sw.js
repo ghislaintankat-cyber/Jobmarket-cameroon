@@ -39,15 +39,15 @@ const messaging = firebase.messaging();
 // français, y compris pour un utilisateur anglophone.
 const ACTION_I18N = {
   fr: { view: '👀 Voir le job', viewMessage: '💬 Voir le message', viewQuote: '💰 Voir le devis', dismiss: 'Fermer', callAccept: '📞 Répondre', callDecline: '✕ Refuser',
-        notifReply: '↩ Répondre', notifReplyHint: 'Votre réponse…', notifMarkRead: '✓ Lu' }, // (20260905f 4ᵉ)
+        notifReply: '↩ Répondre', notifReplyHint: 'Votre réponse…', notifMarkRead: '✓ Lu', notifMute: '🔕 Muet' }, // (20260905f 4ᵉ)
   en: { view: '👀 View job', viewMessage: '💬 View message', viewQuote: '💰 View quote', dismiss: 'Dismiss', callAccept: '📞 Answer', callDecline: '✕ Decline',
-        notifReply: '↩ Reply', notifReplyHint: 'Your reply…', notifMarkRead: '✓ Read' },
+        notifReply: '↩ Reply', notifReplyHint: 'Your reply…', notifMarkRead: '✓ Read', notifMute: '🔕 Mute' },
   it: { view: '👀 Vedi lavoro', viewMessage: '💬 Vedi messaggio', viewQuote: '💰 Vedi preventivo', dismiss: 'Chiudi',
-        notifReply: '↩ Rispondi', notifReplyHint: 'La tua risposta…', notifMarkRead: '✓ Letto' },
+        notifReply: '↩ Rispondi', notifReplyHint: 'La tua risposta…', notifMarkRead: '✓ Letto', notifMute: '🔕 Silenzia' },
   de: { view: '👀 Job ansehen', viewMessage: '💬 Nachricht ansehen', viewQuote: '💰 Angebot ansehen', dismiss: 'Schließen',
-        notifReply: '↩ Antworten', notifReplyHint: 'Ihre Antwort…', notifMarkRead: '✓ Gelesen' },
+        notifReply: '↩ Antworten', notifReplyHint: 'Ihre Antwort…', notifMarkRead: '✓ Gelesen', notifMute: '🔕 Stumm' },
   zh: { view: '👀 查看工作', viewMessage: '💬 查看消息', viewQuote: '💰 查看报价', dismiss: '关闭',
-        notifReply: '↩ 回复', notifReplyHint: '你的回复…', notifMarkRead: '✓ 已读' }
+        notifReply: '↩ 回复', notifReplyHint: '你的回复…', notifMarkRead: '✓ 已读', notifMute: '🔕 静音' }
 };
 
 // Choisit le libellé du bouton "voir" selon le type de notification.
@@ -127,7 +127,11 @@ messaging.onBackgroundMessage((payload) => {
     ] : (type === 'message' || type === 'new-message' || type === 'message-admin') ? [
       { action: 'reply', type: 'text', title: actionLabels.notifReply || '↩ Répondre',
         placeholder: actionLabels.notifReplyHint || 'Votre réponse…' },
-      { action: 'markread', title: actionLabels.notifMarkRead || '✓ Lu' }
+      { action: 'markread', title: actionLabels.notifMarkRead || '✓ Lu' },
+      // (20260907h) 3ᵉ action, comme WhatsApp (« Reply / Mark as read / Mute ») :
+      // met la conversation en sourdine sans ouvrir l'application. Android
+      // affiche au maximum 3 actions — on est exactement à la limite.
+      { action: 'mute', title: actionLabels.notifMute || '🔕 Muet' }
     ] : [
       { action: 'view', title: pickViewLabel(actionLabels, type) },
       { action: 'dismiss', title: actionLabels.dismiss }
@@ -164,7 +168,7 @@ self.addEventListener('notificationclick', (event) => {
   //   • application fermée   → on l'ouvre avec la consigne dans l'adresse,
   //     elle l'exécute au démarrage. C'est le seul moyen sans authentifier
   //     le service worker.
-  if (event.action === 'reply' || event.action === 'markread') {
+  if (event.action === 'reply' || event.action === 'markread' || event.action === 'mute') {
     const dd = event.notification.data || {};
     const tid = dd.threadId || '';
     const texte = (event.reply || '').trim();
@@ -174,7 +178,8 @@ self.addEventListener('notificationclick', (event) => {
         for (const client of liste) {
           if (client.url.startsWith(self.registration.scope) && 'postMessage' in client) {
             client.postMessage({
-              type: event.action === 'reply' ? 'notif-reply' : 'notif-markread',
+              type: event.action === 'reply' ? 'notif-reply'
+                  : event.action === 'mute' ? 'notif-mute' : 'notif-markread',
               threadId: tid, text: texte
             });
             return;   // surtout ne PAS ouvrir l'app : on répond sans quitter
@@ -183,6 +188,8 @@ self.addEventListener('notificationclick', (event) => {
         // aucune fenêtre ouverte : on transmet par l'adresse
         const suffixe = event.action === 'reply'
           ? '#thread=' + encodeURIComponent(tid) + '&reply=' + encodeURIComponent(texte)
+          : event.action === 'mute'
+          ? '#thread=' + encodeURIComponent(tid) + '&mute=1'
           : '#thread=' + encodeURIComponent(tid) + '&markread=1';
         return self.clients.openWindow(self.registration.scope + suffixe);
       })
@@ -266,7 +273,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v233'; // 20260907g : le debit audio des appels s'adapte au reseau + indicateur connexion faible
+const CACHE_VERSION = 'v234'; // 20260907h : video adaptative en visio + action Muet dans la notification
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
