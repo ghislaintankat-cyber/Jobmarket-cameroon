@@ -104,7 +104,13 @@ messaging.onBackgroundMessage((payload) => {
     // reconnaît JobMarket AU TOUCHER, téléphone dans la poche.
     // Un appel garde un motif long et insistant : on ne doit pas confondre
     // « quelqu'un m'appelle » avec « j'ai reçu un message ».
-    vibrate: type === 'call' ? [500, 200, 500, 200, 500] : [70, 80, 70, 80, 70, 80, 200],
+    // (20260907o) l'appel vibre EXACTEMENT comme la sonnerie dans l'app :
+    // même salve longue, pour qu'on reconnaisse « on m'appelle » sans regarder.
+    vibrate: type === 'call' ? [600, 250, 600, 250, 900] : [70, 80, 70, 80, 70, 80, 200],
+    // (20260907o) un appel ne disparaît pas tout seul : il reste à l'écran
+    // tant qu'on n'a pas répondu ou refusé, comme WhatsApp.
+    requireInteraction: type === 'call',
+    silent: false,
     // Android : un message NOUVEAU (même sujet/tag) rejoue son + vibration
     // au lieu de remplacer silencieusement la notif existante.
     renotify: true,
@@ -138,13 +144,61 @@ messaging.onBackgroundMessage((payload) => {
     ]
   };
 
-  self.registration.showNotification(title, options).catch(() => {});
+  // (20260907o) UN APPEL DOIT SONNER, PAS FAIRE « BIP » UNE FOIS.
+  // Retour terrain : « la notification de l'appel doit aussi vibrer et sonner
+  // comme l'appel ». Une notification Android ne joue son son et sa vibration
+  // QU'UNE SEULE FOIS. Pour obtenir une vraie sonnerie, il faut la réafficher
+  // périodiquement : avec le même tag et renotify, chaque réaffichage rejoue
+  // le son ET la vibration. On tient ~20 s (5 salves de 4 s), ce que le
+  // système laisse vivre au service worker — au-delà il nous coupe de toute
+  // façon. On s'arrête net dès que la notification a disparu (répondu,
+  // refusé, ou balayée) : sinon on ferait sonner dans le vide.
+  if (type === 'call') {
+    event.waitUntil(sonnerCommeUnAppel(title, options, tag));
+  } else {
+    self.registration.showNotification(title, options).catch(() => {});
+  }
+
+  // On prévient aussi les fenêtres ouvertes : si l'app est à l'écran, elle
+  // fait vibrer le téléphone et joue la sonnerie de marque elle-même.
+  if (type === 'call') {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((liste) => {
+        liste.forEach((c) => {
+          try { c.postMessage({ type: 'call-ring', threadId: data.threadId || null }); } catch (e) {}
+        });
+      }).catch(() => {})
+    );
+  }
 
   // Met à jour le badge sur l'icône de l'app (Chrome/Edge desktop, Android).
   if ('setAppBadge' in self.navigator) {
     self.navigator.setAppBadge().catch(() => {});
   }
 });
+
+// (20260907o) Réaffiche la notification d'appel toutes les 4 s pour que le
+// téléphone sonne et vibre en continu, et s'arrête dès qu'elle n'est plus là.
+const CALL_RING_SALVES = 5;
+const CALL_RING_INTERVALLE = 4000;
+
+function sonnerCommeUnAppel(title, options, tag) {
+  let salve = 0;
+  const uneSalve = () => self.registration.showNotification(title, options).catch(() => {});
+  const encore = () => {
+    if (++salve >= CALL_RING_SALVES) return Promise.resolve();
+    return new Promise((resoudre) => setTimeout(resoudre, CALL_RING_INTERVALLE))
+      .then(() => {
+        // l'utilisateur a répondu, refusé ou balayé : on se tait
+        if (!tag || !self.registration.getNotifications) return uneSalve().then(encore);
+        return self.registration.getNotifications({ tag }).then((liste) => {
+          if (!liste || !liste.length) return;   // plus rien à l'écran : on arrête
+          return uneSalve().then(encore);
+        }).catch(() => uneSalve().then(encore));
+      });
+  };
+  return uneSalve().then(encore);
+}
 
 // Au clic sur la notification : direction le bon écran selon le TYPE de notif.
 //   - message  -> ouvre la conversation (#thread=<threadId>)
@@ -273,7 +327,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v239'; // 20260907n : echo corrige + sonnerie plus forte + vibration + slogan
+const CACHE_VERSION = 'v241'; // 20260907p : slogan avec la voix des publicites (slogan.mp3)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
@@ -289,6 +343,9 @@ const SHELL_ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  // (20260907p) le slogan parlé, avec la voix des publicités : mis en cache
+  // pour qu'il sonne aussi hors ligne, et pour ne pas le retélécharger.
+  './slogan.mp3',
   'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css',
