@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260907h">
+<html lang="fr" data-app-build="20260907k">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1427,6 +1427,10 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
       <button type="button" class="call-btn gray" id="callAntiEchoBtn" title="Anti-écho" data-i18n-title="callAntiEcho" onclick="callToggleAntiEcho()" style="background:rgba(46,160,103,0.85);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></button>
       <button type="button" class="call-btn gray" id="callMuteBtn" title="Micro" data-i18n-title="callMute" onclick="callToggleMute()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
       <button type="button" class="call-btn gray" id="callCamBtn" title="Caméra" data-i18n-title="callCam" onclick="callToggleCam()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
+      <!-- (20260907j) volume renforcé : dehors, le haut-parleur d'un
+           téléphone d'entrée de gamme ne suffit pas et « volume » ne monte
+           pas au-dessus de 100 %. Éteint par défaut, état mémorisé. -->
+      <button type="button" class="call-btn gray" id="callBoostBtn" title="Volume renforcé" data-i18n-title="callBoostOn" onclick="callToggleBoost()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></button>
       <button type="button" class="call-btn red" id="callEndBtn" title="Raccrocher" data-i18n-title="callEnd" onclick="endCallLocal('end')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(135 12 12)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></g></svg></button>
     </div>
   </div>
@@ -2034,6 +2038,10 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
           (service worker → autorisation → jeton → écriture en base) et
           AFFICHE le résultat. Ajouté après un cas terrain où le worker
           répondait « aucun appareil enregistré » sans aucune explication. -->
+     <!-- (20260907k) rapport de qualité des derniers appels : des chiffres
+          mesurés plutôt qu'une impression (« ça hachait »). Tout reste sur
+          le téléphone, rien n'est envoyé. -->
+     <button class="btn" onclick="afficherRapportsAppels()" style="width:100%;margin-top:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);" data-i18n="callRepBtn">📶 Qualité de mes derniers appels</button>
      <button class="btn" onclick="fixNotifications()" style="width:100%;margin-top:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);" data-i18n="notifFixBtn">🔧 Réparer les notifications</button>
    </div>
    <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
@@ -2245,8 +2253,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260907h" defer></script>
-<script src="app.js?v=20260907h" defer></script>
+<script src="chat-widget.js?v=20260907k" defer></script>
+<script src="app.js?v=20260907k" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
@@ -2663,7 +2671,7 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   padding:12px 14px;justify-content:center;
   background:rgba(255,255,255,.07);border-radius:26px;
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.call-rows-in,.call-rows-out{display:none;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center}
+.call-rows-in,.call-rows-out{display:none;gap:11px;align-items:center;flex-wrap:wrap;justify-content:center}
 #callOverlay.call-in .call-rows-in{display:flex}
 #callOverlay.call-out .call-rows-out{display:flex}
 #callOverlay.call-active .call-rows-out{display:flex}

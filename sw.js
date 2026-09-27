@@ -273,7 +273,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v234'; // 20260907h : video adaptative en visio + action Muet dans la notification
+const CACHE_VERSION = 'v237'; // 20260907k : rapport de qualite des derniers appels
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
