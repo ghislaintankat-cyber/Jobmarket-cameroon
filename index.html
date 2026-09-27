@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260907m">
+<html lang="fr" data-app-build="20260907n">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -2041,6 +2041,9 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
      <!-- (20260907k) rapport de qualité des derniers appels : des chiffres
           mesurés plutôt qu'une impression (« ça hachait »). Tout reste sur
           le téléphone, rien n'est envoyé. -->
+     <!-- (20260907n) diagnostic vibration + slogan de marque -->
+     <button class="btn" onclick="testerVibration()" style="width:100%;margin-top:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);" data-i18n="vibTestBtn">📳 Tester la vibration</button>
+     <button class="btn" onclick="jmcDireSlogan(true)" style="width:100%;margin-top:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);" data-i18n="sloganBtn">🔊 Écouter le slogan JobMarket</button>
      <button class="btn" onclick="afficherRapportsAppels()" style="width:100%;margin-top:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);" data-i18n="callRepBtn">📶 Qualité de mes derniers appels</button>
      <button class="btn" onclick="fixNotifications()" style="width:100%;margin-top:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);" data-i18n="notifFixBtn">🔧 Réparer les notifications</button>
    </div>
@@ -2253,8 +2256,8 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260907m" defer></script>
-<script src="app.js?v=20260907m" defer></script>
+<script src="chat-widget.js?v=20260907n" defer></script>
+<script src="app.js?v=20260907n" defer></script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
