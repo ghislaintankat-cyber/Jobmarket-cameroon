@@ -327,7 +327,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v241'; // 20260907p : slogan avec la voix des publicites (slogan.mp3)
+const CACHE_VERSION = 'v244'; // 20260907s : un seul slogan par appel (plus de double voix)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
 const MAX_TILE_ENTRIES = 400;
@@ -343,13 +343,23 @@ const SHELL_ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  // (20260907p) le slogan parlé, avec la voix des publicités : mis en cache
-  // pour qu'il sonne aussi hors ligne, et pour ne pas le retélécharger.
-  './slogan.mp3',
+  // (20260907r) les bibliothèques servies depuis le dépôt : pré-cachées, donc
+  // l'application démarre HORS LIGNE sans dépendre d'aucun serveur tiers.
+  './vendor/leaflet.js',
+  './vendor/leaflet.css',
+  './vendor/firebase-app-compat.js',
+  './vendor/firebase-auth-compat.js',
+  './vendor/firebase-database-compat.js',
+  './vendor/firebase-messaging-compat.js',
+  './vendor/images/marker-icon.png',
+  './vendor/images/marker-icon-2x.png',
+  './vendor/images/marker-shadow.png',
+  // (20260907q) slogan.mp3 N'EST PLUS préchargé : 77 Ko au tout premier
+  // lancement, alors qu'il ne sert qu'au premier appel reçu. Il est mis en
+  // cache automatiquement à sa première lecture (règle générale plus bas),
+  // donc il fonctionne hors ligne dès le 2ᵉ appel.
   'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js',
   // (20260905b 4ᵉ) le CODE de l'app lui-même (avant : jamais pré-caché →

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260907p">
+<html lang="fr" data-app-build="20260907s">
 <head>
 <script>
   // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -91,28 +91,39 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://unpkg.com"/>
-<link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
 <link rel="preconnect" href="https://www.gstatic.com"/>
 <!-- (20260905k 4ᵉ) pré-connexion vers les 2 services de données : sur 3G,
      chaque connexion TCP/TLS économisée = 0,5 à 2 s d'affichage avancé. -->
 <link rel="preconnect" href="https://jobmarketfuture-default-rtdb.firebaseio.com"/>
 <link rel="preconnect" href="https://res.cloudinary.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+<!-- (20260907q) POLICES NON BLOQUANTES. Retour terrain : « avec MTN/Orange
+     je regarde des vidéos sans problème mais JobMarket met plus de
+     5 minutes à charger ». Une feuille de style classique BLOQUE le
+     rendu : tant que fonts.googleapis.com n'a pas répondu, l'écran
+     reste blanc. Avec media="print" puis bascule au chargement, la
+     page s'affiche tout de suite et la police arrive après. -->
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/><noscript><link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/></noscript>
 <!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<!-- (20260907r) SERVI DEPUIS CE DÉPÔT. Le navigateur a déjà une connexion
+     ouverte vers github.io : aucun DNS, aucune poignée de main TLS
+     supplémentaire. C'est ce qui coûtait le plus cher sur MTN/Orange. -->
+<link rel="stylesheet" href="vendor/leaflet.css" media="print" onload="this.media='all'" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'"/><noscript><link rel="stylesheet" href="vendor/leaflet.css"/></noscript>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" media="print" onload="this.media='all'"/><noscript><link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/></noscript>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<script src="vendor/leaflet.js" defer onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.defer=true;document.head.appendChild(s);"></script>
 <!-- leaflet-routing-machine.min.js n'est PLUS chargé ici : il est injecté à
      la demande (ensureRoutingMachineLoaded dans app.js) uniquement quand
      l'utilisateur demande un itinéraire. -->
-<!-- CompressorJS pour réduire la taille des images -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js" defer></script>
+<!-- (20260907q) CompressorJS n'est PLUS chargé au démarrage : il ne sert
+     qu'au moment d'envoyer une photo. compressImageFile() le charge alors,
+     et sait déjà se passer de lui. Gain : une requête, un domaine (cdnjs)
+     et une poignée de kilo-octets en moins sur le chemin critique. -->
 <!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js" defer></script>
+<script src="vendor/firebase-app-compat.js" defer onerror="this.onerror=null;var s=document.createElement('script');s.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';s.defer=true;document.head.appendChild(s);"></script>
+<script src="vendor/firebase-auth-compat.js" defer onerror="this.onerror=null;var s=document.createElement('script');s.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';s.defer=true;document.head.appendChild(s);"></script>
+<!-- (20260907q) firebase-app-check RETIRÉ : 7,8 Ko téléchargés à chaque
+     visite alors que le code ne l'appelle nulle part (vérifié : 0 occurrence). -->
+<script src="vendor/firebase-database-compat.js" defer onerror="this.onerror=null;var s=document.createElement('script');s.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js';s.defer=true;document.head.appendChild(s);"></script>
+<script src="vendor/firebase-messaging-compat.js" defer onerror="this.onerror=null;var s=document.createElement('script');s.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js';s.defer=true;document.head.appendChild(s);"></script>
 <style>
 /* Le style du panneau de détail (job-drawer) est défini plus bas, dans le
    bloc "VERSION SOMBRE" harmonisé avec le thème doré de l'application. */
@@ -1348,6 +1359,9 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
     <div class="splash-sub" data-i18n="splashSubtitle">Artisans qualifiés près de vous</div>
   </div>
   <div class="splash-bar"><div class="splash-progress"></div></div>
+  <!-- (20260907q) affiché après 8 s : dire que le réseau est lent vaut mieux
+       que laisser croire que l'application a planté. -->
+  <div id="splashLent" data-i18n="splashSlow" style="display:none;margin-top:14px;font-size:12.5px;color:var(--text-dim,#9999BC);text-align:center;padding:0 24px;">Connexion lente… l'application s'ouvre dès que possible.</div>
 </div>
 <!-- ===== LANGUAGE PICKER (shown once, after the splash, until the user picks a language) ===== -->
 <style>
@@ -2256,8 +2270,41 @@ a.wa-file{display:flex;align-items:center;text-decoration:none;color:inherit;gap
   </button>
 </nav>
 <!-- ===== SCRIPTS ===== -->
-<script src="chat-widget.js?v=20260907p" defer></script>
-<script src="app.js?v=20260907p" defer></script>
+<!-- (20260907r) AMORÇAGE. Les bibliothèques sont servies depuis ce dépôt ;
+     si l'une d'elles manquait, son repli CDN arrive un peu plus tard et
+     casserait l'ordre des scripts « defer ». On attend donc que Firebase et
+     Leaflet soient réellement présents avant de lancer l'application —
+     20 s au maximum, après quoi on démarre quand même (l'app sait afficher
+     ses propres messages d'erreur, ce qui vaut mieux qu'une page morte). -->
+<script>
+(function () {
+  // La version est LUE sur la balise <html> : un seul endroit à mettre à
+  // jour à chaque vague, donc impossible de la désynchroniser (le garde-fou
+  // de cohérence de version comparerait alors deux valeurs différentes et
+  // afficherait un écran de blocage).
+  var VERSION = document.documentElement.getAttribute("data-app-build") || "";
+  function pret() {
+    try { return !!(window.firebase && window.firebase.database && window.L && window.L.map); }
+    catch (e) { return false; }
+  }
+  function lancer() {
+    if (window.__jmcLance) return;
+    window.__jmcLance = true;
+    ["chat-widget.js", "app.js"].forEach(function (f) {
+      var s = document.createElement("script");
+      s.src = f + "?v=" + VERSION;
+      s.async = false;                 // on garde l'ordre : widget puis app
+      document.body.appendChild(s);
+    });
+  }
+  var essais = 0;
+  (function attendre() {
+    if (pret()) return lancer();
+    if (++essais > 200) return lancer();   // 20 s
+    setTimeout(attendre, 100);
+  })();
+})();
+</script>
  <!-- VOLET DE PRÉVISUALISATION STYLE APPLICATION MOBILE (DRAWER) -->
 <div id="jobPreviewDrawer" class="job-drawer">
     <div class="drawer-header">
