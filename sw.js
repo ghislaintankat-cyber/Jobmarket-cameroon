@@ -327,15 +327,28 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v244'; // 20260907s : un seul slogan par appel (plus de double voix)
+const CACHE_VERSION = 'v247'; // 20260907v : index.html allege (16,5 Ko gzip en moins)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
-const TILE_CACHE = `jobmarket-tiles-${CACHE_VERSION}`;
+// (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
+// Défaut trouvé en relisant le code : les caches des tuiles de carte, des
+// photos et des vidéos portaient le numéro de version du code. À CHAQUE mise
+// à jour de l'application, leur nom changeait — le nettoyage d'activation les
+// supprimait donc intégralement, et le téléphone retéléchargeait tout : la
+// carte entière, toutes les photos d'annonces, toutes les vidéos du chat.
+// Sur un forfait camerounais, à raison de plusieurs vagues par jour, cela
+// coûtait très cher pour rien : une tuile de carte ou une photo d'annonce ne
+// change pas parce que NOTRE code a changé.
+// Seul le cache du CODE (SHELL) reste versionné — lui doit bien être renouvelé.
+const TILE_CACHE = 'jobmarket-tiles';
 const MAX_TILE_ENTRIES = 400;
-const IMAGE_CACHE = `jobmarket-images-${CACHE_VERSION}`;
+const IMAGE_CACHE = 'jobmarket-images';
 const MAX_IMAGE_ENTRIES = 250;
 // (20260905v 5ᵉ) cache vidéo séparé : peu d'entrées (fichiers lourds)
-const VIDEO_CACHE = `jobmarket-videos-${CACHE_VERSION}`;
+const VIDEO_CACHE = 'jobmarket-videos';
 const MAX_VIDEO_ENTRIES = 12;
+// anciens noms (versionnés) : on récupère leur contenu une dernière fois
+// avant de les supprimer, pour ne rien faire retélécharger lors du passage.
+const PREFIXES_CONTENU = ['jobmarket-tiles-', 'jobmarket-images-', 'jobmarket-videos-'];
 
 const SHELL_ASSETS = [
   './',
@@ -393,15 +406,46 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// (20260907u) Reprend le contenu d'un ancien cache versionné dans le nouveau
+// cache permanent, puis supprime l'ancien. Tout se passe sur l'appareil :
+// aucun téléchargement, donc aucune donnée consommée.
+async function recupererAncienCache(ancienNom, nouveauNom) {
+  try {
+    const ancien = await caches.open(ancienNom);
+    const nouveau = await caches.open(nouveauNom);
+    const demandes = await ancien.keys();
+    for (const req of demandes) {
+      try {
+        if (await nouveau.match(req)) continue;      // déjà présent
+        const res = await ancien.match(req);
+        if (res) await nouveau.put(req, res);
+      } catch (e) {}
+    }
+  } catch (e) {}
+}
+
+function cacheContenuCible(nom) {
+  if (nom.indexOf('jobmarket-tiles-') === 0) return TILE_CACHE;
+  if (nom.indexOf('jobmarket-images-') === 0) return IMAGE_CACHE;
+  if (nom.indexOf('jobmarket-videos-') === 0) return VIDEO_CACHE;
+  return null;
+}
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== SHELL_CACHE && key !== TILE_CACHE && key !== IMAGE_CACHE && key !== VIDEO_CACHE)
-          .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys().then(async (keys) => {
+      const garder = [SHELL_CACHE, TILE_CACHE, IMAGE_CACHE, VIDEO_CACHE];
+      for (const key of keys) {
+        if (garder.indexOf(key) !== -1) continue;
+        // ancien cache de CONTENU : on récupère avant de supprimer
+        const cible = cacheContenuCible(key);
+        if (cible) await recupererAncienCache(key, cible);
+        try { await caches.delete(key); } catch (e) {}
+      }
+      try { await trimTileCache(); } catch (e) {}
+      try { await trimImageCache(); } catch (e) {}
+      try { await trimVideoCache(); } catch (e) {}
+    }).then(() => self.clients.claim())
   );
 });
 
