@@ -327,7 +327,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v247'; // 20260907v : index.html allege (16,5 Ko gzip en moins)
+const CACHE_VERSION = 'v251'; // 20260907z : comportement d'application (retour Android, raccourcis)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des

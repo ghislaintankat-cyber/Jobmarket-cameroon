@@ -33,5 +33,67 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "id": "/Jobmarket-cameroon/",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "categories": [
+    "business",
+    "productivity",
+    "utilities"
+  ],
+  "lang": "fr",
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "Publier un besoin",
+      "short_name": "Publier",
+      "description": "Décrire ce que je cherche — les artisans me contactent",
+      "url": "./?action=publier",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Mes messages",
+      "short_name": "Messages",
+      "description": "Ouvrir mes conversations",
+      "url": "./?action=messages",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Les artisans près de moi",
+      "short_name": "Carte",
+      "description": "Voir la carte des artisans autour de moi",
+      "url": "./?action=carte",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Les artisans autour de vous, sur une carte"
+    }
   ]
 }
