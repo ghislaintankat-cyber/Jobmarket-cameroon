@@ -95,5 +95,23 @@
       "form_factor": "wide",
       "label": "Les artisans autour de vous, sur une carte"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "./?partage=1",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "titre",
+      "text": "texte",
+      "url": "lien",
+      "files": [
+        {
+          "name": "photos",
+          "accept": [
+            "image/*"
+          ]
+        }
+      ]
+    }
+  }
 }

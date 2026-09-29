@@ -327,7 +327,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v251'; // 20260907z : comportement d'application (retour Android, raccourcis)
+const CACHE_VERSION = 'v252'; // 20260907aa : JobMarket dans le menu Partager d'Android
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -434,7 +434,7 @@ function cacheContenuCible(nom) {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(async (keys) => {
-      const garder = [SHELL_CACHE, TILE_CACHE, IMAGE_CACHE, VIDEO_CACHE];
+      const garder = [SHELL_CACHE, TILE_CACHE, IMAGE_CACHE, VIDEO_CACHE, PARTAGE_CACHE];
       for (const key of keys) {
         if (garder.indexOf(key) !== -1) continue;
         // ancien cache de CONTENU : on récupère avant de supprimer
@@ -512,8 +512,54 @@ async function trimImageCache() {
   }
 }
 
+// (20260907aa) PARTAGE VERS JOBMARKET — « Partager » d'Android
+// L'utilisateur prend une photo de son problème (robinet, prise, mur), fait
+// « Partager » et choisit JobMarket. Android envoie alors une requête POST
+// avec la photo. Une page web ne peut pas la recevoir directement : c'est le
+// service worker qui l'intercepte, la met de côté, et renvoie l'application
+// sur « ?partage=1 ». L'application ira chercher le contenu au démarrage.
+const PARTAGE_CACHE = 'jobmarket-partage';
+const PARTAGE_URL = './__partage__';
+
+async function recevoirPartage(req) {
+  try {
+    const form = await req.formData();
+    const texte = [form.get('titre'), form.get('texte'), form.get('lien')]
+      .filter(x => x && String(x).trim()).join(' ').trim();
+    const fichiers = form.getAll('photos').filter(f => f && f.size);
+    const cache = await caches.open(PARTAGE_CACHE);
+    // le texte d'abord (toujours présent, même sans photo)
+    await cache.put(PARTAGE_URL, new Response(JSON.stringify({
+      texte: texte, nbPhotos: fichiers.length, ts: Date.now()
+    }), { headers: { 'Content-Type': 'application/json' } }));
+    // puis chaque photo, sous une adresse numérotée
+    for (let i = 0; i < fichiers.length && i < 4; i++) {
+      try {
+        await cache.put(PARTAGE_URL + '-' + i, new Response(fichiers[i], {
+          headers: { 'Content-Type': fichiers[i].type || 'image/jpeg' }
+        }));
+      } catch (e) {}
+    }
+  } catch (e) {
+    // partage illisible : on ouvre quand même l'application, sans contenu
+  }
+  return Response.redirect('./?partage=1', 303);
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+
+  // (20260907aa) le partage arrive en POST : on le traite AVANT le filtre GET
+  if (req.method === 'POST') {
+    try {
+      const u = new URL(req.url);
+      if (u.searchParams.has('partage')) {
+        event.respondWith(recevoirPartage(req));
+        return;
+      }
+    } catch (e) {}
+  }
+
   if (req.method !== 'GET') return;
   if (req.url.startsWith('blob:') || req.url.startsWith('data:')) return;
 
