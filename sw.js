@@ -179,7 +179,7 @@ messaging.onBackgroundMessage((payload) => {
 
 // (20260907o) Réaffiche la notification d'appel toutes les 4 s pour que le
 // téléphone sonne et vibre en continu, et s'arrête dès qu'elle n'est plus là.
-const CALL_RING_SALVES = 5;
+const CALL_RING_SALVES = 3;   // (20260907af) 5 salves étaient pénibles
 const CALL_RING_INTERVALLE = 4000;
 
 function sonnerCommeUnAppel(title, options, tag) {
@@ -327,7 +327,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v255'; // 20260907ad : les messages aussi partent apres la coupure
+const CACHE_VERSION = 'v258'; // 20260907ag : filet contre les boutons morts
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
