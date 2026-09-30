@@ -341,7 +341,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v262'; // 20260907al : minification plus fine (app.js 194 -> 181 Ko)
+const CACHE_VERSION = 'v263'; // 20260907am : Vendora v1.7 branchee sur la vraie base
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -765,7 +765,13 @@ self.addEventListener('fetch', (event) => {
           caches.open(SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
         }
         return res;
-      }).catch(() => caches.match('./index.html'))
+      // (20260907am) HORS LIGNE : D'ABORD LA PAGE DEMANDÉE.
+      // Avant : toute navigation ratée retombait sur index.html. Depuis
+      // que le site a plusieurs pages (vendora.html, privee.html,
+      // trouver-artisan.html), ouvrir Vendora sans réseau affichait
+      // JobMarket — déroutant. On cherche donc d'abord la page demandée
+      // dans le cache ; index.html ne sert que de dernier recours.
+      }).catch(async () => (await caches.match(req, { ignoreSearch: true })) || caches.match('./index.html'))
     );
     return;
   }
