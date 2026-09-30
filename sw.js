@@ -12,8 +12,22 @@
 //
 // IMPORTANT : incrémentez CACHE_VERSION à chaque mise à jour de l'app.
 
-importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+// (20260907ai) LES BIBLIOTHÈQUES VIENNENT D'ABORD DE CE DÉPÔT.
+// Le service worker allait les chercher sur www.gstatic.com à chaque
+// démarrage : un nom de domaine à résoudre et une connexion TLS à négocier
+// de plus, alors que les mêmes fichiers sont déjà servis avec la page
+// (dossier vendor/, vague r) et déjà en cache. Sur MTN/Orange, c'est une à
+// deux secondes gagnées, et surtout une chose de moins qui peut échouer.
+// Le repli gstatic reste en place : si un fichier vendor/ manquait, le
+// service worker continuerait de fonctionner exactement comme avant.
+try {
+  importScripts('./vendor/firebase-app-compat.js');
+  importScripts('./vendor/firebase-messaging-compat.js');
+} catch (e) {
+  console.warn('SW: vendor/ indisponible, repli sur gstatic', e);
+  importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+  importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+}
 
 firebase.initializeApp({
   apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
@@ -327,7 +341,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v259'; // 20260907ah : 2 textes bruts corriges + filet traductions
+const CACHE_VERSION = 'v261'; // 20260907aj : polices variables locales + hors ligne reellement repare
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -371,10 +385,23 @@ const SHELL_ASSETS = [
   // lancement, alors qu'il ne sert qu'au premier appel reçu. Il est mis en
   // cache automatiquement à sa première lecture (règle générale plus bas),
   // donc il fonctionne hors ligne dès le 2ᵉ appel.
-  'https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap',
-  'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css',
-  'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js',
+  // (20260907aj) LES POLICES SONT SERVIES PAR CE DÉPÔT (voir index.html).
+  // On préchargeait la feuille de style de Google ; elle n'est plus
+  // demandée du tout. À la place, les deux fichiers réellement utilisés
+  // par l'écran d'accueil — ils sont de toute façon téléchargés au
+  // premier affichage, donc les mettre ici ne coûte rien de plus et
+  // rend le texte correct même hors ligne.
+  './vendor/fonts/syne-latin.woff2',
+  './vendor/fonts/dmsans-latin.woff2',
+  // (20260907ai) NE SONT PLUS PRÉCHARGÉS : leaflet-routing-machine (css + js,
+  // unpkg) et compressor.min.js (cdnjs). Même raisonnement que slogan.mp3
+  // ci-dessus : l'itinéraire ne sert qu'au clic sur « itinéraire », et
+  // compressor.min.js qu'à l'envoi d'une photo. Les deux étaient pourtant
+  // téléchargés AU TOUT PREMIER LANCEMENT, pendant que la page se chargeait,
+  // sur la même connexion. La règle générale plus bas les met en cache dès
+  // leur première utilisation réelle : ils fonctionnent donc hors ligne
+  // ensuite, exactement comme avant. Gain : ~19 Ko compressés et DEUX
+  // domaines tiers (unpkg, cdnjs) en moins au premier démarrage.
   // (20260905b 4ᵉ) le CODE de l'app lui-même (avant : jamais pré-caché →
   // hors-ligne, app.js échouait et l'app ne démarrait pas)
   './app.js',
@@ -385,14 +412,55 @@ const SHELL_ASSETS = [
   './apple-touch-icon.png',
   './icon-maskable-192.png',
   './icon-maskable-512.png',
-  // SDK Firebase (chargés par des <script> — hors-ligne, ils doivent venir
-  // du cache sinon l'app ne peut ni lire ni écrire les données)
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js',
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js',
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
-  'https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js'
+  // (20260907ai) LES 5 SDK FIREBASE DE gstatic NE SONT PLUS PRÉCHARGÉS.
+  // C'était un reste de l'époque où la page les chargeait depuis gstatic.
+  // Depuis la vague r, la page charge ./vendor/firebase-*-compat.js — déjà
+  // préchargés quelques lignes plus haut. On téléchargeait donc DEUX FOIS
+  // les mêmes bibliothèques au premier lancement : une fois pour la page
+  // (local), une fois pour le service worker (gstatic), sur la même
+  // connexion, en même temps. Environ 110 Ko compressés pour rien, plus un
+  // domaine tiers à résoudre. Pire : le module « app check » avait été
+  // retiré de la page à la vague q parce qu'aucun code ne l'appelle — et il
+  // continuait pourtant à être téléchargé ici.
+  // Le hors-ligne n'y perd rien : ce sont les fichiers ./vendor/ que la page
+  // demande, et ce sont eux qui sont en cache. Si jamais un fichier vendor
+  // manquait, le repli onerror d'index.html irait chercher gstatic, et la
+  // règle générale (cache-first tiers) le mettrait en cache à ce moment-là.
 ];
+
+// (20260907aj) LES ADRESSES DE LA LISTE, EN ABSOLU.
+// C'est le correctif d'un défaut qui rendait tout le préchargement inutile.
+// La liste ci-dessus est écrite en relatif ('./app.js'). Le test du
+// gestionnaire de requêtes, lui, comparait « SHELL_ASSETS.includes(req.url) »
+// où req.url est TOUJOURS une adresse absolue
+// (https://…/Jobmarket-cameroon/app.js). Cette comparaison était donc
+// FAUSSE à tous les coups pour nos propres fichiers. Résultat : app.js,
+// chat-widget.js, vendor/… étaient bien mis en cache, mais le cache
+// n'était JAMAIS relu — hors ligne, l'application ne redémarrait pas.
+// On résout donc chaque adresse une seule fois, au démarrage du worker.
+// On garde l'adresse SANS paramètre (origine + chemin) : la page demande
+// « app.js?v=20260907aj », le préchargement enregistre « app.js ». Comparer
+// les adresses complètes raterait encore la cible.
+const SHELL_URLS = new Set(
+  SHELL_ASSETS.map((u) => {
+    try { const a = new URL(u, self.location.href); return a.origin + a.pathname; } catch (e) { return u; }
+  })
+);
+
+// (20260907aj) Une seule version de chaque fichier du socle dans le cache.
+// Comme la page demande « app.js?v=<version> », chaque mise à jour créerait
+// une entrée de plus (700 Ko à chaque fois) si on ne rangeait pas derrière.
+async function rangerSocle(cache, req) {
+  try {
+    const cible = new URL(req.url);
+    for (const ancienne of await cache.keys()) {
+      const a = new URL(ancienne.url);
+      if (a.origin + a.pathname === cible.origin + cible.pathname && ancienne.url !== req.url) {
+        await cache.delete(ancienne);
+      }
+    }
+  } catch (e) {}
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -702,7 +770,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (SHELL_ASSETS.includes(req.url) || url.origin !== self.location.origin) {
+  // (20260907aj) LES FICHIERS DE L'APPLICATION : réseau d'abord, cache en
+  // secours. Même politique que la page elle-même — en ligne on a toujours
+  // la dernière version, hors ligne l'application démarre quand même.
+  // « ignoreSearch » est indispensable : la page demande « app.js?v=… », le
+  // cache contient « app.js ».
+  if (url.origin === self.location.origin && SHELL_URLS.has(url.origin + url.pathname)) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        if (res && res.ok && res.status === 200) {
+          caches.open(SHELL_CACHE).then((cache) => {
+            cache.put(req, res.clone());
+            rangerSocle(cache, req);
+          });
+        }
+        return res;
+      }).catch(() => caches.match(req, { ignoreSearch: true }))
+    );
+    return;
+  }
+
+  if (url.origin !== self.location.origin) {
     event.respondWith(
       caches.match(req).then((cached) => cached || fetch(req).then((res) => {
         // même garde : une erreur ne doit jamais être conservée
