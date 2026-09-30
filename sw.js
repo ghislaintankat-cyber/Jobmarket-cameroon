@@ -341,7 +341,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v261'; // 20260907aj : polices variables locales + hors ligne reellement repare
+const CACHE_VERSION = 'v262'; // 20260907al : minification plus fine (app.js 194 -> 181 Ko)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
