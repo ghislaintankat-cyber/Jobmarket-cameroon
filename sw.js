@@ -327,7 +327,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v258'; // 20260907ag : filet contre les boutons morts
+const CACHE_VERSION = 'v259'; // 20260907ah : 2 textes bruts corriges + filet traductions
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
