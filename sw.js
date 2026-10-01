@@ -341,7 +341,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v264'; // 20260907am : Vendora v1.7 branchee sur la vraie base
+const CACHE_VERSION = 'v265'; // 20261001b : Shalom Square (ex-Vendora) v2.1 + précache
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -408,13 +408,14 @@ const SHELL_ASSETS = [
   './chat-widget.js',
   './trouver-artisan.html',
   './privee.html',
-  // (20261001a) VENDORA V2.1 PRÉ-CACHÉE : la marketplace partage la même
-  // portée que l'app (carte « Vendora BOUTIQUE » du compte). Avant, la page
+  // (20261001b) SHALOM SQUARE v2.1 PRÉ-CACHÉE : la marketplace partage la même
+  // portée que l'app (carte « Shalom Square BOUTIQUE » du compte). Avant, la page
   // n'était pas dans le shell : premier lancement hors-ligne → écran d'erreur
   // ou repli index.html. Maintenant elle démarre hors-ligne, et la mise à
   // jour v2.1 (panier, commandes, offres) est disponible partout, tout de
-  // suite, après ce bump de version.
-  './vendora.html',
+  // suite, après ce bump de version. (20261001b) Vendora devient Shalom
+  // Square : vendora.html reste comme redirection vers shalom-square.html.
+  './shalom-square.html',
   './favicon-32.png',
   './apple-touch-icon.png',
   './icon-maskable-192.png',
@@ -774,7 +775,7 @@ self.addEventListener('fetch', (event) => {
         return res;
       // (20260907am) HORS LIGNE : D'ABORD LA PAGE DEMANDÉE.
       // Avant : toute navigation ratée retombait sur index.html. Depuis
-      // que le site a plusieurs pages (vendora.html, privee.html,
+      // que le site a plusieurs pages (shalom-square.html, privee.html,
       // trouver-artisan.html), ouvrir Vendora sans réseau affichait
       // JobMarket — déroutant. On cherche donc d'abord la page demandée
       // dans le cache ; index.html ne sert que de dernier recours.
