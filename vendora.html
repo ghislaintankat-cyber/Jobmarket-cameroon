@@ -2262,8 +2262,26 @@ function doGoogle(){
 }
 
 /* ---------- modal plumbing ---------- */
-function openModal(html,wide){ $("modalRoot").innerHTML='<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="dialog'+(wide?" wide":"")+'">'+html+'</div></div>'; }
-function closeModal(){ $("modalRoot").innerHTML=""; ORDERS_OPEN=false; }
+/* --- bouton RETOUR (Android) : fermer la modal au lieu de quitter la page ---
+   Meme logique que jmcRetourAndroid dans l'app : a l'ouverture d'une modal on
+   pose une entree d'historique (sentinelle). Retour -> la modal se ferme ; il
+   faut un 2e appui pour vraiment revenir a la page precedente (l'app). */
+var VD_BACK=false;
+function vdBackPose(){
+  try{ if(!VD_BACK){ history.pushState({vdModal:1},"",location.href); VD_BACK=true; } }catch(e){}
+}
+function vdBackRetire(){
+  try{ if(VD_BACK){ VD_BACK=false; history.back(); } }catch(e){}
+}
+window.addEventListener("popstate",function(){
+  try{
+    if(VD_BACK){ VD_BACK=false; }
+    var mr=document.getElementById("modalRoot");
+    if(mr&&mr.innerHTML){ closeModal(); }
+  }catch(e){}
+});
+function openModal(html,wide){ $("modalRoot").innerHTML='<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="dialog'+(wide?" wide":"")+'">'+html+'</div></div>'; vdBackPose(); }
+function closeModal(){ vdBackRetire(); $("modalRoot").innerHTML=""; ORDERS_OPEN=false; }
 
 /* ---------- detail ---------- */
 function galleryItems(l){
