@@ -131,6 +131,10 @@ window.__fbcdn = function(k){
   .obstep{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;font-size:13.5px;margin-top:8px;font-weight:600}
   .checkline{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:6px}
   .checkline input{width:17px;height:17px;accent-color:var(--gold)}
+  .profavatar{width:84px;height:84px;font-size:34px;display:inline-flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border:3px solid var(--gold)}
+  .notif.unread{background:rgba(184,134,11,.10);border-left:3px solid var(--gold)}
+  .notif.unread b{color:var(--gold)}
+  .upl{display:flex;align-items:center;justify-content:center;gap:6px}
   .dealcard{width:195px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:.18s}
   .dealcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
   .dthumb{height:104px;position:relative;display:flex;align-items:center;justify-content:center;font-size:42px}
@@ -401,6 +405,7 @@ window.__fbcdn = function(k){
     .toast{bottom:74px}
   }
   @keyframes slideup{from{transform:translateY(28px);opacity:.35}to{transform:none;opacity:1}}
+
 .spark{display:block}
 </style>
 </head>
@@ -426,6 +431,10 @@ window.__fbcdn = function(k){
       <span class="modepill" id="modePill" title="">…</span>
       <button class="ibtn" id="langBtn" onclick="toggleLang()" title="Français / English" style="font-size:11.5px;font-weight:800">EN</button>
       <button class="ibtn" id="darkBtn" onclick="cycleTheme()" title="Thème" aria-label="Thème">🌙</button>
+      <div class="bellwrap">
+        <button class="ibtn" onclick="openCart()" aria-label="Panier" id="cartBtn" title="Panier">🛒</button>
+        <span class="belldot hidden" id="cartDot">0</span>
+      </div>
       <div class="bellwrap">
         <button class="ibtn" onclick="toggleNotifs(event)" aria-label="Notifications" id="bellBtn">🔔</button>
         <span class="belldot hidden" id="bellDot">0</span>
@@ -481,6 +490,7 @@ window.__fbcdn = function(k){
 
   <!-- ================= TOOLBAR ================= -->
   <section class="toolbar" id="toolbar">
+    <div class="tbrow" id="recentRow" style="display:none;gap:6px"></div>
     <div class="tbrow">
       <div class="count" id="countText"></div>
       <button class="hudpill" id="hud" onclick="openBench()" title="Performance de recherche — cliquez pour tester">
@@ -614,7 +624,7 @@ window.__fbcdn = function(k){
       <span class="p" id="chatPrice"></span>
       <span class="chat-tag" id="chatTag"></span>
     </div>
-    <button class="ibtn" style="width:31px;height:31px" onclick="openInApp()" id="inAppBtn" style="display:none" title="Ouvrir dans l'app JobMarket">📲</button>
+    <button class="ibtn" style="width:31px;height:31px;display:none" onclick="openInApp()" id="inAppBtn" title="Ouvrir dans l'app JobMarket">📲</button>
     <button class="ibtn" style="width:31px;height:31px" onclick="toggleChat()" aria-label="Fermer">✕</button>
   </div>
   <div class="qchips" id="quickChips"></div>
@@ -764,6 +774,34 @@ fr:{
   ob_start:"Commencer", ob_invite:"Inviter un ami sur WhatsApp",
   sell_err_cooldown:"Patientez 1 min 30 entre deux publications 🙂", sell_err_price_max:"Prix maximum : 100 000 000 FCFA",
   report_dup:"Signalement déjà envoyé, merci ✅", remote_more:"Charger plus d'annonces réelles",
+  signup_h:"Créer un compte Vendora", signup_name:"Nom complet", signup_phone:"Téléphone (6…)", signup_city:"Ville",
+  signup_btn:"Créer mon compte", signup_have:"Déjà un compte ? Se connecter",
+  auth_err_pw:"Mot de passe : 6 caractères minimum", auth_err_phone:"Téléphone : 9 chiffres commençant par 6",
+  prof_h:"Mon profil", prof_avatar:"Photo de profil", prof_save:"Enregistrer", prof_saved:"Profil mis à jour ✅",
+  prof_ads:"Annonces", prof_views:"Vues", prof_since:"Membre", prof_pro:"🏪 Personnaliser ma boutique pro",
+  ph_photo:"Appareil photo", ph_gallery:"Galerie", ph_max:"Maximum : 4 photos", ph_count:"{n}/4 photos",
+  nt_order:"Nouvelle commande : {t}", nt_review:"Nouvel avis {n}★ reçu 🎉", nt_views:"🎉 {v} vues sur « {t} »",
+  notifs_read:"Notifications marquées comme lues", push_on:"Notifications activées 🔔",
+  my_buys:"Mes achats", my_sales:"Mes ventes", sell_orders_empty:"Aucune vente pour l'instant — publiez une annonce !",
+  st_confirmed:"Confirmée", st_cancelled:"Annulée",
+  act_confirm:"Confirmer ✅", act_paid:"Paiement reçu 💰", act_ship:"Expédiée 🚚", act_deliver:"Livrée ✅",
+  act_buyer_confirm:"Bien reçu ✅", act_cancel:"Annuler",
+  ord_seller:"Vendeur", ord_buyer:"Acheteur", order_placed:"Commande envoyée au vendeur ✅",
+  nt_status:"Commande « {t} » : {s}",
+  cart_h:"Panier", cart_empty:"Votre panier est vide — parcourez les annonces et ajoutez 🛒",
+  cart_add:"Au panier", cart_added:"Ajouté au panier ✅", cart_in:"Déjà dans le panier",
+  cart_order_all:"Commander tout", cart_ordered:"Commandes envoyées ✅", cart_total:"Total",
+  mine_revenue:"Revenus (livrées)", mine_pending:"Ventes en cours",
+  recent_clear:"Effacer l'historique de recherche",
+  edit_l:"Modifier", edit_h:"Modifier l'annonce", edit_save:"Enregistrer les modifications",
+  edit_saved:"Annonce mise à jour ✅", del_l:"Supprimer",
+  del_confirm:"Supprimer définitivement cette annonce ?", del_done:"Annonce supprimée ✅", price_down:"Prix baissé",
+  off_tab:"Offres", off_sent:"Offre envoyée au vendeur 🤝",
+  off_pending:"En attente", off_accepted_l:"Acceptée", off_declined_l:"Refusée", off_withdrawn_l:"Retirée",
+  off_accept:"Accepter ✅", off_decline:"Refuser", off_withdraw:"Retirer mon offre",
+  off_accepted_toast:"Offre acceptée — commande créée ✅", off_declined_toast:"Offre refusée", off_withdrawn_toast:"Offre retirée",
+  off_by:"Offre de {n}", off_on:"Sur « {t} »", off_empty:"Aucune offre pour l'instant",
+  nt_offer:"🤝 Nouvelle offre : {p} pour « {t} »", nt_offer_status:"Offre « {t} » : {s}",
   report_received:"Merci — signalement envoyé à la modération ✅", shop_verified:"Vendeur vérifié"
 },
 en:{
@@ -881,6 +919,34 @@ en:{
   ob_start:"Get started", ob_invite:"Invite a friend on WhatsApp",
   sell_err_cooldown:"Please wait 1½ min between posts 🙂", sell_err_price_max:"Maximum price: 100,000,000 FCFA",
   report_dup:"Report already sent, thanks ✅", remote_more:"Load more live listings",
+  signup_h:"Create a Vendora account", signup_name:"Full name", signup_phone:"Phone (6…)", signup_city:"City",
+  signup_btn:"Create my account", signup_have:"Already have an account? Sign in",
+  auth_err_pw:"Password: 6 characters minimum", auth_err_phone:"Phone: 9 digits starting with 6",
+  prof_h:"My profile", prof_avatar:"Profile photo", prof_save:"Save", prof_saved:"Profile updated ✅",
+  prof_ads:"Listings", prof_views:"Views", prof_since:"Member", prof_pro:"🏪 Customise my pro shop",
+  ph_photo:"Camera", ph_gallery:"Gallery", ph_max:"Maximum: 4 photos", ph_count:"{n}/4 photos",
+  nt_order:"New order: {t}", nt_review:"New {n}★ review received 🎉", nt_views:"🎉 {v} views on '{t}'",
+  notifs_read:"Notifications marked as read", push_on:"Notifications enabled 🔔",
+  my_buys:"My purchases", my_sales:"My sales", sell_orders_empty:"No sales yet — post a listing!",
+  st_confirmed:"Confirmed", st_cancelled:"Cancelled",
+  act_confirm:"Confirm ✅", act_paid:"Payment received 💰", act_ship:"Shipped 🚚", act_deliver:"Delivered ✅",
+  act_buyer_confirm:"Received ✅", act_cancel:"Cancel",
+  ord_seller:"Seller", ord_buyer:"Buyer", order_placed:"Order sent to seller ✅",
+  nt_status:"Order '{t}': {s}",
+  cart_h:"Cart", cart_empty:"Your cart is empty — browse listings and add 🛒",
+  cart_add:"Add to cart", cart_added:"Added to cart ✅", cart_in:"Already in cart",
+  cart_order_all:"Order all", cart_ordered:"Orders sent ✅", cart_total:"Total",
+  mine_revenue:"Revenue (delivered)", mine_pending:"Sales in progress",
+  recent_clear:"Clear search history",
+  edit_l:"Edit", edit_h:"Edit listing", edit_save:"Save changes",
+  edit_saved:"Listing updated ✅", del_l:"Delete",
+  del_confirm:"Permanently delete this listing?", del_done:"Listing deleted ✅", price_down:"Price dropped",
+  off_tab:"Offers", off_sent:"Offer sent to seller 🤝",
+  off_pending:"Pending", off_accepted_l:"Accepted", off_declined_l:"Declined", off_withdrawn_l:"Withdrawn",
+  off_accept:"Accept ✅", off_decline:"Decline", off_withdraw:"Withdraw my offer",
+  off_accepted_toast:"Offer accepted — order created ✅", off_declined_toast:"Offer declined", off_withdrawn_toast:"Offer withdrawn",
+  off_by:"Offer from {n}", off_on:"On \"{t}\"", off_empty:"No offers yet",
+  nt_offer:"🤝 New offer: {p} for \"{t}\"", nt_offer_status:"Offer \"{t}\": {s}",
   report_received:"Thanks — report sent to moderation ✅", shop_verified:"Verified seller"
 }};
 function t(k){ var d=I18N[LANG]||I18N.fr; return (k in d)?d[k]:(I18N.fr[k]||k); }
@@ -1333,6 +1399,10 @@ function onFbUser(u){
       if(FB.profile.name) PEER_NAMES.set(u.uid,FB.profile.name);
       renderAuth();
       subscribeUnread();
+      subscribeUserNotifs();
+      subscribeMyOrders();
+      subscribeMyOffers();
+      initPush();
       if(!FB.welcomed){ FB.welcomed=true; toast(tf("welcome_toast",{n:(FB.profile&&FB.profile.name)||u.displayName||(u.email||"").split("@")[0]||"Cam"})); }
     }).catch(function(){});
     loadRemoteListings();
@@ -1471,9 +1541,180 @@ function publishReview(sellerUid,payload,cb){
   if(!FB.ready||!(FB.auth&&FB.auth.currentUser)){ cb(false); return; }
   try{
     var ref=FB.db.ref("market_reviews/"+sellerUid).push();
-    ref.set(payload).then(function(){ REVIEWS_CACHE.delete(sellerUid); cb(true); })
+    ref.set(payload).then(function(){ REVIEWS_CACHE.delete(sellerUid); pushUserNotif(sellerUid,"nt_review",{n:payload.rating}); cb(true); })
       .catch(function(e){ console.warn("review:",e&&e.message); cb(false); });
   }catch(e){ cb(false); }
+}
+/* --- offres structurées : market_offers/{pushKey} --- */
+var LIVE_OFFERS=[], OFFERS_SUB=null;
+function placeLiveOffer(l,offerPrice,cb){
+  if(!FB.ready||!FB.user||!l||!l.sellerUid){ if(cb)cb(false); return; }
+  try{
+    var me=FB.user;
+    var myName=(FB.profile&&FB.profile.name)||me.displayName||(me.email||"").split("@")[0]||"JobMarket";
+    var o={listingKey:l.remoteKey||String(l.id),listingTitle:l.title,askPrice:Number(l.price)||0,
+      offerPrice:Number(offerPrice)||0,currency:"XAF",
+      buyerUid:me.uid,buyerName:myName,sellerUid:l.sellerUid,sellerName:l.userName||"JobMarket",
+      status:"pending",ts:Date.now(),updated:Date.now()};
+    FB.db.ref("market_offers").push().set(o)
+      .then(function(){ if(cb)cb(true); })
+      .catch(function(){ if(cb)cb(false); });
+  }catch(e){ if(cb)cb(false); }
+}
+function subscribeMyOffers(){
+  if(!(FB.ready&&FB.user&&FB.db)) return;
+  if(OFFERS_SUB){ try{ OFFERS_SUB(); }catch(e){} OFFERS_SUB=null; }
+  try{
+    var ref=FB.db.ref("market_offers").limitToLast(200);
+    OFFERS_SUB=function(){ try{ ref.off("value"); }catch(e){} };
+    ref.on("value",function(snap){
+      var v=(snap&&snap.val())||{}, arr=[];
+      Object.keys(v).forEach(function(k){
+        var o=v[k];
+        if(o&&(o.buyerUid===FB.user.uid||o.sellerUid===FB.user.uid)){ o._key=k; arr.push(o); }
+      });
+      arr.sort(function(a2,b2){ return (b2.ts||0)-(a2.ts||0); });
+      LIVE_OFFERS=arr;
+      try{ if(typeof ORDERS_OPEN!=="undefined"&&ORDERS_OPEN&&typeof openOrders==="function") openOrders(); }catch(e){}
+    });
+  }catch(e){}
+}
+function setOfferStatus(key,status,cb){
+  if(!(FB.ready&&FB.user&&FB.db)){ if(cb)cb(false); return; }
+  var o=null;
+  for(var i=0;i<LIVE_OFFERS.length;i++) if(LIVE_OFFERS[i]._key===key) o=LIVE_OFFERS[i];
+  if(!o){ if(cb)cb(false); return; }
+  try{
+    FB.db.ref("market_offers/"+key).update({status:status,updated:Date.now()}).then(function(){
+      var counterpart=(o.buyerUid===FB.user.uid)?o.sellerUid:o.buyerUid;
+      pushUserNotif(counterpart,"nt_offer_status",{t:o.listingTitle,s:t("off_"+status+"_l")});
+      if(cb)cb(true);
+    }).catch(function(){ if(cb)cb(false); });
+  }catch(e){ if(cb)cb(false); }
+}
+function acceptOfferToOrder(key,cb){
+  if(!(FB.ready&&FB.user&&FB.db)){ if(cb)cb(false); return; }
+  var o=null;
+  for(var i=0;i<LIVE_OFFERS.length;i++) if(LIVE_OFFERS[i]._key===key) o=LIVE_OFFERS[i];
+  if(!o||o.sellerUid!==FB.user.uid){ if(cb)cb(false); return; }
+  try{
+    var order={listingKey:o.listingKey,listingTitle:o.listingTitle,price:o.offerPrice,qty:1,total:o.offerPrice,currency:"XAF",offerKey:key,
+      buyerUid:o.buyerUid,buyerName:o.buyerName,sellerUid:o.sellerUid,sellerName:o.sellerName,
+      ship:"chat",pay:"chat",status:"placed",reviewed:false,ts:Date.now(),updated:Date.now()};
+    FB.db.ref("market_orders").push().set(order).then(function(){
+      return FB.db.ref("market_offers/"+key).update({status:"accepted",updated:Date.now()});
+    }).then(function(){
+      pushUserNotif(o.buyerUid,"nt_offer_status",{t:o.listingTitle,s:t("off_accepted_l")});
+      pushUserNotif(o.buyerUid,"nt_order",{t:o.listingTitle});
+      if(cb)cb(true);
+    }).catch(function(){ if(cb)cb(false); });
+  }catch(e){ if(cb)cb(false); }
+}
+/* --- commandes réelles : market_orders/{pushKey} --- */
+var LIVE_ORDERS=[], ORDERS_SUB=null;
+function placeLiveOrder(l,cb){
+  if(!FB.ready||!FB.user||!l||!l.sellerUid){ if(cb)cb(false); return; }
+  try{
+    var me=FB.user;
+    var myName=(FB.profile&&FB.profile.name)||me.displayName||(me.email||"").split("@")[0]||"JobMarket";
+    var o={listingKey:l.remoteKey||String(l.id),listingTitle:l.title,price:Number(l.price)||0,qty:1,
+      total:Number(l.price)||0,currency:"XAF",
+      buyerUid:me.uid,buyerName:myName,sellerUid:l.sellerUid,sellerName:l.userName||"JobMarket",
+      ship:"chat",pay:"chat",status:"placed",reviewed:false,ts:Date.now(),updated:Date.now()};
+    FB.db.ref("market_orders").push().set(o)
+      .then(function(){ if(cb)cb(true); })
+      .catch(function(){ if(cb)cb(false); });
+  }catch(e){ if(cb)cb(false); }
+}
+function subscribeMyOrders(){
+  if(!(FB.ready&&FB.user&&FB.db)) return;
+  if(ORDERS_SUB){ try{ ORDERS_SUB(); }catch(e){} ORDERS_SUB=null; }
+  try{
+    var ref=FB.db.ref("market_orders").limitToLast(200);
+    ORDERS_SUB=function(){ try{ ref.off("value"); }catch(e){} };
+    ref.on("value",function(snap){
+      var v=(snap&&snap.val())||{}, arr=[];
+      Object.keys(v).forEach(function(k){
+        var o=v[k];
+        if(o&&(o.buyerUid===FB.user.uid||o.sellerUid===FB.user.uid)){ o._key=k; arr.push(o); }
+      });
+      arr.sort(function(a2,b2){ return (b2.ts||0)-(a2.ts||0); });
+      LIVE_ORDERS=arr;
+      try{ if(typeof ORDERS_OPEN!=="undefined"&&ORDERS_OPEN&&typeof openOrders==="function") openOrders(); }catch(e){}
+    });
+  }catch(e){}
+}
+function setOrderStatus(key,status,cb){
+  if(!(FB.ready&&FB.user&&FB.db)){ if(cb)cb(false); return; }
+  var o=null;
+  for(var i=0;i<LIVE_ORDERS.length;i++) if(LIVE_ORDERS[i]._key===key) o=LIVE_ORDERS[i];
+  if(!o){ if(cb)cb(false); return; }
+  try{
+    FB.db.ref("market_orders/"+key).update({status:status,updated:Date.now()}).then(function(){
+      var counterpart=(o.buyerUid===FB.user.uid)?o.sellerUid:o.buyerUid;
+      pushUserNotif(counterpart,"nt_status",{t:o.listingTitle,s:t("st_"+status)});
+      if(cb)cb(true);
+    }).catch(function(){ if(cb)cb(false); });
+  }catch(e){ if(cb)cb(false); }
+}
+/* --- notifications persistantes : userNotifs/{uid} --- */
+function pushUserNotif(uid,type,vars,cb){
+  if(!uid||!FB.ready||!(FB.auth&&FB.auth.currentUser)){ if(cb)cb(false); return; }
+  try{
+    FB.db.ref("userNotifs/"+uid).push().set({type:type,vars:vars||{},ts:Date.now(),read:false})
+      .then(function(){ if(cb)cb(true); }).catch(function(){ if(cb)cb(false); });
+  }catch(e){ if(cb)cb(false); }
+}
+var NOTIF_SUB=null, PERSIST_NOTIFS=[];
+function subscribeUserNotifs(){
+  if(!(FB.ready&&FB.user&&FB.db)) return;
+  if(NOTIF_SUB){ try{ NOTIF_SUB(); }catch(e){} NOTIF_SUB=null; }
+  try{
+    var ref=FB.db.ref("userNotifs/"+FB.user.uid).limitToLast(30);
+    NOTIF_SUB=function(){ try{ ref.off("value"); }catch(e){} };
+    ref.on("value",function(snap){
+      var v=(snap&&snap.val())||{}, arr=[];
+      Object.keys(v).forEach(function(k){ var n=v[k]; if(n){ n._key=k; arr.push(n); } });
+      arr.sort(function(a2,b2){ return (b2.ts||0)-(a2.ts||0); });
+      PERSIST_NOTIFS=arr;
+      renderNotifs();
+    });
+  }catch(e){}
+}
+function markNotifsRead(){
+  if(!(FB.ready&&FB.user&&FB.db)) return;
+  try{
+    PERSIST_NOTIFS.forEach(function(n){
+      if(!n.read){ n.read=true; FB.db.ref("userNotifs/"+FB.user.uid+"/"+n._key+"/read").set(true).catch(function(){}); }
+    });
+  }catch(e){}
+}
+/* --- profil utilisateur : profiles/{uid} --- */
+function saveUserProfile(obj,cb){
+  if(!(FB.ready&&FB.user&&FB.db)){ if(cb)cb(false); return; }
+  try{
+    FB.db.ref("profiles/"+FB.user.uid).update(obj)
+      .then(function(){ if(FB.profile){ Object.keys(obj).forEach(function(k){ FB.profile[k]=obj[k]; }); } if(cb)cb(true); })
+      .catch(function(){ if(cb)cb(false); });
+  }catch(e){ if(cb)cb(false); }
+}
+/* --- push FCM (optionnel) : renseigner FCM_VAPID pour activer --- */
+var FCM_VAPID=""; /* clé VAPID (Console Firebase → Cloud Messaging → Web Push certificates) */
+function initPush(){
+  try{
+    if(!FCM_VAPID||!FB.ready||!FB.user) return;
+    if(!(typeof firebase!=="undefined"&&firebase.messaging&&("Notification" in window))) return;
+    var msg=firebase.messaging();
+    Notification.requestPermission().then(function(perm){
+      if(perm!=="granted") return null;
+      return msg.getToken({vapidKey:FCM_VAPID});
+    }).then(function(tk){
+      if(!tk) return;
+      try{ FB.db.ref("fcmTokens/"+FB.user.uid+"/"+tk.replace(/[.\/#$\[\]]/g,"_")).set(true).catch(function(){}); }catch(e){}
+      try{ msg.onMessage(function(payload){ var d=(payload&&payload.data)||{}; addNotif(d.icon||"🔔",d.key||"nt_order",d); }); }catch(e){}
+      toast(t("push_on"));
+    }).catch(function(){});
+  }catch(e){}
 }
 /* --- vitrines vendeurs : market_shops/{uid} --- */
 var SHOPS_CACHE=new Map();
@@ -1519,6 +1760,11 @@ function bumpRemoteViews(l){
   if(VIEWED_KEYS.has(l.remoteKey)) return l.views||0;
   VIEWED_KEYS.add(l.remoteKey);
   l.views=(l.views||0)+1;
+  try{
+    if(l.sellerUid&&FB.user&&l.sellerUid!==FB.user.uid&&[50,100,500,1000].indexOf(l.views)>-1){
+      pushUserNotif(l.sellerUid,"nt_views",{v:l.views,t:l.title});
+    }
+  }catch(e){}
   if(FB.auth&&FB.auth.currentUser){
     try{
       FB.db.ref("market_listings/"+l.remoteKey+"/views").transaction(function(c){ return (c||0)+1; }).catch(function(){});
@@ -1717,6 +1963,7 @@ function clearBudget(){
 }
 function renderGrid(){
   renderBudgetChips();
+  renderRecentSearches();
   CURR_IDS=computeResults();
   SHOWN=Math.min(BATCH,CURR_IDS.length);
   var g=$("grid");
@@ -1741,6 +1988,19 @@ function mineStatsHTML(){
     +'<span>🟢 '+t("mine_online")+' <b>'+online+'</b></span>'
     +'<span>✅ '+t("mine_sold")+' <b>'+sold+'</b></span>'
     +'<span>💰 '+t("mine_potential")+' <b>'+fmtXAF(pot)+'</b></span>'
+    +(function(){
+      var me=(FB.user&&FB.user.uid); if(!me) return "";
+      var del=[], pend=[];
+      (typeof LIVE_ORDERS!=="undefined"?LIVE_ORDERS:[]).forEach(function(o){
+        if(o.sellerUid!==me) return;
+        if(o.status==="delivered") del.push(o);
+        else if(["placed","confirmed","paid","shipped"].indexOf(o.status)>-1) pend.push(o);
+      });
+      if(!del.length&&!pend.length) return "";
+      var rev=0; del.forEach(function(o){ rev+=(o.total||o.price||0); });
+      return '<span>💵 '+t("mine_revenue")+' <b>'+fmtXAF(rev)+'</b></span>'
+        +'<span>📦 '+t("mine_pending")+' <b>'+pend.length+'</b></span>';
+    })()
     +'</div>';
 }
 function updateCount(){ $("countText").textContent=t("showing")+" "+SHOWN+" "+t("of")+" "+CURR_IDS.length+" "+t("listings"); }
@@ -1840,9 +2100,10 @@ function renderAuth(){
   else { mp.textContent=t("mode_demo"); mp.className="modepill"; mp.title="Hors ligne / prévisualisation : tout fonctionne en local."; }
   var name=(FB.profile&&FB.profile.name)||((FB.user&&(FB.user.displayName||(FB.user.email||"").split("@")[0]))||"")||((USER&&USER.name)||"");
   if(FB.user||USER){
-    a.innerHTML='<button class="userchip" onclick="toggleMenu()"><span class="avatar" style="width:26px;height:26px">'+esc((name||"J").charAt(0).toUpperCase())+'</span><span class="nm">'+esc(name||"Compte")+'</span> ▾</button>'
+    a.innerHTML='<button class="userchip" onclick="toggleMenu()"><span class="avatar" style="width:26px;height:26px;overflow:hidden">'+((FB.profile&&FB.profile.avatar)?'<img src="'+esc(FB.profile.avatar)+'" style="width:100%;height:100%;object-fit:cover" alt="">':esc((name||"J").charAt(0).toUpperCase()))+'</span><span class="nm">'+esc(name||"Compte")+'</span> ▾</button>'
       +'<button class="btn btn-gold btn-sm" onclick="openSell()">'+t("post_ad")+'</button>'
       +'<div class="menu" id="userMenu">'
+      +'<button onclick="closeMenu();openProfile()">👤 '+t("prof_h")+'</button>'
       +'<button onclick="closeMenu();openOrders()">'+t("my_orders")+'</button>'
       +'<button onclick="closeMenu();openHub()">'+t("hub_h")+'</button>'
       +'<button onclick="closeMenu();F.mineOnly=true;renderPills();renderGrid();scrollToGrid()">'+t("my_listings")+'</button>'
@@ -1866,12 +2127,50 @@ function openSignIn(){
     +'<div class="formerr" id="authErr"></div>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
     +'<button class="btn btn-gold" style="flex:1" onclick="doAuth(false)">'+t("login_btn")+'</button>'
-    +'<button class="btn btn-ghost" style="flex:1" onclick="doAuth(true)">'+t("create_account")+'</button></div>'
+    +'<button class="btn btn-ghost" style="flex:1" onclick="openSignUp()">'+t("create_account")+'</button></div>'
     +'<div style="text-align:center;margin:12px 0 8px" class="dim">— '+t("or")+" —</div>"
     +'<button class="btn btn-blue btn-block" onclick="doGoogle()">🔵 '+t("google_btn")+'</button>'
     +(FB.ready?"":'<p class="mutednote">⚠️ '+esc(t("mode_demo"))+" — "+esc(LANG==="fr"?"la connexion nécessite le réseau (Firebase de l'app). En démo, entrez juste un nom :":"sign-in needs the network (the app's Firebase). In demo, just type a name:")+'</p>')
     +(FB.ready?"":'<div class="field" style="margin-top:10px"><input id="inName" type="text" maxlength="40" placeholder="'+esc(LANG==="fr"?"Votre nom (démo)":"Your name (demo)")+'"></div>')
     +(FB.ready?"":'<button class="btn btn-ghost btn-block" onclick="guestSignIn()">'+(LANG==="fr"?"Continuer en démo":"Continue in demo")+'</button>'));
+}
+function openSignUp(){
+  openModal('<button class="iconbtn" onclick="closeModal()" aria-label="Fermer">✕</button>'
+    +'<h2 style="font-size:19px;margin-bottom:4px">👤 '+t("signup_h")+'</h2>'
+    +'<p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">'+t("sign_in_p")+'</p>'
+    +'<div class="field"><label>'+t("signup_name")+'</label><input id="suName" type="text" maxlength="40" placeholder="Marie Ngo"></div>'
+    +'<div class="two"><div class="field"><label>'+t("email")+'</label><input id="suEmail" type="email" autocomplete="email" placeholder="ex. marie@gmail.com"></div>'
+    +'<div class="field"><label>'+t("password")+'</label><input id="suPass" type="password" autocomplete="new-password" placeholder="••••••••"></div></div>'
+    +'<div class="two"><div class="field"><label>'+t("signup_phone")+'</label><input id="suPhone" type="tel" maxlength="15" placeholder="677 00 00 00"></div>'
+    +'<div class="field"><label>'+t("signup_city")+'</label><select id="suCity">'
+      +CITIES.map(function(c){ return '<option value="'+esc(c[0])+'">🇨🇲 '+esc(c[0])+'</option>'; }).join("")
+      +'</select></div></div>'
+    +'<div class="formerr" id="suErr"></div>'
+    +'<button class="btn btn-gold btn-block" onclick="doSignUp()">✅ '+t("signup_btn")+'</button>'
+    +'<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="openSignIn()">'+t("signup_have")+'</button>');
+  setTimeout(function(){ var el=$("suName"); if(el) el.focus(); },60);
+}
+function doSignUp(){
+  var n=$("suName").value.trim(), em=$("suEmail").value.trim(), pw=$("suPass").value;
+  var dg=String($("suPhone").value).replace(/\D/g,""), city=$("suCity").value;
+  var err="";
+  if(n.length<2) err=t("auth_err");
+  else if(!em||em.indexOf("@")<1) err=t("auth_err");
+  else if(pw.length<6) err=t("auth_err_pw");
+  else if(!(dg.length===9&&dg.charAt(0)==="6")) err=t("auth_err_phone");
+  else if(!city) err=t("sell_err_loc");
+  if(err){ $("suErr").textContent=err; return; }
+  if(!FB.ready){ $("suErr").textContent=t("mode_demo")+" — "+(LANG==="fr"?"connexion réseau requise":"network required"); return; }
+  $("suErr").textContent="";
+  FB.auth.createUserWithEmailAndPassword(em,pw).then(function(cred){
+    return FB.db.ref("profiles/"+cred.user.uid).set({name:n,phone:dg,city:city,avatar:"",createdAt:Date.now(),role:"member"}).then(function(){
+      FB.profile={name:n,phone:dg,city:city,avatar:""};
+      closeModal(); renderAuth();
+      toast(tf("welcome_toast",{n:n,r:LANG==="fr"?"nouveau compte":"new account"}));
+    });
+  }).catch(function(e){
+    $("suErr").textContent=(e&&e.message)||"Error";
+  });
 }
 function guestSignIn(){
   var n=($("inName")&&$("inName").value.trim())||"";
@@ -1893,6 +2192,66 @@ function doAuth(signUp){
   }).catch(function(e){
     $("authErr").textContent=(e&&e.code==="auth/invalid-credential")?(LANG==="fr"?"E-mail ou mot de passe incorrect.":"Wrong e-mail or password."):(e&&e.message||"Error");
   });
+}
+function openProfile(){
+  if(!(FB.user||USER)){ openSignIn(); return; }
+  var p=(FB.profile||{});
+  var name=p.name||((FB.user&&(FB.user.displayName||(FB.user.email||"").split("@")[0]))||(USER&&USER.name)||"");
+  var av=(p.avatar?'<img src="'+esc(p.avatar)+'" style="width:100%;height:100%;object-fit:cover" alt="">':esc((name||"J").charAt(0).toUpperCase()));
+  var mine=LISTINGS.filter(isMine), views=0;
+  mine.forEach(function(l){ views+=(l.views||0); });
+  openModal('<button class="iconbtn" onclick="closeModal()" aria-label="Fermer">✕</button>'
+    +'<div style="text-align:center">'
+    +'<label for="avatarFile" style="cursor:pointer;display:inline-block">'
+    +'<span class="avatar profavatar">'+av+'</span>'
+    +'<input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="avatarPicked(this)">'
+    +'<div class="dim" style="font-size:11.5px;margin-top:6px">📷 '+t("prof_avatar")+'</div></label>'
+    +'<h3 style="margin:8px 0 2px">'+esc(name)+'</h3>'
+    +(p.createdAt?'<div class="dim" style="font-size:12px">'+t("prof_since")+' · '+new Date(p.createdAt).toLocaleDateString(LANG==="fr"?"fr-FR":"en-US")+'</div>':"")
+    +'</div>'
+    +'<div class="minestats" style="margin-top:12px"><span>📦 '+t("prof_ads")+' <b>'+mine.length+'</b></span><span>👁 '+t("prof_views")+' <b>'+views.toLocaleString("fr-FR")+'</b></span></div>'
+    +'<div class="field" style="margin-top:10px"><label>'+t("signup_name")+'</label><input id="profName" maxlength="40" value="'+esc(name)+'"></div>'
+    +'<div class="two"><div class="field"><label>'+t("phone")+'</label><input id="profPhone" type="tel" maxlength="15" value="'+esc(p.phone||"")+'" placeholder="677 00 00 00"></div>'
+    +'<div class="field"><label>'+t("signup_city")+'</label><select id="profCity">'
+      +CITIES.map(function(c){ return '<option value="'+esc(c[0])+'"'+(p.city===c[0]?" selected":"")+'>'+esc(c[0])+'</option>'; }).join("")
+      +'</select></div></div>'
+    +'<div class="formerr" id="profErr"></div>'
+    +'<button class="btn btn-gold btn-block" onclick="saveProfileUI()">💾 '+t("prof_save")+'</button>'
+    +(FB.user?'<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeModal();toggleChat()">💬 '+t("messages")+'</button>':"")
+    +(FB.user?'<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="signOut();closeModal()">'+t("signed_out")+'</button>':""));
+}
+function saveProfileUI(){
+  var n=$("profName").value.trim(), dg=String($("profPhone").value).replace(/\D/g,""), city=$("profCity").value;
+  if(n.length<2){ $("profErr").textContent=t("auth_err"); return; }
+  if(dg&&dg.length!==9){ $("profErr").textContent=t("auth_err_phone"); return; }
+  if(!(FB.ready&&FB.user)){
+    USER={name:n}; store.setItem("jm_market_user",JSON.stringify(USER));
+    closeModal(); renderAuth(); toast(t("prof_saved")); return;
+  }
+  saveUserProfile({name:n,phone:dg,city:city,avatar:(FB.profile&&FB.profile.avatar)||""},function(ok2){
+    renderAuth();
+    toast(ok2?t("prof_saved"):t("offline_toast"));
+    closeModal();
+  });
+}
+function avatarPicked(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    compressImage(rd.result,300,0.85,function(url){
+      if(!(FB.ready&&FB.user)){ toast(LANG==="fr"?"Photo de profil : connexion requise":"Profile photo: sign-in required"); return; }
+      uploadPhotoCloudinary(url,function(cl){
+        var av=cl||url;
+        saveUserProfile({avatar:av},function(ok2){
+          var box=document.querySelector(".profavatar");
+          if(box) box.innerHTML='<img src="'+esc(av)+'" style="width:100%;height:100%;object-fit:cover" alt="">';
+          renderAuth();
+          toast(ok2?t("prof_saved"):t("offline_toast"));
+        });
+      });
+    });
+  };
+  rd.readAsDataURL(f);
 }
 function doGoogle(){
   if(!FB.ready) return;
@@ -1957,10 +2316,12 @@ function openDetail(id){
     +'<div class="d-actions">'
     +'<button class="btn btn-gold" onclick="startChat('+id+')">'+t("chat_seller")+'</button>'
     +'<button class="btn btn-blue" onclick="buyNow('+id+')">'+t("buy_now")+'</button>'
+    +'<button class="btn btn-ghost" onclick="addToCart('+id+')" title="'+esc(t("cart_add"))+'">🛒 '+t("cart_add")+'</button>'
     +'<button class="btn btn-ghost" onclick="openOffer('+id+')">'+t("make_offer")+'</button>'
     +'<button class="btn btn-ghost" onclick="toggleSave('+id+',true)">'+(SAVED.has(id)?"❤️":"🤍")+' '+t("save_b")+'</button>'
     +'<button class="btn btn-ghost" onclick="shareWA('+id+')" title="WhatsApp">📤</button>'
     +(!isMine(l)&&l.real&&l.sellerUid?'<button class="btn btn-ghost" onclick="openLeaveReview('+id+')">'+t("leave_review")+'</button>':"")
+    +dActionsExtra(id,l)
     +'</div>'
     +(isMine(l)?'<button class="btn btn-ghost btn-block" style="margin-top:9px" onclick="markSold('+id+','+(!l.sold)+')">'+(l.sold?t("unmark_sold"):t("mark_sold"))+'</button>':"")
     +'<button class="linkbtn" onclick="reportListing('+id+')">'+t("report")+'</button>'
@@ -2014,6 +2375,31 @@ function reportListing(id){
     reportRemoteListing(l,function(ok2){ toast(ok2?t("report_received"):t("reported")); });
   } else { toast(t("reported")); }
 }
+/* ---------- recherches récentes ---------- */
+var RECENT_SEARCHES=[];
+function loadRecentSearches(){ try{ RECENT_SEARCHES=JSON.parse(store.getItem("vendora_rsearch")||"[]"); }catch(e){ RECENT_SEARCHES=[]; } }
+function pushRecentSearch(q){
+  q=String(q||"").trim(); if(q.length<3) return;
+  RECENT_SEARCHES=RECENT_SEARCHES.filter(function(s){ return s!==q; });
+  RECENT_SEARCHES.unshift(q);
+  RECENT_SEARCHES=RECENT_SEARCHES.slice(0,6);
+  store.setItem("vendora_rsearch",JSON.stringify(RECENT_SEARCHES));
+  renderRecentSearches();
+}
+function renderRecentSearches(){
+  var row=$("recentRow"); if(!row) return;
+  if(!RECENT_SEARCHES.length||(F.query&&F.query.trim())){ row.style.display="none"; return; }
+  row.style.display="";
+  row.innerHTML='<span class="dim" style="font-size:12px;align-self:center">🕘</span>'
+    +RECENT_SEARCHES.map(function(s){ return '<button class="qchip" onclick="useRecentSearch(this)" data-q="'+esc(s)+'">🔍 '+esc(s)+'</button>'; }).join("")
+    +'<button class="qchip" onclick="clearRecentSearches()" title="'+esc(t("recent_clear"))+'">✕</button>';
+}
+function useRecentSearch(btn){
+  var q=btn.getAttribute("data-q")||btn.textContent;
+  F.query=q; var si=$("searchInput"); if(si) si.value=q;
+  renderGrid(); scrollToGrid();
+}
+function clearRecentSearches(){ RECENT_SEARCHES=[]; store.setItem("vendora_rsearch","[]"); renderRecentSearches(); }
 function toggleSave(id,fromModal){
   if(SAVED.has(id)) SAVED.delete(id); else { SAVED.add(id); toast(t("saved_toast")); }
   store.setItem("jm_market_saved",JSON.stringify(Array.from(SAVED)));
@@ -2202,8 +2588,9 @@ function sendOffer(id){
   if(l.real&&l.sellerUid){
     if(!FB.user){ toast(t("login_needed")); openSignIn(); return; }
     var msg=(LANG==="fr"?"Bonjour, je vous propose ":"Hello, I offer ")+fmtXAF(v)+(LANG==="fr"?" pour « ":" for \"")+l.title+(LANG==="fr"?" ».":"\".");
+    placeLiveOffer(l,v,function(){});
     sendMarketMessage(pairThreadId(FB.user.uid,l.sellerUid,"market"+l.remoteKey),{text:msg,quote:{price:v,title:l.title,currency:"XAF"}},function(ok){
-      if(ok){ toast(t("quote_sent")); closeModal(); startChat(id); }
+      if(ok){ pushUserNotif(l.sellerUid,"nt_offer",{p:fmtXAF(v),t:l.title}); toast(t("off_sent")); closeModal(); startChat(id); }
       else toast("⚠️ "+(LANG==="fr"?"Envoi impossible (réseau/rules).":"Could not send (network/rules)."));
     });
     return;
@@ -2227,7 +2614,11 @@ function buyNow(id){
     if(!FB.ready){ toast(t("login_needed")); return; }
     var msg=tf("order_msg",{t:l.title,p:fmtXAF(l.price)});
     sendMarketMessage(pairThreadId(FB.user.uid,l.sellerUid,"market"+l.remoteKey),{text:msg},function(ok){
-      if(ok){ toast(t("order_via_chat")); startChat(id); }
+      placeLiveOrder(l,function(ok2){
+        pushUserNotif(l.sellerUid,"nt_order",{t:l.title});
+        toast(ok2?t("order_placed"):t("order_via_chat"));
+        if(ok2){ window.__ORDERS_TAB="buys"; openOrders(); } else startChat(id);
+      });
     });
     return;
   }
@@ -2333,22 +2724,258 @@ function advOrder(o,st){
   else { addNotif("📬","order_delivered",{id:o.oid}); toast(tf("order_delivered",{id:o.oid})); }
   if(ORDERS_OPEN) openOrders();
 }
-function openOrders(){
-  ORDERS_OPEN=true;
-  var steps=["placed","paid","shipped","delivered"], labels=[t("st_placed"),t("st_paid"),t("st_shipped"),t("st_delivered")];
-  var html='<h2 style="font-size:19px;margin-bottom:13px">'+t("my_orders")+'</h2>';
-  if(!ORDERS.length) html+='<p style="color:var(--muted);text-align:center;padding:28px 0">'+t("orders_empty")+'</p>';
-  for(var i=ORDERS.length-1;i>=0;i--){
-    var o=ORDERS[i], idx=steps.indexOf(o.status);
-    var tl=steps.map(function(s,j){ return '<div class="tlstep'+(j<=idx?" done":"")+'"><div class="tldot"></div><span>'+labels[j]+'</span></div>'; }).join("");
-    html+='<div class="order"><div class="oh">'+(o.photo?'<img src="'+o.photo+'" style="width:42px;height:42px;border-radius:10px;object-fit:cover" alt="">':'<span class="em">'+o.emoji+'</span>')
-      +'<div style="flex:1"><b>'+esc(o.title)+'</b><div class="oid">'+o.oid+' · '+new Date(o.ts).toLocaleDateString("fr-FR")+' · '+fmtXAF(o.total)+'</div></div></div>'
-      +'<div class="tl">'+tl+'</div>'
-      +(o.status==="delivered"&&!o.reviewed?'<button class="btn btn-gold btn-sm" onclick="openReview(\''+o.oid+'\')">'+t("write_review")+'</button>':"")
-      +(o.status==="delivered"&&o.reviewed?'<span class="dim" style="font-size:12px">⭐ '+esc(o.reviewTxt||t("review_thanks"))+'</span>':"")
-      +'</div>';
+/* ---------- panier ---------- */
+var CART=[];
+function loadCart(){ try{ CART=JSON.parse(store.getItem("vendora_cart")||"[]"); }catch(e){ CART=[]; } renderCartDot(); }
+function saveCart(){ store.setItem("vendora_cart",JSON.stringify(CART)); renderCartDot(); }
+function renderCartDot(){
+  var d=$("cartDot"); if(!d) return;
+  d.classList.toggle("hidden",!CART.length);
+  d.textContent=CART.length>9?"9+":String(CART.length);
+}
+function addToCart(id){
+  var l=BY_ID.get(id); if(!l) return;
+  if(isMine(l)){ toast(LANG==="fr"?"C'est votre propre annonce 🙂":"This is your own listing 🙂"); return; }
+  if(l.sold){ toast(t("sold_banner")); return; }
+  if(CART.indexOf(id)>-1){ toast(t("cart_in")); return; }
+  CART.push(id); saveCart(); toast(t("cart_added"));
+}
+function openCart(){
+  var items=CART.map(function(id){ return BY_ID.get(id); }).filter(Boolean);
+  var html='<h2 style="font-size:19px;margin-bottom:13px">🛒 '+t("cart_h")+' ('+items.length+')</h2>';
+  if(!items.length){
+    html+='<p style="color:var(--muted);text-align:center;padding:26px 0">'+t("cart_empty")+'</p>';
+  } else {
+    var total=0;
+    items.forEach(function(l){
+      total+=(l.price||0);
+      html+='<div class="order"><div class="oh">'
+        +(l.photo?'<img src="'+l.photo+'" style="width:42px;height:42px;border-radius:10px;object-fit:cover" alt="">':'<span class="em">'+catIcon(l.category)+'</span>')
+        +'<div style="flex:1"><b>'+esc(l.title)+'</b><div class="oid">'+esc(sellerOf(l).name)+' · 🇨🇲 '+esc(l.city)+' · <b style="color:var(--gold)">'+fmtXAF(l.price)+'</b></div></div>'
+        +'<button class="ibtn" style="width:30px;height:30px" onclick="removeFromCart('+l.id+')" aria-label="Retirer">✕</button></div></div>';
+    });
+    html+='<div class="calcout">'+t("cart_total")+' : <b>'+fmtXAF(total)+'</b></div>'
+      +'<button class="btn btn-gold btn-block" style="margin-top:11px" onclick="checkoutCart()">✅ '+t("cart_order_all")+'</button>';
   }
   openModal(html,true);
+}
+function removeFromCart(id){ CART=CART.filter(function(x){ return x!==id; }); saveCart(); openCart(); }
+function checkoutCart(){
+  var items=CART.map(function(id){ return BY_ID.get(id); }).filter(Boolean);
+  if(!items.length) return;
+  var real=items.filter(function(l){ return l.real&&l.sellerUid; });
+  var demo=items.filter(function(l){ return !(l.real&&l.sellerUid); });
+  if(real.length&&(!FB.user||!FB.ready)){ toast(t("login_needed")); openSignIn(); return; }
+  var done=0, need=real.length+demo.length;
+  function fin(){
+    if(done<need) return;
+    CART=[]; saveCart(); toast(t("cart_ordered"));
+    window.__ORDERS_TAB="buys"; openOrders();
+  }
+  real.forEach(function(l){
+    var msg=tf("order_msg",{t:l.title,p:fmtXAF(l.price)});
+    sendMarketMessage(pairThreadId(FB.user.uid,l.sellerUid,"market"+l.remoteKey),{text:msg},function(){
+      placeLiveOrder(l,function(){
+        pushUserNotif(l.sellerUid,"nt_order",{t:l.title});
+        done++; fin();
+      });
+    });
+  });
+  demo.forEach(function(l){
+    var o={oid:"JM-"+(31000+ORDERS.length+1),lid:l.id,title:l.title,emoji:catIcon(l.category),photo:l.photo,
+      price:l.price,ship:0,shipKey:"std",method:"momo",total:l.price,status:"placed",ts:Date.now(),reviewed:false,phoneDigits:""};
+    ORDERS.push(o); addNotif("🧾","n_order_placed",{id:o.oid});
+    try{ scheduleOrder(o); }catch(e){}
+    done++;
+  });
+  fin();
+}
+function dActionsExtra(id,l){
+  var out="";
+  if(l&&l.real&&l.remoteKey&&isMine(l)){
+    out+='<button class="btn btn-ghost" onclick="openEditListing('+id+')">✏️ '+t("edit_l")+'</button>';
+    out+='<button class="btn btn-ghost" onclick="deleteListingUI('+id+')" title="'+esc(t("del_l"))+'">🗑 '+t("del_l")+'</button>';
+  }
+  return out;
+}
+function openEditListing(id){
+  var l=BY_ID.get(id);
+  if(!l||!l.real||!l.remoteKey||!isMine(l)){ toast("⚠️ "+(LANG==="fr"?"Annonce non modifiable.":"Listing cannot be edited.")); return; }
+  var lm=(l.desc&&l.desc.indexOf("📍 ")===0)?(l.desc.split(". ")[0]+". "):"";
+  var body='<div class="field"><label>'+t("what_selling")+'</label>'
+    +'<input id="edTitle" maxlength="90" value="'+esc(l.title)+'"></div>'
+    +'<div class="two"><div class="field"><label>'+t("price_xaf")+'</label>'
+    +'<input id="edPrice" type="number" min="500" step="500" value="'+l.price+'"></div>'
+    +'<div class="field"><label>'+t("city")+'</label><input id="edCity" maxlength="48" value="'+esc(l.city||"")+'"></div></div>'
+    +'<label class="checkline"><input type="checkbox" id="edNeg"'+(l.negotiable?' checked':'')+'> 🤝 '+t("neg_l")+'</label>'
+    +'<div class="field" style="margin-top:8px"><label>'+(LANG==="fr"?"Description":"Description")+'</label><textarea id="edDesc" rows="4" maxlength="700">'+esc(l.desc.slice(lm.length))+'</textarea></div>'
+    +'<button class="btn btn-gold btn-block" style="margin-top:10px" onclick="saveEditListing('+id+')">💾 '+t("edit_save")+'</button>';
+  openModal('<h2 style="font-size:18px;margin-bottom:4px">✏️ '+t("edit_h")+'</h2>'+body);
+}
+function saveEditListing(id){
+  var l=BY_ID.get(id);
+  if(!l||!l.real||!l.remoteKey||!isMine(l)) return;
+  var ti=document.getElementById("edTitle").value.trim();
+  var pr=parseInt(document.getElementById("edPrice").value,10);
+  var ci=document.getElementById("edCity").value.trim();
+  var ng=document.getElementById("edNeg").checked;
+  var de=document.getElementById("edDesc").value.trim();
+  if(ti.length<4){ toast("⚠️ "+t("sell_err_title")); return; }
+  if(!(pr>0)){ toast("⚠️ "+t("sell_err_price")); return; }
+  if(pr>100000000){ toast("⚠️ "+t("sell_err_price_max")); return; }
+  var lm=(l.desc&&l.desc.indexOf("📍 ")===0)?(l.desc.split(". ")[0]+". "):"";
+  var patch={title:ti,price:pr,city:ci||l.city||"",negotiable:!!ng,desc:lm+de,updated:Date.now()};
+  if(pr<l.price) patch.oldPrice=l.price;
+  FB.db.ref("market_listings/"+l.remoteKey).update(patch).then(function(){
+    if(pr<l.price) l.oldPrice=l.price;
+    l.title=ti; l.price=pr; if(ci) l.city=ci; l.negotiable=!!ng; l.desc=lm+de;
+    CACHE.clear(); rebuildSorts(); buildIndex(); renderGrid(); renderShops();
+    closeModal(); toast("✅ "+t("edit_saved"));
+  }).catch(function(){ toast("⚠️ "+(LANG==="fr"?"Échec de la mise à jour (réseau/rules).":"Update failed (network/rules).")); });
+}
+function deleteListingUI(id){
+  var l=BY_ID.get(id);
+  if(!l||!l.real||!l.remoteKey||!isMine(l)){ toast("⚠️ "+(LANG==="fr"?"Annonce non supprimable.":"Listing cannot be deleted.")); return; }
+  if(!confirm(t("del_confirm"))) return;
+  FB.db.ref("market_listings/"+l.remoteKey).remove().then(function(){
+    BY_ID.delete(id);
+    LISTINGS=LISTINGS.filter(function(x){ return x!==l; });
+    if(REMOTE.indexOf(l)>=0) REMOTE.splice(REMOTE.indexOf(l),1);
+    CACHE.clear(); rebuildSorts(); buildIndex(); renderGrid(); renderShops();
+    closeModal(); toast("🗑 "+t("del_done"));
+  }).catch(function(){ toast("⚠️ "+(LANG==="fr"?"Échec de la suppression (réseau/rules).":"Delete failed (network/rules).")); });
+}
+function offerCard(o){
+  var me=(FB.user&&FB.user.uid);
+  var mineSell=(o.sellerUid===me), mineBuy=(o.buyerUid===me);
+  var pill={pending:"⏳ "+t("off_pending"),accepted:"✅ "+t("off_accepted_l"),declined:"❌ "+t("off_declined_l"),withdrawn:"🚫 "+t("off_withdrawn_l")}[o.status||"pending"];
+  var h='<div class="pcard" data-okey="'+esc(o._key)+'" style="margin-bottom:10px">'
+    +'<div style="font-weight:800">'+esc(o.listingTitle||"")+'</div>'
+    +'<div style="font-size:.85rem;opacity:.8;margin:2px 0">'+esc(mineSell?tf("off_by",{n:o.buyerName||"—"}):tf("off_on",{t:o.sellerName||"—"}))+'</div>'
+    +'<div style="font-size:.9rem">'+fmtXAF(o.askPrice||0)+' → <b style="color:var(--gold)">'+fmtXAF(o.offerPrice||0)+'</b> · '+pill+'</div>';
+  if(mineSell&&o.status==="pending"){
+    h+='<div style="display:flex;gap:8px;margin-top:8px">'
+      +'<button class="btn btn-gold" style="flex:1" onclick="acceptOfferUI(\''+o._key+'\')">'+t("off_accept")+'</button>'
+      +'<button class="btn btn-ghost" style="flex:1" onclick="declineOfferUI(\''+o._key+'\')">'+t("off_decline")+'</button></div>';
+  } else if(mineBuy&&o.status==="pending"){
+    h+='<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="withdrawOfferUI(\''+o._key+'\')">'+t("off_withdraw")+'</button>';
+  }
+  h+='</div>';
+  return h;
+}
+function offersTabHTML(){
+  if(!LIVE_OFFERS.length) return '<p style="color:var(--muted);text-align:center;padding:22px 0">🤝 '+t("off_empty")+'</p>';
+  var h="";
+  LIVE_OFFERS.forEach(function(o){ h+=offerCard(o); });
+  return h;
+}
+function acceptOfferUI(key){
+  acceptOfferToOrder(key,function(ok){
+    if(ok){ toast("🤝 "+t("off_accepted_toast")); window.__ORDERS_TAB="offers"; openOrders(); }
+    else toast("⚠️ "+(LANG==="fr"?"Impossible d'accepter.":"Could not accept."));
+  });
+}
+function declineOfferUI(key){
+  setOfferStatus(key,"declined",function(ok){ if(ok) toast("❌ "+t("off_declined_toast")); });
+}
+function withdrawOfferUI(key){
+  setOfferStatus(key,"withdrawn",function(ok){ if(ok) toast("🚫 "+t("off_withdrawn_toast")); });
+}
+function openOrders(){
+  ORDERS_OPEN=true;
+  var tab=(window.__ORDERS_TAB==="sales"||window.__ORDERS_TAB==="offers")?window.__ORDERS_TAB:"buys";
+  var me=(FB.user&&FB.user.uid);
+  var buys=LIVE_ORDERS.filter(function(o){ return o.buyerUid===me; });
+  var sales=LIVE_ORDERS.filter(function(o){ return o.sellerUid===me; });
+  var html='<h2 style="font-size:19px;margin-bottom:13px">'+t("my_orders")+'</h2>'
+    +'<div style="display:flex;gap:8px;margin-bottom:12px">'
+    +'<button class="pill'+(tab==="buys"?" active-deals":"")+'" onclick="window.__ORDERS_TAB=\'buys\';openOrders()">🛒 '+t("my_buys")+' ('+buys.length+')</button>'
+    +'<button class="pill'+(tab==="sales"?" active-deals":"")+'" onclick="window.__ORDERS_TAB=\'sales\';openOrders()">🏪 '+t("my_sales")+' ('+sales.length+')</button>'
+    +'<button class="pill'+(tab==="offers"?" active-deals":"")+'" onclick="window.__ORDERS_TAB=\'offers\';openOrders()">🤝 '+t("off_tab")+' ('+LIVE_OFFERS.length+')</button>'
+    +'</div>';
+  if(tab==="offers"){ html+=offersTabHTML(); }
+  var list=(tab==="sales")?sales:(tab==="offers"?[]:buys);
+  if(tab==="sales"&&!list.length) html+='<p style="color:var(--muted);text-align:center;padding:22px 0">'+t("sell_orders_empty")+'</p>';
+  list.forEach(function(o){ html+=liveOrderCard(o); });
+  /* commandes démo ( onglet achats ) */
+  if(tab==="buys"&&ORDERS.length){
+    html+='<div class="dim" style="font-size:12px;margin:14px 0 6px">— '+t("demo_tag")+' —</div>';
+    var steps=["placed","paid","shipped","delivered"], labels=[t("st_placed"),t("st_paid"),t("st_shipped"),t("st_delivered")];
+    for(var i=ORDERS.length-1;i>=0;i--){
+      var o=ORDERS[i], idx=steps.indexOf(o.status);
+      var tl=steps.map(function(s,j){ return '<div class="tlstep'+(j<=idx?" done":"")+'"><div class="tldot"></div><span>'+labels[j]+'</span></div>'; }).join("");
+      html+='<div class="order"><div class="oh">'+(o.photo?'<img src="'+o.photo+'" style="width:42px;height:42px;border-radius:10px;object-fit:cover" alt="">':'<span class="em">'+o.emoji+'</span>')
+        +'<div style="flex:1"><b>'+esc(o.title)+'</b><div class="oid">'+o.oid+' · '+new Date(o.ts).toLocaleDateString("fr-FR")+' · '+fmtXAF(o.total)+'</div></div></div>'
+        +'<div class="tl">'+tl+'</div>'
+        +(o.status==="delivered"&&!o.reviewed?'<button class="btn btn-gold btn-sm" onclick="openReview(\''+o.oid+'\')">'+t("write_review")+'</button>':"")
+        +(o.status==="delivered"&&o.reviewed?'<span class="dim" style="font-size:12px">⭐ '+esc(o.reviewTxt||t("review_thanks"))+'</span>':"")
+        +'</div>';
+    }
+  }
+  if(tab==="buys"&&!list.length&&!ORDERS.length) html+='<p style="color:var(--muted);text-align:center;padding:28px 0">'+t("orders_empty")+'</p>';
+  openModal(html,true);
+}
+function liveOrderCard(o){
+  var steps=["placed","confirmed","paid","shipped","delivered"];
+  var me=(FB.user&&FB.user.uid), isSeller=(o.sellerUid===me);
+  var idx=steps.indexOf(o.status), cancelled=(o.status==="cancelled");
+  var labels=steps.map(function(s){ return t("st_"+s); });
+  var tl=cancelled
+    ? '<div class="dim" style="font-size:12px;margin:6px 0">✕ '+t("st_cancelled")+' · '+new Date(o.updated||o.ts).toLocaleDateString("fr-FR")+'</div>'
+    : '<div class="tl">'+steps.map(function(s,j){ return '<div class="tlstep'+(j<=idx?" done":"")+'"><div class="tldot"></div><span>'+labels[j]+'</span></div>'; }).join("")+'</div>';
+  var acts=[];
+  if(!cancelled){
+    if(isSeller){
+      if(o.status==="placed") acts.push(["confirmed","act_confirm","btn-gold"]);
+      if(o.status==="confirmed") acts.push(["paid","act_paid","btn-gold"]);
+      if(o.status==="paid") acts.push(["shipped","act_ship","btn-gold"]);
+      if(o.status==="shipped") acts.push(["delivered","act_deliver","btn-gold"]);
+      if(o.status==="placed"||o.status==="confirmed") acts.push(["cancelled","act_cancel","btn-ghost"]);
+    } else {
+      if(o.status==="shipped") acts.push(["delivered","act_buyer_confirm","btn-gold"]);
+      if(o.status==="placed") acts.push(["cancelled","act_cancel","btn-ghost"]);
+    }
+  }
+  var counterpart=isSeller?(t("ord_buyer")+": "+(o.buyerName||"—")):(t("ord_seller")+": "+(o.sellerName||"—"));
+  return '<div class="order"><div class="oh"><span class="em">📦</span>'
+    +'<div style="flex:1"><b>'+esc(o.listingTitle||"?")+'</b>'
+    +'<div class="oid">'+esc(counterpart)+' · '+new Date(o.ts||Date.now()).toLocaleDateString("fr-FR")+' · <b style="color:var(--gold)">'+fmtXAF(o.total||o.price)+'</b></div></div>'
+    +'<span class="catpill'+(cancelled?"":(o.status==="delivered"?"":" "))+'" style="font-size:11px">'+(cancelled?"✕ ":"")+esc(t("st_"+(o.status||"placed")))+'</span></div>'
+    +tl
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'
+    +acts.map(function(a2){ return '<button class="btn btn-sm '+a2[2]+'" onclick="setOrderStatusUI(\''+esc(o._key)+'\',\''+a2[0]+'\')">'+t(a2[1])+'</button>'; }).join("")
+    +((o.status==="delivered"&&!o.reviewed&&!isSeller)?'<button class="btn btn-gold btn-sm" onclick="openReviewLive(\''+esc(o._key)+'\')">⭐ '+t("write_review")+'</button>':"")
+    +((o.status==="delivered"&&o.reviewed)?'<span class="dim" style="font-size:12px;align-self:center">⭐ '+t("review_thanks")+'</span>':"")
+    +'</div></div>';
+}
+function setOrderStatusUI(key,status){
+  setOrderStatus(key,status,function(ok2){
+    toast(ok2?(t("st_"+status)):t("offline_toast"));
+  });
+}
+function openReviewLive(key){
+  var o=null;
+  for(var i=0;i<LIVE_ORDERS.length;i++) if(LIVE_ORDERS[i]._key===key) o=LIVE_ORDERS[i];
+  if(!o) return;
+  openModal('<h2 style="font-size:18px;margin-bottom:4px">'+t("review_h")+'</h2>'
+    +'<p style="font-size:12.5px;color:var(--muted);margin-bottom:11px">'+esc(o.listingTitle||"")+' · '+esc(o.sellerName||"")+'</p>'
+    +'<div class="field"><label>'+t("your_rating")+'</label><div class="starbtns" id="starBtns"></div></div>'
+    +'<div class="field"><label>'+t("your_review")+'</label><textarea id="revTxt" maxlength="300"></textarea></div>'
+    +'<button class="btn btn-gold btn-block" onclick="submitReviewLive(\''+esc(key)+'\')">'+t("submit_review")+'</button>');
+  drawStars(5);
+}
+function submitReviewLive(key){
+  var o=null;
+  for(var i=0;i<LIVE_ORDERS.length;i++) if(LIVE_ORDERS[i]._key===key) o=LIVE_ORDERS[i];
+  if(!o||!FB.user) return;
+  var rating=window.__stars||5, txt=$("revTxt").value.trim();
+  var myName=(FB.profile&&FB.profile.name)||FB.user.displayName||"JobMarket";
+  publishReview(o.sellerUid,{rating:rating,text:txt,from:FB.user.uid,fromName:myName,listingKey:o.listingKey,timestamp:Date.now()},function(ok2){
+    try{ FB.db.ref("market_orders/"+key+"/reviewed").set(true).catch(function(){}); }catch(e){}
+    toast(t("review_thanks"));
+    closeModal();
+    openOrders();
+  });
 }
 function openReview(oid){
   var o=null; for(var i=0;i<ORDERS.length;i++) if(ORDERS[i].oid===oid) o=ORDERS[i];
@@ -2365,6 +2992,28 @@ function submitReview(oid){
   var o=null; for(var i=0;i<ORDERS.length;i++) if(ORDERS[i].oid===oid) o=ORDERS[i];
   if(o){ o.reviewed=true; o.reviewTxt=$("revTxt").value.trim(); }
   closeModal(); toast(t("review_thanks")); openOrders();
+}
+
+/* ---------- compression d'image (canvas, repli silencieux) ---------- */
+function compressImage(dataUrl,maxDim,quality,cb){
+  try{
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var w=img.width,h=img.height,sc=Math.min(1,maxDim/Math.max(w,h));
+        if(sc>=1&&String(dataUrl).length<300000){ cb(dataUrl); return; }
+        var cv=document.createElement("canvas");
+        cv.width=Math.max(1,Math.round(w*sc)); cv.height=Math.max(1,Math.round(h*sc));
+        var ctx=cv.getContext&&cv.getContext("2d");
+        if(!ctx){ cb(dataUrl); return; }
+        ctx.drawImage(img,0,0,cv.width,cv.height);
+        cb(cv.toDataURL("image/jpeg",quality));
+      }catch(e){ cb(dataUrl); }
+    };
+    img.onerror=function(){ cb(dataUrl); };
+    img.src=dataUrl;
+    setTimeout(function(){ try{ if(img.width===0) cb(dataUrl); }catch(e){} },2500);
+  }catch(e){ cb(dataUrl); }
 }
 
 /* ---------- publier ---------- */
@@ -2386,7 +3035,11 @@ function openSell(){
     +'<div class="field"><label>'+t("quartier")+'</label><input id="sellArea" type="text" maxlength="60" placeholder="'+t("sell_quartier_hint")+'"></div></div>'
     +'<div class="field"><label>'+t("phone")+'</label><input id="sellPhone" type="tel" maxlength="15" placeholder="677 00 00 00" value="'+esc((FB.profile&&FB.profile.phone)||"")+'"></div>'
     +'<div class="field"><label>'+(LANG==="fr"?"Description":"Description")+'</label><textarea id="sellDesc" maxlength="700" placeholder="'+t("desc_ph")+'"></textarea></div>'
-    +'<div class="field"><label>'+t("add_photos")+'</label><label class="upl" for="sellFiles">📷 '+t("click_add")+'<input id="sellFiles" type="file" accept="image/*" multiple style="display:none"></label><div class="phumbs" id="phumbs"></div><p class="mutednote">'+t("photo_note")+'</p></div>'
+    +'<div class="field"><label>'+t("add_photos")+' <span class="dim" id="phCount"></span></label>'
+    +'<div style="display:flex;gap:8px">'
+    +'<label class="upl" for="sellFiles" style="flex:1">🖼 '+t("ph_gallery")+'<input id="sellFiles" type="file" accept="image/*" multiple style="display:none"></label>'
+    +'<label class="upl" for="sellCam" style="flex:1">📷 '+t("ph_photo")+'<input id="sellCam" type="file" accept="image/*" capture="environment" style="display:none"></label>'
+    +'</div><div class="phumbs" id="phumbs"></div><p class="mutednote">'+t("photo_note")+' · '+t("ph_max")+'</p></div>'
     +'<div class="field"><label>'+t("pick_cover")+'</label><div class="emoji-grid">'
     +PICK_EMOJIS.map(function(e,i){ return '<button type="button" class="emoji-opt'+(i===0?" sel":"")+'" data-e="'+e+'">'+e+'</button>'; }).join("")
     +'</div></div>'
@@ -2399,6 +3052,7 @@ function renderPhumbs(){
   $("phumbs").innerHTML=SELL_PHOTOS.map(function(src,i){
     return '<div class="ph"><img src="'+src+'" alt=""><button onclick="SELL_PHOTOS.splice('+i+',1);renderPhumbs()">✕</button></div>';
   }).join("");
+  var pc=$("phCount"); if(pc) pc.textContent=tf("ph_count",{n:SELL_PHOTOS.length});
 }
 function pickEmoji(btn){
   var all=document.querySelectorAll(".emoji-opt.sel");
@@ -2731,12 +3385,22 @@ function openInApp(){
 /* ---------- notifications ---------- */
 function addNotif(icon,key,vars){ NOTIFS.unshift({icon:icon,key:key,vars:vars||{},time:Date.now()}); UNREAD++; renderNotifs(); }
 function renderNotifs(){
-  var dot=$("bellDot");
-  dot.classList.toggle("hidden",UNREAD===0);
-  dot.textContent=UNREAD>9?"9+":UNREAD;
-  $("notifList").innerHTML=NOTIFS.length?NOTIFS.map(function(n){
+  var dot=$("bellDot"); if(!dot) return;
+  var unreadPersist=(typeof PERSIST_NOTIFS!=="undefined")?PERSIST_NOTIFS.filter(function(n){ return !n.read; }).length:0;
+  var total=UNREAD+unreadPersist;
+  dot.classList.toggle("hidden",total===0);
+  dot.textContent=total>9?"9+":String(total);
+  var picons={nt_order:"🛒",nt_review:"⭐",nt_views:"👁"};
+  var html="";
+  if(typeof PERSIST_NOTIFS!=="undefined"){
+    html+=PERSIST_NOTIFS.map(function(n){
+      return '<div class="notif'+(n.read?"":" unread")+'"><span class="ni">'+(picons[n.type]||"🔔")+'</span><div>'+esc(tf(n.type,n.vars||{}))+'<span class="nt">'+agoTxt(n.ts||Date.now())+'</span></div></div>';
+    }).join("");
+  }
+  html+=NOTIFS.length?NOTIFS.map(function(n){
     return '<div class="notif"><span class="ni">'+n.icon+'</span><div>'+esc(tf(n.key,n.vars))+'<span class="nt">'+agoTxt(n.time)+'</span></div></div>';
-  }).join(""):'<div class="notif">'+t("notif_empty")+'</div>';
+  }).join(""):"";
+  $("notifList").innerHTML=html||('<div class="notif">'+t("notif_empty")+'</div>');
 }
 function agoTxt(ts){
   var m=Math.max(0,Math.round((Date.now()-ts)/60000));
@@ -2747,7 +3411,7 @@ function agoTxt(ts){
 function toggleNotifs(e){
   e.stopPropagation();
   var p=$("notifPanel"); p.classList.toggle("open");
-  if(p.classList.contains("open")){ UNREAD=0; renderNotifs(); }
+  if(p.classList.contains("open")){ UNREAD=0; markNotifsRead(); renderNotifs(); toast(t("notifs_read")); }
 }
 
 /* ---------- toggles ---------- */
@@ -2756,6 +3420,7 @@ function toggleLang(){
   store.setItem("appLang",LANG);
   CACHE.clear();
   buildData(); buildIndex(); applyI18n(); buildRegionSel(); buildQuartierList();
+  loadCart(); loadRecentSearches(); renderRecentSearches();
   renderChips(); renderDeals(); renderShops(); renderPills(); renderGrid(); renderRecent(); renderAuth(); renderQuickChips();
   toast(LANG==="fr"?"🇨🇲 Bienvenue sur Vendora !":"🇬🇧 Welcome to Vendora!");
 }
@@ -2867,9 +3532,9 @@ function tryOpenDeepLink(){
   var deb=null;
   $("searchInput").addEventListener("input",function(){
     var v=this.value; clearTimeout(deb);
-    deb=setTimeout(function(){ F.query=v; renderGrid(); },130);
+    deb=setTimeout(function(){ F.query=v; renderGrid(); if(v.trim().length>=3) pushRecentSearch(v); },130);
   });
-  $("searchForm").addEventListener("submit",function(e){ e.preventDefault(); F.query=$("searchInput").value; renderGrid(); scrollToGrid(); });
+  $("searchForm").addEventListener("submit",function(e){ e.preventDefault(); F.query=$("searchInput").value; if(F.query.trim().length>=3) pushRecentSearch(F.query); renderGrid(); scrollToGrid(); });
   $("sortSel").addEventListener("change",function(){ F.sort=this.value; renderGrid(); });
   $("minPrice").addEventListener("change",function(){ var v=parseFloat(this.value); F.min=isNaN(v)?null:v; renderGrid(); });
   $("maxPrice").addEventListener("change",function(){ var v=parseFloat(this.value); F.max=isNaN(v)?null:v; renderGrid(); });
@@ -2891,27 +3556,32 @@ function tryOpenDeepLink(){
     if(e.key==="Escape"){ closeModal(); $("notifPanel").classList.remove("open"); closeMenu(); }
   });
   document.addEventListener("change",function(e){
-    if(e.target&&e.target.id==="sellFiles"){
+    if(e.target&&(e.target.id==="sellFiles"||e.target.id==="sellCam")){
       var files=e.target.files;
       for(var i=0;i<files.length&&SELL_PHOTOS.length<4;i++){
         (function(f){
           var rd=new FileReader();
-          rd.onload=function(){ if(SELL_PHOTOS.length<4){ SELL_PHOTOS.push(rd.result); renderPhumbs(); } };
+          rd.onload=function(){
+            if(SELL_PHOTOS.length>=4) return;
+            compressImage(rd.result,1200,0.82,function(url){
+              if(SELL_PHOTOS.length<4){ SELL_PHOTOS.push(url); renderPhumbs(); }
+            });
+          };
           rd.readAsDataURL(f);
         })(files[i]);
       }
+      try{ e.target.value=""; }catch(e2){}
     }
   });
-  /* (20260907am) PAS DE SERVICE WORKER PROPRE A VENDORA.
-     Le dossier livre prevoyait d'enregistrer un worker « vendora-sw.js ».
-     Or un navigateur n'accepte qu'UN SEUL service worker par portee, et
-     vendora.html est servi depuis la meme adresse que l'application
-     (.../Jobmarket-cameroon/). Enregistrer vendora-sw.js aurait donc
-     REMPLACE celui de JobMarket : plus de notifications d'appel, plus de
-     demarrage hors ligne, et un aller-retour complet a chaque passage
-     d'une page a l'autre.
-     Vendora n'y perd rien : le service worker de JobMarket couvre deja
-     cette page (reseau d'abord, cache en secours). */
+  /* PAS DE SERVICE WORKER PROPRE À VENDORA.
+     Un navigateur n'accepte qu'UN SEUL service worker par portée, et
+     vendora.html est servi depuis la même adresse que l'application
+     (.../Jobmarket-cameroon/). Enregistrer vendora-sw.js remplacerait
+     donc celui de JobMarket : plus de notifications d'appel, plus de
+     démarrage hors ligne. Vendora n'y perd rien : le service worker de
+     JobMarket couvre déjà cette page (réseau d'abord, cache en secours).
+     vendora-sw.js reste fourni uniquement pour un hébergement autonome
+     (scope dédié, ex. vendora.example.com). */
 
   /* pont Firebase : live si dispo, sinon démo */
   waitFirebase(function(ok){

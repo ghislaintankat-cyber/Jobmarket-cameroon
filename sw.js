@@ -341,7 +341,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v263'; // 20260907am : Vendora v1.7 branchee sur la vraie base
+const CACHE_VERSION = 'v264'; // 20260907am : Vendora v1.7 branchee sur la vraie base
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -408,6 +408,13 @@ const SHELL_ASSETS = [
   './chat-widget.js',
   './trouver-artisan.html',
   './privee.html',
+  // (20261001a) VENDORA V2.1 PRÉ-CACHÉE : la marketplace partage la même
+  // portée que l'app (carte « Vendora BOUTIQUE » du compte). Avant, la page
+  // n'était pas dans le shell : premier lancement hors-ligne → écran d'erreur
+  // ou repli index.html. Maintenant elle démarre hors-ligne, et la mise à
+  // jour v2.1 (panier, commandes, offres) est disponible partout, tout de
+  // suite, après ce bump de version.
+  './vendora.html',
   './favicon-32.png',
   './apple-touch-icon.png',
   './icon-maskable-192.png',
