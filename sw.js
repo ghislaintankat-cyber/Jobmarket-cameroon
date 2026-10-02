@@ -222,6 +222,24 @@ function sonnerCommeUnAppel(title, options, tag) {
 // lui poste l'info (évite de recharger toute la page) ; sinon on ouvre un
 // nouvel onglet directement sur le bon hash, qu'index.html/app.js sait
 // interpréter au chargement.
+// (20261002b) QUELLE FENÊTRE RÉVEILLER ?
+// Depuis que la boutique (shalom-square.html) est servie à la même adresse
+// que l'application, « une fenêtre dont l'adresse commence par la portée »
+// ne suffit plus : si l'utilisateur avait laissé la boutique ouverte, le
+// clic sur une notification de MESSAGE lui postait l'ordre (qu'elle ne sait
+// pas traiter) et ramenait la BOUTIQUE au premier plan. Rien ne s'ouvrait,
+// et il fallait aller chercher le message à la main.
+// On ne retient donc que les fenêtres de l'application elle-même.
+function estFenetreDeLApp(url) {
+  if (!url || url.indexOf(self.registration.scope) !== 0) return false;
+  const reste = url.slice(self.registration.scope.length).split(/[?#]/)[0];
+  return reste === '' || reste === 'index.html';
+}
+function fenetreDeLApp(liste) {
+  for (const client of liste) if (estFenetreDeLApp(client.url)) return client;
+  return null;
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
@@ -243,15 +261,16 @@ self.addEventListener('notificationclick', (event) => {
     if (event.action === 'reply' && !texte) return;   // champ laissé vide
     event.waitUntil(
       self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((liste) => {
-        for (const client of liste) {
-          if (client.url.startsWith(self.registration.scope) && 'postMessage' in client) {
-            client.postMessage({
-              type: event.action === 'reply' ? 'notif-reply'
-                  : event.action === 'mute' ? 'notif-mute' : 'notif-markread',
-              threadId: tid, text: texte
-            });
-            return;   // surtout ne PAS ouvrir l'app : on répond sans quitter
-          }
+        // (20261002b) uniquement une fenêtre de l'APPLICATION : la boutique
+        // ne sait pas répondre à un message de JobMarket.
+        const client = fenetreDeLApp(liste);
+        if (client && 'postMessage' in client) {
+          client.postMessage({
+            type: event.action === 'reply' ? 'notif-reply'
+                : event.action === 'mute' ? 'notif-mute' : 'notif-markread',
+            threadId: tid, text: texte
+          });
+          return;   // surtout ne PAS ouvrir l'app : on répond sans quitter
         }
         // aucune fenêtre ouverte : on transmet par l'adresse
         const suffixe = event.action === 'reply'
@@ -316,21 +335,23 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.startsWith(self.registration.scope) && 'focus' in client) {
-          // App déjà ouverte : on lui poste tout le contexte nécessaire pour
-          // ouvrir le bon écran sans recharger.
-          if ('postMessage' in client) {
-            client.postMessage({
-              type: 'open-notif',      // nouveau type générique
-              notifType: type,         // 'message' | 'quote' | 'job' | ...
-              jobId: jobId || null,
-              threadId: threadId || null,
-              variant: variant || null
-            });
-          }
-          return client.focus();
+      // (20261002b) On cherche une fenêtre de l'APPLICATION. Si seule la
+      // boutique est ouverte, on n'essaie pas de lui parler : on ouvre
+      // l'application sur le bon écran.
+      const client = fenetreDeLApp(clientList);
+      if (client && 'focus' in client) {
+        // App déjà ouverte : on lui poste tout le contexte nécessaire pour
+        // ouvrir le bon écran sans recharger.
+        if ('postMessage' in client) {
+          client.postMessage({
+            type: 'open-notif',      // nouveau type générique
+            notifType: type,         // 'message' | 'quote' | 'job' | ...
+            jobId: jobId || null,
+            threadId: threadId || null,
+            variant: variant || null
+          });
         }
+        return client.focus();
       }
       if (self.clients.openWindow) {
         return self.clients.openWindow(targetUrl);
@@ -341,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v265'; // 20261001b : Shalom Square (ex-Vendora) v2.1 + précache
+const CACHE_VERSION = 'v267'; // 20261002b : notification ouvre le bon message + bandeau + retour boutique
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -369,7 +390,6 @@ const SHELL_ASSETS = [
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png',
   // (20260907r) les bibliothèques servies depuis le dépôt : pré-cachées, donc
   // l'application démarre HORS LIGNE sans dépendre d'aucun serveur tiers.
   './vendor/leaflet.js',
@@ -406,20 +426,36 @@ const SHELL_ASSETS = [
   // hors-ligne, app.js échouait et l'app ne démarrait pas)
   './app.js',
   './chat-widget.js',
-  './trouver-artisan.html',
-  './privee.html',
-  // (20261001b) SHALOM SQUARE v2.1 PRÉ-CACHÉE : la marketplace partage la même
-  // portée que l'app (carte « Shalom Square BOUTIQUE » du compte). Avant, la page
-  // n'était pas dans le shell : premier lancement hors-ligne → écran d'erreur
-  // ou repli index.html. Maintenant elle démarre hors-ligne, et la mise à
-  // jour v2.1 (panier, commandes, offres) est disponible partout, tout de
-  // suite, après ce bump de version. (20261001b) Vendora devient Shalom
-  // Square : vendora.html reste comme redirection vers shalom-square.html.
-  './shalom-square.html',
+  // (20261002) SHALOM SQUARE N'EST PLUS PRÉ-CACHÉE — MESURE À L'APPUI.
+  // Elle avait été ajoutée ici pour qu'elle démarre hors ligne même sans
+  // avoir jamais été ouverte. Intention juste, prix très lourd :
+  //   shalom-square.html = 382 Ko compressés.
+  //   Premier lancement de JobMarket : 486 Ko → 868 Ko.
+  // C'est-à-dire presque le double, pour une page que la plupart des
+  // visiteurs n'ouvriront jamais — et cela annulait l'essentiel des
+  // vagues ai, aj et al, faites pour répondre à « JobMarket met plus de
+  // 5 minutes à charger ».
+  // Ce qu'on garde : dès la PREMIÈRE ouverture de la boutique, la page est
+  // mise en cache par la règle de navigation plus bas (toute réponse 200
+  // y est rangée), et le repli de la vague am la ressert telle quelle hors
+  // ligne. Donc : hors ligne, la boutique fonctionne dès qu'on l'a
+  // ouverte une fois. Vérifié par un test de comportement, réseau coupé.
+  // Pour revenir en arrière : remettre './shalom-square.html' dans cette
+  // liste — une seule ligne.
   './favicon-32.png',
-  './apple-touch-icon.png',
-  './icon-maskable-192.png',
-  './icon-maskable-512.png',
+  // (20261002) SORTIS DU PRÉCHARGEMENT — 38 Ko compressés au premier
+  // lancement pour des fichiers dont AUCUN ne sert au premier écran :
+  //   trouver-artisan.html  3,6 Ko  page secondaire
+  //   privee.html           3,7 Ko  page secondaire
+  //   apple-touch-icon.png 10,2 Ko  icône iOS, lue seulement à l'ajout
+  //                                 à l'écran d'accueil
+  //   icon-512.png          7,5 Ko  icône d'installation
+  //   icon-maskable-192     7,0 Ko  idem
+  //   icon-maskable-512     5,7 Ko  idem
+  // Même raisonnement que la vague ai : chacun est mis en cache à sa
+  // première utilisation réelle (règle de navigation pour les pages,
+  // règle générale pour les images). icon-192.png, elle, RESTE préchargée :
+  // c'est l'icône des notifications, qui doivent marcher hors ligne.
   // (20260907ai) LES 5 SDK FIREBASE DE gstatic NE SONT PLUS PRÉCHARGÉS.
   // C'était un reste de l'époque où la page les chargeait depuis gstatic.
   // Depuis la vague r, la page charge ./vendor/firebase-*-compat.js — déjà

@@ -1556,7 +1556,9 @@ function placeLiveOffer(l,offerPrice,cb){
       offerPrice:Number(offerPrice)||0,currency:"XAF",
       buyerUid:me.uid,buyerName:myName,sellerUid:l.sellerUid,sellerName:l.userName||"JobMarket",
       status:"pending",ts:Date.now(),updated:Date.now()};
-    FB.db.ref("market_offers").push().set(o)
+    var refOff=FB.db.ref("market_offers").push();
+    refOff.set(o)
+      .then(function(){ return vdIndexerPour("offer",refOff.key,[o.buyerUid,o.sellerUid]); })
       .then(function(){ if(cb)cb(true); })
       .catch(function(){ if(cb)cb(false); });
   }catch(e){ if(cb)cb(false); }
@@ -1565,15 +1567,7 @@ function subscribeMyOffers(){
   if(!(FB.ready&&FB.user&&FB.db)) return;
   if(OFFERS_SUB){ try{ OFFERS_SUB(); }catch(e){} OFFERS_SUB=null; }
   try{
-    var ref=FB.db.ref("market_offers").limitToLast(200);
-    OFFERS_SUB=function(){ try{ ref.off("value"); }catch(e){} };
-    ref.on("value",function(snap){
-      var v=(snap&&snap.val())||{}, arr=[];
-      Object.keys(v).forEach(function(k){
-        var o=v[k];
-        if(o&&(o.buyerUid===FB.user.uid||o.sellerUid===FB.user.uid)){ o._key=k; arr.push(o); }
-      });
-      arr.sort(function(a2,b2){ return (b2.ts||0)-(a2.ts||0); });
+    OFFERS_SUB=vdSuivreLesMiens("offer",function(arr){
       LIVE_OFFERS=arr;
       try{ if(typeof ORDERS_OPEN!=="undefined"&&ORDERS_OPEN&&typeof openOrders==="function") openOrders(); }catch(e){}
     });
@@ -1601,7 +1595,11 @@ function acceptOfferToOrder(key,cb){
     var order={listingKey:o.listingKey,listingTitle:o.listingTitle,price:o.offerPrice,qty:1,total:o.offerPrice,currency:"XAF",offerKey:key,
       buyerUid:o.buyerUid,buyerName:o.buyerName,sellerUid:o.sellerUid,sellerName:o.sellerName,
       ship:"chat",pay:"chat",status:"placed",reviewed:false,ts:Date.now(),updated:Date.now()};
-    FB.db.ref("market_orders").push().set(order).then(function(){
+    var refCmd=FB.db.ref("market_orders").push();
+    refCmd.set(order).then(function(){
+      /* (20261002c) index des DEUX personnes : chacune retrouvera sa commande */
+      return vdIndexerPour("order",refCmd.key,[order.buyerUid,order.sellerUid]);
+    }).then(function(){
       return FB.db.ref("market_offers/"+key).update({status:"accepted",updated:Date.now()});
     }).then(function(){
       pushUserNotif(o.buyerUid,"nt_offer_status",{t:o.listingTitle,s:t("off_accepted_l")});
@@ -1621,24 +1619,110 @@ function placeLiveOrder(l,cb){
       total:Number(l.price)||0,currency:"XAF",
       buyerUid:me.uid,buyerName:myName,sellerUid:l.sellerUid,sellerName:l.userName||"JobMarket",
       ship:"chat",pay:"chat",status:"placed",reviewed:false,ts:Date.now(),updated:Date.now()};
-    FB.db.ref("market_orders").push().set(o)
+    var refCmd2=FB.db.ref("market_orders").push();
+    refCmd2.set(o)
+      .then(function(){ return vdIndexerPour("order",refCmd2.key,[o.buyerUid,o.sellerUid]); })
       .then(function(){ if(cb)cb(true); })
       .catch(function(){ if(cb)cb(false); });
   }catch(e){ if(cb)cb(false); }
 }
+/* ===================================================================
+   (20261002c) CHACUN SA LISTE — index personnel des commandes et offres
+
+   Avant : la page lisait  market_orders  ET  market_offers  EN ENTIER
+   (limitToLast(200)) puis filtrait sur le telephone. Trois problemes :
+
+   1. CONFIDENTIALITE — n'importe quel compte connecte recevait les
+      commandes et les negociations de TOUT LE MONDE (qui achete quoi,
+      a qui, pour combien).
+   2. DONNEES CONSOMMEES — 400 enregistrements au chargement, et le
+      bloc ENTIER renvoye a chaque modification de n'importe qui.
+   3. LE PLUS GRAVE — passe 200 commandes au total sur la place de
+      marche, les plus anciennes sortent de la fenetre : un client ne
+      voit PLUS SES PROPRES COMMANDES. Casse garanti vers 200-500
+      utilisateurs actifs.
+
+   Maintenant : chaque commande/offre est inscrite dans l'index des DEUX
+   personnes concernees (userOrders/<uid>/<cle> = true), et la page ne
+   lit QUE son propre index, puis les enregistrements correspondants.
+   On lit donc 20 lignes au lieu de 400, et seulement les siennes.
+
+   RATTRAPAGE : les commandes creees AVANT cette version n'ont pas
+   d'index. Au premier chargement, si l'index est vide, on relit
+   l'ancienne liste une seule fois et on reconstruit l'index. Rien n'est
+   perdu, et l'ancienne lecture globale disparaitra d'elle-meme. */
+function vdIndexerPour(type, cle, uids){
+  try{
+    if(!(FB.ready&&FB.db&&cle)) return Promise.resolve();
+    var noeud = (type==="order") ? "userOrders" : "userOffers";
+    var p=[];
+    (uids||[]).forEach(function(u){
+      if(u) p.push(FB.db.ref(noeud+"/"+u+"/"+cle).set(true).catch(function(){}));
+    });
+    return Promise.all(p);
+  }catch(e){ return Promise.resolve(); }
+}
+
+/* Abonnement a MON index, puis a chaque enregistrement qu'il designe. */
+function vdSuivreLesMiens(type, surMaj){
+  if(!(FB.ready&&FB.user&&FB.db)) return function(){};
+  var noeudIndex = (type==="order") ? "userOrders" : "userOffers";
+  var noeudData  = (type==="order") ? "market_orders" : "market_offers";
+  var refIndex = FB.db.ref(noeudIndex+"/"+FB.user.uid);
+  var ecoutes = {};          /* cle -> fonction de desabonnement */
+  var valeurs = {};          /* cle -> enregistrement */
+
+  function pousser(){
+    var arr=[];
+    Object.keys(valeurs).forEach(function(k){
+      var o=valeurs[k]; if(o){ o._key=k; arr.push(o); }
+    });
+    arr.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });
+    surMaj(arr);
+  }
+  function suivre(cle){
+    if(ecoutes[cle]) return;
+    var r=FB.db.ref(noeudData+"/"+cle);
+    var h=function(sn){ valeurs[cle]=sn&&sn.val(); pousser(); };
+    r.on("value",h,function(){});
+    ecoutes[cle]=function(){ try{ r.off("value",h); }catch(e){} };
+  }
+  var hAdd=refIndex.on("child_added",function(sn){ suivre(sn.key); },function(){});
+  var hDel=refIndex.on("child_removed",function(sn){
+    var k=sn.key;
+    if(ecoutes[k]){ ecoutes[k](); delete ecoutes[k]; }
+    delete valeurs[k]; pousser();
+  },function(){});
+
+  /* rattrapage unique pour les enregistrements d'avant l'index */
+  try{
+    refIndex.once("value").then(function(sn){
+      if(sn&&sn.exists()) return;
+      return FB.db.ref(noeudData).limitToLast(200).once("value").then(function(s2){
+        var v=(s2&&s2.val())||{}, p=[];
+        Object.keys(v).forEach(function(k){
+          var o=v[k];
+          if(o&&(o.buyerUid===FB.user.uid||o.sellerUid===FB.user.uid)){
+            p.push(FB.db.ref(noeudIndex+"/"+FB.user.uid+"/"+k).set(true).catch(function(){}));
+          }
+        });
+        return Promise.all(p);
+      });
+    }).catch(function(){});
+  }catch(e){}
+
+  return function(){
+    try{ refIndex.off("child_added",hAdd); refIndex.off("child_removed",hDel); }catch(e){}
+    Object.keys(ecoutes).forEach(function(k){ ecoutes[k](); });
+    ecoutes={}; valeurs={};
+  };
+}
+
 function subscribeMyOrders(){
   if(!(FB.ready&&FB.user&&FB.db)) return;
   if(ORDERS_SUB){ try{ ORDERS_SUB(); }catch(e){} ORDERS_SUB=null; }
   try{
-    var ref=FB.db.ref("market_orders").limitToLast(200);
-    ORDERS_SUB=function(){ try{ ref.off("value"); }catch(e){} };
-    ref.on("value",function(snap){
-      var v=(snap&&snap.val())||{}, arr=[];
-      Object.keys(v).forEach(function(k){
-        var o=v[k];
-        if(o&&(o.buyerUid===FB.user.uid||o.sellerUid===FB.user.uid)){ o._key=k; arr.push(o); }
-      });
-      arr.sort(function(a2,b2){ return (b2.ts||0)-(a2.ts||0); });
+    ORDERS_SUB=vdSuivreLesMiens("order",function(arr){
       LIVE_ORDERS=arr;
       try{ if(typeof ORDERS_OPEN!=="undefined"&&ORDERS_OPEN&&typeof openOrders==="function") openOrders(); }catch(e){}
     });
@@ -2266,22 +2350,55 @@ function doGoogle(){
    Meme logique que jmcRetourAndroid dans l'app : a l'ouverture d'une modal on
    pose une entree d'historique (sentinelle). Retour -> la modal se ferme ; il
    faut un 2e appui pour vraiment revenir a la page precedente (l'app). */
-var VD_BACK=false;
+/* (20261002b) BOUTON RETOUR : LE CHAT AUSSI.
+   Avant, seules les fenetres (modalRoot) posaient une sentinelle. Le
+   panneau de discussion, lui, n'etait pas couvert : ouvrir le chat puis
+   appuyer sur Retour FAISAIT QUITTER LA PAGE au lieu de refermer le chat.
+   C'est le meme defaut que celui corrige dans l'app a la vague af.
+   On generalise donc la notion de COUCHE : chaque couche ouverte pose une
+   entree d'historique, Retour ferme la couche du dessus, et on ne sort de
+   la page que lorsqu'il n'y a plus rien d'ouvert.
+   VD_IGNORE evite le double effet : quand c'est NOUS qui appelons
+   history.back() (clic sur la croix), le popstate qui suit ne doit pas
+   fermer une deuxieme couche. */
+var VD_BACK=0, VD_IGNORE=0;
 function vdBackPose(){
-  try{ if(!VD_BACK){ history.pushState({vdModal:1},"",location.href); VD_BACK=true; } }catch(e){}
+  try{ history.pushState({vdCouche:1},"",location.href); VD_BACK++; }catch(e){}
 }
 function vdBackRetire(){
-  try{ if(VD_BACK){ VD_BACK=false; history.back(); } }catch(e){}
+  try{ if(VD_BACK>0){ VD_BACK--; VD_IGNORE++; history.back(); } }catch(e){}
+}
+/* fermetures BRUTES : elles ne touchent pas a l'historique */
+function vdFermerModalBrut(){ try{ $("modalRoot").innerHTML=""; ORDERS_OPEN=false; }catch(e){} }
+function vdFermerChatBrut(){ try{ var d=$("drawer"); if(d) d.classList.remove("open"); }catch(e){} }
+/* ouvre le panneau de discussion en ne posant qu'UNE seule sentinelle,
+   meme si on l'ouvre plusieurs fois de suite (sinon il faudrait appuyer
+   deux fois sur Retour pour le refermer). */
+function vdOuvrirChat(){
+  try{
+    var d=$("drawer"); if(!d) return;
+    if(d.classList.contains("open")) return;
+    d.classList.add("open"); vdBackPose();
+  }catch(e){}
+}
+/* ferme la couche la plus haute ; renvoie true si quelque chose a ete ferme */
+function vdFermerCoucheHaute(){
+  try{
+    var mr=document.getElementById("modalRoot");
+    if(mr&&mr.innerHTML){ vdFermerModalBrut(); return true; }
+    var d=document.getElementById("drawer");
+    if(d&&d.classList.contains("open")){ vdFermerChatBrut(); return true; }
+  }catch(e){}
+  return false;
 }
 window.addEventListener("popstate",function(){
   try{
-    if(VD_BACK){ VD_BACK=false; }
-    var mr=document.getElementById("modalRoot");
-    if(mr&&mr.innerHTML){ closeModal(); }
+    if(VD_IGNORE>0){ VD_IGNORE--; return; }   /* c'est nous qui venons de reculer */
+    if(VD_BACK>0){ VD_BACK--; vdFermerCoucheHaute(); }
   }catch(e){}
 });
 function openModal(html,wide){ $("modalRoot").innerHTML='<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="dialog'+(wide?" wide":"")+'">'+html+'</div></div>'; vdBackPose(); }
-function closeModal(){ vdBackRetire(); $("modalRoot").innerHTML=""; ORDERS_OPEN=false; }
+function closeModal(){ vdFermerModalBrut(); vdBackRetire(); }
 
 /* ---------- detail ---------- */
 function galleryItems(l){
@@ -3256,10 +3373,14 @@ function inviteFriends(){
 function toggleChat(){
   var d=$("drawer");
   var opening=!d.classList.contains("open");
-  d.classList.toggle("open");
   if(opening){
+    d.classList.add("open");
+    vdBackPose();                      /* (20261002b) Retour = fermer le chat */
     CHAT_UNREAD=0; renderChatBadge();
     if(CHAT&&CHAT.mode==="live"&&CHAT.tid&&FB.user) markThreadRead(CHAT.tid);
+  }else{
+    vdFermerChatBrut();
+    vdBackRetire();
   }
 }
 function chatHead(l,s){
@@ -3285,7 +3406,7 @@ function startChat(id){
     chatHead(l,s);
     $("chatTag").textContent=t("secure_tag"); $("chatTag").className="chat-tag secure";
     $("inAppBtn").style.display="";
-    $("drawer").classList.add("open");
+    vdOuvrirChat();
     renderChat();
     markThreadRead(tid);
     CHAT.unsub=subscribeThread(tid,function(m){
@@ -3309,7 +3430,7 @@ function startChat(id){
     $("inAppBtn").style.display="none";
     var conv=CHAT_DEMO.get(id);
     if(!conv){ conv={msgs:[],i:0}; CHAT_DEMO.set(id,conv); }
-    $("drawer").classList.add("open");
+    vdOuvrirChat();
     if(conv.msgs.length===0){
       var tp=addTyping();
       setTimeout(function(){

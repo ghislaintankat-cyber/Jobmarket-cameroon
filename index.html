@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20260907am">
+<html lang="fr" data-app-build="20261002b">
 <head>
 <script>
 // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -2957,5 +2957,25 @@ reader.readAsDataURL(event.target.files[0]);
 </div>
 </div>
 <input type="file" id="waFileIn" accept="image/*" multiple style="display:none" onchange="W.onFile(this)">
+<style>
+#jmcMsgBanner{position:fixed;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:13500;
+display:none;align-items:center;gap:11px;padding:11px 13px;border-radius:14px;cursor:pointer;
+background:var(--dark2,#15151d);color:var(--text,#fff);border:1px solid rgba(255,215,0,.35);
+box-shadow:0 10px 30px rgba(0,0,0,.45);transform:translateY(-130%);transition:transform .25s ease;}
+#jmcMsgBanner.open{display:flex;transform:none;}
+#jmcMsgBanner .jmcbAv{width:38px;height:38px;border-radius:50%;object-fit:cover;flex:none;background:#333;}
+#jmcMsgBanner .jmcbBody{flex:1;min-width:0;}
+#jmcMsgBanner .jmcbName{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#jmcMsgBanner .jmcbText{font-size:12.5px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#jmcMsgBanner .jmcbGo{font-size:12px;font-weight:800;color:#FFD700;flex:none;}
+</style>
+<div id="jmcMsgBanner" role="button" tabindex="0" onclick="jmcBanniereOuvrir()">
+<img class="jmcbAv" id="jmcbAv" src="" alt="">
+<div class="jmcbBody">
+<div class="jmcbName" id="jmcbName"></div>
+<div class="jmcbText" id="jmcbText"></div>
+</div>
+<div class="jmcbGo" data-i18n="bannerOpen">Ouvrir ›</div>
+</div>
 </body>
 </html>
