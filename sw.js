@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v268'; // 20261002d : premier lancement bloque au logo + bouton retour
+const CACHE_VERSION = 'v269'; // 20261003a : reseau trop lent = ecran qui explique, plus d'app morte
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des

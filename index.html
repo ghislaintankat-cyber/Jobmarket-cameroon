@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261002d">
+<html lang="fr" data-app-build="20261003a">
 <head>
 <script>
 // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1979,9 +1979,36 @@ document.body.appendChild(s);
 var essais = 0;
 (function attendre() {
 if (pret()) return lancer();
-if (++essais > 200) return lancer();   // 20 s
+/* (20261003a) AU BOUT DE 20 S SANS LES BIBLIOTHÈQUES : ON NE LANCE PLUS
+L'APPLICATION DANS LE VIDE.
+Avant, on injectait app.js quand même. Or app.js fait, dès ses
+premières lignes, « firebase.database() » et « L.map(...) ». Si
+Firebase ou la carte ne sont pas arrivés, ces appels lèvent une
+erreur et TOUT app.js s'arrête : écran de démarrage figé, aucune
+explication, et rien ne peut plus se produire — même si le réseau
+revient une seconde après.
+Sur MTN/Orange, 20 s sans réponse n'a rien d'exceptionnel.
+Maintenant : on le DIT et on propose de réessayer. Un écran qui
+explique vaut mieux qu'une application morte. */
+if (++essais > 200) return reseauTropLent();
 setTimeout(attendre, 100);
 })();
+function reseauTropLent() {
+try {
+var lent = document.getElementById("splashLent");
+if (lent) lent.style.display = "block";
+var b = document.getElementById("splashRecharger");
+if (b) b.style.display = "inline-block";
+/* si les bibliothèques finissent par arriver, on démarre quand même :
+l'utilisateur n'a alors rien à faire. */
+var reste = 600;   // on continue de surveiller pendant 60 s
+(function encore() {
+if (pret()) return lancer();
+if (--reste <= 0) return;
+setTimeout(encore, 100);
+})();
+} catch (e) {}
+}
 /* (20261002d) FILET DE SÉCURITÉ DE L'ÉCRAN DE DÉMARRAGE.
 Jusqu'ici, seul app.js savait effacer cet écran. S'il n'arrivait pas
 (réseau coupé au milieu du téléchargement, fichier absent), on
