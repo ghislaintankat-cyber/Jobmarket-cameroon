@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261002b">
+<html lang="fr" data-app-build="20261002d">
 <head>
 <script>
 // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1184,6 +1184,7 @@ background: var(--surface);
 </div>
 <div class="splash-bar"><div class="splash-progress"></div></div>
 <div id="splashLent" data-i18n="splashSlow" style="display:none;margin-top:14px;font-size:12.5px;color:var(--text-dim,#9999BC);text-align:center;padding:0 24px;">Connexion lente… l'application s'ouvre dès que possible.</div>
+<button id="splashRecharger" data-i18n="splashRetry" onclick="location.reload()" style="display:none;margin-top:16px;background:#2D6CDF;color:#fff;border:none;padding:12px 26px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Réessayer</button>
 </div>
 <style>
 .lang-pick-option{transition:background .15s,border-color .15s,transform .12s;}
@@ -1981,6 +1982,24 @@ if (pret()) return lancer();
 if (++essais > 200) return lancer();   // 20 s
 setTimeout(attendre, 100);
 })();
+/* (20261002d) FILET DE SÉCURITÉ DE L'ÉCRAN DE DÉMARRAGE.
+Jusqu'ici, seul app.js savait effacer cet écran. S'il n'arrivait pas
+(réseau coupé au milieu du téléchargement, fichier absent), on
+restait devant le logo pour toujours. Ces deux minuteries sont
+posées par la page elle-même : elles fonctionnent même si plus rien
+ne se charge. */
+function splashEncoreLa() {
+try {
+var s = document.getElementById("splash");
+return !!s && !s.classList.contains("hide") && s.style.display !== "none";
+} catch (e) { return false; }
+}
+setTimeout(function () {
+try { if (splashEncoreLa()) { var e = document.getElementById("splashLent"); if (e) e.style.display = "block"; } } catch (e) {}
+}, 8000);
+setTimeout(function () {
+try { if (splashEncoreLa()) { var b = document.getElementById("splashRecharger"); if (b) b.style.display = "inline-block"; } } catch (e) {}
+}, 22000);
 })();
 </script>
 <div id="jobPreviewDrawer" class="job-drawer">
