@@ -1368,5 +1368,479 @@ renderInbox();
 renderAuth();
 updateTitleBadge();
 </script>
+
+
+
+
+
+
+
+
+
+<script>
+/* (correctif maison 20261005d) SECURITE ET IA DU CHAT — meme niveau
+   que JobMarket Cameroon. Tout est contenu ici : aucune ligne de la
+   page livree n'est modifiee, seules des fonctions sont ajoutees. */
+var VD_ARNAQUE = [
+  {cle:"acompte", mots:["acompte","avance","verse d abord","verser d abord","paye d abord","payer d abord","envoie d abord","envoyer d abord","depose d abord","frais de livraison avant","deposit first","pay first","send money"]},
+  {cle:"momo", mots:["orange money","mtn money","momo","mobile money","depot momo","retrait momo"]},
+  {cle:"code", mots:["code de confirmation","code recu par sms","donne moi le code","envoie le code","code otp","code a 6 chiffres","verification code"]},
+  {cle:"ailleurs", mots:["continue sur whatsapp","ecris moi sur telegram","parlons ailleurs","hors de l application","mon autre numero"]},
+  {cle:"urgence", mots:["depeche toi de payer","offre valable aujourd hui seulement","sinon je vends a un autre"]}
+];
+function vdSansAccents(s){try{return String(s==null?"":s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();}catch(e){return String(s==null?"":s).toLowerCase();}}
+/* 1-3. reconnaitre une arnaque dans un message recu */
+function vdChatRisque(txt){
+  try{
+    var s=" "+vdSansAccents(txt).replace(/[^a-z0-9]+/g," ")+" ";
+    if(s.trim().length<4) return [];
+    var out=[];
+    VD_ARNAQUE.forEach(function(g){
+      for(var i=0;i<g.mots.length;i++){
+        var w=" "+vdSansAccents(g.mots[i]).replace(/[^a-z0-9]+/g," ").trim()+" ";
+        if(s.indexOf(w)!==-1){ out.push(g.cle); break; }
+      }
+    });
+    return out;
+  }catch(e){ return []; }
+}
+function vdMessageRisque(cles){
+  if(!cles||!cles.length) return "";
+  if(cles.indexOf("code")!==-1) return "🚨 On te demande un CODE recu par SMS. Ne le donne JAMAIS : c'est la cle de ton compte ou de ton argent.";
+  if(cles.indexOf("acompte")!==-1||cles.indexOf("momo")!==-1) return "⚠️ On te demande de l'argent AVANT la livraison. Paye a la remise, dans un lieu public.";
+  if(cles.indexOf("ailleurs")!==-1) return "⚠️ On te propose de continuer ailleurs. Reste ici : cette discussion est ta seule preuve.";
+  return "⚠️ Ce message te presse de decider. Prends ton temps : une vraie offre attend.";
+}
+var VD_DOMAINES_SURS=["ghislaintankat-cyber.github.io","api.whatsapp.com","wa.me","res.cloudinary.com","google.com","maps.google.com"];
+function vdLiensSuspects(txt){
+  try{
+    var liens=String(txt||"").match(/https?:\/\/[^\s<>"']+/gi)||[], out=[];
+    liens.forEach(function(u){
+      var h=""; try{ h=new URL(u).hostname.toLowerCase().replace(/^www\./,""); }catch(e){ h=""; }
+      if(!h) return;
+      for(var i=0;i<VD_DOMAINES_SURS.length;i++){ var d=VD_DOMAINES_SURS[i]; if(h===d||h.slice(-(d.length+1))==="."+d) return; }
+      out.push(h);
+    });
+    return out;
+  }catch(e){ return []; }
+}
+/* 4-5. bloquer un importun, signaler une conversation */
+function vdBloques(){ try{ var l=JSON.parse(localStorage.getItem("vd_bloques")||"[]"); return Array.isArray(l)?l:[]; }catch(e){ return []; } }
+function vdEstBloque(uid){ return !!uid && vdBloques().indexOf(uid)!==-1; }
+function vdBasculerBlocage(uid){
+  try{
+    if(!uid) return false;
+    var l=vdBloques(), i=l.indexOf(uid);
+    if(i===-1) l.push(uid); else l.splice(i,1);
+    localStorage.setItem("vd_bloques", JSON.stringify(l.slice(-200)));
+    try{ toast(i===-1?"🚫 Contact bloque. Ses messages sont masques.":"✅ Contact debloque."); }catch(e){}
+    return i===-1;
+  }catch(e){ return false; }
+}
+function vdSignalerConversation(uid, dernier){
+  try{
+    var me = FB && FB.auth && FB.auth.currentUser;
+    if(!me){ toast("Connecte-toi d'abord."); return false; }
+    FB.db.ref("errorLogs").push({
+      message:"[signalement_chat_boutique] "+String(dernier||"").slice(0,400),
+      timestamp:Date.now(), type:"support", sujet:"signalement_chat_boutique",
+      uid:me.uid, peer:uid||"", build:"shalom-20261005d"
+    }).then(function(){ toast("🚩 Signalement recu par l'equipe JobMarket Cameroon ✅"); })
+     .catch(function(){ toast("Envoi impossible. Reessaie quand le reseau revient."); });
+    return true;
+  }catch(e){ return false; }
+}
+/* 6-9. l'IA : dire pourquoi, repondre quand meme, annoncer la limite */
+function vdRaisonIA(err){
+  try{
+    if(typeof navigator!=="undefined" && navigator.onLine===false)
+      return "📴 Tu es hors ligne : l'IA a besoin du reseau.";
+    var m=String(err&&(err.message||err)||"").toLowerCase();
+    if(m.indexOf("abort")!==-1||m.indexOf("timeout")!==-1) return "⏱️ Le reseau est trop lent. Reessaie dans un instant.";
+    if(m.indexOf("429")!==-1||m.indexOf("quota")!==-1) return "🙇 L'IA est tres demandee. Reessaie dans une minute.";
+  }catch(e){}
+  return "🤖 L'IA n'a pas pu repondre. Tu peux ecrire toi-meme : une reponse est proposee.";
+}
+function vdReponsesHorsLigne(titre){
+  var t0=String(titre||"").slice(0,50);
+  return [
+    "Bonjour, l'article"+(t0?" « "+t0+" »":"")+" est-il toujours disponible ?",
+    "Bonjour, quel est votre dernier prix ? Je peux passer le voir.",
+    "Bonjour, ou peut-on se rencontrer pour la remise ?"
+  ];
+}
+var VD_IA_PAR_JOUR=30;
+function vdQuotaIA(){
+  try{
+    var k="vd_ia_"+new Date().toISOString().slice(0,10);
+    var n=Number(localStorage.getItem(k)||0)||0;
+    return {utilises:n, restants:Math.max(0,VD_IA_PAR_JOUR-n), cle:k, plafond:VD_IA_PAR_JOUR};
+  }catch(e){ return {utilises:0,restants:VD_IA_PAR_JOUR,cle:"",plafond:VD_IA_PAR_JOUR}; }
+}
+function vdConsommerIA(){
+  try{
+    var q=vdQuotaIA(); if(!q.cle) return true;
+    if(q.restants<=0){ toast("🤖 Tu as utilise tes "+VD_IA_PAR_JOUR+" demandes d'IA du jour. Elles reviennent demain."); return false; }
+    localStorage.setItem(q.cle,String(q.utilises+1));
+    for(var i=localStorage.length-1;i>=0;i--){ var c=localStorage.key(i); if(c&&c.indexOf("vd_ia_")===0&&c!==q.cle) localStorage.removeItem(c); }
+    return true;
+  }catch(e){ return true; }
+}
+function vdAvertirDonneesIA(txt){
+  try{
+    var s=String(txt||"");
+    var code=/\b\d{4,8}\b/.test(s)&&/(code|otp|pin|mot de passe|password)/i.test(s);
+    var carte=/\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b/.test(s);
+    if(!code&&!carte) return "";
+    return "🔒 N'envoie jamais un code, un mot de passe ou un numero de carte — ni a l'IA, ni a personne.";
+  }catch(e){ return ""; }
+}
+/* 10. un brouillon par conversation : on ne perd plus ce qu'on tape */
+function vdBrouillonCle(tid){ return "vd_brouillon_"+String(tid||"x"); }
+function vdBrouillonEcrire(tid,txt){
+  try{ if(!tid) return false; txt?localStorage.setItem(vdBrouillonCle(tid),String(txt).slice(0,2000)):localStorage.removeItem(vdBrouillonCle(tid)); return true; }catch(e){ return false; }
+}
+function vdBrouillonLire(tid){ try{ return localStorage.getItem(vdBrouillonCle(tid))||""; }catch(e){ return ""; } }
+/* 11. les conversations, de la plus recente a la plus ancienne */
+function vdTrierFils(liste){
+  try{
+    if(!Array.isArray(liste)) return liste;
+    return liste.slice().sort(function(a,b){
+      var da=Math.max(Number(a&&a.lastAt)||0, Number(a&&a.ts)||0);
+      var db=Math.max(Number(b&&b.lastAt)||0, Number(b&&b.ts)||0);
+      return db-da;
+    });
+  }catch(e){ return liste; }
+}
+/* 12. tout bouton-icone doit avoir un nom pour les lecteurs d'ecran */
+function vdNommerBoutons(){
+  try{
+    var n=0;
+    document.querySelectorAll("button").forEach(function(b){
+      if(b.getAttribute("aria-label")) return;
+      var t0=(b.textContent||"").trim();
+      if(t0.length>=3) return;
+      var nom=b.getAttribute("title")||b.getAttribute("data-nom")||t0;
+      if(nom){ b.setAttribute("aria-label",nom); n++; }
+    });
+    return n;
+  }catch(e){ return 0; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdNommerBoutons(); }catch(e){} }); }catch(e){}
+try{
+  window.vdChatRisque=vdChatRisque; window.vdMessageRisque=vdMessageRisque;
+  window.vdLiensSuspects=vdLiensSuspects; window.vdEstBloque=vdEstBloque;
+  window.vdBasculerBlocage=vdBasculerBlocage; window.vdSignalerConversation=vdSignalerConversation;
+  window.vdRaisonIA=vdRaisonIA; window.vdReponsesHorsLigne=vdReponsesHorsLigne;
+  window.vdQuotaIA=vdQuotaIA; window.vdConsommerIA=vdConsommerIA;
+  window.vdAvertirDonneesIA=vdAvertirDonneesIA; window.vdBrouillonEcrire=vdBrouillonEcrire;
+  window.vdBrouillonLire=vdBrouillonLire; window.vdTrierFils=vdTrierFils;
+  window.vdNommerBoutons=vdNommerBoutons;
+}catch(e){}
+</script>
+
+<script>
+/* (correctif maison 20261005e) LES NEUF DERNIERS POINTS pour mettre
+   la messagerie de la boutique au niveau de celle de JobMarket. */
+
+/* 17. ACCUSES DE LECTURE — savoir si l'autre a lu change tout : on
+   n'envoie pas trois fois le meme message pour rien. */
+function vdAccuseLecture(msg, moi){
+  try{
+    if(!msg || msg.from !== moi) return "";
+    var lu = msg.readBy && Object.keys(msg.readBy).some(function(u){ return u !== moi; });
+    if(lu) return "lu";
+    return msg._envoye === false ? "attente" : "envoye";
+  }catch(e){ return ""; }
+}
+function vdIconeAccuse(etat){
+  return etat === "lu" ? '<span style="color:#34b7f1" title="Lu">✓✓</span>'
+       : etat === "envoye" ? '<span style="opacity:.65" title="Envoye">✓✓</span>'
+       : etat === "attente" ? '<span style="opacity:.5" title="En attente de reseau">🕐</span>' : "";
+}
+function vdMarquerLu(tid, ids){
+  try{
+    var me = FB && FB.auth && FB.auth.currentUser; if(!me || !tid) return 0;
+    var maj = {}, n = 0;
+    (ids||[]).forEach(function(k){ if(k){ maj["chats/"+tid+"/messages/"+k+"/readBy/"+me.uid] = true; n++; } });
+    if(!n) return 0;
+    maj["userInboxes/"+me.uid+"/threads/"+tid+"/unread"] = 0;
+    FB.db.ref().update(maj).catch(function(){});
+    return n;
+  }catch(e){ return 0; }
+}
+
+/* 18. REPONDRE EN CITANT — sans citation, une discussion sur trois
+   articles devient illisible. */
+function vdCiterMessage(m, maxi){
+  try{
+    if(!m) return null;
+    var t0 = String(m.text || (m.quote ? "Devis" : "") || "").replace(/\s+/g," ").trim();
+    return { id: m.id || m.key || "", from: m.from || "", text: t0.slice(0, Number(maxi) || 90) };
+  }catch(e){ return null; }
+}
+function vdApercuCitation(q){
+  if(!q) return "";
+  return '<div class="vd-cite" style="border-left:3px solid var(--acc,#38bdf8);padding:4px 8px;margin-bottom:4px;'
+    + 'font-size:12px;opacity:.85;border-radius:4px;background:rgba(255,255,255,.05);">' + esc(q.text || "") + '</div>';
+}
+
+/* 19. CHERCHER DANS LES CONVERSATIONS — au-dela de dix fils, sans
+   recherche on ne retrouve plus personne. Sans accents : les
+   claviers d'ici n'en mettent pas. */
+function vdChercherFils(liste, q){
+  try{
+    var s = vdSansAccents(q).trim();
+    if(!s) return liste || [];
+    return (liste || []).filter(function(f){
+      var hay = vdSansAccents((f && (f.name||f.peerName||"")) + " " + (f && (f.lastMessage||f.last||"")));
+      return hay.indexOf(s) !== -1;
+    });
+  }catch(e){ return liste || []; }
+}
+
+/* 20-21. EPINGLER ET ARCHIVER — le client serieux en haut, les fils
+   morts hors de vue. Rien n'est supprime : desarchiver rend tout. */
+function vdListeLocale(cle){ try{ var l=JSON.parse(localStorage.getItem(cle)||"[]"); return Array.isArray(l)?l:[]; }catch(e){ return []; } }
+function vdBasculerListe(cle, tid){
+  try{
+    if(!tid) return false;
+    var l=vdListeLocale(cle), i=l.indexOf(tid);
+    if(i===-1) l.push(tid); else l.splice(i,1);
+    localStorage.setItem(cle, JSON.stringify(l.slice(-300)));
+    return i===-1;
+  }catch(e){ return false; }
+}
+function vdEstEpingle(tid){ return vdListeLocale("vd_epingles").indexOf(tid)!==-1; }
+function vdEpingler(tid){ var r=vdBasculerListe("vd_epingles",tid); try{ toast(r?"📌 Conversation epinglee":"Conversation desepinglee"); }catch(e){} return r; }
+function vdEstArchive(tid){ return vdListeLocale("vd_archives").indexOf(tid)!==-1; }
+function vdArchiver(tid){ var r=vdBasculerListe("vd_archives",tid); try{ toast(r?"🗄️ Conversation archivee":"Conversation desarchivee"); }catch(e){} return r; }
+function vdOrdonnerFils(liste){
+  try{
+    var vis=(liste||[]).filter(function(f){ return !vdEstArchive(f && f.tid); });
+    return vdTrierFils(vis).sort(function(a,b){
+      var pa=vdEstEpingle(a&&a.tid)?1:0, pb=vdEstEpingle(b&&b.tid)?1:0;
+      return pb-pa;
+    });
+  }catch(e){ return liste; }
+}
+
+/* 22. « EN TRAIN D'ECRIRE » — on attend au lieu de relancer. */
+function vdEcritEnCours(tid, actif){
+  try{
+    var me = FB && FB.auth && FB.auth.currentUser; if(!me || !tid) return false;
+    var r = FB.db.ref("chats/"+tid+"/meta/typing/"+me.uid);
+    actif ? r.set(Date.now()) : r.remove();
+    try{ if(actif) r.onDisconnect().remove(); }catch(e){}
+    return true;
+  }catch(e){ return false; }
+}
+function vdQuiEcrit(typing, moi, delaiMs){
+  try{
+    var lim = Date.now() - (Number(delaiMs)||8000), out=[];
+    Object.keys(typing||{}).forEach(function(u){
+      if(u!==moi && Number(typing[u])>lim) out.push(u);
+    });
+    return out;
+  }catch(e){ return []; }
+}
+
+/* 23. PRESENCE — « vu il y a 5 min » evite d'attendre pour rien. */
+function vdPresenceTexte(p){
+  try{
+    if(!p) return "";
+    if(p.state==="active") return "🟢 en ligne";
+    var ts=Number(p.lastChanged)||0; if(!ts) return "";
+    var m=Math.floor((Date.now()-ts)/60000);
+    if(m<1) return "vu a l'instant";
+    if(m<60) return "vu il y a "+m+" min";
+    var h=Math.floor(m/60); if(h<24) return "vu il y a "+h+" h";
+    return "vu il y a "+Math.floor(h/24)+" j";
+  }catch(e){ return ""; }
+}
+
+/* 24. FILE D'ATTENTE HORS LIGNE + RENVOI — un message ecrit dans une
+   zone sans reseau ne doit pas disparaitre. */
+function vdFileLire(){ try{ var l=JSON.parse(localStorage.getItem("vd_file_msg")||"[]"); return Array.isArray(l)?l:[]; }catch(e){ return []; } }
+function vdFileAjouter(tid, texte){
+  try{
+    if(!tid || !String(texte||"").trim()) return "";
+    var l=vdFileLire();
+    if(l.length>=50) return "";
+    var ref="att_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
+    l.push({ref:ref, tid:tid, texte:String(texte).slice(0,2000), ts:Date.now()});
+    localStorage.setItem("vd_file_msg", JSON.stringify(l));
+    return ref;
+  }catch(e){ return ""; }
+}
+function vdFileRetirer(ref){
+  try{ localStorage.setItem("vd_file_msg", JSON.stringify(vdFileLire().filter(function(x){ return x && x.ref!==ref; }))); return true; }catch(e){ return false; }
+}
+function vdFileTraiter(envoyer){
+  try{
+    var l=vdFileLire(); if(!l.length) return 0;
+    if(typeof navigator!=="undefined" && navigator.onLine===false) return 0;
+    var f = envoyer || function(tid,texte,cb){ try{ sendMarketMessage(tid,{text:texte},cb); }catch(e){ cb && cb(false); } };
+    var n=0;
+    l.forEach(function(it){
+      if(!it || !it.tid) { vdFileRetirer(it && it.ref); return; }
+      n++; f(it.tid, it.texte, function(ok){ if(ok) vdFileRetirer(it.ref); });
+    });
+    return n;
+  }catch(e){ return 0; }
+}
+try{ window.addEventListener("online", function(){ try{ vdFileTraiter(); }catch(e){} }); }catch(e){}
+
+/* 25. SEPARATEURS DE JOUR — « Aujourd'hui / Hier / 3 oct. » : sans
+   eux, on ne sait plus si un message date d'une heure ou d'un mois. */
+function vdSeparateurJour(ts, tsPrecedent){
+  try{
+    var d=new Date(Number(ts)||0); if(!ts) return "";
+    var jour=function(x){ return new Date(x).toDateString(); };
+    if(tsPrecedent && jour(tsPrecedent)===jour(ts)) return "";
+    var auj=new Date(), hier=new Date(Date.now()-86400000);
+    if(jour(ts)===auj.toDateString()) return "Aujourd'hui";
+    if(jour(ts)===hier.toDateString()) return "Hier";
+    return d.toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:(d.getFullYear()!==auj.getFullYear())?"numeric":undefined});
+  }catch(e){ return ""; }
+}
+
+try{
+  window.vdAccuseLecture=vdAccuseLecture; window.vdIconeAccuse=vdIconeAccuse;
+  window.vdMarquerLu=vdMarquerLu; window.vdCiterMessage=vdCiterMessage;
+  window.vdApercuCitation=vdApercuCitation; window.vdChercherFils=vdChercherFils;
+  window.vdEpingler=vdEpingler; window.vdEstEpingle=vdEstEpingle;
+  window.vdArchiver=vdArchiver; window.vdEstArchive=vdEstArchive;
+  window.vdOrdonnerFils=vdOrdonnerFils; window.vdEcritEnCours=vdEcritEnCours;
+  window.vdQuiEcrit=vdQuiEcrit; window.vdPresenceTexte=vdPresenceTexte;
+  window.vdFileAjouter=vdFileAjouter; window.vdFileLire=vdFileLire;
+  window.vdFileTraiter=vdFileTraiter; window.vdSeparateurJour=vdSeparateurJour;
+}catch(e){}
+</script>
+
+<script>
+/* (correctif maison 20261006) VEILLE DU CHAT — rend visibles les
+   fonctions posees par les blocs precedents, sans modifier le rendu
+   de la page livree. */
+var VD_VU = { tid: null, dernier: "" };
+
+/* 1. LE BANDEAU D'ALERTE, juste au-dessus du champ de reponse. */
+function vdPoserBandeau(){
+  try{
+    var zone = document.getElementById("chatInput");
+    if(!zone || !zone.parentElement) return "";
+    var b = document.getElementById("vdAlerteChat");
+    if(!CHAT || !CHAT.open || !CHAT.tid){ if(b) b.style.display="none"; return ""; }
+    var ms = (typeof threadMsgs === "function" ? threadMsgs(CHAT.tid) : []) || [];
+    var me = FB && FB.auth && FB.auth.currentUser;
+    var dernier = null;
+    for(var i=ms.length-1;i>=0;i--){ var m=ms[i]; if(m && m.text && (!me || m.from!==me.uid)){ dernier=m; break; } }
+    if(!dernier){ if(b) b.style.display="none"; return ""; }
+    var cles = vdChatRisque(dernier.text), hotes = vdLiensSuspects(dernier.text);
+    if(!cles.length && !hotes.length){ if(b) b.style.display="none"; return ""; }
+    var txt = cles.length ? vdMessageRisque(cles)
+      : "🔗 Ce message renvoie vers " + hotes[0] + ". N'y entre jamais tes codes.";
+    if(!b){
+      b = document.createElement("div"); b.id = "vdAlerteChat";
+      zone.parentElement.insertBefore(b, zone);
+    }
+    b.style.cssText = "margin:8px;padding:9px 11px;border-radius:10px;font-size:12.5px;line-height:1.5;"
+      + "background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.45);";
+    b.innerHTML = esc(txt)
+      + '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">'
+      + '<button type="button" aria-label="Bloquer ce contact" onclick="vdBloquerFil()" style="flex:1;min-width:110px;padding:7px;border:1px solid var(--bd,#333);background:none;color:inherit;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🚫 Bloquer</button>'
+      + '<button type="button" aria-label="Signaler cette conversation" onclick="vdSignalerFil()" style="flex:1;min-width:110px;padding:7px;border:none;background:var(--acc,#38bdf8);color:#04121f;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;">🚩 Signaler</button>'
+      + '</div>';
+    b.style.display = "block";
+    return cles.length ? cles.join(",") : "lien";
+  }catch(e){ return ""; }
+}
+function vdBloquerFil(){
+  try{ var p = CHAT && CHAT.peer; if(!p) return false; vdBasculerBlocage(p); vdMasquerBloques(); return true; }catch(e){ return false; }
+}
+function vdSignalerFil(){
+  try{
+    var ms = (typeof threadMsgs === "function" ? threadMsgs(CHAT && CHAT.tid) : []) || [];
+    var d = ms.length ? (ms[ms.length-1].text || "") : "";
+    return vdSignalerConversation(CHAT && CHAT.peer, d);
+  }catch(e){ return false; }
+}
+
+/* 2. LES CONTACTS BLOQUES DISPARAISSENT DE LA LISTE. */
+function vdMasquerBloques(){
+  try{
+    var n = 0, liste = document.getElementById("convList");
+    if(!liste) return 0;
+    liste.querySelectorAll("[data-tid]").forEach(function(el){
+      var tid = el.getAttribute("data-tid") || "";
+      var parts = String(tid).split("__")[0].split("_");
+      var me = FB && FB.auth && FB.auth.currentUser;
+      var peer = "";
+      for(var i=0;i<parts.length;i++){ if(parts[i] && (!me || parts[i]!==me.uid)) { peer = parts[i]; break; } }
+      if(peer && vdEstBloque(peer)){ el.style.display = "none"; n++; }
+      else if(el.style.display === "none") el.style.display = "";
+    });
+    return n;
+  }catch(e){ return 0; }
+}
+
+/* 3. LE BROUILLON PAR CONVERSATION : on ne perd plus ce qu'on tape. */
+function vdBrouillonVeille(){
+  try{
+    var i = document.getElementById("chatInput");
+    if(!i) return false;
+    if(!i.__vdPose){
+      i.__vdPose = true;
+      i.addEventListener("input", function(){
+        try{ if(CHAT && CHAT.tid) vdBrouillonEcrire(CHAT.tid, i.value); }catch(e){}
+        try{ if(CHAT && CHAT.tid) vdEcritEnCours(CHAT.tid, !!i.value); }catch(e){}
+      });
+    }
+    var tid = CHAT && CHAT.tid;
+    if(tid && VD_VU.tid !== tid){
+      VD_VU.tid = tid;
+      var brouillon = vdBrouillonLire(tid);
+      if(brouillon && !i.value){ i.value = brouillon; try{ toast("✍️ Ton brouillon a ete retrouve"); }catch(e){} }
+    }
+    return true;
+  }catch(e){ return false; }
+}
+
+/* 4. LA BARRE HORS LIGNE DIT COMBIEN DE MESSAGES ATTENDENT. */
+function vdBarreAttente(){
+  try{
+    var bar = document.getElementById("offlineBar");
+    if(!bar) return 0;
+    var n = (vdFileLire() || []).length;
+    var hl = (typeof navigator !== "undefined" && navigator.onLine === false);
+    if(!n && !hl) return 0;
+    var e = document.getElementById("vdAttente");
+    if(!e){ e = document.createElement("span"); e.id = "vdAttente"; e.style.cssText="margin-left:8px;font-weight:800;"; bar.appendChild(e); }
+    e.textContent = n ? ("⏳ " + n + " message(s) en attente d'envoi") : "";
+    return n;
+  }catch(e){ return 0; }
+}
+
+function vdVeilleChat(){
+  try{
+    if(window.__vdVeille) return false;
+    window.__vdVeille = setInterval(function(){
+      try{ vdPoserBandeau(); }catch(e){}
+      try{ vdBrouillonVeille(); }catch(e){}
+      try{ vdMasquerBloques(); }catch(e){}
+      try{ vdBarreAttente(); }catch(e){}
+    }, 1600);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleChat(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState !== "loading") vdVeilleChat(); }catch(e){}
+try{
+  window.vdPoserBandeau=vdPoserBandeau; window.vdBloquerFil=vdBloquerFil;
+  window.vdSignalerFil=vdSignalerFil; window.vdMasquerBloques=vdMasquerBloques;
+  window.vdBrouillonVeille=vdBrouillonVeille; window.vdBarreAttente=vdBarreAttente;
+  window.vdVeilleChat=vdVeilleChat;
+}catch(e){}
+</script>
 </body>
 </html>

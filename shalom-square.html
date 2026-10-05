@@ -725,7 +725,7 @@ fr:{
   listing_live:"🎉 Votre annonce est en ligne !", listing_live_fb:"🎉 Annonce publiée et synchronisée avec votre compte JobMarket !",
   uploading_photos:"📤 Envoi des photos…",
   chat_seller:"💬 Contacter le vendeur", buy_now:"🛒 Commander", make_offer:"🤝 Faire une offre", save_b:"Favori",
-  report:"⚑ Signaler cette annonce", reported:"Merci — l'équipe de modération va examiner.", saved_toast:"Ajouté à vos favoris ❤️",
+  report:"⚑ Signaler cette annonce", reported:"Signalement déjà envoyé — l'équipe JobMarket Cameroon l'a reçu.", saved_toast:"Ajouté à vos favoris ❤️",
   listed_ago_1:"publiée il y a {n} jour", listed_ago_n:"publiée il y a {n} jours", views:"vues",
   verified_s:"✓ Vendeur vérifié", unverified:"· non vérifié", reviews:"avis", real_seller:"Vendeur vérifié", demo_seller:"Démo",
   offer_h:"Faire une offre", offer_p:"Les vendeurs acceptent généralement les offres à moins de 10 % du prix demandé.",
@@ -826,7 +826,7 @@ fr:{
   off_accepted_toast:"Offre acceptée — commande créée ✅", off_declined_toast:"Offre refusée", off_withdrawn_toast:"Offre retirée",
   off_by:"Offre de {n}", off_on:"Sur « {t} »", off_empty:"Aucune offre pour l'instant",
   nt_offer:"🤝 Nouvelle offre : {p} pour « {t} »", nt_offer_status:"Offre « {t} » : {s}",
-  report_received:"Merci — signalement envoyé à la modération ✅", shop_verified:"Vendeur vérifié"
+  report_received:"Merci — signalement reçu par l'équipe JobMarket Cameroon ✅ (visible uniquement par les administrateurs)", shop_verified:"Vendeur vérifié"
 },
 en:{
   search_ph:"Search (phone, mason, honey, motorbike…)", messages:"Messages", chat_ph:"Type a message…",
@@ -972,7 +972,7 @@ en:{
   off_accepted_toast:"Offer accepted — order created ✅", off_declined_toast:"Offer declined", off_withdrawn_toast:"Offer withdrawn",
   off_by:"Offer from {n}", off_on:"On \"{t}\"", off_empty:"No offers yet",
   nt_offer:"🤝 New offer: {p} for \"{t}\"", nt_offer_status:"Offer \"{t}\": {s}",
-  report_received:"Thanks — report sent to moderation ✅", shop_verified:"Verified seller"
+  report_received:"Thanks — received by the JobMarket Cameroon team ✅ (admins only)", shop_verified:"Verified seller"
 }};
 function t(k){ var d=I18N[LANG]||I18N.fr; return (k in d)?d[k]:(I18N.fr[k]||k); }
 function tf(k,vars){ var s=t(k); for(var v in vars){ s=s.split("{"+v+"}").join(vars[v]); } return s; }
@@ -2631,7 +2631,7 @@ function openDetail(id){
   if(l.real && phoneDigits.length===9){
     phoneRow = '<div class="contactrow">'
       +'<a class="btn btn-wa btn-sm" style="text-decoration:none" href="tel:+237'+phoneDigits+'">📞 '+t("call")+'</a>'
-      +'<a class="btn btn-wa btn-sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/237'+phoneDigits+'">🟢 WhatsApp</a>'
+      +'<button class="btn btn-wa btn-sm" onclick="vdContactSecurise(\''+id+'\')">💬 '+t("chat_seller").replace(/^[^ ]+ /,"")+'</button>'
       +'<button class="btn btn-ghost btn-sm" onclick="copyNum(\''+phoneDigits+'\')">📋 '+t("copy_num")+'</button>'
       +'<span class="dim" style="font-size:12.5px">'+esc(fmtPhone(phoneDigits))+'</span>'
       +(op?'<span class="optag '+op.id+'">'+op.label+'</span>':"")
@@ -3623,6 +3623,13 @@ function goMessenger(tid){
   var url="./shalom-square-chat.html"+(tid?("#thread="+encodeURIComponent(tid)):"");
   window.__NAV_TO=url;
   try{ window.location.href=url; }catch(e){}
+}
+/* (correctif maison) vdContactSecurise : on reste DANS
+   l'application. Une discussion WhatsApp ne peut etre ni prouvee ni
+   moderee ; ici elle l'est. WhatsApp garde le partage de l'annonce. */
+function vdContactSecurise(id){
+  try{ closeModal(); }catch(e){}
+  try{ startChat(id); }catch(e){ try{ toast(t("chat_seller")); }catch(e2){} }
 }
 function startChat(id){
   var l=BY_ID.get(id); if(!l) return;
