@@ -1,3 +1,1458 @@
+╔══════════════════════════════════════════════════════════════════╗
+║   SHALOM SQUARE — LIVRAISON FINALE (version 20261003)             ║
+║   Division en 2 pages · IA intégrée · démos -80%                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+CE FICHIER CONTIENT TOUT LE NÉCESSAIRE, EN TEXTE BRUT, POUR METTRE
+À JOUR L'APPLICATION. Il est conçu pour être partagé (avec une autre
+IA ou un collaborateur) : chaque fichier à déployer est délimité par
+des marqueurs >>>DÉBUT DU FICHIER<<< et >>>FIN DU FICHIER<<<.
+
+SOMMAIRE
+--------
+  PARTIE A ......... Instructions de déploiement (à lire d'abord)
+  FICHIER 1/2 ...... shalom-square-chat.html   → NOUVEAU (la messagerie)
+  FICHIER 2/2 ...... shalom-square.html        → REMPLACER (le marché)
+
+QUOI DE NEUF (résumé)
+---------------------
+ 1. L'app est divisée en 2 pages :
+      • Page MARCHÉ (shalom-square.html) : annonces, recherche, panier,
+        commandes, offres, profil, publication.
+      • Page MESSAGERIE (shalom-square-chat.html) : chat sécurisé copié
+        du modèle JobMarket Cameroon — liste des conversations + vue
+        conversation, style WhatsApp, 2 panneaux sur ordinateur,
+        notifications bannière + son + vibration, sentinelle bouton
+        retour (le bouton retour ferme le fil/la fenêtre, jamais la page).
+ 2. Synchronisation garantie : mêmes fils Firebase JobMarket
+      (chats/{uidA}_{uidB}__market{clé}) — une discussion reste UNE
+      seule conversation, ouverte depuis JobMarket, le marché ou la
+      messagerie. Messages photo 📷 et vocal 🎤 de JobMarket affichés.
+ 3. IA dans les parties importantes (même worker sécurisé que JobMarket,
+      Llama 3.3 70B via Cloudflare Workers AI — AUCUNE clé dans les
+      pages, RIEN à redéployer côté IA) :
+      • Marché, publier : ✨ prix conseillé (suggest_price) +
+        ✨ améliorer la description (rewrite_job).
+      • Messagerie : ✨ réponses suggérées (suggest_reply), ✨ premier
+        message (craft_contact_message), 🌐 traduction (translate_message),
+        🛡️ vérification anti-arnaque de l'annonce (check_scam_signals),
+        🤖 réponse automatique d'absence (ai_away_reply, 1 fois/4h/fil).
+ 4. ~80% des faux contenus supprimés (les vrais utilisateurs arrivent) :
+      annonces 1250→250, vendeurs 70→14, images démo 9→5, faux chat de
+      démo SUPPRIMÉ, catalogue services hors-mission SUPPRIMÉ (code
+      mort), boutons factices supprimés, fausses notifications
+      d'accueil supprimées. Une annonce d'exemple affiche honnêtement
+      « Annonce d'exemple — les vrais vendeurs arrivent bientôt 🙂 ».
+      Poids du marché : 678 Ko → 542 Ko.
+ 5. Qualité : 16/16 suites de tests vertes après adaptation (dont 2
+      nouvelles : page messagerie 53/53, split marché 22/22).
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║  PARTIE A — INSTRUCTIONS DE DÉPLOIEMENT (GitHub Pages)            ║
+╚══════════════════════════════════════════════════════════════════╝
+
+ 1. Ouvrez le dépôt GitHub du site (Jobmarket-cameroon).
+ 2. FICHIER 1 : créez un fichier nommé exactement
+       shalom-square-chat.html
+    à la racine (même dossier que index.html, app.js, sw.js) et
+    collez-y TOUT le contenu entre les marqueurs du FICHIER 1/2
+    (ci-dessous), sans les lignes de marqueurs elles-mêmes.
+ 3. FICHIER 2 : ouvrez le fichier shalom-square.html existant,
+    sélectionnez TOUT son contenu, remplacez-le par TOUT le contenu
+    entre les marqueurs du FICHIER 2/2 (ci-dessous), puis enregistrez
+    (commit). Vérifiez que la taille affichée par GitHub est
+    ~542 Ko (≈ 539-543 Ko) pour confirmer que rien n'a été tronqué.
+ 4. RIEN D'AUTRE À MODIFIER :
+      • sw.js : inchangé (sa règle de navigation générique met la
+        nouvelle page en cache dès sa première ouverture et la ressert
+        hors ligne).
+      • chat-proxy.js (worker IA) : inchangé, tous les modes utilisés
+        existent déjà en production.
+      • index.html, app.js, manifest.json (JobMarket) : inchangés.
+ 5. ⚠️ À NE PAS FAIRE : ne téléversez PAS shalom-square-sw.js sur le
+    site (fichier « hébergement autonome uniquement » — un seul service
+    worker par portée : il remplacerait celui de JobMarket).
+ 6. ⚠️ RAPPEL RÈGLES FIREBASE : les règles de sécurité de la base
+    (firebase-rules.txt, 990 lignes, 37 chemins — livrées précédemment)
+    doivent être publiées dans la console Firebase → Realtime Database
+    → Règles, pour que commandes/offres/discussions des vrais
+    utilisateurs fonctionnent. C'est la seule action en attente.
+ 7. Test rapide après déploiement :
+      • ouvrez le marché → bouton 💬 flottant → la messagerie s'ouvre ;
+      • connectez-vous (même compte que JobMarket) → vos conversations
+        JobMarket apparaissent ;
+      • publiez une annonce → boutons ✨ prix IA et ✨ description ;
+      • dans une conversation : ✨ réponse suggérée, 🛡️ vérification
+        (si une annonce réelle est discutée), 🌐 traduire (clic sur une
+        bulle reçue).
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║  FICHIER 1/2 — shalom-square-chat.html  (NOUVEAU — la messagerie) ║
+║  Enregistrer sous : shalom-square-chat.html (racine du dépôt)     ║
+╚══════════════════════════════════════════════════════════════════╝
+
+>>>DÉBUT DU FICHIER 1/2 — shalom-square-chat.html — COPIER À PARTIR D'ICI<<<
+<!DOCTYPE html>
+<html lang="fr" data-app-build="20261003a">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Shalom Square — Messagerie sécurisée</title>
+<meta name="description" content="Messagerie sécurisée Shalom Square — discutez avec les vendeurs et acheteurs d'objets et de denrées partout au Cameroun. Synchronisé avec JobMarket Cameroon.">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A0A0F'/%3E%3Ctext x='32' y='42' font-size='32' text-anchor='middle'%3E%F0%9F%9B%8D%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --gold:#FFD700; --gold2:#B8860B; --goldink:#0A0A0F;
+  --accent:#2D6CDF; --red:#EF4444; --stars:#FFC53D; --ok:#25D366;
+  --bg:#0A0A0F; --card:#151521; --card2:#1B1B2B; --line:rgba(255,255,255,.09);
+  --ink:#ECECF4; --muted:#9CA0B0;
+  --shadow:0 1px 3px rgba(0,0,0,.5); --shadow-lg:0 14px 38px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--ink);overflow:hidden;
+  display:flex;flex-direction:column;
+}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font-family:inherit}
+a{color:var(--gold);text-decoration:none}
+
+/* ---------- barre du haut ---------- */
+.topbar{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--card);border-bottom:1px solid var(--line);
+  padding-top:calc(10px + env(safe-area-inset-top));flex-shrink:0;z-index:30;
+}
+.logo{display:flex;align-items:center;gap:9px;min-width:0}
+.logo-ic{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold2));
+  display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.logo b{font-size:14.5px;letter-spacing:.2px;white-space:nowrap}
+.logo .sub{font-size:10.5px;color:var(--muted);font-weight:700;letter-spacing:.6px;text-transform:uppercase}
+.topbar .grow{flex:1}
+.tbtn{
+  border:1px solid var(--line);background:var(--card2);border-radius:10px;
+  padding:7px 11px;font-size:12px;font-weight:700;white-space:nowrap;
+}
+.tbtn:hover{border-color:rgba(255,215,0,.4)}
+.tbtn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--goldink);border:none}
+
+/* ---------- layout 2 panneaux ---------- */
+.main{flex:1;display:flex;min-height:0;position:relative}
+.list-pane{
+  width:100%;max-width:100%;display:flex;flex-direction:column;min-height:0;
+  border-right:1px solid var(--line);background:var(--bg);
+}
+.searchbar{padding:10px 12px;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-shrink:0}
+.searchbar input{
+  flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  color:var(--ink);padding:10px 13px;font-size:13.5px;outline:none;
+}
+.searchbar input:focus{border-color:rgba(255,215,0,.45)}
+.conv-scroll{flex:1;overflow-y:auto;overscroll-behavior:contain}
+.conv{
+  display:flex;gap:11px;padding:11px 13px;cursor:pointer;align-items:center;
+  border-bottom:1px solid rgba(255,255,255,.045);
+}
+.conv:hover{background:var(--card)}
+.conv.active{background:var(--card2)}
+.conv .dot-unread{position:absolute;top:8px;right:10px;width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.ava{
+  width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:16px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);
+}
+.conv-mid{flex:1;min-width:0}
+.conv-name{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
+.conv-prev{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.conv-prev .you{color:var(--gold);font-weight:700}
+.conv-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+.conv-time{font-size:10.5px;color:var(--muted)}
+.badge{
+  min-width:19px;height:19px;border-radius:999px;background:var(--ok);color:#06230f;
+  font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;
+}
+.empty{
+  padding:40px 22px;text-align:center;color:var(--muted);font-size:13.5px;line-height:1.7;
+}
+.empty .big{font-size:42px;margin-bottom:10px}
+
+/* ---------- panneau fil ---------- */
+.thread-pane{
+  display:none;flex-direction:column;flex:1;min-width:0;min-height:0;background:var(--bg);
+}
+.thread-pane.open{display:flex}
+@media(min-width:880px){
+  .list-pane{width:355px;max-width:355px}
+  .thread-pane{display:flex}
+  .thread-pane .back-btn{display:none}
+  .thread-empty-hero{display:flex}
+}
+@media(max-width:879px){
+  .thread-pane.open{position:absolute;inset:0;z-index:40;background:var(--bg)}
+}
+.thread-empty-hero{
+  display:none;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:10px;
+  color:var(--muted);font-size:13.5px;text-align:center;padding:30px;
+}
+.thread-head{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);
+  border-bottom:1px solid var(--line);flex-shrink:0;padding-top:calc(9px + env(safe-area-inset-top));
+}
+.back-btn{
+  width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card2);
+  font-size:16px;flex-shrink:0;
+}
+.thread-hmid{flex:1;min-width:0}
+.thread-name{font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-tag{font-size:10px;font-weight:800;letter-spacing:.4px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px;display:inline-block;margin-top:2px}
+.chat-tag.secure{color:var(--ok);border-color:rgba(37,211,102,.45)}
+.chat-tag.demo{color:var(--gold);border-color:rgba(255,215,0,.4)}
+.hbtn{
+  width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card2);
+  font-size:15px;flex-shrink:0;position:relative;
+}
+.hbtn:disabled{opacity:.45;cursor:default}
+.listing-chip{
+  display:flex;align-items:center;gap:8px;margin:8px 12px 0;padding:8px 11px;border-radius:12px;
+  background:var(--card);border:1px solid var(--line);font-size:12px;flex-shrink:0;cursor:pointer;
+}
+.listing-chip .lthumb{font-size:18px}
+.listing-chip .ltitle{font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.listing-chip .lprice{color:var(--gold);font-weight:800;white-space:nowrap}
+
+.bubbles{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:13px;display:flex;flex-direction:column;gap:9px;background:var(--bg)}
+.bubble{max-width:84%;padding:9px 12px;border-radius:14px;font-size:13.5px;line-height:1.45;animation:pop .18s ease-out;word-wrap:break-word}
+@keyframes pop{from{transform:scale(.94);opacity:.4}to{transform:scale(1);opacity:1}}
+.bubble.them{align-self:flex-start;background:var(--card2);border-bottom-left-radius:4px}
+.bubble.me{align-self:flex-end;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--goldink);border-bottom-right-radius:4px;font-weight:600}
+.bubble.sys{align-self:center;background:transparent;color:var(--muted);font-size:11.5px;text-align:center;border:1px dashed var(--line);border-radius:10px;padding:6px 12px;max-width:92%}
+.msgtime{display:block;font-size:9.5px;opacity:.75;margin-top:3px;text-align:right}
+.autolabel{display:block;font-size:9px;font-weight:800;letter-spacing:.5px;opacity:.8;margin-bottom:2px}
+.quotecard{background:rgba(0,0,0,.18);border-radius:8px;padding:6px 8px;margin-bottom:5px;font-size:12px}
+.bubble.them .quotecard{background:rgba(255,255,255,.06)}
+.dim{color:var(--muted)}
+.bubble .trans{margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,.25);font-size:12.5px;opacity:.92}
+.bubble .trans b{font-size:9.5px;letter-spacing:.5px;opacity:.7;display:block;margin-bottom:2px}
+.bubble-acts{display:flex;gap:6px;align-self:flex-start;margin-top:-4px;padding:0 4px}
+.bact{
+  font-size:10.5px;font-weight:700;border:1px solid var(--line);border-radius:999px;
+  background:var(--card);padding:3px 9px;color:var(--muted);
+}
+.bact:hover{color:var(--gold);border-color:rgba(255,215,0,.4)}
+
+.qchips{display:flex;gap:7px;padding:8px 12px 2px;flex-wrap:wrap;flex-shrink:0}
+.qchip{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:5px 11px;background:var(--card);cursor:pointer;font-weight:700}
+.qchip:hover{border-color:rgba(255,215,0,.4)}
+.qchip.ai{border-color:rgba(45,108,223,.55);color:#8FB7FF;background:rgba(45,108,223,.12)}
+.qchip.ai.busy{opacity:.55;pointer-events:none}
+
+.chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);flex-shrink:0;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+.chat-input input{
+  flex:1;background:var(--card);border:1px solid var(--line);border-radius:999px;
+  color:var(--ink);padding:11px 16px;font-size:13.5px;outline:none;
+}
+.chat-input input:focus{border-color:rgba(255,215,0,.45)}
+.sendbtn{
+  width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:var(--goldink);font-size:17px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+}
+.sendbtn:disabled{opacity:.5}
+
+/* ---------- banniere notif heads-up ---------- */
+.banner{
+  position:fixed;top:0;left:0;right:0;z-index:400;transform:translateY(-110%);
+  transition:transform .28s cubic-bezier(.2,.9,.3,1.2);
+  background:var(--card2);border-bottom:1px solid var(--line);box-shadow:var(--shadow-lg);
+  display:flex;gap:11px;align-items:center;padding:11px 14px;cursor:pointer;
+  padding-top:calc(11px + env(safe-area-inset-top));
+}
+.banner.show{transform:translateY(0)}
+.banner .b-ic{font-size:22px}
+.banner .b-title{font-size:12.5px;font-weight:800}
+.banner .b-text{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70vw}
+
+/* ---------- modal ---------- */
+.modal-veil{
+  position:fixed;inset:0;background:rgba(4,4,8,.72);z-index:300;display:flex;
+  align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(3px);
+}
+.modal{
+  background:var(--card);border:1px solid var(--line);border-radius:18px;max-width:420px;width:100%;
+  padding:20px;box-shadow:var(--shadow-lg);max-height:86vh;overflow-y:auto;
+}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:11.5px;font-weight:800;color:var(--muted);margin-bottom:5px;letter-spacing:.3px}
+.field input{
+  width:100%;background:var(--card2);border:1px solid var(--line);border-radius:11px;
+  color:var(--ink);padding:11px 13px;font-size:14px;outline:none;
+}
+.field input:focus{border-color:rgba(255,215,0,.5)}
+.btn{
+  border-radius:12px;padding:12px 16px;font-size:13.5px;font-weight:800;cursor:pointer;
+  border:1px solid var(--line);background:var(--card2);width:100%;
+}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--goldink);border:none}
+.btn-ghost{background:transparent}
+.formerr{color:var(--red);font-size:12px;min-height:16px;margin:4px 0 8px}
+.two{display:flex;gap:10px}
+.two>*{flex:1}
+
+.toast{
+  position:fixed;bottom:18px;left:50%;transform:translate(-50%,140%);z-index:500;
+  background:var(--card2);border:1px solid var(--line);color:var(--ink);border-radius:12px;
+  padding:11px 18px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);
+  transition:transform .25s ease;max-width:88vw;text-align:center;
+}
+.toast.show{transform:translate(-50%,0)}
+
+.offline-bar{
+  display:none;background:rgba(239,68,68,.14);border-bottom:1px solid rgba(239,68,68,.4);
+  color:#FCA5A5;font-size:11.5px;font-weight:700;text-align:center;padding:6px 10px;flex-shrink:0;
+}
+.offline-bar.show{display:block}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--card2);border-radius:8px}
+</style>
+</head>
+<body>
+<!-- (correctif maison) remonter en haut : apparait des qu'on a descendu
+     un ecran et demi, disparait sinon. -->
+<button id="vdHautBtn" type="button" onclick="vdRemonter()" aria-label="Remonter en haut"
+  style="display:none;position:fixed;right:14px;bottom:86px;z-index:60;width:44px;height:44px;
+  border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);
+  font-size:19px;box-shadow:var(--shadow-lg);cursor:pointer">↑</button>
+<script>
+function vdRemonter(){ try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(e){ window.scrollTo(0,0); } }
+window.addEventListener("scroll",function(){
+  try{
+    var b=document.getElementById("vdHautBtn"); if(!b) return;
+    b.style.display=(window.scrollY>window.innerHeight*1.5)?"block":"none";
+  }catch(e){}
+},{passive:true});
+</script>
+
+<div class="topbar">
+  <a class="logo" href="./shalom-square.html" id="backLink" title="Retour au marché">
+    <div class="logo-ic">🛍️</div>
+    <div style="min-width:0">
+      <b>Shalom Square</b>
+      <div class="sub" data-i18n="app_sub" id="appSub">MESSAGERIE SÉCURISÉE</div>
+    </div>
+  </a>
+  <div class="grow"></div>
+  <button class="tbtn" id="langBtn" onclick="toggleLang()">EN</button>
+  <button class="tbtn gold" id="authBtn" onclick="authClick()">🔐 <span data-i18n="login_btn">Connexion</span></button>
+</div>
+<div class="offline-bar" id="offlineBar" data-i18n="offline_bar">📡 Connexion à la base sécurisée en cours…</div>
+
+<div class="main">
+  <aside class="list-pane" aria-label="Conversations">
+    <div class="searchbar">
+      <button type="button" id="vdCroixRech" onclick="vdViderRecherche()" aria-label="Effacer la recherche" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;z-index:2">✕</button><input id="searchInput" type="search" data-i18n-ph="search_ph" placeholder="Rechercher une conversation…" oninput="renderInbox()">
+    </div>
+    <div class="conv-scroll" id="convList"></div>
+  </aside>
+
+  <section class="thread-pane" id="threadPane" aria-label="Conversation">
+    <div class="thread-empty-hero" id="threadHero">
+      <div style="font-size:46px">💬</div>
+      <b data-i18n="hero_title" style="color:var(--ink);font-size:15px">Sélectionnez une conversation</b>
+      <span data-i18n="hero_p">Vos discussions avec les vendeurs et acheteurs apparaissent ici — elles sont synchronisées avec l'app JobMarket Cameroon.</span>
+    </div>
+    <div id="threadUI" style="display:none;flex-direction:column;flex:1;min-height:0">
+      <div class="thread-head">
+        <button class="back-btn" onclick="closeThreadUI()" aria-label="Retour">←</button>
+        <div class="ava" id="thAva" style="width:38px;height:38px;font-size:14px">💬</div>
+        <div class="thread-hmid">
+          <div class="thread-name" id="thName">…</div>
+          <span class="chat-tag secure" id="thTag" data-i18n="secure_tag">CHAT SÉCURISÉ JOBMARKET</span>
+        </div>
+        <button class="hbtn" id="scamBtn" onclick="aiScamCheck()" title="Vérification IA de l'annonce" style="display:none">🛡️</button>
+      </div>
+      <div class="listing-chip" id="listingChip" style="display:none" onclick="openListing()">
+        <span class="lthumb" id="lcThumb">📦</span>
+        <span class="ltitle" id="lcTitle"></span>
+        <span class="lprice" id="lcPrice"></span>
+      </div>
+      <div class="bubbles" id="bubbles"></div>
+      <div class="qchips" id="aiRow"></div>
+      <div class="qchips" id="quickChips"></div>
+      <div class="chat-input">
+        <input id="chatInput" type="text" data-i18n-ph="chat_ph" placeholder="Écrivez un message…"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();sendText();}">
+        <button class="sendbtn" onclick="sendText()" aria-label="Envoyer">➤</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="banner" id="banner" onclick="bannerClick()">
+  <div class="b-ic" id="bIc">💬</div>
+  <div style="min-width:0">
+    <div class="b-title" id="bTitle"></div>
+    <div class="b-text" id="bText"></div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toastEl" role="status"></div>
+
+<script src="vendor/firebase-app-compat.js" onerror="__fbcdn('app')"></script>
+<script src="vendor/firebase-auth-compat.js" onerror="__fbcdn('auth')"></script>
+<script src="vendor/firebase-database-compat.js" onerror="__fbcdn('database')"></script>
+
+<script>
+"use strict";
+/* =====================================================================
+   SHALOM SQUARE — MESSAGERIE SÉCURISÉE (page dédiée)
+   ---------------------------------------------------------------------
+   Plateforme de messagerie du marché Shalom Square (biens & denrées),
+   copiée du modèle JobMarket Cameroon (chat-widget) en respectant la
+   différence de mission. Protocole chat 100 % compatible :
+   - mêmes fils     : chats/{uidA}_{uidB}__market{listingKey}
+   - mêmes index    : userThreads/{uid}, userInboxes/{uid}/threads
+   - mêmes messages : {from,to,timestamp,readBy,text,quote,autoReply}
+   → une conversation ouverte dans l'app JobMarket, sur le marché
+     Shalom Square ou ici reste UNE SEULE ET MÊME conversation.
+   IA (mêmes modes que JobMarket, via le worker sécurisé) :
+   - suggest_reply         : réponses suggérées au vendeur/acheteur
+   - translate_message     : traduction d'un message reçu
+   - check_scam_signals    : vérification IA de l'annonce discutée
+   - craft_contact_message : premier message rédigé par l'IA
+   - ai_away_reply         : réponse automatique d'absence (vendeur)
+   ===================================================================== */
+
+/* ---------- stockage local (même shim que le marché) ---------- */
+var store = (function(){
+  try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return localStorage; }
+  catch(e){ var m={}; return { getItem:function(k){return (k in m)?m[k]:null;}, setItem:function(k,v){m[k]=String(v);}, removeItem:function(k){delete m[k];} }; }
+})();
+
+/* ---------- i18n (clé partagée appLang avec le marché + JobMarket) ---------- */
+var I18N={
+fr:{
+  app_sub:"Messagerie sécurisée", search_ph:"Rechercher une conversation…",
+  login_btn:"Connexion", logout_btn:"Se déconnecter",
+  secure_tag:"CHAT SÉCURISÉ JOBMARKET",
+  hero_title:"Sélectionnez une conversation",
+  hero_p:"Vos discussions avec les vendeurs et acheteurs apparaissent ici — elles sont synchronisées avec l'app JobMarket Cameroon.",
+  inbox_empty_title:"Aucune conversation pour l'instant",
+  inbox_empty_p:"Contactez un vendeur depuis le marché Shalom Square — la discussion s'ouvrira ici, en sécurité.",
+  inbox_empty_go:"🛍️ Aller au marché",
+  login_needed_title:"Connexion requise",
+  login_needed_p:"La messagerie sécurisée nécessite un compte (comme dans l'app JobMarket). Vos conversations restent privées et chiffrées en transit.",
+  sign_in_h:"Se connecter", sign_in_p:"Même compte que le marché Shalom Square et l'app JobMarket.",
+  email:"Adresse e-mail", password:"Mot de passe", your_name:"Votre nom",
+  login_go:"Se connecter", signup_go:"Créer un compte", no_account:"Pas de compte ?", have_account:"Déjà un compte ?",
+  forgot:"Mot de passe oublié ?", reset_sent:"E-mail de réinitialisation envoyé ✓",
+  signout_done:"Déconnecté. À bientôt 👋",
+  chat_ph:"Écrivez un message…",
+  you:"Vous", welcome_thread:"Début de votre conversation sécurisée. Écrivez votre premier message 👇",
+  msg_fail:"Message non envoyé — réseau ou règles de la base.",
+  q_available:"C'est toujours disponible ?", q_price:"Quel est votre dernier prix ?", q_ship:"Livrez-vous à Yaoundé ?",
+  ai_suggest:"✨ Suggérer une réponse", ai_suggest_loading:"L'IA réfléchit…",
+  ai_craft:"✨ Rédiger mon premier message", ai_craft_loading:"Rédaction en cours…",
+  ai_translate:"Traduire", ai_translating:"Traduction…", ai_translate_fail:"Traduction indisponible — réessayez.",
+  ai_scam:"Vérifier l'annonce", ai_scam_loading:"Vérification IA…",
+  ai_scam_low:"✅ Annonce cohérente — aucun signal d'arnaque détecté.",
+  ai_scam_medium:"⚠️ Signaux à surveiller :", ai_scam_high:"🚨 Signaux d'arnaque détectés :",
+  ai_err:"IA momentanément indisponible — réessayez.",
+  ai_auto_sent:"Réponse automatique envoyée (absence)",
+  notif_new_msg:"Nouveau message",
+  listing_ctx:"Annonce discutée", go_listing:"Voir l'annonce sur le marché",
+  profile_title:"Mon compte", signout_confirm:"Se déconnecter de la messagerie ?",
+  back_market:"← Retour au marché",
+  send_self:"C'est votre propre annonce 🙂",
+  today:"Aujourd'hui", offline_bar:"📡 Connexion à la base sécurisée en cours…",
+  auth_bad_credentials:"E-mail ou mot de passe incorrect.", auth_exists:"Ce compte existe déjà — connectez-vous.",
+  auth_weak:"Mot de passe trop faible (6 caractères minimum).", auth_invalid_email:"Adresse e-mail invalide.",
+  auth_generic:"Impossible de s'authentifier — vérifiez votre connexion.",
+  name_required:"Indiquez votre nom pour créer le compte.",
+  empty_thread_hint:"Présentez-vous et posez votre question — le vendeur répond généralement vite."
+},
+en:{
+  app_sub:"Secure messaging", search_ph:"Search a conversation…",
+  login_btn:"Sign in", logout_btn:"Sign out",
+  secure_tag:"JOBMARKET SECURE CHAT",
+  hero_title:"Select a conversation",
+  hero_p:"Your discussions with sellers and buyers appear here — synced with the JobMarket Cameroon app.",
+  inbox_empty_title:"No conversation yet",
+  inbox_empty_p:"Contact a seller from the Shalom Square market — the discussion will open here, securely.",
+  inbox_empty_go:"🛍️ Go to the market",
+  login_needed_title:"Sign-in required",
+  login_needed_p:"Secure messaging requires an account (like in the JobMarket app). Your conversations stay private and encrypted in transit.",
+  sign_in_h:"Sign in", sign_in_p:"Same account as Shalom Square market and the JobMarket app.",
+  email:"E-mail address", password:"Password", your_name:"Your name",
+  login_go:"Sign in", signup_go:"Create an account", no_account:"No account?", have_account:"Already registered?",
+  forgot:"Forgot password?", reset_sent:"Reset e-mail sent ✓",
+  signout_done:"Signed out. See you soon 👋",
+  chat_ph:"Write a message…",
+  you:"You", welcome_thread:"Start of your secure conversation. Write your first message 👇",
+  msg_fail:"Message not sent — network or database rules.",
+  q_available:"Is this still available?", q_price:"What is your last price?", q_ship:"Do you deliver to Yaoundé?",
+  ai_suggest:"✨ Suggest a reply", ai_suggest_loading:"AI is thinking…",
+  ai_craft:"✨ Draft my first message", ai_craft_loading:"Drafting…",
+  ai_translate:"Translate", ai_translating:"Translating…", ai_translate_fail:"Translation unavailable — try again.",
+  ai_scam:"Verify the listing", ai_scam_loading:"AI verification…",
+  ai_scam_low:"✅ Listing looks consistent — no scam signal detected.",
+  ai_scam_medium:"⚠️ Signals to watch:", ai_scam_high:"🚨 Scam signals detected:",
+  ai_err:"AI temporarily unavailable — try again.",
+  ai_auto_sent:"Automatic reply sent (away)",
+  notif_new_msg:"New message",
+  listing_ctx:"Listing discussed", go_listing:"View listing on the market",
+  profile_title:"My account", signout_confirm:"Sign out of messaging?",
+  back_market:"← Back to market",
+  send_self:"This is your own listing 🙂",
+  today:"Today", offline_bar:"📡 Connecting to the secure database…",
+  auth_bad_credentials:"Incorrect e-mail or password.", auth_exists:"This account already exists — sign in.",
+  auth_weak:"Password too weak (6 characters minimum).", auth_invalid_email:"Invalid e-mail address.",
+  auth_generic:"Could not authenticate — check your connection.",
+  name_required:"Enter your name to create the account.",
+  empty_thread_hint:"Introduce yourself and ask your question — sellers usually reply quickly."
+}};
+var LANG=(function(){
+  var v=store.getItem("appLang");
+  if(v==="fr"||v==="en") return v;
+  return (navigator.language||"fr").toLowerCase().indexOf("en")===0?"en":"fr";
+})();
+function t(k){ return (I18N[LANG]&&I18N[LANG][k])||(I18N.fr[k])||k; }
+function toggleLang(){
+  LANG=(LANG==="fr")?"en":"fr";
+  store.setItem("appLang",LANG);
+  applyLang();
+  renderAll();
+}
+function applyLang(){
+  document.documentElement.lang=LANG;
+  $("langBtn").textContent=(LANG==="fr")?"EN":"FR";
+  var els=document.querySelectorAll("[data-i18n]");
+  for(var i=0;i<els.length;i++){ els[i].textContent=t(els[i].getAttribute("data-i18n")); }
+  var ph=document.querySelectorAll("[data-i18n-ph]");
+  for(var j=0;j<ph.length;j++){ ph[j].placeholder=t(ph[j].getAttribute("data-i18n-ph")); }
+}
+
+/* ---------- utilitaires ---------- */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+function fmtXAF(n){
+  n=Number(n)||0;
+  try{ return n.toLocaleString(LANG==="fr"?"fr-FR":"en-US").replace(/\u202f/g," ")+" FCFA"; }
+  catch(e){ return String(n)+" FCFA"; }
+}
+function hhmm(ts){
+  try{ return new Date(ts||Date.now()).toLocaleTimeString(LANG==="fr"?"fr-FR":"en-US",{hour:"2-digit",minute:"2-digit"}); }
+  catch(e){ return ""; }
+}
+function dayLabel(ts){
+  var d=new Date(ts||Date.now()), now=new Date();
+  var same=(d.toDateString()===now.toDateString());
+  if(same) return hhmm(ts);
+  var y=new Date(now.getTime()-86400000);
+  if(d.toDateString()===y.toDateString()) return LANG==="fr"?"hier":"yest.";
+  try{ return d.toLocaleDateString(LANG==="fr"?"fr-FR":"en-US",{day:"2-digit",month:"2-digit"}); }
+  catch(e){ return ""; }
+}
+var TOAST_T=null;
+function toast(msg){
+  var el=$("toastEl"); if(!el) return;
+  el.textContent=msg; el.classList.add("show");
+  if(TOAST_T) clearTimeout(TOAST_T);
+  TOAST_T=setTimeout(function(){ el.classList.remove("show"); },3200);
+}
+function hueOf(s){ var h=0; s=String(s||"x"); for(var i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))>>>0; } return h%360; }
+function initialsOf(name){
+  var p=String(name||"?").trim().split(/\s+/);
+  return ((p[0]||"?").charAt(0)+(p.length>1?(p[p.length-1]||"").charAt(0):"")).toUpperCase();
+}
+function avaHTML(uid,name,size){
+  var h=hueOf(uid||name);
+  return '<div class="ava" style="'+(size?'width:'+size+'px;height:'+size+'px;font-size:'+Math.max(11,Math.round((size||46)*0.35))+'px;':'')+
+    'background:linear-gradient(135deg,hsl('+h+',55%,38%),hsl('+((h+40)%360)+',60%,26%))">'+
+    esc(initialsOf(name))+'</div>';
+}
+
+/* ---------- Firebase (même config, mêmes scripts miroirs) ---------- */
+var FIREBASE_CONFIG={apiKey:"AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",authDomain:"jobmarketfuture.firebaseapp.com",databaseURL:"https://jobmarketfuture-default-rtdb.firebaseio.com",projectId:"jobmarketfuture",storageBucket:"jobmarketfuture.firebasestorage.app",messagingSenderId:"482846801525",appId:"1:482846801525:web:bcb9e17fe90161c81be6af"};
+var FB={ready:false,user:null,profile:null,auth:null,db:null};
+var CDN_FB="https://www.gstatic.com/firebasejs/8.10.1/";
+var FB_VENDOR_TIMEOUT=null;
+function __fbcdn(which){
+  try{
+    var s=document.createElement("script");
+    s.src=CDN_FB+"firebase-"+which+"-compat.js";
+    s.onload=function(){ if(which==="database"){ try{ fbBoot(); }catch(e){} } };
+    document.head.appendChild(s);
+  }catch(e){}
+  if(!FB_VENDOR_TIMEOUT){
+    FB_VENDOR_TIMEOUT=setTimeout(function(){
+      if(!FB.ready){ $("offlineBar").classList.add("show"); }
+    },9000);
+  }
+}
+function fbInit(){
+  try{
+    if(typeof firebase==="undefined") return false;
+    try{ firebase.initializeApp(FIREBASE_CONFIG); }catch(e){}
+    FB.auth=firebase.auth(); FB.db=firebase.database();
+    FB.ready=true;
+    FB.auth.onAuthStateChanged(function(u){ FB.user=u; onFbUser(u); });
+    return true;
+  }catch(e){ console.warn("fbInit:",e&&e.message); return false; }
+}
+function fbBoot(){
+  if(FB.ready) return;
+  if(typeof firebase!=="undefined"&&firebase.database){ fbInit(); return; }
+  var tries=0;
+  (function tick(){
+    if(typeof firebase!=="undefined"&&firebase.database){ if(fbInit()){ return; } }
+    if(++tries>50){ $("offlineBar").classList.add("show"); return; }
+    setTimeout(tick,100);
+  })();
+}
+window.addEventListener("load",fbBoot);
+
+/* =====================================================================
+   SENTINELLE BOUTON RETOUR (système de couches — identique au marché
+   20261002c : vdCouche / VD_BACK / VD_IGNORE). Le bouton retour du
+   téléphone ferme le fil ouvert ou la modal, jamais la page.
+   ===================================================================== */
+var VD_BACK=0, VD_IGNORE=0;
+function vdBackPose(){ try{ history.pushState({vdCouche:1},"",location.href); VD_BACK++; }catch(e){} }
+function vdBackRetire(){ if(VD_BACK>0){ VD_BACK--; VD_IGNORE++; try{ history.back(); }catch(e){} } }
+function vdFermerModalBrut(){
+  var r=$("modalRoot");
+  if(r){ r.style.display="none"; r.innerHTML=""; }
+}
+function vdFermerThreadBrut(){ closeThreadPane(); }
+function vdFermerCoucheHaute(){
+  var mr=$("modalRoot");
+  if(mr&&mr.style.display==="block"&&mr.firstChild){ vdFermerModalBrut(); return; }
+  if(CHAT&&CHAT.open){ vdFermerThreadBrut(); return; }
+}
+window.addEventListener("popstate",function(){
+  if(VD_IGNORE>0){ VD_IGNORE--; return; }
+  if(VD_BACK>0){ VD_BACK--; vdFermerCoucheHaute(); return; }
+});
+
+/* ---------- modal (avec sentinelle) ---------- */
+function openModal(html){
+  var root=$("modalRoot");
+  root.innerHTML='<div class="modal-veil" onclick="if(event.target===this)closeModal()"><div class="modal">'+html+'</div></div>';
+  root.style.display="block";
+  vdBackPose();
+}
+function closeModal(){ try{ vdTitrePage(null); }catch(e){}
+  var mr=$("modalRoot");
+  if(mr&&mr.style.display==="block"&&mr.firstChild){ vdFermerModalBrut(); vdBackRetire(); }
+}
+
+/* ---------- auth (même compte que le marché et JobMarket) ---------- */
+function authClick(){
+  if(FB.user){ openProfile(); return; }
+  openSignIn();
+}
+function renderAuth(){
+  var b=$("authBtn"); if(!b) return;
+  if(FB.user){
+    var nm=(FB.profile&&FB.profile.name)||FB.user.displayName||(FB.user.email||"").split("@")[0]||"";
+    b.innerHTML=esc(String(nm).split(" ")[0]||"👤");
+  } else {
+    b.innerHTML="🔐 "+t("login_btn");
+  }
+}
+function openSignIn(){
+  openModal('<h2 style="font-size:19px;margin-bottom:4px">'+t("sign_in_h")+'</h2>'
+    +'<p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">'+t("sign_in_p")+'</p>'
+    +'<div class="field" id="nameField" style="display:none"><label>'+t("your_name")+'</label><input id="inName" type="text" maxlength="40" placeholder="ex. Marie Abena"></div>'
+    +'<div class="field"><label>'+t("email")+'</label><input id="inEmail" type="email" autocomplete="email" placeholder="ex. marie@gmail.com"></div>'
+    +'<div class="field"><label>'+t("password")+'</label><input id="inPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>'
+    +'<div class="formerr" id="authErr"></div>'
+    +'<button class="btn btn-gold" style="margin-bottom:9px" onclick="doAuth(false)">'+t("login_go")+'</button>'
+    +'<button class="btn btn-ghost" style="margin-bottom:9px" id="signupBtn" onclick="switchAuthMode(true)">'+t("no_account")+' '+t("signup_go")+'</button>'
+    +'<div style="text-align:center"><a href="javascript:void 0" style="font-size:12px" onclick="resetPass()">'+t("forgot")+'</a></div>');
+}
+var AUTH_MODE_SIGNUP=false;
+function switchAuthMode(signup){
+  AUTH_MODE_SIGNUP=!!signup;
+  $("nameField").style.display=signup?"block":"none";
+  $("signupBtn").innerHTML=signup?(t("have_account")+" "+t("login_go")):(t("no_account")+" "+t("signup_go"));
+  document.querySelector("#modalRoot .btn-gold").textContent=signup?t("signup_go"):t("login_go");
+}
+function authErrMsg(code){
+  code=String(code||"");
+  if(/user-not-found|wrong-password|invalid-credential/.test(code)) return t("auth_bad_credentials");
+  if(/email-already-in-use/.test(code)) return t("auth_exists");
+  if(/weak-password/.test(code)) return t("auth_weak");
+  if(/invalid-email/.test(code)) return t("auth_invalid_email");
+  return t("auth_generic");
+}
+function doAuth(signup){
+  var em=$("inEmail").value.trim(), pw=$("inPass").value, nm=($("inName")&&$("inName").value||"").trim();
+  var errEl=$("authErr"); errEl.textContent="";
+  if(signup&&!nm){ errEl.textContent=t("name_required"); return; }
+  if(!em||!pw){ errEl.textContent=t("auth_generic"); return; }
+  var done=signup
+    ? FB.auth.createUserWithEmailAndPassword(em,pw)
+    : FB.auth.signInWithEmailAndPassword(em,pw);
+  done.then(function(res){
+    if(signup&&res&&res.user){
+      FB.db.ref("profiles/"+res.user.uid).set({
+        name:nm, createdAt:Date.now(), app:"shalom-square"
+      }).catch(function(){});
+    }
+    closeModal();
+    toast("👋 "+((signup?nm:"")||em.split("@")[0]));
+  }).catch(function(e){ errEl.textContent=authErrMsg(e&&e.code); });
+}
+function resetPass(){
+  var em=$("inEmail").value.trim();
+  if(!em){ $("authErr").textContent=t("auth_invalid_email"); return; }
+  FB.auth.sendPasswordResetEmail(em).then(function(){ toast(t("reset_sent")); })
+  .catch(function(e){ $("authErr").textContent=authErrMsg(e&&e.code); });
+}
+/* (correctif maison) FORMULAIRE DE PROFIL COMPLET.
+   Trois sections, un indicateur de completude, et des champs qui
+   portent LES MEMES NOMS que dans JobMarket (name, phone,
+   whatsappNumber, city, profileType, company, jobTitle) pour que les
+   deux applications parlent du meme profil. Les champs propres a la
+   vente (description, horaires, livraison, paiements) vont dans
+   market_shops/<uid>. */
+function vdProfilPourcent(p, sh) {
+  var champs = [p.name, p.phone, p.city, p.whatsappNumber, vdAvatar(p),
+                (sh && sh.desc), (sh && sh.hours), (sh && sh.delivery)];
+  var n = 0;
+  for (var i = 0; i < champs.length; i++) if (String(champs[i] || "").trim()) n++;
+  return Math.round(n * 100 / champs.length);
+}
+function vdProfilChamps(p, name) {
+  var sh = FB.shop || {};
+  var pct = vdProfilPourcent(p, sh);
+  var fr = (LANG === "fr");
+  var estBoutique = (p.profileType === "company");
+  var villes = CITIES.map(function (c) {
+    return '<option value="' + esc(c[0]) + '"' + (p.city === c[0] ? " selected" : "") + '>' + esc(c[0]) + '</option>';
+  }).join("");
+  function section(titre, corps) {
+    return '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">'
+      + '<div style="font-size:11.5px;font-weight:800;letter-spacing:.4px;color:var(--muted);margin-bottom:8px">' + titre + '</div>'
+      + corps + '</div>';
+  }
+  return ''
+    /* jauge de completude : montre tout de suite ce qu'il reste a faire */
+    + '<div style="margin-top:12px">'
+    +   '<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:5px">'
+    +     '<span>' + (fr ? "Profil complété" : "Profile completed") + '</span><b style="color:var(--gold)">' + pct + ' %</b></div>'
+    +   '<div style="height:6px;border-radius:99px;background:var(--line);overflow:hidden">'
+    +     '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--gold),var(--gold2))"></div></div>'
+    +   (pct < 100 ? '<div class="dim" style="font-size:11px;margin-top:5px">'
+        + (fr ? "Un profil complet rassure les acheteurs — ils répondent plus souvent."
+              : "A complete profile reassures buyers — they reply more often.") + '</div>' : '')
+    + '</div>'
+
+    + section(fr ? "IDENTITÉ" : "IDENTITY",
+        '<div class="field"><label>' + t("signup_name") + '</label>'
+      + '<input id="profName" maxlength="40" value="' + esc(name) + '" placeholder="' + (fr ? "Ton nom ou celui de ta boutique" : "Your name or shop name") + '"></div>'
+      + '<div class="field"><label>' + (fr ? "Type de compte" : "Account type") + '</label>'
+      + '<select id="profType" onchange="vdProfilBascule()">'
+      +   '<option value="person"' + (estBoutique ? "" : " selected") + '>' + (fr ? "👤 Particulier" : "👤 Individual") + '</option>'
+      +   '<option value="company"' + (estBoutique ? " selected" : "") + '>' + (fr ? "🏪 Boutique / Entreprise" : "🏪 Shop / Business") + '</option>'
+      + '</select></div>')
+
+    + section(fr ? "CONTACT" : "CONTACT",
+        '<div class="two"><div class="field"><label>' + t("phone") + '</label>'
+      + '<input id="profPhone" type="tel" inputmode="tel" maxlength="15" value="' + esc(p.phone || "") + '" placeholder="677 00 00 00"></div>'
+      + '<div class="field"><label>WhatsApp</label>'
+      + '<input id="profWa" type="tel" inputmode="tel" maxlength="15" value="' + esc(p.whatsappNumber || "") + '" placeholder="' + (fr ? "si différent" : "if different") + '"></div></div>'
+      + '<div class="two"><div class="field"><label>' + t("signup_city") + '</label><select id="profCity">' + villes + '</select></div>'
+      + '<div class="field"><label>' + (fr ? "Quartier" : "Area") + '</label>'
+      + '<input id="profArea" maxlength="40" value="' + esc(p.area || "") + '" placeholder="' + (fr ? "Ex : Bastos, Emia…" : "e.g. Bastos") + '"></div></div>')
+
+    + '<div id="profBoutique" style="display:' + (estBoutique ? "block" : "none") + '">'
+    + section(fr ? "MA BOUTIQUE" : "MY SHOP",
+        '<div class="field"><label>' + (fr ? "Ce que je vends" : "What I sell") + '</label>'
+      + '<input id="profMetier" maxlength="60" value="' + esc(p.jobTitle || "") + '" placeholder="' + (fr ? "Ex : Téléphones et accessoires" : "e.g. Phones and accessories") + '"></div>'
+      + '<div class="field"><label>' + (fr ? "Présentation" : "About") + '</label>'
+      + '<textarea id="profDesc" rows="3" maxlength="280" placeholder="' + (fr ? "Deux lignes sur ta boutique : depuis quand, ce qui te distingue…" : "Two lines about your shop…") + '">' + esc(sh.desc || "") + '</textarea></div>'
+      + '<div class="two"><div class="field"><label>' + (fr ? "Horaires" : "Opening hours") + '</label>'
+      + '<input id="profHoraires" maxlength="40" value="' + esc(sh.hours || "") + '" placeholder="' + (fr ? "Lun–Sam 8h–18h" : "Mon–Sat 8am–6pm") + '"></div>'
+      + '<div class="field"><label>' + (fr ? "Livraison" : "Delivery") + '</label>'
+      + '<select id="profLivraison">'
+      +   ['', 'oui', 'ville', 'non'].map(function (v) {
+            var lib = v === "" ? (fr ? "— à préciser —" : "— not set —")
+                    : v === "oui" ? (fr ? "Oui, partout au Cameroun" : "Yes, nationwide")
+                    : v === "ville" ? (fr ? "Dans ma ville seulement" : "My city only")
+                    : (fr ? "Retrait sur place" : "Pickup only");
+            return '<option value="' + v + '"' + ((sh.delivery || "") === v ? " selected" : "") + '>' + lib + '</option>';
+          }).join("")
+      + '</select></div></div>'
+      + '<div class="field"><label>' + (fr ? "Paiements acceptés" : "Payments accepted") + '</label>'
+      + '<input id="profPaiements" maxlength="60" value="' + esc(sh.pay || "") + '" placeholder="MTN MoMo, Orange Money, ' + (fr ? "espèces" : "cash") + '"></div>')
+    + '</div>';
+}
+function vdProfilBascule() {
+  try {
+    var sel = document.getElementById("profType");
+    var box = document.getElementById("profBoutique");
+    if (sel && box) box.style.display = (sel.value === "company") ? "block" : "none";
+  } catch (e) {}
+}
+
+/* (correctif maison) on lit la fiche boutique au besoin, sans
+   retarder l'ouverture du profil. */
+function vdChargerBoutique(apres) {
+  try {
+    if (!(FB.ready && FB.user && FB.db)) { if (apres) apres(); return; }
+    if (FB.shop) { if (apres) apres(); return; }
+    FB.db.ref("market_shops/" + FB.user.uid).once("value").then(function (s) {
+      FB.shop = (s && s.val()) || {};
+      if (apres) apres();
+    }).catch(function () { FB.shop = {}; if (apres) apres(); });
+  } catch (e) { if (apres) apres(); }
+}
+
+function openProfile(){
+  var u=FB.user; if(!u) return;
+  var nm=(FB.profile&&FB.profile.name)||u.displayName||(u.email||"").split("@")[0]||"—";
+  openModal('<h2 style="font-size:18px;margin-bottom:10px">'+t("profile_title")+'</h2>'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'+avaHTML(u.uid,nm,52)
+    +'<div style="min-width:0"><b style="font-size:15px">'+esc(nm)+'</b><div class="dim" style="font-size:12px">'+esc(u.email||"")+'</div></div></div>'
+    +'<a class="btn btn-ghost" style="display:block;text-align:center;margin-bottom:9px" href="./shalom-square.html">🛍️ '+t("back_market").replace("← ","")+'</a>'
+    +'<button class="btn" style="margin-bottom:9px;background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.4)" onclick="signOut()">'+t("logout_btn")+'</button>');
+}
+function signOut(){
+  closeModal();
+  FB.auth.signOut().then(function(){ toast(t("signout_done")); })
+  .catch(function(){ toast(t("signout_done")); });
+}
+
+/* =====================================================================
+   PROTOCOLE CHAT — portage à l'identique du marché (compatible JobMarket)
+   ===================================================================== */
+function pairThreadId(a,b,suffix){ return [a,b].sort().join("_")+(suffix?("__"+suffix):""); }
+function peerOf(threadId){
+  var me=FB.auth&&FB.auth.currentUser; if(!me) return null;
+  var parts=String(threadId).split("__")[0].split("_");
+  for(var i=0;i<parts.length;i++){ if(parts[i]&&parts[i]!==me.uid) return parts[i]; }
+  return null;
+}
+function listingKeyOf(threadId){
+  var parts=String(threadId).split("__");
+  if(parts.length<2) return null;
+  var suf=parts[1];
+  return suf.indexOf("market")===0 ? suf.slice(6) : null;
+}
+function sendMarketMessage(threadId,payload,cb,presetKey){
+  var me=FB.auth&&FB.auth.currentUser;
+  if(!me||!FB.ready){ cb&&cb(false,"auth"); return; }
+  var peer=peerOf(threadId);
+  if(!peer){ cb&&cb(false,"peer"); return; }
+  try{
+    var msgId=presetKey||FB.db.ref("chats/"+threadId+"/messages").push().key;
+    var now=Date.now();
+    var myName=(FB.profile&&FB.profile.name)||me.displayName||(me.email||"").split("@")[0]||"Utilisateur";
+    var peerName=PEER_NAMES.get(peer)||"Utilisateur";
+    var preview=payload.quote?("🧾 "+t("listing_ctx")+" : "+fmtXAF(payload.quote.price)):(payload.text||"").slice(0,100);
+    var msg={from:me.uid,to:peer,timestamp:now,readBy:{}};
+    msg.readBy[me.uid]=true;
+    if(payload.text) msg.text=payload.text;
+    if(payload.quote) msg.quote=payload.quote;
+    if(payload.autoReply) msg.autoReply=true;
+    FB.db.ref("userThreads/"+me.uid+"/"+threadId).set(true).catch(function(){});
+    FB.db.ref("userThreads/"+peer+"/"+threadId).set(true).catch(function(){});
+    var parts={}; parts[me.uid]=true; parts[peer]=true;
+    FB.db.ref("chats/"+threadId+"/meta/participants").update(parts).catch(function(){});
+    var names={}; names[me.uid]=myName; names[peer]=peerName;
+    FB.db.ref("chats/"+threadId+"/meta").update({names:names,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
+    FB.db.ref("userInboxes/"+peer+"/threads/"+threadId).update({peerUid:me.uid,peerName:myName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
+    FB.db.ref("userInboxes/"+me.uid+"/threads/"+threadId).update({peerUid:peer,peerName:peerName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
+    FB.db.ref("userInboxes/"+peer+"/threads/"+threadId+"/unread").transaction(function(c){ return (c||0)+1; }).catch(function(){});
+    FB.db.ref("chats/"+threadId+"/messages/"+msgId).set(msg).then(function(){ cb&&cb(true,msgId); }).catch(function(e){ cb&&cb(false,e); });
+  }catch(e){ cb&&cb(false,e); }
+}
+var RENDERED_KEYS=new Map();
+function preMarkThreadMsg(threadId,key){
+  if(!RENDERED_KEYS.has(threadId)) RENDERED_KEYS.set(threadId,new Set());
+  RENDERED_KEYS.get(threadId).add(key);
+}
+function subscribeThread(threadId,cb){
+  if(!FB.ready) return null;
+  var ref=FB.db.ref("chats/"+threadId+"/messages").limitToLast(80);
+  var h=function(snap){
+    var m=snap.val()||{}; var key=snap.key;
+    if(!RENDERED_KEYS.has(threadId)) RENDERED_KEYS.set(threadId,new Set());
+    var seen=RENDERED_KEYS.get(threadId);
+    if(seen.has(key)) return;
+    seen.add(key);
+    cb(m,key);
+  };
+  ref.on("child_added",h,function(err){ console.warn("chat listener:",err&&err.message); });
+  return function(){ ref.off("child_added",h); };
+}
+function markThreadRead(threadId){
+  var me=FB.auth&&FB.auth.currentUser;
+  if(!me||!FB.ready) return;
+  FB.db.ref("userInboxes/"+me.uid+"/threads/"+threadId+"/unread").set(0).catch(function(){});
+}
+
+/* ---------- état global de la page ---------- */
+var CHAT={open:false,tid:null,peer:null,unsub:null,meta:null,listing:null};
+var THREAD_MSGS=new Map();
+var PEER_NAMES=new Map();
+var INBOX={};                 /* tid -> {peerName,lastMessage,lastAt,lastFrom,unread,peerUid} */
+var INBOX_UNSUB=null;
+var TOTAL_UNREAD=0;
+function threadMsgs(tid){ if(!THREAD_MSGS.has(tid)) THREAD_MSGS.set(tid,[]); return THREAD_MSGS.get(tid); }
+
+/* ---------- cycle de vie utilisateur ---------- */
+function onFbUser(u){
+  renderAuth();
+  if(INBOX_UNSUB){ try{ INBOX_UNSUB(); }catch(e){} INBOX_UNSUB=null; }
+  if(CHAT.open) closeThreadPane();
+  INBOX={}; renderInbox();
+  if(u){
+    FB.db.ref("profiles/"+u.uid).once("value").then(function(snap){
+      FB.profile=snap.val()||{};
+      renderAuth();
+    }).catch(function(){});
+    PEER_NAMES.set(u.uid,(FB.profile&&FB.profile.name)||u.displayName||(u.email||"").split("@")[0]||"");
+    try{
+      var ref=FB.db.ref("userInboxes/"+u.uid+"/threads");
+      INBOX_UNSUB=function(){ try{ ref.off("value"); }catch(e){} };
+      var firstSnap=true, prevLastAt={};
+      ref.on("value",function(snap){
+        var v=(snap&&snap.val())||{};
+        INBOX=v;
+        var n=0;
+        Object.keys(v).forEach(function(k){ var th=v[k]; if(th&&th.unread>0) n+=Number(th.unread)||0; });
+        TOTAL_UNREAD=n; updateTitleBadge();
+        /* notification des nouveaux messages des fils NON ouverts */
+        if(!firstSnap){
+          var notify=null;
+          Object.keys(v).forEach(function(k){
+            var th=v[k]||{};
+            var nowAt=Number(th.lastAt)||0, wasAt=prevLastAt[k]||0;
+            if(nowAt>wasAt&&th.lastFrom&&FB.user&&th.lastFrom!==FB.user.uid
+               &&!(CHAT.open&&CHAT.tid===k&&document.visibilityState==="visible")){
+              notify={tid:k,name:th.peerName||"Shalom Square",text:th.lastMessage||""};
+            }
+          });
+          if(notify){ showBanner("💬",notify.name,notify.text,notify.tid); beep(); vibrate(); }
+        }
+        firstSnap=false;
+        prevLastAt={};
+        Object.keys(v).forEach(function(k){ prevLastAt[k]=Number(v[k]&&v[k].lastAt)||0; });
+        renderInbox();
+        if(PENDING_THREAD){ var pt=PENDING_THREAD; PENDING_THREAD=null; openThread(pt); }
+      },function(err){ console.warn("inbox listener:",err&&err.message); });
+    }catch(e){}
+  } else {
+    FB.profile=null; TOTAL_UNREAD=0; updateTitleBadge();
+  }
+}
+function updateTitleBadge(){
+  document.title=(TOTAL_UNREAD>0?("("+TOTAL_UNREAD+") "):"")+"Shalom Square — "+t("app_sub");
+}
+
+/* ---------- rendu de la liste des conversations ---------- */
+function renderInbox(){
+  var box=$("convList"); if(!box) return;
+  if(!FB.user){
+    box.innerHTML='<div class="empty"><div class="big">🔐</div><b style="color:var(--ink)">'+t("login_needed_title")+'</b><br>'
+      +t("login_needed_p")+'<br><br>'
+      +'<button class="btn btn-gold" style="max-width:230px;margin:0 auto" onclick="openSignIn()">'+t("login_go")+'</button></div>';
+    return;
+  }
+  var q=($("searchInput").value||"").toLowerCase().trim();
+  var arr=Object.keys(INBOX).map(function(tid){
+    var th=INBOX[tid]||{};
+    return {tid:tid,name:th.peerName||th.peerUid||"?",prev:th.lastMessage||"",lastAt:Number(th.lastAt)||0,
+            lastFrom:th.lastFrom||"",unread:Number(th.unread)||0,peerUid:th.peerUid||""};
+  }).filter(function(r){
+    if(!q) return true;
+    return (r.name+" "+r.prev).toLowerCase().indexOf(q)>=0;
+  }).sort(function(a,b){ return b.lastAt-a.lastAt; });
+
+  if(!arr.length){
+    box.innerHTML='<div class="empty"><div class="big">💬</div><b style="color:var(--ink)">'+t("inbox_empty_title")+'</b><br>'
+      +t("inbox_empty_p")+'<br><br>'
+      +'<a class="btn btn-gold" style="display:block;max-width:230px;margin:0 auto" href="./shalom-square.html">'+t("inbox_empty_go")+'</a></div>';
+    return;
+  }
+  var html=arr.map(function(r){
+    var you=(r.lastFrom&&FB.user&&r.lastFrom===FB.user.uid)?('<span class="you">'+esc(t("you"))+" : </span>"):"";
+    return '<div class="conv'+(CHAT.open&&CHAT.tid===r.tid?" active":"")+'" data-tid="'+esc(r.tid)+'" onclick="openThread(\''+esc(r.tid)+'\')">'
+      +avaHTML(r.peerUid||r.tid,r.name,46)
+      +'<div class="conv-mid"><div class="conv-name">'+esc(r.name)+'</div>'
+      +'<div class="conv-prev">'+you+esc(r.prev)+'</div></div>'
+      +'<div class="conv-right"><span class="conv-time">'+(r.lastAt?dayLabel(r.lastAt):"")+'</span>'
+      +(r.unread>0?'<span class="badge">'+(r.unread>99?"99+":r.unread)+'</span>':"")
+      +'</div></div>';
+  }).join("");
+  box.innerHTML=html;
+}
+function renderAll(){ renderInbox(); renderThread(); renderQuickChips(); renderAuth(); updateTitleBadge(); }
+
+/* ---------- ouverture / fermeture d'un fil ---------- */
+var PENDING_THREAD=null;
+function openThread(tid){
+  if(!FB.user){ PENDING_THREAD=tid; openSignIn(); return; }
+  closeModal();
+  if(CHAT.unsub){ try{ CHAT.unsub(); }catch(e){} CHAT.unsub=null; }
+  var peer=peerOf(tid);
+  if(!peer){ toast("…"); return; }
+  var inbox=INBOX[tid]||{};
+  var wasOpen=CHAT.open;
+  CHAT={open:true,tid:tid,peer:peer,unsub:null,meta:null,listing:LISTING_CACHE.get(tid)||null};
+  if(!wasOpen) vdBackPose();
+  showThreadPane();
+  $("thName").textContent=inbox.peerName||PEER_NAMES.get(peer)||peer.slice(0,8);
+  $("thAva").outerHTML=avaHTML(peer,$("thName").textContent,38).replace('class="ava"','class="ava" id="thAva"');
+  renderListingChip();
+  renderThread(); renderQuickChips(); renderAiIdle();
+  markThreadRead(tid);
+  CHAT.unsub=subscribeThread(tid,onThreadMsg);
+  /* meta du fil (noms, contexte) + annonce discutée */
+  FB.db.ref("chats/"+tid+"/meta").once("value").then(function(snap){
+    var m=(snap&&snap.val())||{};
+    if(!CHAT.open||CHAT.tid!==tid) return;
+    CHAT.meta=m;
+    var names=m.names||{};
+    var nm=names[peer]||inbox.peerName||PEER_NAMES.get(peer);
+    if(nm){ $("thName").textContent=nm; PEER_NAMES.set(peer,nm); }
+    renderThread();
+  }).catch(function(){});
+  loadListingContext(tid);
+}
+function closeThreadUI(){ vdFermerThreadBrut(); vdBackRetire(); }
+function showThreadPane(){
+  $("threadHero").style.display="none";
+  $("threadUI").style.display="flex";
+  $("threadPane").classList.add("open");
+}
+function closeThreadPaneOnly(){
+  $("threadPane").classList.remove("open");
+  $("threadUI").style.display="none";
+  $("threadHero").style.display="flex";
+}
+function closeThreadPane(){
+  if(CHAT.unsub){ try{ CHAT.unsub(); }catch(e){} CHAT.unsub=null; }
+  CHAT.open=false; CHAT.tid=null;
+  closeThreadPaneOnly();
+  hideBanners();
+  renderInbox();
+}
+
+/* ---------- contexte annonce (pour la vérification IA + accroche) ---------- */
+var LISTING_CACHE=new Map();
+function loadListingContext(tid){
+  var key=listingKeyOf(tid);
+  if(!key) return;
+  if(LISTING_CACHE.has(tid)){ CHAT.listing=LISTING_CACHE.get(tid); renderListingChip(); renderAiIdle(); return; }
+  FB.db.ref("market_listings/"+key).once("value").then(function(snap){
+    var v=(snap&&snap.val())||null;
+    if(!v||!v.title) return;
+    var l={key:key,title:String(v.title).slice(0,90),price:Number(v.price)||0,desc:String(v.desc||"").slice(0,600),city:v.city||"",cat:v.category||""};
+    LISTING_CACHE.set(tid,l);
+    if(CHAT.open&&CHAT.tid===tid){ CHAT.listing=l; renderListingChip(); renderAiIdle(); }
+  }).catch(function(){});
+}
+function renderListingChip(){
+  var chip=$("listingChip"), l=CHAT.listing;
+  if(!l){ chip.style.display="none"; $("scamBtn").style.display="none"; return; }
+  chip.style.display="flex";
+  $("lcTitle").textContent=l.title;
+  $("lcPrice").textContent=l.price?fmtXAF(l.price):"";
+  $("lcThumb").textContent=catEmoji(l.cat);
+  $("scamBtn").style.display="";
+}
+function catEmoji(cat){
+  cat=String(cat||"");
+  if(/food|denree|miel|cereal|legume|fruit/.test(cat)) return "🍯";
+  if(/phone|tech|electro|informatique/.test(cat)) return "📱";
+  if(/mode|habit|dress|vetement/.test(cat)) return "👗";
+  if(/meuble|table|maison/.test(cat)) return "🪑";
+  if(/vehicule|moto|voiture|car/.test(cat)) return "🚗";
+  return "📦";
+}
+function openListing(){
+  var l=CHAT.listing; if(!l) return;
+  window.location.href="./shalom-square.html#listing="+encodeURIComponent(l.key);
+}
+
+/* ---------- rendu du fil ---------- */
+function bubbleHTML(m){
+  var tm=hhmm(m.ts);
+  var inner="";
+  if(m.autoReply){ inner+='<span class="autolabel">🤖 '+(LANG==="fr"?"réponse automatique":"auto reply")+'</span>'; }
+  if(m.quote){
+    inner+='<div class="quotecard">🧾 <b>'+t("listing_ctx")+'</b> : '+esc(fmtXAF(m.quote.price))
+      +(m.quote.title?('<br><span class="dim" style="font-size:11.5px">'+esc(String(m.quote.title).slice(0,60))+'</span>'):"")
+      +'</div>';
+  }
+  inner+=m.trans?('<div>'+esc(m.text||"")+'</div><div class="trans"><b>🌐 '+t("ai_translate")+'</b>'+esc(m.trans)+'</div>'):esc(m.text||"");
+  return '<div class="bubble '+(m.who==="me"?"me":"them")+'" data-mk="'+esc(m.key||"")+'">'+inner
+    +'<span class="msgtime">'+tm+(m.who==="me"?" ✓":"")+'</span></div>';
+}
+function renderThread(){
+  var box=$("bubbles"); if(!box) return;
+  if(!CHAT.open){ box.innerHTML=""; return; }
+  var arr=threadMsgs(CHAT.tid);
+  var html=arr.length
+    ? arr.map(bubbleHTML).join("")
+    : '<div class="bubble sys">'+t("welcome_thread")+'<br><span class="dim" style="font-size:10.5px">'+t("empty_thread_hint")+'</span></div>';
+  box.innerHTML=html;
+  box.scrollTop=box.scrollHeight;
+}
+function onThreadMsg(m,key){
+  if(!m) return;
+  if(!m.text&&!m.quote){
+    /* messages riches venant de l'app JobMarket : photos, vocaux */
+    if(m.imageUrl||(m.images&&m.images.length)) m.text="📷 "+(LANG==="fr"?"Photo":"Photo");
+    else if(m.voice) m.text="🎤 "+(LANG==="fr"?"Message vocal":"Voice message");
+    else return;
+  }
+  var me=FB.auth&&FB.auth.currentUser;
+  var tid=CHAT.tid;
+  var arr=threadMsgs(tid);
+  var mine=me&&m.from===me.uid;
+  arr.push({who:mine?"me":"them",text:m.text||"",quote:m.quote,autoReply:!!m.autoReply,ts:m.timestamp||Date.now(),key:key});
+  if(arr.length>300) arr.shift();
+  if(CHAT.open&&CHAT.tid===tid){
+    renderThread();
+    if(!mine){
+      if(document.visibilityState==="visible"){ markThreadRead(tid); }
+      else { scheduleAwayReply(tid,m,arr); }
+    }
+  }
+  if(!mine){
+    notifyIncoming(tid,m);
+  }
+}
+function renderQuickChips(){
+  var box=$("quickChips"); if(!box) return;
+  if(!CHAT.open){ box.innerHTML=""; return; }
+  box.innerHTML=[t("q_available"),t("q_price"),t("q_ship")].map(function(q){
+    return '<button class="qchip" onclick="quickSend(this)">'+esc(q)+'</button>';
+  }).join("");
+}
+function quickSend(btn){ sendText(btn.textContent); }
+
+/* ---------- envoi ---------- */
+function sendText(){
+  var inp=$("chatInput");
+  var txt=(inp.value||"").trim();
+  if(!txt) return;
+  inp.value="";
+  if(!CHAT.open||!CHAT.tid) return;
+  var tid=CHAT.tid, key=null;
+  try{ key=FB.db.ref("chats/"+tid+"/messages").push().key; }catch(e){ key=null; }
+  if(!FB.user){ inp.value=txt; openSignIn(); return; }
+  var arr=threadMsgs(tid);
+  if(key){ preMarkThreadMsg(tid,key); }
+  arr.push({who:"me",text:txt,ts:Date.now()});
+  renderThread();
+  sendMarketMessage(tid,{text:txt},function(ok){
+    if(!ok){
+      for(var i=arr.length-1;i>=0;i--){ if(arr[i].who==="me"&&arr[i].text===txt){ arr.splice(i,1); break; } }
+      if(key){ var seen=RENDERED_KEYS.get(tid); if(seen) seen.delete(key); }
+      renderThread();
+      toast("⚠️ "+t("msg_fail"));
+    }
+  },key);
+}
+
+/* =====================================================================
+   IA — mêmes modes que JobMarket Cameroon via le worker sécurisé
+   (Llama 3.3 70B, Workers AI) : aucune clé dans la page.
+   ===================================================================== */
+var AI_URL="https://jobmarket-chat-proxy.ghislaintankat.workers.dev";
+var AI_BUSY=false;
+function aiFetch(body,timeoutMs){
+  return new Promise(function(resolve){
+    try{
+      var ac=("AbortController" in window)?new AbortController():null;
+      var to=setTimeout(function(){ if(ac) ac.abort(); },timeoutMs||9000);
+      fetch(AI_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(body),
+        signal:ac?ac.signal:undefined
+      }).then(function(r){
+        clearTimeout(to);
+        return r.json().catch(function(){ resolve(null); });
+      }).then(function(j){ resolve(j||null); })
+      .catch(function(){ resolve(null); });
+    }catch(e){ resolve(null); }
+  });
+}
+function buildAiContext(){
+  var arr=threadMsgs(CHAT.tid).slice(-12);
+  var msgs=arr.map(function(m){
+    var who=(m.who==="me")?"Moi":"Client";
+    var body=m.text||(m.quote?("🧾 "+t("listing_ctx")+" "+fmtXAF(m.quote.price)):"");
+    return who+" : "+String(body).slice(0,150);
+  }).filter(function(s){ return s.split(" : ")[1]; });
+  var l=CHAT.listing;
+  return {
+    lastMessages:msgs,
+    proTitle:(FB.profile&&FB.profile.name)||"",
+    proSkills:"",
+    availability:(FB.profile&&FB.profile.availability)||"",
+    jobContext:l?String(l.title+" — "+(l.price?fmtXAF(l.price):"")+(l.city?" ("+l.city+")":"")).slice(0,300):"Marché Shalom Square (biens et denrées, Cameroun)",
+    peerJobs:[],
+    lang:LANG
+  };
+}
+/* --- réponses suggérées (suggest_reply) --- */
+function renderAiIdle(){
+  var row=$("aiRow"); if(!row) return;
+  row.innerHTML="";
+  if(!CHAT.open) return;
+  var b=document.createElement("button");
+  b.className="qchip ai";
+  b.textContent=t("ai_suggest");
+  b.onclick=aiSuggest;
+  row.appendChild(b);
+  var arr=threadMsgs(CHAT.tid);
+  if(!arr.length&&CHAT.listing){
+    var c=document.createElement("button");
+    c.className="qchip ai";
+    c.textContent=t("ai_craft");
+    c.onclick=aiCraftContact;
+    row.appendChild(c);
+  }
+}
+function aiSuggest(){
+  if(AI_BUSY||!CHAT.open) return;
+  AI_BUSY=true;
+  var row=$("aiRow");
+  row.innerHTML='<button class="qchip ai busy">'+esc(t("ai_suggest_loading"))+'</button>';
+  var ctx=buildAiContext();
+  aiFetch(Object.assign({mode:"suggest_reply"},ctx),9000).then(function(j){
+    AI_BUSY=false;
+    if(!CHAT.open){ return; }
+    var sugs=(j&&!j.fallback&&Array.isArray(j.suggestions))?j.suggestions.map(function(s){return String(s).trim();}).filter(Boolean).slice(0,2):[];
+    renderAiIdle();
+    if(!sugs.length){ toast("🤖 "+t("ai_err")); return; }
+    var box=$("aiRow");
+    sugs.forEach(function(s){
+      var b=document.createElement("button");
+      b.className="qchip ai";
+      b.textContent="✨ "+s.slice(0,160);
+      b.onclick=function(){ if(CHAT.open){ $("chatInput").value=s; $("chatInput").focus(); } };
+      box.appendChild(b);
+    });
+  });
+}
+/* --- premier message rédigé par l'IA (craft_contact_message) --- */
+function aiCraftContact(){
+  if(AI_BUSY||!CHAT.open||!CHAT.listing) return;
+  AI_BUSY=true;
+  var row=$("aiRow");
+  row.innerHTML='<button class="qchip ai busy">'+esc(t("ai_craft_loading"))+'</button>';
+  var l=CHAT.listing;
+  aiFetch({
+    mode:"craft_contact_message",
+    jobTitle:l.title,
+    jobDesc:String(l.desc||"").slice(0,400),
+    proTitle:PEER_NAMES.get(CHAT.peer)||$("thName").textContent||"",
+    proSkills:"",
+    availability:"",
+    previousExchanges:"",
+    lang:LANG
+  },10000).then(function(j){
+    AI_BUSY=false;
+    if(!CHAT.open) return;
+    renderAiIdle();
+    var msg=(j&&!j.fallback&&typeof j.message==="string")?j.message.trim():"";
+    if(!msg){ toast("🤖 "+t("ai_err")); return; }
+    $("chatInput").value=msg.slice(0,600);
+    $("chatInput").focus();
+  });
+}
+/* --- traduction d'un message reçu (translate_message) --- */
+function aiTranslateBubble(btn){
+  var mk=btn.getAttribute("data-mk");
+  var arr=threadMsgs(CHAT.tid);
+  var m=null;
+  for(var i=0;i<arr.length;i++){ if(arr[i].key===mk){ m=arr[i]; break; } }
+  if(!m||!m.text) return;
+  var old=btn.textContent;
+  btn.textContent=t("ai_translating");
+  aiFetch({mode:"translate_message",text:m.text.slice(0,900),from:(LANG==="fr"?"en":"fr"),to:LANG},7000).then(function(j){
+    btn.textContent=old;
+    var tr=(j&&!j.fallback&&typeof j.translation==="string")?j.translation.trim():"";
+    if(!tr){ toast("🌐 "+t("ai_translate_fail")); return; }
+    m.trans=tr;
+    renderThread();
+  });
+}
+/* --- vérification IA de l'annonce (check_scam_signals) --- */
+function aiScamCheck(){
+  if(!CHAT.open||!CHAT.listing){ return; }
+  var l=CHAT.listing, btn=$("scamBtn");
+  btn.disabled=true;
+  aiFetch({mode:"check_scam_signals",title:l.title,description:String(l.desc||"").slice(0,600),price:l.price?String(l.price):"",lang:LANG},12000).then(function(j){
+    btn.disabled=false;
+    if(!j||j.fallback||!j.riskLevel){ toast("🛡️ "+t("ai_err")); return; }
+    var level=String(j.riskLevel), note=String(j.note||"").slice(0,400);
+    var head=level==="high"?t("ai_scam_high"):(level==="medium"?t("ai_scam_medium"):t("ai_scam_low"));
+    var color=level==="high"?"#EF4444":(level==="medium"?"#FFC53D":"#25D366");
+    openModal('<h2 style="font-size:17px;margin-bottom:10px">🛡️ '+t("ai_scam")+'</h2>'
+      +'<div style="border:1px solid '+color+'55;border-radius:12px;padding:12px;background:'+color+'14;font-size:13px;line-height:1.6">'
+      +'<b style="color:'+color+'">'+esc(head)+'</b>'
+      +(note?('<br>'+esc(note)):"")
+      +'</div>'
+      +'<div class="dim" style="font-size:11px;margin-top:10px;line-height:1.5">'+(LANG==="fr"
+        ?"Conseils : payez à la livraison ou via la commande sécurisée du marché ; ne versez jamais d'acompte à un inconnu ; méfiez-vous des prix trop beaux pour être vrais."
+        :"Tips: pay on delivery or via the market's secure order; never wire a deposit to a stranger; beware of prices too good to be true.")+'</div>'
+      +'<button class="btn btn-gold" style="margin-top:14px" onclick="closeModal()">OK</button>');
+  });
+}
+/* --- réponse automatique d'absence (ai_away_reply, portée de JobMarket) --- */
+var AWAY_INFLIGHT=false;
+function scheduleAwayReply(tid,m,arr){
+  if(AWAY_INFLIGHT) return;
+  if(!FB.user||FB.user.isAnonymous) return;
+  if(m&&m.autoReply) return;
+  try{
+    if(Date.now()-(Number(store.getItem("aiAway_"+tid))||0)<144e5) return;
+  }catch(e){}
+  AWAY_INFLIGHT=true;
+  var msgs=arr.slice(-8).map(function(x){
+    var who=(x.who==="me")?"Moi":"Client";
+    return who+" : "+String(x.text||(x.quote?"🧾 "+t("listing_ctx"):"")).slice(0,120);
+  }).filter(function(s){ return s.split(" : ")[1]; });
+  var l=LISTING_CACHE.get(tid)||null;
+  aiFetch({
+    mode:"ai_away_reply",
+    incomingMessage:String((m&&m.text)||"").slice(0,300),
+    lastMessages:msgs,
+    proTitle:(FB.profile&&FB.profile.name)||"",
+    proSkills:"",
+    availability:(FB.profile&&FB.profile.availability)||"",
+    jobContext:l?String(l.title+" — "+(l.price?fmtXAF(l.price):"")).slice(0,300):"Marché Shalom Square (biens et denrées)",
+    peerJobs:[],
+    socialProof:[],
+    lang:LANG
+  },10000).then(function(j){
+    AWAY_INFLIGHT=false;
+    if(!j||j.fallback||typeof j.message!=="string") return;
+    var txt=j.message.trim(); if(!txt) return;
+    if(!FB.user||!FB.auth||FB.auth.currentUser!==FB.user) return;
+    if(document.visibilityState==="visible") return;   /* plus absent → pas d'auto-réponse */
+    sendMarketMessage(tid,{text:txt.slice(0,500),autoReply:true},function(ok){
+      if(ok){ try{ store.setItem("aiAway_"+tid,String(Date.now())); }catch(e){} }
+    });
+  });
+}
+/* clic sur une bulle reçue → actions (traduire) */
+document.addEventListener("click",function(ev){
+  var b=ev.target;
+  if(!(b instanceof HTMLElement)) return;
+  if(b.classList&&b.classList.contains("bact")) return;
+  var bubble=b.closest?b.closest(".bubble.them"):null;
+  if(!bubble||!CHAT.open) return;
+  var mk=bubble.getAttribute("data-mk");
+  if(!mk) return;
+  var acts=bubble.querySelector(".bubble-acts");
+  if(acts){ acts.remove(); return; }
+  var row=document.createElement("div");
+  row.className="bubble-acts";
+  row.innerHTML='<button class="bact" data-mk="'+esc(mk)+'" onclick="aiTranslateBubble(this)">🌐 '+esc(t("ai_translate"))+'</button>';
+  bubble.after(row);
+},true);
+
+/* ---------- notifications façon WhatsApp ---------- */
+var BANNER_T=null, BANNER_TID=null;
+function notifyIncoming(tid,m){
+  var inbox=INBOX[tid]||{};
+  var name=(m&&m.fromName)||(inbox.peerName)||PEER_NAMES.get(peerOf(tid)||"")||"Shalom Square";
+  var txt=(m&&m.text)?String(m.text).slice(0,90):(m&&m.quote?("🧾 "+t("listing_ctx")):"…");
+  if(!(CHAT.open&&CHAT.tid===tid&&document.visibilityState==="visible")){
+    showBanner("💬",name,txt,tid);
+    beep(); vibrate();
+  }
+  updateTitleBadgeSoon();
+}
+function showBanner(ic,title,text,tid){
+  var b=$("banner");
+  $("bIc").textContent=ic; $("bTitle").textContent=title; $("bText").textContent=text;
+  BANNER_TID=tid||null;
+  b.classList.add("show");
+  if(BANNER_T) clearTimeout(BANNER_T);
+  BANNER_T=setTimeout(hideBanners,4200);
+}
+function hideBanners(){ var b=$("banner"); if(b) b.classList.remove("show"); }
+function bannerClick(){
+  var tid=BANNER_TID;
+  hideBanners();
+  if(tid) openThread(tid);
+}
+function beep(){
+  try{
+    var C=window.AudioContext||window.webkitAudioContext;
+    if(!C) return;
+    var ctx=new C(), o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type="sine"; o.frequency.value=830;
+    g.gain.setValueAtTime(0.0001,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.12,ctx.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.45);
+    o.start(); o.stop(ctx.currentTime+0.5);
+  }catch(e){}
+}
+function vibrate(){ try{ if(navigator.vibrate) navigator.vibrate([90,50,90]); }catch(e){} }
+var TITLE_SOON=null;
+function updateTitleBadgeSoon(){
+  if(TITLE_SOON) clearTimeout(TITLE_SOON);
+  TITLE_SOON=setTimeout(function(){
+    var n=0;
+    Object.keys(INBOX).forEach(function(k){ var th=INBOX[k]; if(th&&th.unread>0) n+=Number(th.unread)||0; });
+    TOTAL_UNREAD=n; updateTitleBadge();
+  },400);
+}
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="visible"&&CHAT.open&&CHAT.tid){ markThreadRead(CHAT.tid); }
+});
+
+/* ---------- lien profond #thread=<tid> (depuis le marché / JobMarket) ---------- */
+function readDeepLink(){
+  var h=location.hash||"";
+  var m=h.match(/thread=([^&]+)/);
+  return m?decodeURIComponent(m[1]):null;
+}
+if(readDeepLink()){ PENDING_THREAD=readDeepLink(); }
+window.addEventListener("hashchange",function(){
+  var tid=readDeepLink();
+  if(tid&&FB.user&&tid!==CHAT.tid){ openThread(tid); }
+});
+
+/* ---------- démarrage ---------- */
+applyLang();
+renderInbox();
+renderAuth();
+updateTitleBadge();
+</script>
+</body>
+</html>
+
+>>>FIN DU FICHIER 1/2 — shalom-square-chat.html — NE PAS COPIER CETTE LIGNE<<<
+
+
+╔══════════════════════════════════════════════════════════════════╗
+║  FICHIER 2/2 — shalom-square.html  (REMPLACER — le marché)        ║
+║  Enregistrer sous : shalom-square.html (racine du dépôt)          ║
+╚══════════════════════════════════════════════════════════════════╝
+
+>>>DÉBUT DU FICHIER 2/2 — shalom-square.html — COPIER À PARTIR D'ICI<<<
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -414,21 +1869,6 @@ window.__fbcdn = function(k){
 </style>
 </head>
 <body>
-<!-- (correctif maison) remonter en haut : apparait des qu'on a descendu
-     un ecran et demi, disparait sinon. -->
-<button id="vdHautBtn" type="button" onclick="vdRemonter()" aria-label="Remonter en haut"
-  style="display:none;position:fixed;right:14px;bottom:86px;z-index:60;width:44px;height:44px;
-  border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);
-  font-size:19px;box-shadow:var(--shadow-lg);cursor:pointer">↑</button>
-<script>
-function vdRemonter(){ try{ window.scrollTo({top:0,behavior:"smooth"}); }catch(e){ window.scrollTo(0,0); } }
-window.addEventListener("scroll",function(){
-  try{
-    var b=document.getElementById("vdHautBtn"); if(!b) return;
-    b.style.display=(window.scrollY>window.innerHeight*1.5)?"block":"none";
-  }catch(e){}
-},{passive:true});
-</script>
 
 <!-- ================= HEADER ================= -->
 <header class="topbar">
@@ -443,7 +1883,7 @@ window.addEventListener("scroll",function(){
     </div>
     <form class="search" id="searchForm" role="search" onsubmit="return false">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
-      <button type="button" id="vdCroixRech" onclick="vdViderRecherche()" aria-label="Effacer la recherche" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;z-index:2">✕</button><input id="searchInput" type="text" autocomplete="off" aria-label="Rechercher" data-i18n-ph="search_ph">
+      <input id="searchInput" type="text" autocomplete="off" aria-label="Rechercher" data-i18n-ph="search_ph">
       <span class="kbd">/</span>
     </form>
     <div class="actions">
@@ -678,6 +2118,389 @@ var IMG = {
   honey: vdIllustration("🍯", "#5f4a1e", "#2e220f"),
   car:   vdIllustration("🚗", "#1e5f3a", "#0f2e1e"),
   hero:  vdIllustration("🛍️", "#5f3a1e", "#2e1b0f")
+};
+
+/* ---------- i18n (FR par défaut, comme l'app) ---------- */
+var I18N={
+fr:{
+  search_ph:"Cherchez (téléphone, maçon, miel, moto…)", messages:"Messages", chat_ph:"Écrivez un message…",
+  demo_msg:"Bouton démo — la fonctionnalité complète arrive 🙂", notif_title:"Notifications", notif_empty:"Aucune notification.",
+  ai_price:"Prix conseillé par l'IA", ai_desc:"Améliorer la description", ai_desc_done:"Description améliorée ✓", ai_need_title:"Écrivez d'abord un titre 🙂", ai_err:"IA momentanément indisponible — réessayez.",
+  hero_pill:"Édition Turbo — recherche instantanée dans plus de 1 200 annonces",
+  hero_title:"Objets, denrées, véhicules — <b>la marketplace du Cameroun, propulsée par JobMarket.</b>",
+  hero_sub:"Achetez et vendez téléphones, motos, meubles, denrées et plus, partout au Cameroun. Discutez via le chat sécurisé JobMarket, payez par MTN MoMo ou Orange Money. Les métiers et services ? C'est sur JobMarket.",
+  browse_btn:"Parcourir les annonces", post_free_btn:"Publier une annonce — gratuit",
+  stats_listings:"annonces en ligne", stats_regions:"régions couvertes", stats_chat:"chat sécurisé intégré", stats_rating:"note moyenne",
+  deals_h:"Bonnes affaires du jour", saved:"Favoris", deals_only:"Promos", verified_only:"Vérifiés", my_listings:"Mes annonces",
+  view_list:"Liste", view_grid:"Grille", region:"Région", any_region:"Toutes les régions", condition:"État", any_cond:"Tous",
+  c_new:"Neuf", c_used:"Occasion", c_handmade:"Fait main", c_fresh:"Produits frais", c_wholesale:"Gros", c_service:"Service",
+  sort:"Trier", s_newest:"Plus récentes", s_price_asc:"Prix : croissant", s_price_desc:"Prix : décroissant", s_rating:"Mieux notés",
+  showing:"Affichage de", of:"sur", listings:"annonces",
+  no_results_h:"Aucune annonce ne correspond", no_results_p:"Essayez d'autres mots-clés, élargissez le budget, ou effacez les filtres.", clear_filters:"Effacer les filtres",
+  recently_viewed:"👀 Vues récemment", how_h:"Comment marche Shalom Square",
+  buy_h:"Pour les acheteurs", buy_1t:"Cherchez & découvrez", buy_1p:"Parcourez par catégorie, prix et région — instantanément.",
+  buy_2t:"Discutez via le chat sécurisé", buy_2p:"Le même chat que l'app JobMarket — vos messages se synchronisent.",
+  buy_3t:"Payez en confiance", buy_3p:"MTN MoMo, Orange Money, espèces — ou règlez dans le chat.",
+  sell_h:"Pour les vendeurs", sell_1t:"Publiez en quelques minutes", sell_1p:"Photos, prix en FCFA, quartier — votre annonce est en ligne aussitôt.",
+  sell_2t:"Recevez les demandes", sell_2p:"Les acheteurs vous écrivent — sur Shalom Square ou dans l'app JobMarket.",
+  sell_3t:"Concluez la vente", sell_3p:"Négociez, envoyez un devis dans le chat, encaissez par MoMo.",
+  trust_line:"🛡️ Profils vérifiés · 💬 Chat sécurisé JobMarket · 📲 MTN MoMo & Orange Money · 🇨🇲 Toutes les 10 régions",
+  f_about:"Shalom Square est la marketplace du Cameroun dédiée aux objets, denrées et véhicules — par JobMarket. Même compte, même chat sécurisé ; les métiers et services restent sur l'app JobMarket.",
+  f_buyers:"Acheteurs", f_browse:"Tout parcourir", f_orders:"Mes commandes",
+  f_sellers:"Vendeurs", f_post:"Publier une annonce", f_hub:"Espace vendeur",
+  f_support:"Assistance", f_app:"← Retour à l'app", f_perf:"⚡ Performances", f_contact:"WhatsApp support",
+  sign_in:"Connexion", sign_in_h:"Connexion Shalom Square", sign_in_p:"Le même compte que l'app JobMarket — vos annonces et vos discussions se retrouvent partout.",
+  email:"Adresse e-mail", password:"Mot de passe", create_account:"Créer mon compte", login_btn:"Se connecter", google_btn:"Continuer avec Google", or:"ou",
+  auth_err:"Veuillez saisir un e-mail et un mot de passe (6+ caractères).", login_needed:"Connectez-vous pour contacter les vendeurs et publier des annonces.",
+  welcome_toast:"Bienvenue, {n} ! Votre compte JobMarket est connecté. 🎉", signed_out:"Déconnecté. À bientôt ! 👋",
+  guest_chip:"Invité", post_ad:"➕ Publier",
+  sell_h2:"Publier une annonce — gratuit", sell_p:"Visible immédiatement sur Shalom Square. En mode connecté, elle est aussi enregistrée dans votre compte JobMarket.",
+  what_selling:"Que vendez-vous ?", title_ph:"ex. Miel pur de Bafoussam — 5 litres", price_xaf:"Prix (FCFA)", cond_type:"État / type",
+  city:"Ville", quartier:"Quartier / repère", phone:"Téléphone", desc_ph:"Décrivez votre annonce : état, quantité, livraison, paiement (MoMo, Orange Money, espèces)…",
+  add_photos:"📷 Ajouter des photos", click_add:"Cliquez pour ajouter des photos (max 4)",
+  photo_note:"En mode connecté, les photos sont envoyées comme dans l'app (Cloudinary). Sinon elles restent sur cet appareil.",
+  pick_cover:"Ou choisissez une icône de couverture", publish:"🚀 Publier maintenant",
+  sell_err_title:"Donnez un titre à votre annonce (4 caractères min.).", sell_err_price:"Saisissez un prix valide en FCFA (supérieur à 0).", sell_err_loc:"Choisissez une ville.",
+  sell_err_phone:"Saisissez un numéro de téléphone valide (ex. 677 00 00 00).",
+  listing_live:"🎉 Votre annonce est en ligne !", listing_live_fb:"🎉 Annonce publiée et synchronisée avec votre compte JobMarket !",
+  uploading_photos:"📤 Envoi des photos…",
+  chat_seller:"💬 Contacter le vendeur", buy_now:"🛒 Commander", make_offer:"🤝 Faire une offre", save_b:"Favori",
+  report:"⚑ Signaler cette annonce", reported:"Merci — l'équipe de modération va examiner.", saved_toast:"Ajouté à vos favoris ❤️",
+  listed_ago_1:"publiée il y a {n} jour", listed_ago_n:"publiée il y a {n} jours", views:"vues",
+  verified_s:"✓ Vendeur vérifié", unverified:"· non vérifié", reviews:"avis", real_seller:"Vendeur vérifié", demo_seller:"Démo",
+  offer_h:"Faire une offre", offer_p:"Les vendeurs acceptent généralement les offres à moins de 10 % du prix demandé.",
+  your_offer_xaf:"Votre offre (FCFA)", send_offer:"Envoyer l'offre", offer_accepted:"🎉 Offre acceptée à {p} ! Finalisons dans le chat.",
+  offer_counter:"Le vendeur contre-offre à {p}.", accept_counter:"Accepter la contre-offre", decline:"Refuser",
+  offer_too_low:"Désolé, c'est trop loin du prix demandé. Réessayez 😉", quote_sent:"🧾 Devis envoyé dans le chat sécurisé ✅",
+  order_msg:"Bonjour, je souhaite commander « {t} » à {p}. Est-ce toujours disponible ?",
+  checkout:"Paiement", order_summary:"Récapitulatif", shipping:"Livraison", ship_std:"Agence de transport — 2–5 jours", ship_exp:"Express moto — 24 h", ship_pick:"Retrait sur place — gratuit",
+  payment:"Moyen de paiement", pay_momo:"📲 MTN Mobile Money", pay_om:"🟠 Orange Money", pay_cash:"💵 Espèces à la livraison",
+  momo_note:"Vous recevrez une invite de paiement sur votre téléphone (démo).", pay_now:"Payer {p}", processing:"Paiement en cours…",
+  payment_ok:"Paiement réussi ✅", order_placed:"Commande passée ! 🎉", order_id:"Commande", view_orders:"Voir mes commandes", continue_shopping:"Continuer mes achats",
+  thanks_buy:"Merci d'avoir commandé sur Shalom Square !",
+  order_msg_chat:"Excellente nouvelle — j'ai reçu votre paiement pour {t} ✅ Je prépare votre commande !",
+  my_orders:"Mes commandes", orders_empty:"Aucune commande — trouvez votre bonheur et cliquez « Commander » ! 🛍️",
+  st_placed:"Passée", st_paid:"Payée", st_shipped:"Expédiée", st_delivered:"Livrée",
+  write_review:"⭐ Laisser un avis", review_h:"Notez votre achat", your_rating:"Votre note", your_review:"Votre avis (facultatif)",
+  submit_review:"Envoyer l'avis", review_thanks:"Merci pour votre avis — il aide toute la communauté ! ⭐", total:"Total",
+  member_since:"Membre depuis", resp_time:"Répond en", all_listings:"Annonces", seller_reviews:"Avis", demo_note_profile:"Profil de démonstration (annonce générée localement).",
+  hub_h:"Espace vendeur", h_active:"Annonces actives", h_views:"Vues (30 j)", h_chats:"Discussions (30 j)", h_conv:"Conversion",
+  h_top:"Meilleures annonces", h_boost:"Booster", h_boosted:"Boostée pendant 7 jours 🔥", h_calc:"Calculateur de revenus",
+  h_price_xaf:"Votre prix (FCFA)", h_qty:"Ventes par mois", h_comm:"Commission (8 %)", h_payout:"Vous recevez",
+  h_note:"Chiffres de démonstration. JobMarket prélève 8 % uniquement sur les ventes finalisées en ligne — publier est toujours gratuit.",
+  q_available:"Est-ce encore disponible ?", q_price:"Pouvez-vous faire un effort sur le prix ?", q_ship:"Livrez-vous dans ma région ?",
+  chat_welcome:"👋 Bienvenue sur Shalom Square. Ouvrez une annonce et cliquez « Contacter le vendeur » pour discuter et négocier.",
+  secure_tag:"CHAT SÉCURISÉ JOBMARKET", demo_tag:"DÉMO LOCALE",
+  bench_h:"⚡ Performances de recherche", bench_p:"Shalom Square interroge un index inversé (pondéré, préfixes + tolérance aux fautes) au lieu de scanner chaque annonce. Test effectué sur votre appareil, à l'instant :",
+  bench_run:"Lancer le test", bench_running:"Test en cours…", bench_naive:"Scan classique", bench_index:"Index Shalom Square",
+  bench_speedup:"plus rapide", bench_note:"Aussi : seules ~24 cartes sont rendues à la fois (lots virtuels) — l'interface reste fluide quelle que soit l'échelle.",
+  built_in:"{n} annonces indexées en {ms} ms au démarrage", listings_indexed:"annonces indexées",
+  n1:"💰 Baisse de prix sur une annonce sauvegardée", n2:"✅ Votre annonce a reçu 12 nouvelles vues", n3:"👋 Bienvenue sur Shalom Square — essayez le test ⚡ !",
+  order_shipped:"📦 La commande {id} a été expédiée !", order_delivered:"📬 Commande {id} livrée — laissez un avis !",
+  n_order_placed:"🧾 Commande {id} confirmée — nous vous préviendrons à l'expédition",
+  mode_demo:"MODE DÉMO", mode_live:"SYNC JOBMARKET", open_in_app:"Ouvrir cette discussion dans l'app JobMarket",
+  order_via_chat:"La commande se finalise dans le chat sécurisé — un message vient d'être envoyé au vendeur 💬",
+  wa_order:"Commander via WhatsApp", quote_label:"Devis", remote_badge:"SHALOM",
+  call:"Appeler", copy_num:"Copier", copied:"Numéro copié ✅",
+  copy_amount:"Copier le montant", amt_copied:"Montant copié ✅",
+  pay_steps:"Étapes de paiement", pay_to:"Envoyer le paiement à :",
+  momo_ussd:"Composez *126# → Transfert d'argent → numéro du vendeur → montant, puis envoyez le reçu dans le chat.",
+  om_ussd:"Composez #150*1# → Transfert d'argent → numéro du vendeur → montant, puis envoyez le reçu dans le chat.",
+  cash_confirm:"Préparez le montant exact — payable à la remise en main propre.",
+  pay_chat_note:"Le vendeur confirmera la réception dans le chat sécurisé — gardez le reçu MoMo / Orange Money.",
+  offline_toast:"📡 Hors ligne — Shalom Square continue de fonctionner en local", online_toast:"📡 Connexion rétablie",
+  sell_quartier_hint:"ex. Bastos, Akwa, Marché A…",
+  near_me:"Près de moi", geo_err:"Position indisponible — filtrez par région à la place.",
+  searching_gps:"📡 Localisation en cours…", geo_far:"Vous semblez loin du Cameroun 🇨🇲",
+  leave_review:"⭐ Laisser un avis", review_login:"Connectez-vous pour laisser un avis.",
+  review_posted:"Merci pour votre avis ! ⭐", no_reviews_yet:"Aucun avis pour le moment.",
+  buyer_reviews:"Avis des acheteurs", shop_contact:"Contacter la boutique",
+  shop_empty:"Pas d'autres annonces dans cette boutique pour le moment.",
+  mark_sold:"✅ Marquer comme vendu", unmark_sold:"↩ Remettre en vente",
+  sold_badge:"VENDU", sold_banner:"Annonce déjà vendue",
+  sold_toast:"Annonce marquée comme vendue ✅", relist_toast:"Annonce de nouveau en vente 🔄",
+  geo_pill:"📍 {c} · ±{r} km",
+  jm_chip:"🔧 Métiers & jobs → JobMarket", jm_switch:"Un service ou un métier à proposer ? Publiez-le plutôt sur JobMarket →",
+  shops_row_h:"Boutiques en vedette", shop_n_listings:"{n} annonces",
+  budget_q:"Budget", budget_clear:"Retirer le filtre prix",
+  shop_share:"Partager", shop_shared:"Boutique partagée sur WhatsApp 📤", shop_from:"dès {p}",
+  chat_notif:"Nouveau message de {n}",
+  quartier_q:"Quartier", quartier_ph:"Ex : Bastos, Akwa…", shared_ok:"Annonce partagée ✅",
+  shop_pro_edit:"Personnaliser ma vitrine", shop_pro_name:"Nom de la boutique",
+  shop_pro_desc:"Description (que vendez-vous ?)", shop_pro_desc_ph:"Ex : Miel pur et produits de la ruche, récolte de Bafoussam. Livraison Yaoundé–Douala.",
+  shop_pro_wa:"WhatsApp (9 chiffres)", shop_pro_city:"Ville", shop_pro_cat:"Style de bannière",
+  shop_pro_save:"Enregistrer la vitrine", shop_pro_saved:"Vitrine mise à jour ✅",
+  photo_only:"Avec photo", neg_l:"Prix négociable", neg_badge:"Négociable", pro_badge:"Pro",
+  mine_stats:"Vues totales", mine_online:"En ligne", mine_sold:"Vendues", mine_potential:"Panier possible",
+  ob_h:"Bienvenue sur Shalom Square !", ob_1:"Cherchez et filtrez par quartier, budget ou ville",
+  ob_2:"Discutez en chat sécurisé avec votre compte JobMarket",
+  ob_3:"Vendez en 2 minutes : photo, prix, publier",
+  ob_start:"Commencer", ob_invite:"Inviter un ami sur WhatsApp",
+  sell_err_cooldown:"Patientez 1 min 30 entre deux publications 🙂", sell_err_price_max:"Prix maximum : 100 000 000 FCFA",
+  report_dup:"Signalement déjà envoyé, merci ✅", remote_more:"Charger plus d'annonces réelles",
+  signup_h:"Créer un compte Shalom Square", signup_name:"Nom complet", signup_phone:"Téléphone (6…)", signup_city:"Ville",
+  signup_btn:"Créer mon compte", signup_have:"Déjà un compte ? Se connecter",
+  auth_err_pw:"Mot de passe : 6 caractères minimum", auth_err_phone:"Téléphone : 9 chiffres commençant par 6",
+  prof_h:"Mon profil", prof_avatar:"Photo de profil", prof_save:"Enregistrer", prof_saved:"Profil mis à jour ✅",
+  prof_ads:"Annonces", prof_views:"Vues", prof_since:"Membre", prof_pro:"🏪 Personnaliser ma boutique pro",
+  ph_photo:"Appareil photo", ph_gallery:"Galerie", ph_max:"Maximum : 4 photos", ph_count:"{n}/4 photos",
+  nt_order:"Nouvelle commande : {t}", nt_review:"Nouvel avis {n}★ reçu 🎉", nt_views:"🎉 {v} vues sur « {t} »",
+  notifs_read:"Notifications marquées comme lues", push_on:"Notifications activées 🔔",
+  my_buys:"Mes achats", my_sales:"Mes ventes", sell_orders_empty:"Aucune vente pour l'instant — publiez une annonce !",
+  st_confirmed:"Confirmée", st_cancelled:"Annulée",
+  act_confirm:"Confirmer ✅", act_paid:"Paiement reçu 💰", act_ship:"Expédiée 🚚", act_deliver:"Livrée ✅",
+  act_buyer_confirm:"Bien reçu ✅", act_cancel:"Annuler",
+  ord_seller:"Vendeur", ord_buyer:"Acheteur", order_placed:"Commande envoyée au vendeur ✅",
+  nt_status:"Commande « {t} » : {s}",
+  cart_h:"Panier", cart_empty:"Votre panier est vide — parcourez les annonces et ajoutez 🛒",
+  cart_add:"Au panier", cart_added:"Ajouté au panier ✅", cart_in:"Déjà dans le panier",
+  cart_order_all:"Commander tout", cart_ordered:"Commandes envoyées ✅", cart_total:"Total",
+  mine_revenue:"Revenus (livrées)", mine_pending:"Ventes en cours",
+  recent_clear:"Effacer l'historique de recherche",
+  edit_l:"Modifier", edit_h:"Modifier l'annonce", edit_save:"Enregistrer les modifications",
+  edit_saved:"Annonce mise à jour ✅", del_l:"Supprimer",
+  del_confirm:"Supprimer définitivement cette annonce ?", del_done:"Annonce supprimée ✅", price_down:"Prix baissé",
+  off_tab:"Offres", off_sent:"Offre envoyée au vendeur 🤝",
+  off_pending:"En attente", off_accepted_l:"Acceptée", off_declined_l:"Refusée", off_withdrawn_l:"Retirée",
+  off_accept:"Accepter ✅", off_decline:"Refuser", off_withdraw:"Retirer mon offre",
+  off_accepted_toast:"Offre acceptée — commande créée ✅", off_declined_toast:"Offre refusée", off_withdrawn_toast:"Offre retirée",
+  off_by:"Offre de {n}", off_on:"Sur « {t} »", off_empty:"Aucune offre pour l'instant",
+  nt_offer:"🤝 Nouvelle offre : {p} pour « {t} »", nt_offer_status:"Offre « {t} » : {s}",
+  report_received:"Merci — signalement envoyé à la modération ✅", shop_verified:"Vendeur vérifié"
+},
+en:{
+  search_ph:"Search (phone, mason, honey, motorbike…)", messages:"Messages", chat_ph:"Type a message…",
+  demo_msg:"Demo button — full feature coming soon 🙂", notif_title:"Notifications", notif_empty:"No notifications yet.",
+  ai_price:"AI-suggested price", ai_desc:"Improve description", ai_desc_done:"Description improved ✓", ai_need_title:"Write a title first 🙂", ai_err:"AI temporarily unavailable — try again.",
+  hero_pill:"Turbo edition — instant search across 1,200+ listings",
+  hero_title:"Goods, food, vehicles — <b>Cameroon's marketplace, powered by JobMarket.</b>",
+  hero_sub:"Buy and sell phones, motorbikes, furniture, produce and more across Cameroon. Chat through JobMarket secure chat; pay with MTN MoMo or Orange Money. Trades & services? That's on JobMarket.",
+  browse_btn:"Browse listings", post_free_btn:"Post a listing — free",
+  stats_listings:"live listings", stats_regions:"regions covered", stats_chat:"secure chat built in", stats_rating:"average rating",
+  deals_h:"Today's best deals", saved:"Saved", deals_only:"Deals", verified_only:"Verified", my_listings:"My listings",
+  view_list:"List", view_grid:"Grid", region:"Region", any_region:"All regions", condition:"Condition", any_cond:"Any",
+  c_new:"New", c_used:"Used", c_handmade:"Handmade", c_fresh:"Fresh produce", c_wholesale:"Wholesale", c_service:"Service",
+  sort:"Sort", s_newest:"Newest", s_price_asc:"Price: low → high", s_price_desc:"Price: high → low", s_rating:"Top rated",
+  showing:"Showing", of:"of", listings:"listings",
+  no_results_h:"No listings match your search", no_results_p:"Try other keywords, widen your budget, or clear the filters.", clear_filters:"Clear all filters",
+  recently_viewed:"👀 Recently viewed", how_h:"How Shalom Square works",
+  buy_h:"For buyers", buy_1t:"Search & discover", buy_1p:"Browse by category, price and region — instantly.",
+  buy_2t:"Chat through secure chat", buy_2p:"The same chat as the JobMarket app — your messages stay in sync.",
+  buy_3t:"Pay with confidence", buy_3p:"MTN MoMo, Orange Money, cash — or settle it in the chat.",
+  sell_h:"For sellers", sell_1t:"Post in minutes", sell_1p:"Photos, price in FCFA, neighbourhood — your listing goes live instantly.",
+  sell_2t:"Get inquiries", sell_2p:"Buyers message you — on Shalom Square or in the JobMarket app.",
+  sell_3t:"Close the sale", sell_3p:"Negotiate, send a quote in the chat, get paid via MoMo.",
+  trust_line:"🛡️ Verified profiles · 💬 JobMarket secure chat · 📲 MTN MoMo & Orange Money · 🇨🇲 All 10 regions",
+  f_about:"Shalom Square is Cameroon's marketplace for goods, produce and vehicles — by JobMarket. Same account, same secure chat; trades and services stay on the JobMarket app.",
+  f_buyers:"Buyers", f_browse:"Browse all", f_orders:"My orders",
+  f_sellers:"Sellers", f_post:"Post a listing", f_hub:"Seller Hub", 
+  f_support:"Support", f_app:"← Back to the app", f_perf:"⚡ Performance", f_contact:"WhatsApp support",
+  sign_in:"Sign in", sign_in_h:"Shalom Square sign-in", sign_in_p:"The same account as the JobMarket app — your listings and conversations follow you everywhere.",
+  email:"E-mail address", password:"Password", create_account:"Create my account", login_btn:"Sign in", google_btn:"Continue with Google", or:"or",
+  auth_err:"Please enter an e-mail and a password (6+ characters).", login_needed:"Sign in to contact sellers and post listings.",
+  welcome_toast:"Welcome, {n}! Your JobMarket account is connected. 🎉", signed_out:"Signed out. See you soon! 👋",
+  guest_chip:"Guest", post_ad:"➕ Post",
+  sell_h2:"Post a listing — free", sell_p:"Live instantly on Shalom Square. When connected, it is also saved to your JobMarket account.",
+  what_selling:"What are you selling?", title_ph:"e.g. Pure Bafoussam honey — 5 litres", price_xaf:"Price (FCFA)", cond_type:"Condition / type",
+  city:"City", quartier:"Neighbourhood / landmark", phone:"Phone", desc_ph:"Describe your listing: condition, quantity, delivery, payment (MoMo, Orange Money, cash)…",
+  add_photos:"📷 Add photos", click_add:"Click to add photos (max 4)",
+  photo_note:"When connected, photos upload like in the app (Cloudinary). Otherwise they stay on this device.",
+  pick_cover:"Or pick a cover icon", publish:"🚀 Publish now",
+  sell_err_title:"Give your listing a title (4+ characters).", sell_err_price:"Enter a valid price in FCFA (greater than 0).", sell_err_loc:"Choose a city.",
+  sell_err_phone:"Enter a valid phone number (e.g. 677 00 00 00).",
+  listing_live:"🎉 Your listing is live!", listing_live_fb:"🎉 Listing published and synced with your JobMarket account!",
+  uploading_photos:"📤 Uploading photos…",
+  chat_seller:"💬 Contact seller", buy_now:"🛒 Order now", make_offer:"🤝 Make an offer", save_b:"Save",
+  report:"⚑ Report this listing", reported:"Thanks — the moderation team will review it.", saved_toast:"Saved to your favourites ❤️",
+  listed_ago_1:"listed {n} day ago", listed_ago_n:"listed {n} days ago", views:"views",
+  verified_s:"✓ Verified seller", unverified:"· unverified", reviews:"reviews", real_seller:"Verified seller", demo_seller:"Demo",
+  offer_h:"Make an offer", offer_p:"Sellers usually accept offers within 10% of the asking price.",
+  your_offer_xaf:"Your offer (FCFA)", send_offer:"Send offer", offer_accepted:"🎉 Offer accepted at {p}! Let's finalize in the chat.",
+  offer_counter:"The seller counters at {p}.", accept_counter:"Accept counter-offer", decline:"Decline",
+  offer_too_low:"Sorry, that's too far below the asking price. Try again 😉", quote_sent:"🧾 Quote sent in the secure chat ✅",
+  order_msg:"Hello, I'd like to order \"{t}\" at {p}. Is it still available?",
+  checkout:"Checkout", order_summary:"Summary", shipping:"Delivery", ship_std:"Transport agency — 2–5 days", ship_exp:"Motorbike express — 24h", ship_pick:"Local pickup — free",
+  payment:"Payment method", pay_momo:"📲 MTN Mobile Money", pay_om:"🟠 Orange Money", pay_cash:"💵 Cash on delivery",
+  momo_note:"You will receive a payment prompt on your phone (demo).", pay_now:"Pay {p}", processing:"Processing payment…",
+  payment_ok:"Payment successful ✅", order_placed:"Order placed! 🎉", order_id:"Order", view_orders:"View my orders", continue_shopping:"Continue shopping",
+  thanks_buy:"Thank you for ordering on Shalom Square!",
+  order_msg_chat:"Great news — I received your payment for {t} ✅ I'm preparing your order now!",
+  my_orders:"My orders", orders_empty:"No orders yet — find something you love and hit “Order now”! 🛍️",
+  st_placed:"Placed", st_paid:"Paid", st_shipped:"Shipped", st_delivered:"Delivered",
+  write_review:"⭐ Write a review", review_h:"Rate your purchase", your_rating:"Your rating", your_review:"Your review (optional)",
+  submit_review:"Submit review", review_thanks:"Thanks for your review — it helps the whole community! ⭐", total:"Total",
+  member_since:"Member since", resp_time:"Responds in", all_listings:"Listings", seller_reviews:"Reviews", demo_note_profile:"Demo profile (locally generated listing).",
+  hub_h:"Seller Hub", h_active:"Active listings", h_views:"Views (30d)", h_chats:"Chats (30d)", h_conv:"Conversion",
+  h_top:"Top listings", h_boost:"Boost", h_boosted:"Boosted for 7 days 🔥", h_calc:"Earnings calculator",
+  h_price_xaf:"Your price (FCFA)", h_qty:"Sales per month", h_comm:"Commission (8%)", h_payout:"You receive",
+  h_note:"Demo figures. JobMarket takes 8% only on completed online sales — posting is always free.",
+  q_available:"Is it still available?", q_price:"Can you do better on the price?", q_ship:"Do you deliver to my region?",
+  chat_welcome:"👋 Welcome to Shalom Square. Open a listing and press “Contact seller” to chat and negotiate.",
+  secure_tag:"JOBMARKET SECURE CHAT", demo_tag:"LOCAL DEMO",
+  bench_h:"⚡ Search performance", bench_p:"Shalom Square queries an inverted index (weighted, prefix + typo tolerant) instead of scanning every listing. Ran on your device, just now:",
+  bench_run:"Run benchmark", bench_running:"Benchmarking…", bench_naive:"Classic scan", bench_index:"Shalom Square index",
+  bench_speedup:"faster", bench_note:"Also: only ~24 cards are rendered at a time (virtual batches) — the UI stays smooth at any scale.",
+  built_in:"{n} listings indexed in {ms}ms at startup", listings_indexed:"listings indexed",
+  n1:"💰 Price drop on a listing you saved", n2:"✅ Your listing got 12 new views", n3:"👋 Welcome to Shalom Square — try the ⚡ test!",
+  order_shipped:"📦 Order {id} has been shipped!", order_delivered:"📬 Order {id} delivered — leave a review!",
+  n_order_placed:"🧾 Order {id} confirmed — we'll notify you when it ships",
+  mode_demo:"DEMO MODE", mode_live:"JOBMARKET SYNC", open_in_app:"Open this conversation in the JobMarket app",
+  order_via_chat:"Orders are finalized in the secure chat — a message was just sent to the seller 💬",
+  wa_order:"Order via WhatsApp", quote_label:"Quote", remote_badge:"SHALOM",
+  call:"Call", copy_num:"Copy", copied:"Number copied ✅",
+  copy_amount:"Copy amount", amt_copied:"Amount copied ✅",
+  pay_steps:"Payment steps", pay_to:"Send the payment to:",
+  momo_ussd:"Dial *126# → Money transfer → seller's number → amount, then send the receipt in the chat.",
+  om_ussd:"Dial #150*1# → Money transfer → seller's number → amount, then send the receipt in the chat.",
+  cash_confirm:"Prepare the exact amount — payable cash on handover.",
+  pay_chat_note:"The seller will confirm receipt in the secure chat — keep your MoMo / Orange Money receipt.",
+  offline_toast:"📡 Offline — Shalom Square keeps working locally", online_toast:"📡 Back online",
+  sell_quartier_hint:"e.g. Bastos, Akwa, Marché A…",
+  near_me:"Near me", geo_err:"Location unavailable — use the region filter instead.",
+  searching_gps:"📡 Locating…", geo_far:"You seem far from Cameroon 🇨🇲",
+  leave_review:"⭐ Leave a review", review_login:"Sign in to leave a review.",
+  review_posted:"Thanks for your review! ⭐", no_reviews_yet:"No reviews yet.",
+  buyer_reviews:"Buyer reviews", shop_contact:"Contact the shop",
+  shop_empty:"No other listings in this shop for now.",
+  mark_sold:"✅ Mark as sold", unmark_sold:"↩ Put back on sale",
+  sold_badge:"SOLD", sold_banner:"Already sold",
+  sold_toast:"Listing marked as sold ✅", relist_toast:"Listing back on sale 🔄",
+  geo_pill:"📍 {c} · ±{r} km",
+  jm_chip:"🔧 Trades & jobs → JobMarket", jm_switch:"Offering a service or trade? Post it on JobMarket instead →",
+  shops_row_h:"Featured shops", shop_n_listings:"{n} listings",
+  budget_q:"Budget", budget_clear:"Clear price filter",
+  shop_share:"Share", shop_shared:"Shop shared on WhatsApp 📤", shop_from:"from {p}",
+  chat_notif:"New message from {n}",
+  quartier_q:"Neighbourhood", quartier_ph:"e.g. Bastos, Akwa…", shared_ok:"Listing shared ✅",
+  shop_pro_edit:"Customise my shop", shop_pro_name:"Shop name",
+  shop_pro_desc:"Description (what do you sell?)", shop_pro_desc_ph:"e.g. Pure honey & hive products from Bafoussam. Yaoundé–Douala delivery.",
+  shop_pro_wa:"WhatsApp (9 digits)", shop_pro_city:"City", shop_pro_cat:"Banner style",
+  shop_pro_save:"Save shop", shop_pro_saved:"Shop updated ✅",
+  photo_only:"With photo", neg_l:"Negotiable price", neg_badge:"Negotiable", pro_badge:"Pro",
+  mine_stats:"Total views", mine_online:"Online", mine_sold:"Sold", mine_potential:"Possible basket",
+  ob_h:"Welcome to Shalom Square!", ob_1:"Search and filter by neighbourhood, budget or city",
+  ob_2:"Chat securely with your JobMarket account",
+  ob_3:"Sell in 2 minutes: photo, price, publish",
+  ob_start:"Get started", ob_invite:"Invite a friend on WhatsApp",
+  sell_err_cooldown:"Please wait 1½ min between posts 🙂", sell_err_price_max:"Maximum price: 100,000,000 FCFA",
+  report_dup:"Report already sent, thanks ✅", remote_more:"Load more live listings",
+  signup_h:"Create a Shalom Square account", signup_name:"Full name", signup_phone:"Phone (6…)", signup_city:"City",
+  signup_btn:"Create my account", signup_have:"Already have an account? Sign in",
+  auth_err_pw:"Password: 6 characters minimum", auth_err_phone:"Phone: 9 digits starting with 6",
+  prof_h:"My profile", prof_avatar:"Profile photo", prof_save:"Save", prof_saved:"Profile updated ✅",
+  prof_ads:"Listings", prof_views:"Views", prof_since:"Member", prof_pro:"🏪 Customise my pro shop",
+  ph_photo:"Camera", ph_gallery:"Gallery", ph_max:"Maximum: 4 photos", ph_count:"{n}/4 photos",
+  nt_order:"New order: {t}", nt_review:"New {n}★ review received 🎉", nt_views:"🎉 {v} views on '{t}'",
+  notifs_read:"Notifications marked as read", push_on:"Notifications enabled 🔔",
+  my_buys:"My purchases", my_sales:"My sales", sell_orders_empty:"No sales yet — post a listing!",
+  st_confirmed:"Confirmed", st_cancelled:"Cancelled",
+  act_confirm:"Confirm ✅", act_paid:"Payment received 💰", act_ship:"Shipped 🚚", act_deliver:"Delivered ✅",
+  act_buyer_confirm:"Received ✅", act_cancel:"Cancel",
+  ord_seller:"Seller", ord_buyer:"Buyer", order_placed:"Order sent to seller ✅",
+  nt_status:"Order '{t}': {s}",
+  cart_h:"Cart", cart_empty:"Your cart is empty — browse listings and add 🛒",
+  cart_add:"Add to cart", cart_added:"Added to cart ✅", cart_in:"Already in cart",
+  cart_order_all:"Order all", cart_ordered:"Orders sent ✅", cart_total:"Total",
+  mine_revenue:"Revenue (delivered)", mine_pending:"Sales in progress",
+  recent_clear:"Clear search history",
+  edit_l:"Edit", edit_h:"Edit listing", edit_save:"Save changes",
+  edit_saved:"Listing updated ✅", del_l:"Delete",
+  del_confirm:"Permanently delete this listing?", del_done:"Listing deleted ✅", price_down:"Price dropped",
+  off_tab:"Offers", off_sent:"Offer sent to seller 🤝",
+  off_pending:"Pending", off_accepted_l:"Accepted", off_declined_l:"Declined", off_withdrawn_l:"Withdrawn",
+  off_accept:"Accept ✅", off_decline:"Decline", off_withdraw:"Withdraw my offer",
+  off_accepted_toast:"Offer accepted — order created ✅", off_declined_toast:"Offer declined", off_withdrawn_toast:"Offer withdrawn",
+  off_by:"Offer from {n}", off_on:"On \"{t}\"", off_empty:"No offers yet",
+  nt_offer:"🤝 New offer: {p} for \"{t}\"", nt_offer_status:"Offer \"{t}\": {s}",
+  report_received:"Thanks — report sent to moderation ✅", shop_verified:"Verified seller"
+}};
+function t(k){ var d=I18N[LANG]||I18N.fr; return (k in d)?d[k]:(I18N.fr[k]||k); }
+function tf(k,vars){ var s=t(k); for(var v in vars){ s=s.split("{"+v+"}").join(vars[v]); } return s; }
+
+/* ---------- utils ---------- */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+function fmtXAF(v){ return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g," ")+" FCFA"; }
+function fmtPhone(d){ d=String(d).replace(/\D/g,""); return d.length===9? d.slice(0,3)+" "+d.slice(3,5)+" "+d.slice(5,7)+" "+d.slice(7,9) : d; }
+function operatorOf(phone){
+  var d=String(phone||"").replace(/\D/g,"");
+  if(d.length<2||d.charAt(0)!=="6") return null;
+  var c=d.charAt(1);
+  if(c==="7"||c==="8"||c==="5") return {id:"mtn",label:"MTN",pay:"momo"};
+  if(c==="9") return {id:"orange",label:"Orange",pay:"om"};
+  if(c==="6") return {id:"nexttel",label:"Nexttel",pay:null};
+  if(c==="2") return {id:"camtel",label:"Camtel",pay:null};
+  return null;
+}
+var toastTimer=null;
+function toast(msg){
+  var el=$("toastEl"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){ el.classList.remove("show"); },2800);
+}
+
+/* ---------- RNG déterministe ---------- */
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+var RNG = mulberry32(0xC0FFEE);
+function r(a,b){ return a+RNG()*(b-a); }
+function ri(a,b){ return Math.floor(r(a,b+1)); }
+function pk(arr){ return arr[Math.floor(RNG()*arr.length)]; }
+function pkw(items){
+  var tot=0; for(var i=0;i<items.length;i++) tot+=items[i][1];
+  var x=RNG()*tot;
+  for(var j=0;j<items.length;j++){ x-=items[j][1]; if(x<=0) return items[j][0]; }
+  return items[0][0];
+}
+
+/* ---------- catégories (mêmes clés que l'app JobMarket pour les métiers) ---------- */
+var TRADES=[
+  ["btp","BTP / Maçonnerie","Construction / Masonry","🧱","#FF9500"],
+  ["electricite","Électricité","Electrical","⚡","#FFD700"],
+  ["plomberie","Plomberie","Plumbing","🚰","#007AFF"],
+  ["menage","Nettoyage","Cleaning","🧹","#25D366"],
+  ["jardinage","Jardinage","Gardening","🌿","#34C759"],
+  ["mecanique","Mécanique auto","Auto mechanics","🧰","#FF3B30"],
+  ["informatique","Informatique","IT services","💻","#AF52DE"],
+  ["autre","Autres métiers","Other trades","✂️","#8E8E93"]
+];
+var GOODS=[
+  ["electronique","Électronique","Electronics","📱","#38bdf8"],
+  ["mode","Mode & Beauté","Fashion & Beauty","👗","#f472b6"],
+  ["maison","Maison","Home & Living","🛋️","#fbbf24"],
+  ["alimentation","Alim. & Agriculture","Food & Agriculture","🥑","#4ade80"],
+  ["vehicules","Véhicules","Vehicles","🛵","#94a3b8"],
+  ["autresbiens","Autres biens","Other goods","📦","#2dd4bf"]
+];
+/* Shalom Square = objets & denrées uniquement — les métiers et services restent sur JobMarket */
+var CATS=[];
+for(var gi=0;gi<GOODS.length;gi++) CATS.push({key:GOODS[gi][0],fr:GOODS[gi][1],en:GOODS[gi][2],icon:GOODS[gi][3],color:GOODS[gi][4],trade:false});
+var CATMAP={}; for(var ci=0;ci<CATS.length;ci++) CATMAP[CATS[ci].key]=CATS[ci];
+function catName(k){ var c=CATMAP[k]; if(!c) return k; return LANG==="en"?c.en:c.fr; }
+function catIcon(k){ var c=CATMAP[k]; return c?c.icon:"📦"; }
+function catColor(k){ var c=CATMAP[k]; return c?c.color:"#8E8E93"; }
+function catGrad(k){ return "linear-gradient(135deg,#14161f,"+catColor(k)+")"; }
+var ALT_GRADS=["linear-gradient(135deg,#14161f,#6366f1)","linear-gradient(135deg,#14161f,#22d3ee)","linear-gradient(135deg,#14161f,#e879f9)"];
+var PICK_EMOJIS=["📦","📱","💻","🎧","📺","⌚","🎮","👗","👜","👟","💄","🍯","☕","🫘","🥑","🍅","🛵","🚗","🚰","🧱","⚡","🧹","🌿","🧰","💻","🧵","🪑","🛋️"];
+
+/* ---------- villes du Cameroun (10 régions) ---------- */
+var CITIES=[
+  ["Yaoundé","Centre",3.6],["Douala","Littoral",3.4],["Bafoussam","Ouest",2.0],["Bamenda","Nord-Ouest",1.6],["Buea","Sud-Ouest",1.4],
+  ["Garoua","Nord",1.4],["Maroua","Extrême-Nord",1.3],["Ngaoundéré","Adamaoua",1.2],["Limbé","Sud-Ouest",1.2],["Ebolowa","Sud",1.1],
+  ["Kribi","Sud",1.1],["Kumba","Sud-Ouest",1.1],["Nkongsamba","Littoral",1.1],["Dschang","Ouest",1.0],["Edea","Littoral",1.0],
+  ["Bertoua","Est",1.0],["Foumban","Ouest",0.9],["Mbalmayo","Centre",0.9],["Kousséri","Extrême-Nord",0.8],["Obala","Centre",0.8],
+  ["Sangmélima","Sud",0.8],["Yagoua","Extrême-Nord",0.7],["Batouri","Est",0.7],["Soa","Centre",0.7],["Guider","Nord",0.6],
+  ["Tibati","Adamaoua",0.6],["Abong-Mbang","Est",0.5],["Bafang","Ouest",0.8]
+];
+var REGIONS=["Centre","Littoral","Ouest","Nord-Ouest","Sud-Ouest","Sud","Est","Adamaoua","Nord","Extrême-Nord"];
+var CITY_POOL=[];
+for(var ci2=0;ci2<CITIES.length;ci2++){ var w=Math.round(CITIES[ci2][2]*10); for(var cw=0;cw<w;cw++) CITY_POOL.push(ci2); }
+var CITY_COORDS={
+"Yaoundé":[3.848,11.502],"Douala":[4.0511,9.7679],"Bafoussam":[5.478,10.418],"Bamenda":[5.9597,10.1459],
+"Buea":[4.1527,9.241],"Garoua":[9.3265,13.398],"Maroua":[10.591,14.3159],"Ngaoundéré":[7.3167,13.5833],
+"Limbé":[4.0228,9.1997],"Ebolowa":[2.9,11.15],"Kribi":[2.94,9.908],"Kumba":[4.636,9.447],
+"Nkongsamba":[5.038,9.941],"Dschang":[5.446,10.053],"Edea":[3.8,10.13],"Bertoua":[4.577,13.684],
+"Foumban":[5.517,10.9],"Mbalmayo":[3.513,11.5],"Kousséri":[12.077,15.03],"Obala":[4.17,11.53],
+"Sangmélima":[2.933,11.983],"Yagoua":[10.39,15.23],"Batouri":[4.43,14.55],"Soa":[3.66,11.55],
+"Guider":[9.933,13.95],"Tibati":[6.47,12.62],"Abong-Mbang":[3.98,13.17],"Bafang":[5.15,10.18]
 };
 function distKm(la1,lo1,la2,lo2){
   var R=6371,d=Math.PI/180,dLa=(la2-la1)*d,dLo=(lo2-lo1)*d;
@@ -1017,7 +2840,8 @@ function onFbUser(u){
       if(!FB.welcomed){ FB.welcomed=true; toast(tf("welcome_toast",{n:(FB.profile&&FB.profile.name)||u.displayName||(u.email||"").split("@")[0]||"Cam"})); }
     }).catch(function(){});
     loadRemoteListings();
-  } else { FB.profile=null; }
+    try{ REMOTE.forEach(function(l){ l.mine = vdEstAMoi(l.sellerUid); }); rebuildSorts(); renderGrid(); }catch(e){}
+  } else { try{ REMOTE.forEach(function(l){ l.mine=false; }); }catch(e){} FB.profile=null; }
 }
 /* --- protocole chat identique à l'app (sendChatMessageToThread) --- */
 function pairThreadId(a,b,suffix){ return [a,b].sort().join("_")+(suffix?"__"+suffix:""); }
@@ -1083,6 +2907,10 @@ function remoteIdHash(key){
   var h=0; for(var i=0;i<key.length;i++){ h=(h*31+key.charCodeAt(i))>>>0; }
   return 900000+h%89999;
 }
+/* (correctif maison) vdEstAMoi */
+function vdEstAMoi(uid){
+  try{ var me = FB && FB.auth && FB.auth.currentUser; return !!(me && uid && uid === me.uid); }catch(e){ return false; }
+}
 function addRemoteListing(key,v){
   if(!v||!v.title) return;
   var id=remoteIdHash(key);
@@ -1092,6 +2920,10 @@ function addRemoteListing(key,v){
     category:CATMAP[v.category]?v.category:"autresbiens",city:v.city||"Yaoundé",region:v.region||cityRegion(v.city||"Yaoundé"),
     condition:v.condition||"Neuf",desc:v.desc||"",quartier:v.quartier||v.landmark||null,lat:v.lat||null,lng:v.lng||null,sold:!!v.sold,photo:v.image||null,photos:v.images||[],
     views:v.views||ri(60,900),createdDaysAgo:days,real:true,sellerUid:v.user||null,foodTag:(v.category==="alimentation")?foodTagOf(v.title||""):null,negotiable:!!v.negotiable,userName:v.userName||"JobMarket",phone:v.phone||"",isPro:!!v.isPro};
+  /* (correctif maison) vdEstAMoi : une annonce venue du serveur et
+     publiee par moi doit etre reconnue comme mienne — sinon on ne
+     retrouve jamais ses propres publications. */
+  l.mine = vdEstAMoi(l.sellerUid);
   REMOTE.push(l);
   BY_ID.set(id,l); LISTINGS.push(l);
   if(l.sellerUid&&l.userName) PEER_NAMES.set(l.sellerUid,l.userName);
@@ -1120,6 +2952,22 @@ function loadMoreRemote(){
   var more=$("remoteMore");
   if(more){ more.disabled=true; }
   fetchRemoteListings(FB.remoteLimit,false);
+}
+/* (correctif maison) vdPublicationLocale : on ne fait plus croire
+   qu'une annonce est en ligne quand elle ne l'est pas. */
+function vdPublicationLocale(raison){
+  try{
+    var fr = (typeof LANG === "undefined" || LANG === "fr");
+    var txt = fr
+      ? "⚠️ Annonce enregistrée sur CE téléphone seulement — personne d'autre ne la voit."
+      : "⚠️ Saved on THIS phone only — nobody else can see it.";
+    if (raison === "auth") txt += fr ? " Connecte-toi pour la publier pour de vrai."
+                                     : " Sign in to publish it for real.";
+    if (raison === "refus") txt += fr ? " La base a refusé l'enregistrement."
+                                      : " The database refused the write.";
+    toast(txt);
+    if (raison === "auth") setTimeout(function(){ try{ openAuth&&openAuth(); }catch(e){} }, 1200);
+  }catch(e){}
 }
 function publishLiveListing(data,cb){
   if(!FB.ready||!(FB.auth&&FB.auth.currentUser)){ cb(false); return; }
@@ -1922,106 +3770,6 @@ function doAuth(signUp){
     $("authErr").textContent=(e&&e.code==="auth/invalid-credential")?(LANG==="fr"?"E-mail ou mot de passe incorrect.":"Wrong e-mail or password."):(e&&e.message||"Error");
   });
 }
-/* (correctif maison) FORMULAIRE DE PROFIL COMPLET.
-   Trois sections, un indicateur de completude, et des champs qui
-   portent LES MEMES NOMS que dans JobMarket (name, phone,
-   whatsappNumber, city, profileType, company, jobTitle) pour que les
-   deux applications parlent du meme profil. Les champs propres a la
-   vente (description, horaires, livraison, paiements) vont dans
-   market_shops/<uid>. */
-function vdProfilPourcent(p, sh) {
-  var champs = [p.name, p.phone, p.city, p.whatsappNumber, vdAvatar(p),
-                (sh && sh.desc), (sh && sh.hours), (sh && sh.delivery)];
-  var n = 0;
-  for (var i = 0; i < champs.length; i++) if (String(champs[i] || "").trim()) n++;
-  return Math.round(n * 100 / champs.length);
-}
-function vdProfilChamps(p, name) {
-  var sh = FB.shop || {};
-  var pct = vdProfilPourcent(p, sh);
-  var fr = (LANG === "fr");
-  var estBoutique = (p.profileType === "company");
-  var villes = CITIES.map(function (c) {
-    return '<option value="' + esc(c[0]) + '"' + (p.city === c[0] ? " selected" : "") + '>' + esc(c[0]) + '</option>';
-  }).join("");
-  function section(titre, corps) {
-    return '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">'
-      + '<div style="font-size:11.5px;font-weight:800;letter-spacing:.4px;color:var(--muted);margin-bottom:8px">' + titre + '</div>'
-      + corps + '</div>';
-  }
-  return ''
-    /* jauge de completude : montre tout de suite ce qu'il reste a faire */
-    + '<div style="margin-top:12px">'
-    +   '<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:5px">'
-    +     '<span>' + (fr ? "Profil complété" : "Profile completed") + '</span><b style="color:var(--gold)">' + pct + ' %</b></div>'
-    +   '<div style="height:6px;border-radius:99px;background:var(--line);overflow:hidden">'
-    +     '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--gold),var(--gold2))"></div></div>'
-    +   (pct < 100 ? '<div class="dim" style="font-size:11px;margin-top:5px">'
-        + (fr ? "Un profil complet rassure les acheteurs — ils répondent plus souvent."
-              : "A complete profile reassures buyers — they reply more often.") + '</div>' : '')
-    + '</div>'
-
-    + section(fr ? "IDENTITÉ" : "IDENTITY",
-        '<div class="field"><label>' + t("signup_name") + '</label>'
-      + '<input id="profName" maxlength="40" value="' + esc(name) + '" placeholder="' + (fr ? "Ton nom ou celui de ta boutique" : "Your name or shop name") + '"></div>'
-      + '<div class="field"><label>' + (fr ? "Type de compte" : "Account type") + '</label>'
-      + '<select id="profType" onchange="vdProfilBascule()">'
-      +   '<option value="person"' + (estBoutique ? "" : " selected") + '>' + (fr ? "👤 Particulier" : "👤 Individual") + '</option>'
-      +   '<option value="company"' + (estBoutique ? " selected" : "") + '>' + (fr ? "🏪 Boutique / Entreprise" : "🏪 Shop / Business") + '</option>'
-      + '</select></div>')
-
-    + section(fr ? "CONTACT" : "CONTACT",
-        '<div class="two"><div class="field"><label>' + t("phone") + '</label>'
-      + '<input id="profPhone" type="tel" inputmode="tel" maxlength="15" value="' + esc(p.phone || "") + '" placeholder="677 00 00 00"></div>'
-      + '<div class="field"><label>WhatsApp</label>'
-      + '<input id="profWa" type="tel" inputmode="tel" maxlength="15" value="' + esc(p.whatsappNumber || "") + '" placeholder="' + (fr ? "si différent" : "if different") + '"></div></div>'
-      + '<div class="two"><div class="field"><label>' + t("signup_city") + '</label><select id="profCity">' + villes + '</select></div>'
-      + '<div class="field"><label>' + (fr ? "Quartier" : "Area") + '</label>'
-      + '<input id="profArea" maxlength="40" value="' + esc(p.area || "") + '" placeholder="' + (fr ? "Ex : Bastos, Emia…" : "e.g. Bastos") + '"></div></div>')
-
-    + '<div id="profBoutique" style="display:' + (estBoutique ? "block" : "none") + '">'
-    + section(fr ? "MA BOUTIQUE" : "MY SHOP",
-        '<div class="field"><label>' + (fr ? "Ce que je vends" : "What I sell") + '</label>'
-      + '<input id="profMetier" maxlength="60" value="' + esc(p.jobTitle || "") + '" placeholder="' + (fr ? "Ex : Téléphones et accessoires" : "e.g. Phones and accessories") + '"></div>'
-      + '<div class="field"><label>' + (fr ? "Présentation" : "About") + '</label>'
-      + '<textarea id="profDesc" rows="3" maxlength="280" placeholder="' + (fr ? "Deux lignes sur ta boutique : depuis quand, ce qui te distingue…" : "Two lines about your shop…") + '">' + esc(sh.desc || "") + '</textarea></div>'
-      + '<div class="two"><div class="field"><label>' + (fr ? "Horaires" : "Opening hours") + '</label>'
-      + '<input id="profHoraires" maxlength="40" value="' + esc(sh.hours || "") + '" placeholder="' + (fr ? "Lun–Sam 8h–18h" : "Mon–Sat 8am–6pm") + '"></div>'
-      + '<div class="field"><label>' + (fr ? "Livraison" : "Delivery") + '</label>'
-      + '<select id="profLivraison">'
-      +   ['', 'oui', 'ville', 'non'].map(function (v) {
-            var lib = v === "" ? (fr ? "— à préciser —" : "— not set —")
-                    : v === "oui" ? (fr ? "Oui, partout au Cameroun" : "Yes, nationwide")
-                    : v === "ville" ? (fr ? "Dans ma ville seulement" : "My city only")
-                    : (fr ? "Retrait sur place" : "Pickup only");
-            return '<option value="' + v + '"' + ((sh.delivery || "") === v ? " selected" : "") + '>' + lib + '</option>';
-          }).join("")
-      + '</select></div></div>'
-      + '<div class="field"><label>' + (fr ? "Paiements acceptés" : "Payments accepted") + '</label>'
-      + '<input id="profPaiements" maxlength="60" value="' + esc(sh.pay || "") + '" placeholder="MTN MoMo, Orange Money, ' + (fr ? "espèces" : "cash") + '"></div>')
-    + '</div>';
-}
-function vdProfilBascule() {
-  try {
-    var sel = document.getElementById("profType");
-    var box = document.getElementById("profBoutique");
-    if (sel && box) box.style.display = (sel.value === "company") ? "block" : "none";
-  } catch (e) {}
-}
-
-/* (correctif maison) on lit la fiche boutique au besoin, sans
-   retarder l'ouverture du profil. */
-function vdChargerBoutique(apres) {
-  try {
-    if (!(FB.ready && FB.user && FB.db)) { if (apres) apres(); return; }
-    if (FB.shop) { if (apres) apres(); return; }
-    FB.db.ref("market_shops/" + FB.user.uid).once("value").then(function (s) {
-      FB.shop = (s && s.val()) || {};
-      if (apres) apres();
-    }).catch(function () { FB.shop = {}; if (apres) apres(); });
-  } catch (e) { if (apres) apres(); }
-}
-
 function openProfile(){
   if(!(FB.user||USER)){ openSignIn(); return; }
   if (FB.user && !FB.shop) { return void vdChargerBoutique(openProfile); }
@@ -2155,7 +3903,7 @@ window.addEventListener("popstate",function(){
   }catch(e){}
 });
 function openModal(html,wide){ $("modalRoot").innerHTML='<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="dialog'+(wide?" wide":"")+'">'+html+'</div></div>'; vdBackPose(); }
-function closeModal(){ try{ vdTitrePage(null); }catch(e){} vdFermerModalBrut(); vdBackRetire(); }
+function closeModal(){ vdFermerModalBrut(); vdBackRetire(); }
 
 /* ---------- detail ---------- */
 function galleryItems(l){
@@ -3093,7 +4841,7 @@ function submitListing(){
       images:[],image:"",lat:(CITY_COORDS[city]||[0,0])[0],lng:(CITY_COORDS[city]||[0,0])[1],user:FB.user.uid,userName:myName||"JobMarket",
       timestamp:Date.now(),country:"Cameroon",currency:"XAF",lang:LANG,kind:"market"};
     if(!mkPhotos.length){
-      publishLiveListing(data,function(ok,key){ ok?finalizeLive(key,[]):finalizeLocal(); });
+      publishLiveListing(data,function(ok,key){ if(ok){finalizeLive(key,[]);}else{finalizeLocal();vdPublicationLocale("refus");} });
       return;
     }
     var urls=[], total=mkPhotos.length, done=0;
@@ -3103,12 +4851,13 @@ function submitListing(){
         if(url) urls.push(url);
         if(done===total){
           data.images=urls; data.image=urls[0]||"";
-          publishLiveListing(data,function(ok,key){ ok?finalizeLive(key,urls):finalizeLocal(); });
+          publishLiveListing(data,function(ok,key){ if(ok){finalizeLive(key,urls);}else{finalizeLocal();vdPublicationLocale("refus");} });
         }
       });
     });
   } else {
     finalizeLocal();
+    vdPublicationLocale("auth");
   }
 }
 function pk0cond(cat){ return cat==="alimentation"?"Produits frais":"Neuf"; }
@@ -3437,3 +5186,9 @@ function tryOpenDeepLink(){
 </script>
 </body>
 </html>
+
+>>>FIN DU FICHIER 2/2 — shalom-square.html — NE PAS COPIER CETTE LIGNE<<<
+
+
+Fin de la livraison. Fichiers également disponibles séparément dans
+le dossier livraison-texte-shalom/ (LISEZMOI + chaque fichier seul).
