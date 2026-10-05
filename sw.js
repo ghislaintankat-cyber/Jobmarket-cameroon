@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v272'; // 20261003b : session ouverte avant les lectures (vie privee)
+const CACHE_VERSION = 'v273'; // 20261004e : commentaire remis a jour avec la vague en cours
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des

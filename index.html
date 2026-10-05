@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261004d">
+<html lang="fr" data-app-build="20261004e">
 <head>
 <script>
 // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1060,6 +1060,22 @@ color:var(--text-dim);
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px;}
+[data-save-btn].saved {
+color: var(--gold, #FFD700) !important;
+border-color: rgba(255, 215, 0, 0.55) !important;
+background: rgba(255, 215, 0, 0.10) !important;
+font-weight: 700;
+}
+.jmc-cat-n {
+margin-left: 5px;
+font-size: 10px;
+font-weight: 800;
+line-height: 1;
+padding: 2px 5px;
+border-radius: 8px;
+background: rgba(255, 255, 255, 0.12);
+color: var(--text, #e9edef);
+}
 .job-drawer {
 position: fixed;
 top: 0;
@@ -1544,6 +1560,7 @@ background: var(--surface);
 <div class="form-group">
 <label class="form-label" data-i18n="fieldRequirements">Exigences (optionnel)</label>
 <textarea class="form-textarea" id="requirements" data-i18n-placeholder="phRequirements" placeholder="Ex: Ponctuel, experience minimum 2 ans, materiel personnel..." maxlength="800"></textarea>
+<div id="jmcExigCompteur" style="text-align:right;font-size:11.5px;color:var(--text-dim,#9999BC);margin-top:3px;"></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
 <div class="form-group">
@@ -1566,6 +1583,7 @@ background: var(--surface);
 <div class="form-group">
 <label class="form-label" data-i18n="fieldLandmark">Repere / Quartier</label>
 <input class="form-input" id="landmark" type="text" data-i18n-placeholder="phLandmark" placeholder="Ex: Bastos, pres du rond-point..." maxlength="150"/>
+<datalist id="jmcQuartiers"></datalist>
 </div>
 <div class="form-group">
 <label class="form-label" data-i18n="fieldPhotos">Photos (jusqu'a 5)</label>
@@ -1579,6 +1597,7 @@ background: var(--surface);
 </div>
 <div class="image-previews" id="imagePreviews"></div>
 </div>
+<div id="jmcRecap" style="display:none;margin:10px 0 12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--border,#333);font-size:12.5px;line-height:1.5;"></div>
 <button class="btn btn-primary" id="publishBtn" onclick="addJob()">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
 <span data-i18n="publishNow">Publier maintenant</span>
@@ -1620,6 +1639,7 @@ background: var(--surface);
 <option value="dist" data-i18n="sortNearest">Le plus proche</option>
 <option value="rating" data-i18n="sortRating">Mieux notés</option>
 <option value="price" data-i18n="sortPrice">Moins cher</option>
+<option value="pricedesc">Mieux payés</option>
 <option value="newest" data-i18n="sortNewest">Plus récent</option>
 <option value="pro" data-i18n="sortProFirst">⭐ Pro / vérifié d'abord</option>
 </select>
@@ -1908,7 +1928,7 @@ style="width:100%;box-sizing:border-box;margin-bottom:10px;background:var(--dark
 <div class="chat-safety" data-i18n="chatSafetyNotice">Aucune clé IA, aucun message envoyé à un modèle externe. Ne partagez jamais de mot de passe, code SMS, carte bancaire ou document d'identité dans le chat.</div>
 <div class="chat-input-row">
 <input class="chat-input" id="chatInput" type="text" data-i18n-placeholder="chatInputPlaceholder" placeholder="Votre message..." onkeypress="handleChatKey(event)"/>
-<button class="chat-send" onclick="sendChatMessage()">
+<button class="chat-send" onclick="sendChatMessage()" aria-label="Envoyer le message" title="Envoyer">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
 </button>
 </div>
@@ -1953,7 +1973,7 @@ style="width:100%;box-sizing:border-box;margin-bottom:10px;background:var(--dark
 <span data-i18n="navCompanies">Entreprises</span>
 </button>
 <div class="nav-center-wrap">
-<button class="nav-center" onclick="toggleJobForm()">
+<button class="nav-center" onclick="toggleJobForm()" aria-label="Publier un besoin" title="Publier un besoin">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 </button>
 </div>
@@ -2877,7 +2897,7 @@ reader.readAsDataURL(event.target.files[0]);
 <div class="wa" id="wa">
 <div class="wa-side" id="waSide">
 <div class="wa-side-head">
-<img class="avatar" src="" id="waMyAv">
+<img class="avatar" src="" id="waMyAv" alt="Ma photo de profil">
 <div class="wa-side-acts">
 <button class="wa-icon-btn" title="Épinglés" data-i18n-title="chatPinnedTitle" onclick="W.toggleStarred()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
 <button class="wa-icon-btn" title="Fermer" data-i18n-title="chatCloseTitle" onclick="closeMessagesInbox()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
@@ -2909,8 +2929,8 @@ reader.readAsDataURL(event.target.files[0]);
 <div class="keys"><span class="key" data-i18n="keyEnter">Entrée = Envoyer</span><span class="key" data-i18n="keyShiftEnter">Maj+Entrée = Saut de ligne</span><span class="key" data-i18n="keyEsc">Échap = Fermer</span><span class="key" data-i18n="keyCtrlF">Ctrl+F = Rechercher</span></div>
 </div>
 <div class="wa-chead" id="waCHead" style="display:none">
-<button class="wa-back" onclick="W.goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-<img class="wa-chead-av" id="waHeadAv" src="">
+<button class="wa-back" onclick="W.goBack()" aria-label="Retour" title="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+<img class="wa-chead-av" id="waHeadAv" src="" alt="Photo du contact">
 <div class="wa-chead-info" onclick="W.toggleProfile()">
 <div class="wa-chead-name" id="waHeadName"></div>
 <div class="wa-chead-sub" id="waHeadSub" style="display:none"></div>
@@ -2933,20 +2953,20 @@ reader.readAsDataURL(event.target.files[0]);
 <svg style="width:18px;height:18px;color:var(--text-secondary)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
 <input type="text" placeholder="Rechercher dans la conversation…" data-i18n-placeholder="chatMsgSearchPh" id="waMsgSearchIn" oninput="W.searchMessages(this.value)">
 <div class="wa-search-nav"><span id="waSearchCount">0/0</span>
-<button class="wa-icon-btn" onclick="W.searchNav(-1)"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg></button>
-<button class="wa-icon-btn" onclick="W.searchNav(1)"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+<button class="wa-icon-btn" onclick="W.searchNav(-1)" aria-label="Résultat précédent" title="Précédent"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg></button>
+<button class="wa-icon-btn" onclick="W.searchNav(1)" aria-label="Résultat suivant" title="Suivant"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
 </div>
-<button class="wa-icon-btn" onclick="W.toggleSearch()"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+<button class="wa-icon-btn" onclick="W.toggleSearch()" aria-label="Rechercher dans la conversation" title="Rechercher"><svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
 </div>
 <div class="wa-pinned-bar" id="waPinnedBar" style="display:none"></div>
 <div class="wa-msgs" id="waMsgs" style="display:none"></div>
-<button class="wa-scroll-btn" id="waScrollBtn" onclick="W.scrollToBottom(true)">
+<button class="wa-scroll-btn" id="waScrollBtn" onclick="W.scrollToBottom(true)" aria-label="Aller au dernier message" title="Dernier message">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
 <span class="badge" id="waScrollBadge" style="display:none"></span>
 </button>
 <div class="wa-reply-prev" id="waReplyPrev">
 <div><div class="wa-reply-prev-name" id="waReplyName"></div><div class="wa-reply-prev-text" id="waReplyText"></div></div>
-<button class="wa-reply-prev-close" onclick="W.cancelPreview()">&times;</button>
+<button class="wa-reply-prev-close" onclick="W.cancelPreview()" aria-label="Annuler la réponse" title="Annuler">&times;</button>
 </div>
 <div class="wa-quick" id="waAiSuggest" style="background:linear-gradient(135deg,rgba(122,78,194,.06),rgba(255,215,0,.05))">
 <div class="wa-quick-row" id="waAiRow" style="justify-content:center"></div>
@@ -2979,9 +2999,9 @@ reader.readAsDataURL(event.target.files[0]);
 </div>
 <div class="wa-drop" id="waDrop"><svg style="width:48px;height:48px;color:var(--pri)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="wa-drop-text" data-i18n="chatDropText">Dépose une image ici</span><span class="wa-drop-sub" data-i18n="chatDropSub">JPG, PNG, WEBP, GIF — max 8 Mo</span></div>
 <div class="wa-profile" id="waProfile">
-<div class="wa-prof-head"><button class="wa-icon-btn" onclick="W.toggleProfile()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button><h3 data-i18n="chatContactInfo">Infos du contact</h3></div>
+<div class="wa-prof-head"><button class="wa-icon-btn" onclick="W.toggleProfile()" aria-label="Fermer la fiche du contact" title="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button><h3 data-i18n="chatContactInfo">Infos du contact</h3></div>
 <div class="wa-prof-body">
-<div class="wa-prof-avatar"><img id="waProfAv" src=""><div class="name" id="waProfName"></div><div class="status" id="waProfStatus"></div></div>
+<div class="wa-prof-avatar"><img id="waProfAv" src="" alt="Photo du contact"><div class="name" id="waProfName"></div><div class="status" id="waProfStatus"></div></div>
 <div class="wa-prof-actions">
 <button class="wa-prof-action" onclick="W.toggleStarred()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span data-i18n="chatStarAction">Épingler</span></button>
 </div>
@@ -2990,7 +3010,7 @@ reader.readAsDataURL(event.target.files[0]);
 </div>
 </div>
 </div>
-<div class="wa-lightbox" id="waLB" onclick="W.closeLB()"><button class="wa-lightbox-close">&times;</button><img id="waLBImg" src=""></div>
+<div class="wa-lightbox" id="waLB" onclick="W.closeLB()"><button class="wa-lightbox-close" aria-label="Fermer l'image" title="Fermer">&times;</button><img id="waLBImg" src="" alt="Image de la conversation"></div>
 <div class="wa-ctx" id="waCtx"></div>
 <div id="aiAnalysisBox" style="display:none;position:fixed;left:16px;right:16px;bottom:118px;z-index:1400;background:var(--bg-card,#151515);border:1px solid rgba(37,211,102,0.5);border-radius:14px;padding:14px;max-height:46vh;overflow:auto;box-shadow:0 10px 34px rgba(0,0,0,.55);">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -2999,7 +3019,7 @@ reader.readAsDataURL(event.target.files[0]);
 </div>
 <div id="aiAnalysisBody" style="font-size:13px;line-height:1.55;white-space:pre-wrap;color:var(--text-primary,#fff);"></div>
 </div>
-<div class="wa-modal" id="waFwdModal"><div class="wa-modal-box"><div class="wa-modal-head"><button class="wa-icon-btn" onclick="W.closeFwd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button><h3 data-i18n="chatFwdTitle">Transférer le message à…</h3></div><div class="wa-modal-list" id="waFwdList"></div></div></div>
+<div class="wa-modal" id="waFwdModal"><div class="wa-modal-box"><div class="wa-modal-head"><button class="wa-icon-btn" onclick="W.closeFwd()" aria-label="Fermer le transfert" title="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button><h3 data-i18n="chatFwdTitle">Transférer le message à…</h3></div><div class="wa-modal-list" id="waFwdList"></div></div></div>
 <div class="wa-modal" id="waPollModal"><div class="wa-modal-box"><div class="wa-poll-modal"><h3 data-i18n="chatPollTitle">Créer un sondage</h3><input id="waPollQ" placeholder="Pose une question…" data-i18n-placeholder="chatPollQPh"><div id="waPollOpts"><input placeholder="Option 1" class="poll-opt"><input placeholder="Option 2" class="poll-opt"></div><button class="add-opt" data-i18n="chatPollAddOpt" onclick="W.addPollOpt()">+ Ajouter une option</button><button class="send-poll" data-i18n="chatPollSend" onclick="W.sendPoll()">Envoyer le sondage</button></div></div></div>
 <div class="wa-modal" id="waTplModal"><div class="wa-modal-box"><div class="wa-tpl-modal"><div class="wa-tpl-head"><h3 data-i18n="tplTitle">⚡ Mes réponses prêtes</h3><button type="button" class="wa-tpl-close" onclick="W.closeTemplates()" title="Fermer" data-i18n-title="chatCloseTitle" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><p class="wa-tpl-hint" data-i18n="tplHint">1 tap = insérée dans le message (modifiable avant l’envoi).</p><div id="waTplList" class="wa-tpl-list"></div><div class="wa-tpl-add"><input id="waTplIn" placeholder="Nouvelle réponse… (ex : Bonjour, je suis disponible)" data-i18n-placeholder="tplPlaceholder"><button onclick="W.addTemplate()" data-i18n="tplAdd">Ajouter</button></div></div></div></div>
 <div class="wa-modal" id="waQuoteModal"><div class="wa-modal-box"><div class="wa-quote-modal">
@@ -3011,7 +3031,7 @@ reader.readAsDataURL(event.target.files[0]);
 <textarea id="waQuoteNotes" rows="2" placeholder="Notes : ce qui est inclus, garantie…" data-i18n-placeholder="quoteNotesPh"></textarea>
 <button type="button" class="wa-quote-send" onclick="W.sendQuote()"><span data-i18n="quoteSend">Envoyer le devis</span></button>
 </div></div></div>
-<div class="wa-toast" id="waToast"><img id="waToastAv" src=""><div class="wa-toast-body"><div class="wa-toast-name" id="waToastName"></div><div class="wa-toast-text" id="waToastText"></div></div></div>
+<div class="wa-toast" id="waToast"><img id="waToastAv" src="" alt="Photo de l'expéditeur"><div class="wa-toast-body"><div class="wa-toast-name" id="waToastName"></div><div class="wa-toast-text" id="waToastText"></div></div></div>
 </div>
 </div>
 <button type="button" id="jmcHaut" onclick="jmcRemonterEnHaut()" aria-label="Remonter en haut"
