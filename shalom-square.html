@@ -2076,6 +2076,79 @@ function vdMotifTexte(cle){
   }
   return cle || "";
 }
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008d) LES SIGNALEMENTS ÉTAIENT ILLISIBLES POUR L'ADMINISTRATEUR
+
+   Les règles prévoient depuis le début un nœud « market_reports »
+   structuré — listingKey, sellerUid, reason, reporter, timestamp —
+   avec lecture réservée aux administrateurs. Il n'était utilisé par
+   AUCUNE ligne de code. Les signalements partaient uniquement dans
+   « errorLogs », mélangés aux plantages et aux messages de support :
+   impossible de savoir quelle annonce est signalée, par combien de
+   personnes, ni pour quel motif.
+
+   On écrit maintenant AUX DEUX ENDROITS. errorLogs reste le canal que
+   l'équipe lit au quotidien ; market_reports devient la liste de
+   modération, triable par annonce.
+   ═══════════════════════════════════════════════════════════════════ */
+function vdSignalementStructure(l, motif, detail){
+  try{
+    var me = (FB.auth && FB.auth.currentUser) ? FB.auth.currentUser.uid : "";
+    if(!me || !FB.db) return false;
+    var nom = (FB.profile && FB.profile.name) || "";
+    FB.db.ref("market_reports").push({
+      listingKey: String(l.remoteKey || ("demo" + l.id)).slice(0, 60),
+      listingTitle: String(l.title || "").slice(0, 120),
+      sellerUid: String(l.sellerUid || "").slice(0, 40),
+      reporter: me,
+      reporterName: String(nom).slice(0, 60),
+      reason: String(motif || "autre").slice(0, 30),
+      timestamp: Date.now()
+    }).catch(function(){});
+    return true;
+  }catch(e){ return false; }
+}
+
+/* Le panneau de modération : la liste des annonces signalées, groupées,
+   la plus signalée en premier. Sans regroupement, dix signalements de
+   la même annonce ressemblent à dix problèmes différents. */
+function vdAdminSignalements(){
+  if(!VD_EST_ADMIN){ toast("Reserve a l'administrateur."); return false; }
+  openModal('<button class="iconbtn" onclick="closeModal()" aria-label="Fermer">✕</button>'
+    + '<div class="d-title">🚩 Annonces signalees</div>'
+    + '<div id="vdAdminSig" class="dim" style="font-size:13px;margin-top:10px">Chargement…</div>');
+  FB.db.ref("market_reports").orderByChild("timestamp").limitToLast(120).once("value").then(function(sn){
+    var par = {};
+    sn.forEach(function(ch){
+      var v = ch.val() || {};
+      if(!v.listingKey) return;
+      if(!par[v.listingKey]) par[v.listingKey] = { titre: v.listingTitle || v.listingKey, n: 0, motifs: {}, dernier: 0, vendeur: v.sellerUid || "" };
+      var e = par[v.listingKey];
+      e.n++;
+      e.motifs[v.reason || "autre"] = (e.motifs[v.reason || "autre"] || 0) + 1;
+      if((v.timestamp || 0) > e.dernier) e.dernier = v.timestamp || 0;
+    });
+    var liste = Object.keys(par).map(function(k){ var o = par[k]; o.cle = k; return o; });
+    liste.sort(function(a, b){ return b.n - a.n || b.dernier - a.dernier; });
+    var box = document.getElementById("vdAdminSig");
+    if(!box) return;
+    if(!liste.length){ box.innerHTML = "Aucun signalement. ✅"; return; }
+    box.innerHTML = liste.map(function(o){
+      var motifs = Object.keys(o.motifs).map(function(m){ return vdMotifTexte(m) + " (" + o.motifs[m] + ")"; }).join(" · ");
+      var grave = o.n >= 3;
+      return '<div style="border:1px solid ' + (grave ? "rgba(229,72,77,.6)" : "var(--line)")
+        + ';border-radius:12px;padding:10px;margin-bottom:10px">'
+        + '<div style="font-weight:800;font-size:13.5px">' + (grave ? "🔴 " : "🟠 ") + esc(String(o.titre).slice(0, 70)) + '</div>'
+        + '<div class="dim" style="font-size:11.5px;margin:3px 0 6px">' + o.n + ' signalement(s) · ' + esc(motifs) + '</div>'
+        + '<div class="dim" style="font-size:11px">cle : ' + esc(o.cle) + (o.vendeur ? (' · vendeur : ' + esc(o.vendeur.slice(0, 8))) : "") + '</div>'
+        + '</div>';
+    }).join("");
+  }).catch(function(){
+    var box = document.getElementById("vdAdminSig");
+    if(box) box.innerHTML = "Lecture impossible. Publiez les regles a jour.";
+  });
+  return true;
+}
 function vdSignalerAnnonce(id){
   var l = BY_ID.get(id);
   if(!l) return false;
@@ -2132,6 +2205,8 @@ function vdEnvoyerSignalement(id){
       timestamp: Date.now(),
       at: Date.now()
     }).then(function(){
+      /* (20261008d) la copie structurée, pour la modération */
+      try{ vdSignalementStructure(l, motif, detail); }catch(e){}
       closeModal();
       toast(LANG === "fr" ? "🚩 Signalement envoyé. Merci." : "🚩 Report sent. Thank you.");
     }).catch(function(){
@@ -4509,6 +4584,7 @@ function vdAdminPanneau(){
   if(!VD_EST_ADMIN){ toast("Reserve a l'administrateur."); return false; }
   openModal('<button class="iconbtn" onclick="closeModal()" aria-label="Fermer">✕</button>'
     + '<div class="d-title">🛡️ Demandes de verification</div>'
+    + '<button class="btn btn-ghost" style="margin-bottom:8px" onclick="vdAdminSignalements()">🚩 Voir les annonces signalees</button>'
     + '<div id="vdAdminListe" class="dim" style="font-size:13px;margin-top:10px">Chargement…</div>');
   FB.db.ref("verifications").orderByChild("requestedAt").limitToLast(40).once("value").then(function(sn){
     var items = [];
