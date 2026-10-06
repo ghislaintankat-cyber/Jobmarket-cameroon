@@ -1546,7 +1546,10 @@ function publishLiveListing(data,cb){
   if(!FB.ready||!(FB.auth&&FB.auth.currentUser)){ cb(false); return; }
   try{
     var ref=FB.db.ref("market_listings").push();
-    ref.set(data).then(function(){
+    /* (20261008e) le numéro ne part plus dans le nœud public */
+    var vdD=vdSeparerAnnonce(data);
+    FB.db.ref("market_listings_contact/"+ref.key).set(vdD.prive).catch(function(){});
+    ref.set(vdD.publique).then(function(){
       FB.db.ref("userListings/"+FB.auth.currentUser.uid+"/"+ref.key).set(true).catch(function(){});
       addRemoteListing(ref.key,data);
       cb(true,ref.key);
@@ -2556,6 +2559,103 @@ function vdVeilleMarcheC(){
 }
 try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleMarcheC(); }catch(e){} }); }catch(e){}
 try{ if(document.readyState !== "loading") vdVeilleMarcheC(); }catch(e){}
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008e) LE NUMÉRO DU VENDEUR SORT DU NŒUD PUBLIC
+
+   Mesuré sur la base en ligne, sans aucun compte :
+       GET /market_listings.json  →  …, "phone": "6XXXXXXXX", lat, lng
+   Le numéro de chaque vendeur était téléchargeable par n'importe qui.
+   Il part maintenant dans « market_listings_contact », lisible par les
+   seules personnes connectées, et la position publique est arrondie à
+   environ un kilomètre.
+
+   Le reste du code continue de lire « l.phone » : les vraies valeurs
+   sont remises dans les objets en mémoire dès qu'on est connecté.
+   ═══════════════════════════════════════════════════════════════════ */
+function vdPositionFloue(v){
+  var n = Number(v);
+  if(!isFinite(n)) return n;
+  return Math.round(100 * n) / 100;
+}
+function vdSeparerAnnonce(data){
+  var prive = { phone: data.phone || "", user: data.user || "" };
+  if(isFinite(Number(data.lat))) prive.lat = Number(data.lat);
+  if(isFinite(Number(data.lng))) prive.lng = Number(data.lng);
+  var pub = {};
+  for(var k in data) if(Object.prototype.hasOwnProperty.call(data, k)) pub[k] = data[k];
+  delete pub.phone;
+  if(isFinite(Number(data.lat))) pub.lat = vdPositionFloue(data.lat);
+  if(isFinite(Number(data.lng))) pub.lng = vdPositionFloue(data.lng);
+  return { publique: pub, prive: prive };
+}
+var VD_CONTACTS = {};
+function vdAppliquerContacts(){
+  var n = 0;
+  try{
+    LISTINGS.forEach(function(l){
+      if(!l.remoteKey) return;
+      var c = VD_CONTACTS[l.remoteKey];
+      if(!c) return;
+      if(c.phone) l.phone = c.phone;
+      if(isFinite(Number(c.lat))) l.lat = Number(c.lat);
+      if(isFinite(Number(c.lng))) l.lng = Number(c.lng);
+      n++;
+    });
+    if(n){ try{ CACHE.clear(); renderGrid(); }catch(e){} }
+  }catch(e){}
+  return n;
+}
+function vdEcouterContacts(){
+  try{
+    if(!(FB.auth && FB.auth.currentUser) || vdEcouterContacts._pose) return false;
+    vdEcouterContacts._pose = true;
+    FB.db.ref("market_listings_contact").on("value", function(s){
+      VD_CONTACTS = (s && s.val()) || {};
+      vdAppliquerContacts();
+    }, function(){});
+    return true;
+  }catch(e){ return false; }
+}
+/* Les annonces déjà en ligne sont déplacées par leur vendeur, une fois,
+   sans qu'il ait rien à faire. Personne d'autre n'en a le droit. */
+function vdMigrerMesAnnonces(){
+  try{
+    var me = (FB.auth && FB.auth.currentUser) ? FB.auth.currentUser.uid : "";
+    if(!me || vdMigrerMesAnnonces._fait) return 0;
+    vdMigrerMesAnnonces._fait = true;
+    FB.db.ref("market_listings").orderByChild("user").equalTo(me).once("value").then(function(sn){
+      var tout = (sn && sn.val()) || {}, n = 0;
+      Object.keys(tout).forEach(function(id){
+        var v = tout[id] || {};
+        if(!v.phone) return;
+        var prive = { phone: v.phone, user: me };
+        if(isFinite(Number(v.lat))) prive.lat = Number(v.lat);
+        if(isFinite(Number(v.lng))) prive.lng = Number(v.lng);
+        FB.db.ref("market_listings_contact/" + id).update(prive).then(function(){
+          var eff = { phone: null };
+          if(isFinite(Number(v.lat))) eff.lat = vdPositionFloue(v.lat);
+          if(isFinite(Number(v.lng))) eff.lng = vdPositionFloue(v.lng);
+          FB.db.ref("market_listings/" + id).update(eff).catch(function(){});
+        }).catch(function(){});
+        n++;
+      });
+      if(n) console.log("[20261008e] " + n + " annonce(s) boutique mise(s) a l abri");
+    }).catch(function(){});
+    return 1;
+  }catch(e){ return 0; }
+}
+function vdVeillePrivee(){
+  try{
+    if(window.__vdPrivee) return false;
+    window.__vdPrivee = setInterval(function(){
+      try{ vdEcouterContacts(); }catch(e){}
+    }, 3000);
+    setTimeout(function(){ try{ vdMigrerMesAnnonces(); }catch(e){} }, 4500);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeillePrivee(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState !== "loading") vdVeillePrivee(); }catch(e){}
 function cardHTML(l){
   var key=[l.id,LANG,SAVED.has(l.id)?1:0,VIEW,l.negotiable?1:0,vdDistanceCle(l),((l.real&&typeof PRO_SELLERS!=="undefined"&&PRO_SELLERS.has(l.sellerUid))?1:0),(l.mine?(l.views||0):0)].join("|");
   var c=CACHE.get(key); if(c) return c;

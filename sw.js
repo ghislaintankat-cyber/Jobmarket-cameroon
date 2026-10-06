@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v286'; // 20261008d : bumpedAt accepte, limite serveur, signalements lisibles
+const CACHE_VERSION = 'v287'; // 20261008e : numeros et positions hors du nœud public
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
