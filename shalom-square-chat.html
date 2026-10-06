@@ -148,6 +148,42 @@ a{color:var(--gold);text-decoration:none}
 .dim{color:var(--muted)}
 .bubble .trans{margin-top:6px;padding-top:6px;border-top:1px dashed rgba(255,255,255,.25);font-size:12.5px;opacity:.92}
 .bubble .trans b{font-size:9.5px;letter-spacing:.5px;opacity:.7;display:block;margin-bottom:2px}
+/* (20261008b) écran d'appel, sonnerie entrante, photo et vocal */
+.vdcall-ov{position:fixed;inset:0;z-index:9000;background:#07100c;display:none;
+  flex-direction:column;align-items:center;justify-content:space-between;
+  padding:calc(26px + env(safe-area-inset-top)) 14px calc(26px + env(safe-area-inset-bottom))}
+.vdcall-ov.on{display:flex}
+.vdcall-top{text-align:center;color:#e9fff4;z-index:3;position:relative}
+.vdcall-name{font-size:21px;font-weight:800;line-height:1.2}
+.vdcall-state{font-size:13.5px;opacity:.78;margin-top:5px;font-variant-numeric:tabular-nums}
+.vdcall-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;display:none;z-index:1}
+.vdcall-vid.on{display:block}
+.vdcall-mini{position:absolute;right:12px;top:calc(14px + env(safe-area-inset-top));
+  width:102px;height:138px;object-fit:cover;border-radius:13px;z-index:2;
+  border:2px solid rgba(255,255,255,.35);background:#000;display:none}
+.vdcall-mini.on{display:block}
+.vdcall-acts{display:flex;gap:15px;z-index:3;flex-wrap:wrap;justify-content:center}
+.vdcall-b{width:62px;height:62px;border-radius:50%;border:0;font-size:24px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);color:#fff}
+.vdcall-b.hang{background:#e5484d}
+.vdcall-b.take{background:#2ecc71}
+.vdcall-b.off{background:#fff;color:#111}
+.vdring{position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top));z-index:9500;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;
+  display:none;align-items:center;gap:10px;box-shadow:0 14px 34px rgba(0,0,0,.5)}
+.vdring.on{display:flex}
+.vdring-mid{flex:1;min-width:0}
+.vdring-name{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vdring-kind{font-size:11.5px;color:var(--muted);margin-top:2px}
+.vdring-b{width:40px;height:40px;border-radius:50%;border:0;font-size:17px;color:#fff;cursor:pointer}
+.vdring-b.ok{background:#2ecc71}
+.vdring-b.no{background:#e5484d}
+.iobtn{width:40px;height:40px;border-radius:50%;flex-shrink:0;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
+.iobtn.rec{background:#e5484d;color:#fff;border-color:#e5484d}
+.bubble.sys .vdcallline{font-weight:700}
+.bubble audio{width:212px;max-width:100%;height:36px;display:block;margin:3px 0}
 .bubble-acts{display:flex;gap:6px;align-self:flex-start;margin-top:-4px;padding:0 4px}
 .bact{
   font-size:10.5px;font-weight:700;border:1px solid var(--line);border-radius:999px;
@@ -281,6 +317,10 @@ body.light{
           <span class="chat-tag secure" id="thTag" data-i18n="secure_tag">CHAT SÉCURISÉ JOBMARKET</span>
         </div>
         <button class="hbtn" id="scamBtn" onclick="aiScamCheck()" title="Vérification IA de l'annonce" style="display:none">🛡️</button>
+                <button class="hbtn" id="vdRechFilBtn" title="Chercher dans la conversation" aria-label="Chercher dans la conversation">🔎</button>
+        <button class="hbtn" id="vdVenduBtn" title="Marquer vendu" aria-label="Marquer vendu" style="display:none">✅</button>
+        <button class="hbtn" id="vdCallAudioBtn" title="Appel audio" aria-label="Appel audio">📞</button>
+        <button class="hbtn" id="vdCallVideoBtn" title="Appel vidéo" aria-label="Appel vidéo">🎥</button>
         <button class="hbtn" id="inAppBtn" onclick="openInApp()" title="Ouvrir dans l'app JobMarket" style="display:none">📲</button>
       </div>
       <div class="listing-chip" id="listingChip" style="display:none" onclick="openListing()">
@@ -288,16 +328,49 @@ body.light{
         <span class="ltitle" id="lcTitle"></span>
         <span class="lprice" id="lcPrice"></span>
       </div>
+      <div id="vdFilRecherche" style="display:none;padding:7px 12px 0"><input id="vdFilRechChamp" type="text" placeholder="Chercher dans cette conversation…" style="width:100%;background:var(--card);border:1px solid var(--line);border-radius:999px;color:var(--ink);padding:8px 14px;font-size:13px;outline:none"></div>
       <div class="bubbles" id="bubbles"></div>
       <div class="qchips" id="aiRow"></div>
       <div class="qchips" id="quickChips"></div>
       <div class="chat-input">
         <input id="chatInput" type="text" data-i18n-ph="chat_ph" placeholder="Écrivez un message…"
           onkeydown="if(event.key==='Enter'){event.preventDefault();sendText();}">
+                <button class="iobtn" id="vdLieuBtn" title="Partager ma position" aria-label="Partager ma position">📍</button>
+        <input id="vdPhotoFile" type="file" accept="image/*" style="display:none">
+        <button class="iobtn" id="vdPhotoBtn" title="Envoyer une photo" aria-label="Envoyer une photo">📷</button>
+        <button class="iobtn" id="vdVoiceBtn" title="Message vocal" aria-label="Message vocal">🎤</button>
         <button class="sendbtn" onclick="sendText()" aria-label="Envoyer">➤</button>
       </div>
     </div>
   </section>
+</div>
+
+<!-- (20261008b) écran d'appel audio / vidéo -->
+<div class="vdcall-ov" id="vdCallOv" role="dialog" aria-modal="true" aria-label="Appel en cours">
+  <video class="vdcall-vid" id="vdCallRemote" playsinline autoplay></video>
+  <video class="vdcall-mini" id="vdCallMini" playsinline autoplay muted></video>
+  <audio id="vdCallAudio" autoplay></audio>
+  <div class="vdcall-top">
+    <div class="vdcall-name" id="vdCallName">…</div>
+    <div class="vdcall-state" id="vdCallState">…</div>
+  </div>
+  <div class="vdcall-acts">
+    <button class="vdcall-b" id="vdCallMic" title="Couper le micro" aria-label="Couper le micro">🎙️</button>
+    <button class="vdcall-b" id="vdCallCam" title="Couper la caméra" aria-label="Couper la caméra">📹</button>
+    <button class="vdcall-b" id="vdCallFlip" title="Changer de caméra" aria-label="Changer de caméra">🔄</button>
+    <button class="vdcall-b take" id="vdCallTake" title="Répondre" aria-label="Répondre" style="display:none">📞</button>
+    <button class="vdcall-b hang" id="vdCallHang" title="Raccrocher" aria-label="Raccrocher">📵</button>
+  </div>
+</div>
+<!-- (20261008b) bandeau d'appel entrant : il sonne même conversation fermée -->
+<div class="vdring" id="vdRing" role="alert">
+  <div style="font-size:22px">📞</div>
+  <div class="vdring-mid">
+    <div class="vdring-name" id="vdRingName">…</div>
+    <div class="vdring-kind" id="vdRingKind">Appel entrant</div>
+  </div>
+  <button class="vdring-b ok" id="vdRingTake" title="Répondre" aria-label="Répondre">✅</button>
+  <button class="vdring-b no" id="vdRingDrop" title="Refuser" aria-label="Refuser">✖️</button>
 </div>
 
 <div class="banner" id="banner" onclick="bannerClick()">
@@ -674,7 +747,7 @@ function sendMarketMessage(threadId,payload,cb,presetKey){
   var peer=peerOf(threadId);
   if(!peer){ cb&&cb(false,"peer"); return; }
   try{
-    var msgId=presetKey||FB.db.ref("chats/"+threadId+"/messages").push().key;
+    var msgId=presetKey||FB.db.ref("market_chats/"+threadId+"/messages").push().key;
     var now=Date.now();
     var myName=(FB.profile&&FB.profile.name)||me.displayName||(me.email||"").split("@")[0]||"Utilisateur";
     var peerName=PEER_NAMES.get(peer)||"Utilisateur";
@@ -684,16 +757,26 @@ function sendMarketMessage(threadId,payload,cb,presetKey){
     if(payload.text) msg.text=payload.text;
     if(payload.quote) msg.quote=payload.quote;
     if(payload.autoReply) msg.autoReply=true;
-    FB.db.ref("userThreads/"+me.uid+"/"+threadId).set(true).catch(function(){});
-    FB.db.ref("userThreads/"+peer+"/"+threadId).set(true).catch(function(){});
+    /* (20261008b) vdChampsRiches : sans ces deux lignes, une photo ou
+       un vocal arrivaient chez l'autre comme une bulle vide. */
+    if(payload.imageUrl) msg.imageUrl=payload.imageUrl;
+    if(payload.voice){ msg.voice=payload.voice; if(payload.duree) msg.duree=Math.round(payload.duree); }
+    /* (20261008c) vdChampLieu : sans cette ligne la position partirait vide */
+    if(payload.lieu && payload.lieu.lat!=null) msg.lieu={lat:Number(payload.lieu.lat),lng:Number(payload.lieu.lng)};
+    if(!payload.text&&!payload.quote&&payload.lieu) preview="📍 Position partagée";
+    if(!payload.text&&!payload.quote){
+      preview = payload.imageUrl ? "📷 Photo" : (payload.voice ? "🎤 Message vocal" : preview);
+    }
+    FB.db.ref("market_threads/"+me.uid+"/"+threadId).set(true).catch(function(){});
+    FB.db.ref("market_threads/"+peer+"/"+threadId).set(true).catch(function(){});
     var parts={}; parts[me.uid]=true; parts[peer]=true;
-    FB.db.ref("chats/"+threadId+"/meta/participants").update(parts).catch(function(){});
+    FB.db.ref("market_chats/"+threadId+"/meta/participants").update(parts).catch(function(){});
     var names={}; names[me.uid]=myName; names[peer]=peerName;
-    FB.db.ref("chats/"+threadId+"/meta").update({names:names,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
-    FB.db.ref("userInboxes/"+peer+"/threads/"+threadId).update({peerUid:me.uid,peerName:myName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
-    FB.db.ref("userInboxes/"+me.uid+"/threads/"+threadId).update({peerUid:peer,peerName:peerName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
-    FB.db.ref("userInboxes/"+peer+"/threads/"+threadId+"/unread").transaction(function(c){ return (c||0)+1; }).catch(function(){});
-    FB.db.ref("chats/"+threadId+"/messages/"+msgId).set(msg).then(function(){ cb&&cb(true,msgId); }).catch(function(e){ cb&&cb(false,e); });
+    FB.db.ref("market_chats/"+threadId+"/meta").update({names:names,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
+    FB.db.ref("market_inboxes/"+peer+"/threads/"+threadId).update({peerUid:me.uid,peerName:myName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
+    FB.db.ref("market_inboxes/"+me.uid+"/threads/"+threadId).update({peerUid:peer,peerName:peerName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
+    FB.db.ref("market_inboxes/"+peer+"/threads/"+threadId+"/unread").transaction(function(c){ return (c||0)+1; }).catch(function(){});
+    FB.db.ref("market_chats/"+threadId+"/messages/"+msgId).set(msg).then(function(){ cb&&cb(true,msgId); }).catch(function(e){ cb&&cb(false,e); });
   }catch(e){ cb&&cb(false,e); }
 }
 var RENDERED_KEYS=new Map();
@@ -703,7 +786,7 @@ function preMarkThreadMsg(threadId,key){
 }
 function subscribeThread(threadId,cb){
   if(!FB.ready) return null;
-  var ref=FB.db.ref("chats/"+threadId+"/messages").limitToLast(80);
+  var ref=FB.db.ref("market_chats/"+threadId+"/messages").limitToLast(80);
   var h=function(snap){
     var m=snap.val()||{}; var key=snap.key;
     if(!RENDERED_KEYS.has(threadId)) RENDERED_KEYS.set(threadId,new Set());
@@ -718,7 +801,7 @@ function subscribeThread(threadId,cb){
 function markThreadRead(threadId){
   var me=FB.auth&&FB.auth.currentUser;
   if(!me||!FB.ready) return;
-  FB.db.ref("userInboxes/"+me.uid+"/threads/"+threadId+"/unread").set(0).catch(function(){});
+  FB.db.ref("market_inboxes/"+me.uid+"/threads/"+threadId+"/unread").set(0).catch(function(){});
 }
 
 /* ---------- état global de la page ---------- */
@@ -743,7 +826,7 @@ function onFbUser(u){
     }).catch(function(){});
     PEER_NAMES.set(u.uid,(FB.profile&&FB.profile.name)||u.displayName||(u.email||"").split("@")[0]||"");
     try{
-      var ref=FB.db.ref("userInboxes/"+u.uid+"/threads");
+      var ref=FB.db.ref("market_inboxes/"+u.uid+"/threads");
       INBOX_UNSUB=function(){ try{ ref.off("value"); }catch(e){} };
       var firstSnap=true, prevLastAt={};
       ref.on("value",function(snap){
@@ -913,7 +996,7 @@ function openThread(tid){
   markThreadRead(tid);
   CHAT.unsub=subscribeThread(tid,onThreadMsg);
   /* meta du fil (noms, contexte) + annonce discutée */
-  FB.db.ref("chats/"+tid+"/meta").once("value").then(function(snap){
+  FB.db.ref("market_chats/"+tid+"/meta").once("value").then(function(snap){
     var m=(snap&&snap.val())||{};
     if(!CHAT.open||CHAT.tid!==tid) return;
     CHAT.meta=m;
@@ -1041,6 +1124,901 @@ function vdImg(u, largeur) {
   } catch (e) { return u || ""; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008b) APPELS AUDIO ET VIDEO DANS LA MESSAGERIE DE LA BOUTIQUE
+
+   POURQUOI. La demande etait nette : « le chat de Shalom doit etre
+   exactement developpe comme celui de JobMarket, mais je ne vois pas
+   les appels video ou normal ». C'etait vrai : la page livree ne
+   contenait ni RTCPeerConnection, ni getUserMedia, ni la moindre
+   trace d'appel. On ne pouvait qu'ecrire.
+
+   COMMENT. Meme architecture que JobMarket : WebRTC pair a pair, le
+   STUN de Google plus le TURN maison lu dans « config/call » (le
+   meme nœud, donc un seul endroit a regler). La signalisation passe
+   par la base, dans « market_calls » — separee de JobMarket, comme
+   le reste de la boutique depuis 20261008a.
+
+   LE NŒUD. Chacun ECRIT dans la boite de l'autre et LIT dans la
+   sienne :
+       market_calls/<destinataire>/<idAppel> = { from, kind, sdp,
+                                                 state, ice:{…} }
+   L'appel porte le meme identifiant des deux cotes, donc aucune
+   collision et aucun besoin de droit croise.
+
+   L'HORLOGE. Piege connu et deja paye dans JobMarket : un appel
+   etait jete parce que son horodatage paraissait « trop vieux »
+   quand les deux telephones n'etaient pas a la meme heure. Ici
+   l'instant est ecrit par le SERVEUR (ServerValue.TIMESTAMP) et
+   compare avec le decalage lu dans « .info/serverTimeOffset ». Les
+   deux cotes raisonnent donc sur la meme horloge.
+   ═══════════════════════════════════════════════════════════════════ */
+var VD_STUN = "stun:stun.l.google.com:19302";
+var VD_TURN = null;
+var VD_DECALAGE = 0;
+function vdHeureServeur(){ return Date.now() + VD_DECALAGE; }
+function vdLireDecalage(){
+  try{
+    if(!FB || !FB.db) return false;
+    FB.db.ref(".info/serverTimeOffset").on("value", function(sn){
+      var v = sn && sn.val();
+      if(typeof v === "number" && Math.abs(v) < 86400000) VD_DECALAGE = v;
+    });
+    return true;
+  }catch(e){ return false; }
+}
+function vdServeursIce(){
+  return new Promise(function(res){
+    var liste = [ { urls: VD_STUN } ];
+    if(VD_TURN && VD_TURN.turnUrl){
+      liste.push({ urls: VD_TURN.turnUrl, username: VD_TURN.username || "", credential: VD_TURN.credential || "" });
+      return res(liste);
+    }
+    try{
+      FB.db.ref("config/call").once("value").then(function(sn){
+        var d = sn && sn.val();
+        if(d && typeof d.turnUrl === "string" && d.turnUrl.indexOf("turn:") === 0){
+          VD_TURN = { turnUrl: String(d.turnUrl).slice(0,120),
+                      username: String(d.username || "").slice(0,80),
+                      credential: String(d.credential || "").slice(0,120) };
+          liste.push({ urls: VD_TURN.turnUrl, username: VD_TURN.username, credential: VD_TURN.credential });
+        }
+        res(liste);
+      }).catch(function(){ res(liste); });
+    }catch(e){ res(liste); }
+  });
+}
+
+var VD_APPEL = null;      /* l'appel en cours, des deux cotes */
+var VD_ENTRANT = null;    /* l'appel qui sonne, pas encore accepte */
+var VD_ECOUTE_APPELS = "";
+
+function vdAppelChrono(ms){
+  var s = Math.max(0, Math.round((ms || 0) / 1000));
+  var m = Math.floor(s / 60); s = s % 60;
+  return (m < 10 ? "0" + m : "" + m) + ":" + (s < 10 ? "0" + s : "" + s);
+}
+function vdAppelDuree(ms){
+  var s = Math.max(0, Math.round((ms || 0) / 1000));
+  if(s < 60) return s + " s";
+  var m = Math.floor(s / 60); s = s % 60;
+  return m + " min " + (s < 10 ? "0" + s : "" + s) + " s";
+}
+function vdAppelEtat(txt){
+  var e = document.getElementById("vdCallState");
+  if(e) e.textContent = txt || "";
+  return txt || "";
+}
+function vdAppelOuvrirEcran(nom, kind, attente){
+  var ov = document.getElementById("vdCallOv");
+  if(!ov) return false;
+  var n = document.getElementById("vdCallName");
+  if(n) n.textContent = nom || (LANG === "fr" ? "Correspondant" : "Contact");
+  var v = document.getElementById("vdCallRemote");
+  var mini = document.getElementById("vdCallMini");
+  if(v) v.classList.toggle("on", kind === "video");
+  if(mini) mini.classList.toggle("on", kind === "video");
+  var cam = document.getElementById("vdCallCam");
+  var flip = document.getElementById("vdCallFlip");
+  if(cam) cam.style.display = (kind === "video") ? "" : "none";
+  if(flip) flip.style.display = (kind === "video") ? "" : "none";
+  var mic = document.getElementById("vdCallMic");
+  if(mic){ mic.textContent = "🎙️"; mic.classList.remove("off"); }
+  ov.classList.add("on");
+  return true;
+}
+function vdAppelFermerEcran(){
+  var ov = document.getElementById("vdCallOv");
+  if(ov) ov.classList.remove("on");
+  var v = document.getElementById("vdCallRemote");
+  var mini = document.getElementById("vdCallMini");
+  try{ if(v) v.srcObject = null; }catch(e){}
+  try{ if(mini) mini.srcObject = null; }catch(e){}
+  vdSonnerie(false);
+  return true;
+}
+
+/* La sonnerie est fabriquee, pas telechargee : aucun fichier de plus
+   a charger, et elle marche hors ligne. */
+var VD_SONNE = null;
+function vdSonnerie(marche){
+  try{
+    if(!marche){
+      if(VD_SONNE){
+        try{ clearInterval(VD_SONNE.t); }catch(e){}
+        try{ VD_SONNE.ctx.close(); }catch(e){}
+        VD_SONNE = null;
+        try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){}
+      }
+      return false;
+    }
+    if(VD_SONNE) return true;
+    var C = window.AudioContext || window.webkitAudioContext;
+    if(!C) return false;
+    var ctx = new C();
+    var bip = function(){
+      try{
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine"; o.frequency.value = 880;
+        o.connect(g); g.connect(ctx.destination);
+        var n = ctx.currentTime;
+        g.gain.setValueAtTime(0.0001, n);
+        g.gain.exponentialRampToValueAtTime(0.2, n + 0.06);
+        g.gain.exponentialRampToValueAtTime(0.0001, n + 0.5);
+        o.start(n); o.stop(n + 0.55);
+        try{ if(navigator.vibrate) navigator.vibrate([250, 180, 250]); }catch(e){}
+      }catch(e){}
+    };
+    bip();
+    VD_SONNE = { ctx: ctx, t: setInterval(bip, 1500) };
+    return true;
+  }catch(e){ return false; }
+}
+
+function vdAppelMonter(){
+  return vdServeursIce().then(function(ice){
+    if(!VD_APPEL) return false;
+    var pc = new RTCPeerConnection({ iceServers: ice });
+    VD_APPEL.pc = pc;
+    VD_APPEL.face = "user";
+    var contraintes = (VD_APPEL.kind === "video")
+      ? { audio: true, video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } }
+      : { audio: true, video: false };
+    return navigator.mediaDevices.getUserMedia(contraintes).then(function(flux){
+      if(!VD_APPEL){ try{ flux.getTracks().forEach(function(p){ p.stop(); }); }catch(e){} return false; }
+      VD_APPEL.local = flux;
+      flux.getTracks().forEach(function(p){ try{ pc.addTrack(p, flux); }catch(e){} });
+      var mini = document.getElementById("vdCallMini");
+      if(mini && VD_APPEL.kind === "video"){ try{ mini.srcObject = flux; mini.muted = true; mini.play(); }catch(e){} }
+      pc.ontrack = function(ev){
+        var d = (ev.streams && ev.streams[0]) || null;
+        if(!d || !VD_APPEL) return;
+        VD_APPEL.distant = d;
+        var v = document.getElementById("vdCallRemote");
+        var a = document.getElementById("vdCallAudio");
+        if(VD_APPEL.kind === "video" && v){ try{ v.srcObject = d; v.play(); }catch(e){} }
+        if(a){ try{ a.srcObject = d; a.play(); }catch(e){} }
+      };
+      pc.onicecandidate = function(ev){
+        if(!ev || !ev.candidate || !VD_APPEL) return;
+        try{
+          var moi = (FB.auth && FB.auth.currentUser) ? FB.auth.currentUser.uid : "";
+          FB.db.ref("market_calls/" + VD_APPEL.pair + "/" + VD_APPEL.id + "/ice").push({
+            from: moi,
+            c: JSON.stringify(ev.candidate.toJSON ? ev.candidate.toJSON() : ev.candidate)
+          }).catch(function(){});
+        }catch(e){}
+      };
+      pc.onconnectionstatechange = function(){
+        if(!VD_APPEL || !VD_APPEL.pc) return;
+        var s = VD_APPEL.pc.connectionState;
+        if(s === "connected") vdAppelEnCours();
+        if(s === "failed" || s === "closed") vdAppelTerminer("coupe");
+      };
+      return true;
+    });
+  });
+}
+
+function vdAppelEcouterIce(base){
+  try{
+    var r = FB.db.ref(base + "/ice");
+    var h = r.on("child_added", function(sn){
+      var v = sn && sn.val();
+      if(!v || !v.c || !VD_APPEL || !VD_APPEL.pc) return;
+      var moi = (FB.auth && FB.auth.currentUser) ? FB.auth.currentUser.uid : "";
+      if(v.from === moi) return;
+      try{ VD_APPEL.pc.addIceCandidate(new RTCIceCandidate(JSON.parse(v.c))); }catch(e){}
+    });
+    if(VD_APPEL) VD_APPEL.ecoutes.push(function(){ try{ r.off("child_added", h); }catch(e){} });
+    return true;
+  }catch(e){ return false; }
+}
+function vdAppelEcouterMaBoite(){
+  try{
+    var me = FB.auth && FB.auth.currentUser;
+    if(!me || !VD_APPEL) return false;
+    var base = "market_calls/" + me.uid + "/" + VD_APPEL.id;
+    var r = FB.db.ref(base);
+    var h = r.on("value", function(sn){
+      var v = sn && sn.val();
+      if(!v || !VD_APPEL) return;
+      if(v.state === "declined"){ vdAppelTerminer("refuse"); return; }
+      if(v.state === "ended"){ vdAppelTerminer("raccroche"); return; }
+      if(v.sdp && VD_APPEL.pc && VD_APPEL.role === "appelant" && !VD_APPEL.repondu){
+        VD_APPEL.repondu = true;
+        try{ VD_APPEL.pc.setRemoteDescription(new RTCSessionDescription(v.sdp)); }catch(e){}
+        vdAppelEtat(LANG === "fr" ? "Connexion…" : "Connecting…");
+      }
+    });
+    VD_APPEL.ecoutes.push(function(){ try{ r.off("value", h); }catch(e){} });
+    vdAppelEcouterIce(base);
+    return true;
+  }catch(e){ return false; }
+}
+
+function vdAppelDemarrer(kind){
+  kind = (kind === "video") ? "video" : "audio";
+  if(VD_APPEL){ toast(LANG === "fr" ? "⚠️ Un appel est déjà en cours" : "⚠️ A call is already running"); return false; }
+  if(!CHAT.open || !CHAT.tid){ toast(LANG === "fr" ? "Ouvrez d’abord une conversation" : "Open a conversation first"); return false; }
+  var me = FB.auth && FB.auth.currentUser;
+  if(!me){ openSignIn(); return false; }
+  var pair = peerOf(CHAT.tid);
+  if(!pair){ toast(LANG === "fr" ? "Correspondant introuvable" : "Contact not found"); return false; }
+  if(typeof vdEstBloque === "function" && vdEstBloque(CHAT.tid)){
+    toast(LANG === "fr" ? "🚫 Cette conversation est bloquée" : "🚫 This conversation is blocked");
+    return false;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof RTCPeerConnection === "undefined"){
+    toast(LANG === "fr" ? "Ce navigateur ne sait pas téléphoner" : "This browser cannot place calls");
+    return false;
+  }
+  var id = "";
+  try{ id = FB.db.ref("market_calls/" + pair).push().key; }catch(e){ id = ""; }
+  if(!id) id = "c" + Date.now();
+  VD_APPEL = { id: id, pair: pair, tid: CHAT.tid, kind: kind, role: "appelant",
+               pc: null, local: null, debut: 0, minuteur: null, ecoutes: [], repondu: false };
+  var inbox = (typeof INBOX !== "undefined" && INBOX[CHAT.tid]) || {};
+  vdAppelOuvrirEcran(vdNomEntete(inbox, pair), kind, true);
+  vdAppelEtat(kind === "video" ? (LANG === "fr" ? "Appel vidéo…" : "Video call…") : (LANG === "fr" ? "Appel…" : "Calling…"));
+  var take = document.getElementById("vdCallTake");
+  if(take) take.style.display = "none";
+  vdAppelMonter().then(function(ok){
+    if(!ok || !VD_APPEL) return null;
+    return VD_APPEL.pc.createOffer().then(function(off){
+      return VD_APPEL.pc.setLocalDescription(off).then(function(){
+        var myName = (FB.profile && FB.profile.name) || me.displayName || "Utilisateur";
+        var enr = { from: me.uid, fromName: String(myName).slice(0, 40), kind: kind,
+                    tid: CHAT.tid, state: "ringing", sdp: { type: off.type, sdp: off.sdp } };
+        try{ enr.at = firebase.database.ServerValue.TIMESTAMP; }catch(e){ enr.at = vdHeureServeur(); }
+        FB.db.ref("market_calls/" + pair + "/" + id).set(enr).catch(function(){ vdAppelTerminer("reseau"); });
+        vdAppelEcouterMaBoite();
+        VD_APPEL.sonnerieT = setTimeout(function(){
+          if(VD_APPEL && VD_APPEL.id === id && !VD_APPEL.debut){
+            try{ FB.db.ref("market_calls/" + pair + "/" + id).update({ state: "ended" }); }catch(e){}
+            vdAppelTerminer("sansreponse");
+          }
+        }, 45000);
+      });
+    });
+  }).catch(function(){ vdAppelTerminer("micro"); });
+  return true;
+}
+
+function vdAppelEntrant(id, v){
+  VD_ENTRANT = { id: id, from: v.from, fromName: v.fromName || "",
+                 kind: (v.kind === "video") ? "video" : "audio",
+                 tid: v.tid || "", sdp: v.sdp };
+  var r = document.getElementById("vdRing");
+  if(r){
+    var n = document.getElementById("vdRingName");
+    var k = document.getElementById("vdRingKind");
+    if(n) n.textContent = v.fromName || vdNomDuPair(v.from) || (LANG === "fr" ? "Correspondant" : "Contact");
+    if(k) k.textContent = (VD_ENTRANT.kind === "video")
+      ? (LANG === "fr" ? "🎥 Appel vidéo entrant" : "🎥 Incoming video call")
+      : (LANG === "fr" ? "📞 Appel entrant" : "📞 Incoming call");
+    r.classList.add("on");
+  }
+  vdSonnerie(true);
+  VD_ENTRANT.t = setTimeout(function(){
+    if(VD_ENTRANT && VD_ENTRANT.id === id) vdAppelRefuser(true);
+  }, 45000);
+  return true;
+}
+function vdAppelEcouter(){
+  try{
+    var me = FB.auth && FB.auth.currentUser;
+    if(!me || !FB.db) return false;
+    if(VD_ECOUTE_APPELS === me.uid) return true;
+    VD_ECOUTE_APPELS = me.uid;
+    vdLireDecalage();
+    FB.db.ref("market_calls/" + me.uid).limitToLast(6).on("child_added", function(sn){
+      var v = sn && sn.val();
+      if(!v || !v.from || !v.sdp) return;
+      if(v.state !== "ringing") return;
+      /* trop vieux : c'est un reste, pas un appel. L'ecart est mesure
+         sur l'horloge du serveur, pas sur celle du telephone. */
+      var age = vdHeureServeur() - Number(v.at || 0);
+      if(Number(v.at || 0) > 0 && age > 90000){ try{ sn.ref.remove(); }catch(e){} return; }
+      if(VD_APPEL || VD_ENTRANT){
+        try{ FB.db.ref("market_calls/" + v.from + "/" + sn.key).update({ state: "declined" }); }catch(e){}
+        return;
+      }
+      if(typeof vdEstBloque === "function" && v.tid && vdEstBloque(v.tid)){
+        try{ FB.db.ref("market_calls/" + v.from + "/" + sn.key).update({ state: "declined" }); }catch(e){}
+        try{ sn.ref.remove(); }catch(e){}
+        return;
+      }
+      vdAppelEntrant(sn.key, v);
+    });
+    return true;
+  }catch(e){ return false; }
+}
+function vdAppelAccepter(){
+  var e = VD_ENTRANT; VD_ENTRANT = null;
+  vdSonnerie(false);
+  var r = document.getElementById("vdRing"); if(r) r.classList.remove("on");
+  if(!e) return false;
+  try{ clearTimeout(e.t); }catch(x){}
+  var me = FB.auth && FB.auth.currentUser;
+  if(!me) return false;
+  VD_APPEL = { id: e.id, pair: e.from, tid: e.tid, kind: e.kind, role: "appele",
+               pc: null, local: null, debut: 0, minuteur: null, ecoutes: [], repondu: true };
+  vdAppelOuvrirEcran(e.fromName || vdNomDuPair(e.from) || (LANG === "fr" ? "Correspondant" : "Contact"), e.kind, false);
+  vdAppelEtat(LANG === "fr" ? "Connexion…" : "Connecting…");
+  var take = document.getElementById("vdCallTake");
+  if(take) take.style.display = "none";
+  vdAppelMonter().then(function(ok){
+    if(!ok || !VD_APPEL) return null;
+    return VD_APPEL.pc.setRemoteDescription(new RTCSessionDescription(e.sdp)).then(function(){
+      return VD_APPEL.pc.createAnswer();
+    }).then(function(ans){
+      return VD_APPEL.pc.setLocalDescription(ans).then(function(){
+        FB.db.ref("market_calls/" + e.from + "/" + e.id).update({
+          state: "accepted", sdp: { type: ans.type, sdp: ans.sdp }
+        }).catch(function(){});
+        vdAppelEcouterMaBoite();
+      });
+    });
+  }).catch(function(){ vdAppelTerminer("micro"); });
+  if(e.tid && (!CHAT.open || CHAT.tid !== e.tid)){ try{ openThread(e.tid); }catch(x){} }
+  return true;
+}
+function vdAppelRefuser(manque){
+  var e = VD_ENTRANT; VD_ENTRANT = null;
+  vdSonnerie(false);
+  var r = document.getElementById("vdRing"); if(r) r.classList.remove("on");
+  if(!e) return false;
+  try{ clearTimeout(e.t); }catch(x){}
+  try{ FB.db.ref("market_calls/" + e.from + "/" + e.id).update({ state: "declined" }); }catch(x){}
+  try{
+    var me = FB.auth && FB.auth.currentUser;
+    if(me) FB.db.ref("market_calls/" + me.uid + "/" + e.id).remove();
+  }catch(x){}
+  var quoi = (e.kind === "video")
+    ? (LANG === "fr" ? "🎥 Appel vidéo" : "🎥 Video call")
+    : (LANG === "fr" ? "📞 Appel audio" : "📞 Audio call");
+  vdAppelTrace(e.tid, quoi + " · " + (manque
+    ? (LANG === "fr" ? "manqué" : "missed")
+    : (LANG === "fr" ? "refusé" : "declined")), e.kind, 0);
+  return true;
+}
+function vdAppelEnCours(){
+  if(!VD_APPEL || VD_APPEL.debut) return false;
+  VD_APPEL.debut = Date.now();
+  try{ clearTimeout(VD_APPEL.sonnerieT); }catch(e){}
+  vdAppelEtat("00:00");
+  VD_APPEL.minuteur = setInterval(function(){
+    if(!VD_APPEL || !VD_APPEL.debut) return;
+    vdAppelEtat(vdAppelChrono(Date.now() - VD_APPEL.debut));
+  }, 1000);
+  return true;
+}
+function vdAppelRaccrocher(){
+  if(!VD_APPEL){ if(VD_ENTRANT) return vdAppelRefuser(false); return false; }
+  try{ FB.db.ref("market_calls/" + VD_APPEL.pair + "/" + VD_APPEL.id).update({ state: "ended" }); }catch(e){}
+  return vdAppelTerminer("raccroche");
+}
+function vdAppelTerminer(raison){
+  var a = VD_APPEL; VD_APPEL = null;
+  vdAppelFermerEcran();
+  if(!a) return false;
+  try{ clearTimeout(a.sonnerieT); }catch(e){}
+  try{ clearInterval(a.minuteur); }catch(e){}
+  (a.ecoutes || []).forEach(function(f){ try{ f(); }catch(e){} });
+  try{ if(a.local) a.local.getTracks().forEach(function(p){ p.stop(); }); }catch(e){}
+  try{ if(a.pc) a.pc.close(); }catch(e){}
+  try{
+    var me = FB.auth && FB.auth.currentUser;
+    if(me) FB.db.ref("market_calls/" + me.uid + "/" + a.id).remove();
+  }catch(e){}
+  var quoi = (a.kind === "video")
+    ? (LANG === "fr" ? "🎥 Appel vidéo" : "🎥 Video call")
+    : (LANG === "fr" ? "📞 Appel audio" : "📞 Audio call");
+  var duree = a.debut ? (Date.now() - a.debut) : 0;
+  var texte;
+  if(duree) texte = quoi + " · " + vdAppelDuree(duree);
+  else if(raison === "refuse") texte = quoi + " · " + (LANG === "fr" ? "refusé" : "declined");
+  else if(raison === "sansreponse") texte = quoi + " · " + (LANG === "fr" ? "sans réponse" : "no answer");
+  else if(raison === "micro") texte = quoi + " · " + (LANG === "fr" ? "micro ou caméra refusé" : "mic or camera denied");
+  else if(raison === "reseau") texte = quoi + " · " + (LANG === "fr" ? "réseau indisponible" : "network unavailable");
+  else if(raison === "coupe") texte = quoi + " · " + (LANG === "fr" ? "connexion coupée" : "connection lost");
+  else texte = quoi + " · " + (LANG === "fr" ? "terminé" : "ended");
+  vdAppelTrace(a.tid, texte, a.kind, duree);
+  return true;
+}
+
+/* La trace reste LOCALE a l'ecran et part dans le journal personnel.
+   Elle n'est pas envoyee comme message : sinon les deux cotes en
+   ecriraient chacun une et la conversation finirait pleine de
+   doublons, avec des pastilles « non lu » pour rien. */
+function vdAppelTrace(tid, texte, kind, duree){
+  try{
+    if(tid && typeof threadMsgs === "function"){
+      var arr = threadMsgs(tid);
+      arr.push({ who: "sys", sys: true, text: texte, ts: Date.now() });
+      if(CHAT.open && CHAT.tid === tid) renderThread();
+    }
+    var me = FB.auth && FB.auth.currentUser;
+    if(me && FB.db){
+      FB.db.ref("market_calls_log/" + me.uid).push({
+        tid: tid || "", kind: kind || "audio", texte: String(texte || "").slice(0, 80),
+        duree: Math.round((duree || 0) / 1000), at: Date.now()
+      }).catch(function(){});
+    }
+    return texte;
+  }catch(e){ return texte; }
+}
+
+function vdAppelCouperMicro(){
+  if(!VD_APPEL || !VD_APPEL.local) return false;
+  var p = VD_APPEL.local.getAudioTracks()[0];
+  if(!p) return false;
+  p.enabled = !p.enabled;
+  var b = document.getElementById("vdCallMic");
+  if(b){ b.textContent = p.enabled ? "🎙️" : "🔇"; b.classList.toggle("off", !p.enabled); }
+  return !p.enabled;
+}
+function vdAppelCouperCamera(){
+  if(!VD_APPEL || !VD_APPEL.local) return false;
+  var p = VD_APPEL.local.getVideoTracks()[0];
+  if(!p) return false;
+  p.enabled = !p.enabled;
+  var b = document.getElementById("vdCallCam");
+  if(b){ b.textContent = p.enabled ? "📹" : "🚫"; b.classList.toggle("off", !p.enabled); }
+  var mini = document.getElementById("vdCallMini");
+  if(mini) mini.style.opacity = p.enabled ? "1" : "0.25";
+  return !p.enabled;
+}
+function vdAppelChangerCamera(){
+  if(!VD_APPEL || !VD_APPEL.pc || VD_APPEL.kind !== "video") return Promise.resolve(false);
+  VD_APPEL.face = (VD_APPEL.face === "environment") ? "user" : "environment";
+  var face = VD_APPEL.face;
+  return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: face } }).then(function(flux){
+    var neuf = flux.getVideoTracks()[0];
+    if(!neuf || !VD_APPEL){ try{ flux.getTracks().forEach(function(p){ p.stop(); }); }catch(e){} return false; }
+    var envoyeur = null;
+    VD_APPEL.pc.getSenders().forEach(function(s){ if(s.track && s.track.kind === "video") envoyeur = s; });
+    if(envoyeur) try{ envoyeur.replaceTrack(neuf); }catch(e){}
+    try{
+      var anc = VD_APPEL.local.getVideoTracks()[0];
+      if(anc){ VD_APPEL.local.removeTrack(anc); anc.stop(); }
+      VD_APPEL.local.addTrack(neuf);
+    }catch(e){}
+    var mini = document.getElementById("vdCallMini");
+    if(mini){ try{ mini.srcObject = VD_APPEL.local; }catch(e){} }
+    return face;
+  }).catch(function(){ return false; });
+}
+
+function vdAppelInstaller(){
+  var paires = [
+    ["vdCallAudioBtn", function(){ vdAppelDemarrer("audio"); }],
+    ["vdCallVideoBtn", function(){ vdAppelDemarrer("video"); }],
+    ["vdCallHang", function(){ vdAppelRaccrocher(); }],
+    ["vdCallMic", function(){ vdAppelCouperMicro(); }],
+    ["vdCallCam", function(){ vdAppelCouperCamera(); }],
+    ["vdCallFlip", function(){ vdAppelChangerCamera(); }],
+    ["vdRingTake", function(){ vdAppelAccepter(); }],
+    ["vdRingDrop", function(){ vdAppelRefuser(false); }]
+  ];
+  var n = 0;
+  paires.forEach(function(p){
+    var el = document.getElementById(p[0]);
+    if(el && !el.getAttribute("data-vd-pose")){
+      el.setAttribute("data-vd-pose", "1");
+      el.addEventListener("click", p[1]);
+      n++;
+    }
+  });
+  return n;
+}
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008b) ENVOYER UNE PHOTO ET UN MESSAGE VOCAL
+
+   POURQUOI. La messagerie savait AFFICHER les photos venues de
+   JobMarket mais pas en envoyer : il n'y avait aucun champ fichier
+   dans la page, aucun MediaRecorder. Pour vendre un objet, montrer
+   une photo dans la discussion est le geste le plus courant qui
+   soit — « tu peux m'envoyer une photo du dos de l'appareil ? ».
+
+   LE POIDS. La photo est reduite A 1280 PIXELS ET RECOMPRESSEE SUR
+   L'APPAREIL avant le moindre octet envoye. Une photo de telephone
+   de 3,5 Mo part a environ 160 Ko : vingt fois moins de forfait
+   consomme, et l'envoi passe sur une connexion faible.
+   ═══════════════════════════════════════════════════════════════════ */
+var VD_CLOUD_IMG = "https://api.cloudinary.com/v1_1/dvoab3mzb/image/upload";
+var VD_CLOUD_SON = "https://api.cloudinary.com/v1_1/dvoab3mzb/video/upload";
+var VD_CLOUD_PRESET = "job_preset";
+
+function vdReduirePhoto(fichier, cote, qualite){
+  return new Promise(function(res){
+    try{
+      var lec = new FileReader();
+      lec.onerror = function(){ res(null); };
+      lec.onload = function(){
+        var img = new Image();
+        img.onerror = function(){ res(null); };
+        img.onload = function(){
+          try{
+            var L = cote || 1280;
+            var w = img.width, h = img.height;
+            if(w > L || h > L){
+              if(w > h){ h = Math.round(h * L / w); w = L; }
+              else { w = Math.round(w * L / h); h = L; }
+            }
+            var cv = document.createElement("canvas");
+            cv.width = w; cv.height = h;
+            cv.getContext("2d").drawImage(img, 0, 0, w, h);
+            res(cv.toDataURL("image/jpeg", qualite || 0.72));
+          }catch(e){ res(null); }
+        };
+        img.src = lec.result;
+      };
+      lec.readAsDataURL(fichier);
+    }catch(e){ res(null); }
+  });
+}
+function vdVersBlob(dataUrl){
+  try{
+    var p = String(dataUrl || "").split(",");
+    if(p.length < 2) return null;
+    var bin = atob(p[1]);
+    var n = bin.length, u = new Uint8Array(n);
+    while(n--) u[n] = bin.charCodeAt(n);
+    return new Blob([u], { type: "image/jpeg" });
+  }catch(e){ return null; }
+}
+function vdTeleverser(blob, nom, adresse){
+  return new Promise(function(res){
+    try{
+      if(!blob) return res(null);
+      var fd = new FormData();
+      fd.append("file", blob, nom || "fichier");
+      fd.append("upload_preset", VD_CLOUD_PRESET);
+      fetch(adresse || VD_CLOUD_IMG, { method: "POST", body: fd })
+        .then(function(r){ return r.json(); })
+        .then(function(j){ res((j && (j.secure_url || j.url)) || null); })
+        .catch(function(){ res(null); });
+    }catch(e){ res(null); }
+  });
+}
+function vdPhotoChoisie(fichier){
+  if(!fichier) return Promise.resolve(false);
+  if(!CHAT.open || !CHAT.tid){ toast(LANG === "fr" ? "Ouvrez une conversation" : "Open a conversation"); return Promise.resolve(false); }
+  if(!FB.user){ openSignIn(); return Promise.resolve(false); }
+  var tid = CHAT.tid;
+  toast(LANG === "fr" ? "📷 Envoi de la photo…" : "📷 Sending photo…");
+  return vdReduirePhoto(fichier, 1280, 0.72).then(function(durl){
+    if(!durl){ toast(LANG === "fr" ? "⚠️ Photo illisible" : "⚠️ Unreadable photo"); return false; }
+    return vdTeleverser(vdVersBlob(durl), "photo.jpg", VD_CLOUD_IMG).then(function(url){
+      if(!url){ toast(LANG === "fr" ? "⚠️ Envoi impossible" : "⚠️ Upload failed"); return false; }
+      var key = null;
+      try{ key = FB.db.ref("market_chats/" + tid + "/messages").push().key; }catch(e){ key = null; }
+      if(key) preMarkThreadMsg(tid, key);
+      var arr = threadMsgs(tid);
+      arr.push({ who: "me", text: "", photos: [url], ts: Date.now(), key: key });
+      renderThread();
+      sendMarketMessage(tid, { imageUrl: url }, function(ok){
+        if(!ok) toast(LANG === "fr" ? "⚠️ Message non parti" : "⚠️ Message not sent");
+      }, key);
+      return url;
+    });
+  });
+}
+
+/* --- message vocal ------------------------------------------------ */
+var VD_VOIX = null;
+function vdVocalSupporte(){
+  try{ return !!(window.MediaRecorder && navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
+  catch(e){ return false; }
+}
+function vdVocalDemarrer(){
+  if(VD_VOIX) return Promise.resolve(false);
+  if(!vdVocalSupporte()){ toast(LANG === "fr" ? "Ce navigateur n’enregistre pas le son" : "This browser cannot record"); return Promise.resolve(false); }
+  if(!CHAT.open || !CHAT.tid){ toast(LANG === "fr" ? "Ouvrez une conversation" : "Open a conversation"); return Promise.resolve(false); }
+  return navigator.mediaDevices.getUserMedia({ audio: true }).then(function(flux){
+    var mr = new MediaRecorder(flux);
+    var bouts = [];
+    mr.ondataavailable = function(ev){ if(ev.data && ev.data.size) bouts.push(ev.data); };
+    VD_VOIX = { mr: mr, flux: flux, bouts: bouts, tid: CHAT.tid, debut: Date.now() };
+    mr.start();
+    var b = document.getElementById("vdVoiceBtn");
+    if(b){ b.textContent = "⏹️"; b.classList.add("rec"); b.title = LANG === "fr" ? "Arrêter et envoyer" : "Stop and send"; }
+    VD_VOIX.limite = setTimeout(function(){ vdVocalArreter(); }, 120000);
+    return true;
+  }).catch(function(){
+    toast(LANG === "fr" ? "🎤 Micro refusé" : "🎤 Mic denied");
+    return false;
+  });
+}
+function vdVocalArreter(){
+  var v = VD_VOIX;
+  if(!v) return false;
+  try{ clearTimeout(v.limite); }catch(e){}
+  var b = document.getElementById("vdVoiceBtn");
+  if(b){ b.textContent = "🎤"; b.classList.remove("rec"); b.title = LANG === "fr" ? "Message vocal" : "Voice message"; }
+  v.mr.onstop = function(){
+    VD_VOIX = null;
+    try{ v.flux.getTracks().forEach(function(p){ p.stop(); }); }catch(e){}
+    var secondes = Math.round((Date.now() - v.debut) / 1000);
+    if(secondes < 1){ toast(LANG === "fr" ? "Trop court" : "Too short"); return; }
+    var blob = new Blob(v.bouts, { type: v.bouts.length && v.bouts[0].type ? v.bouts[0].type : "audio/webm" });
+    vdVocalEnvoyer(v.tid, blob, secondes);
+  };
+  try{ v.mr.stop(); }catch(e){ VD_VOIX = null; }
+  return true;
+}
+function vdVocalEnvoyer(tid, blob, secondes){
+  toast(LANG === "fr" ? "🎤 Envoi du vocal…" : "🎤 Sending voice…");
+  return vdTeleverser(blob, "vocal.webm", VD_CLOUD_SON).then(function(url){
+    if(!url){ toast(LANG === "fr" ? "⚠️ Envoi impossible" : "⚠️ Upload failed"); return false; }
+    var key = null;
+    try{ key = FB.db.ref("market_chats/" + tid + "/messages").push().key; }catch(e){ key = null; }
+    if(key) preMarkThreadMsg(tid, key);
+    var arr = threadMsgs(tid);
+    arr.push({ who: "me", text: "", voice: url, duree: secondes, ts: Date.now(), key: key });
+    renderThread();
+    sendMarketMessage(tid, { voice: url, duree: secondes }, function(ok){
+      if(!ok) toast(LANG === "fr" ? "⚠️ Message non parti" : "⚠️ Message not sent");
+    }, key);
+    return url;
+  });
+}
+function vdMediaInstaller(){
+  var n = 0;
+  var f = document.getElementById("vdPhotoFile");
+  var bp = document.getElementById("vdPhotoBtn");
+  if(bp && !bp.getAttribute("data-vd-pose")){
+    bp.setAttribute("data-vd-pose", "1");
+    bp.addEventListener("click", function(){ if(f) f.click(); });
+    n++;
+  }
+  if(f && !f.getAttribute("data-vd-pose")){
+    f.setAttribute("data-vd-pose", "1");
+    f.addEventListener("change", function(){
+      var fic = f.files && f.files[0];
+      f.value = "";
+      if(fic) vdPhotoChoisie(fic);
+    });
+    n++;
+  }
+  var bv = document.getElementById("vdVoiceBtn");
+  if(bv && !bv.getAttribute("data-vd-pose")){
+    bv.setAttribute("data-vd-pose", "1");
+    bv.addEventListener("click", function(){ if(VD_VOIX) vdVocalArreter(); else vdVocalDemarrer(); });
+    n++;
+  }
+  return n;
+}
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008c) SIX MANQUES DE LA MESSAGERIE DE LA BOUTIQUE
+
+   Comptés sur le fichier livré, avant d'écrire une ligne :
+       new Notification ........ 0   (rien ne prévient hors de l'onglet)
+       geolocation ............. 0   (impossible de dire OU on se retrouve)
+       suppression de message .. 0   (une erreur reste affichee pour toujours)
+       recherche dans un fil ... 0   (on remonte 200 messages au pouce)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* --- 1. etre prevenu meme hors de l'onglet ------------------------ */
+/* Le bandeau interne ne sert a rien si la personne regarde un autre
+   onglet ou une autre application : elle ne voit RIEN. Une notification
+   du navigateur, elle, s'affiche par-dessus tout. On ne la demande pas
+   au chargement (refus quasi garanti) mais au premier message recu. */
+function vdNotifPermission(){
+  try{
+    if(!("Notification" in window)) return "absent";
+    return Notification.permission;
+  }catch(e){ return "absent"; }
+}
+function vdNotifDemander(){
+  try{
+    if(!("Notification" in window)) return false;
+    if(Notification.permission !== "default") return Notification.permission === "granted";
+    Notification.requestPermission().then(function(){ }).catch(function(){});
+    return true;
+  }catch(e){ return false; }
+}
+var VD_NOTIFS = {};
+function vdNotifMessage(tid, nom, texte){
+  try{
+    if(!("Notification" in window)) return false;
+    if(Notification.permission !== "granted"){ vdNotifDemander(); return false; }
+    if(document.visibilityState === "visible" && CHAT.open && CHAT.tid === tid) return false;
+    /* une seule notification par conversation : sinon dix messages
+       d'affilee en empilent dix. */
+    var n = new Notification(nom || "Shalom Square", {
+      body: String(texte || "").slice(0, 120),
+      icon: "./icon-192.png",
+      tag: "vd-" + tid,
+      renotify: true
+    });
+    n.onclick = function(){
+      try{ window.focus(); openThread(tid); n.close(); }catch(e){}
+    };
+    VD_NOTIFS[tid] = n;
+    setTimeout(function(){ try{ n.close(); }catch(e){} }, 12000);
+    return true;
+  }catch(e){ return false; }
+}
+
+/* --- 2. partager sa position (le point de rendez-vous) ------------ */
+/* « On se retrouve ou ? » est la question qui suit toute vente. Jusqu'ici
+   il fallait decrire le quartier en toutes lettres. */
+function vdPositionPartager(){
+  if(!CHAT.open || !CHAT.tid){ toast(LANG === "fr" ? "Ouvrez une conversation" : "Open a conversation"); return false; }
+  if(!navigator.geolocation){ toast(LANG === "fr" ? "Position indisponible" : "Location unavailable"); return false; }
+  if(!FB.user){ openSignIn(); return false; }
+  var tid = CHAT.tid;
+  toast(LANG === "fr" ? "📍 Recherche de votre position…" : "📍 Finding your position…");
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var la = Math.round(pos.coords.latitude * 1000000) / 1000000;
+    var lo = Math.round(pos.coords.longitude * 1000000) / 1000000;
+    var key = null;
+    try{ key = FB.db.ref("market_chats/" + tid + "/messages").push().key; }catch(e){ key = null; }
+    if(key) preMarkThreadMsg(tid, key);
+    var arr = threadMsgs(tid);
+    arr.push({ who: "me", text: "", lieu: { lat: la, lng: lo }, ts: Date.now(), key: key });
+    renderThread();
+    sendMarketMessage(tid, { lieu: { lat: la, lng: lo } }, function(ok){
+      if(!ok) toast(LANG === "fr" ? "⚠️ Position non envoyée" : "⚠️ Location not sent");
+    }, key);
+  }, function(){
+    toast(LANG === "fr" ? "Position refusée" : "Location denied");
+  }, { timeout: 9000, maximumAge: 60000, enableHighAccuracy: true });
+  return true;
+}
+function vdLienCarte(lat, lng){
+  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(lat + "," + lng);
+}
+
+/* --- 3. rappeler depuis un appel manque --------------------------- */
+/* Deux raccourcis SANS PARAMETRE. Raison : l'attribut onclick aurait
+   demande des apostrophes echappees, et les antislashs ne survivent pas
+   au passage par les gabarits du script de correctifs — la page partait
+   en SyntaxError silencieuse. Piege deja paye, cette fois contourne. */
+function vdRappelAudio(){ try{ return vdRappelerDepuisTrace(CHAT.tid, "audio"); }catch(e){ return false; } }
+function vdRappelVideo(){ try{ return vdRappelerDepuisTrace(CHAT.tid, "video"); }catch(e){ return false; } }
+function vdRappelerDepuisTrace(tid, kind){
+  try{
+    if(!tid) return false;
+    if(!CHAT.open || CHAT.tid !== tid) openThread(tid);
+    setTimeout(function(){ try{ vdAppelDemarrer(kind === "video" ? "video" : "audio"); }catch(e){} }, 400);
+    return true;
+  }catch(e){ return false; }
+}
+
+/* --- 4. supprimer un message envoye par erreur -------------------- */
+/* On ne l'efface pas en douce : la bulle devient « Message supprime ».
+   Faire disparaitre un message sans laisser de trace permettrait de nier
+   l'avoir ecrit — exactement ce qu'un arnaqueur cherche. */
+function vdSupprimerMessage(key){
+  try{
+    if(!key || !CHAT.open || !CHAT.tid) return false;
+    var me = FB.auth && FB.auth.currentUser;
+    if(!me) return false;
+    var tid = CHAT.tid;
+    var arr = threadMsgs(tid);
+    var trouve = null;
+    for(var i = 0; i < arr.length; i++) if(arr[i].key === key) trouve = arr[i];
+    if(!trouve) return false;
+    if(trouve.who !== "me"){ toast(LANG === "fr" ? "On ne peut retirer que ses propres messages" : "You can only remove your own messages"); return false; }
+    trouve.efface = true; trouve.text = ""; trouve.photos = []; trouve.voice = null; trouve.lieu = null;
+    renderThread();
+    FB.db.ref("market_chats/" + tid + "/messages/" + key).update({
+      text: "", imageUrl: null, images: null, voice: null, lieu: null, deleted: true
+    }).catch(function(){ toast(LANG === "fr" ? "⚠️ Suppression non enregistrée" : "⚠️ Deletion not saved"); });
+    return true;
+  }catch(e){ return false; }
+}
+function vdMenuMessage(key){
+  try{
+    if(!key) return false;
+    if(confirm(LANG === "fr" ? "Retirer ce message de la conversation ?" : "Remove this message from the conversation?"))
+      return vdSupprimerMessage(key);
+    return false;
+  }catch(e){ return false; }
+}
+
+/* --- 5. chercher dans la conversation ouverte --------------------- */
+var VD_RECH_FIL = "";
+function vdChercherDansFil(txt){
+  VD_RECH_FIL = String(txt || "").trim();
+  try{ renderThread(); }catch(e){}
+  return VD_RECH_FIL;
+}
+function vdFilCorrespond(m){
+  if(!VD_RECH_FIL) return true;
+  try{
+    var q = vdSansAcc(VD_RECH_FIL.toLowerCase());
+    var t2 = vdSansAcc(String(m && m.text || "").toLowerCase());
+    return t2.indexOf(q) !== -1;
+  }catch(e){ return true; }
+}
+function vdBasculerRecherche(){
+  var b = document.getElementById("vdFilRecherche");
+  if(!b) return false;
+  var ouvert = b.style.display !== "none";
+  b.style.display = ouvert ? "none" : "";
+  if(ouvert){ vdChercherDansFil(""); var c = document.getElementById("vdFilRechChamp"); if(c) c.value = ""; }
+  else { var c2 = document.getElementById("vdFilRechChamp"); if(c2) setTimeout(function(){ try{ c2.focus(); }catch(e){} }, 60); }
+  return !ouvert;
+}
+
+/* --- 6. marquer l'objet vendu sans quitter la conversation -------- */
+/* Le vendeur conclut DANS la discussion. L'obliger a repasser par le
+   marche pour dire « vendu », c'est s'assurer qu'il ne le fera pas, et
+   que dix personnes ecriront pour un objet deja parti. */
+function vdCleAnnonceDuFil(tid){
+  try{
+    var p = String(tid || "").split("__");
+    if(p.length < 2) return null;
+    var suf = p[1];
+    return suf.indexOf("market") === 0 ? suf.slice(6) : null;
+  }catch(e){ return null; }
+}
+function vdJeSuisLeVendeur(){
+  try{
+    var me = FB.auth && FB.auth.currentUser;
+    if(!me || !CHAT.listing) return false;
+    return CHAT.listing.user === me.uid || CHAT.listing.sellerUid === me.uid;
+  }catch(e){ return false; }
+}
+function vdMarquerVendu(){
+  try{
+    if(!CHAT.open || !CHAT.tid) return false;
+    var cle = vdCleAnnonceDuFil(CHAT.tid);
+    if(!cle){ toast(LANG === "fr" ? "Cette conversation ne porte pas sur une annonce" : "This conversation has no listing"); return false; }
+    if(!vdJeSuisLeVendeur()){ toast(LANG === "fr" ? "Seul le vendeur peut le faire" : "Only the seller can do this"); return false; }
+    if(!confirm(LANG === "fr" ? "Marquer cet objet comme VENDU ?" : "Mark this item as SOLD?")) return false;
+    FB.db.ref("market_listings/" + cle + "/sold").set(true).then(function(){
+      toast(LANG === "fr" ? "✅ Objet marqué vendu" : "✅ Item marked sold");
+      try{ if(CHAT.listing) CHAT.listing.sold = true; renderListingChip(); }catch(e){}
+    }).catch(function(){
+      toast(LANG === "fr" ? "⚠️ Enregistrement impossible" : "⚠️ Could not save");
+    });
+    return true;
+  }catch(e){ return false; }
+}
+
+function vdInstaller20261008c(){
+  var n = 0;
+  var poser = function(id, ev, fn){
+    var el = document.getElementById(id);
+    if(el && !el.getAttribute("data-vdc")){ el.setAttribute("data-vdc", "1"); el.addEventListener(ev, fn); n++; }
+  };
+  poser("vdLieuBtn", "click", function(){ vdPositionPartager(); });
+  poser("vdRechFilBtn", "click", function(){ vdBasculerRecherche(); });
+  poser("vdVenduBtn", "click", function(){ vdMarquerVendu(); });
+  poser("vdFilRechChamp", "input", function(e){ vdChercherDansFil(e.target.value); });
+  /* le bouton « vendu » ne s'affiche que pour le vendeur de l'annonce */
+  try{
+    var bv = document.getElementById("vdVenduBtn");
+    if(bv) bv.style.display = (CHAT.open && vdJeSuisLeVendeur() && !(CHAT.listing && CHAT.listing.sold)) ? "" : "none";
+  }catch(e){}
+  return n;
+}
 function bubbleHTML(m){
   var tm=hhmm(m.ts);
   var inner="";
@@ -1056,7 +2034,36 @@ function bubbleHTML(m){
         +'<img class="msgphoto" src="'+esc(vdImg(u,400))+'" alt="" loading="lazy"></a>';
     }).join("");
   }
+  /* (20261008b) vdBulleEnrichie : un vocal se joue, une trace
+     d'appel est une ligne de service — ni « moi » ni « lui ». */
+  if(m.voice){
+    inner+='<audio controls preload="none" src="'+esc(m.voice)+'"></audio>';
+    if(m.duree) inner+='<span class="dim" style="font-size:10.5px">🎤 '+Math.round(m.duree)+' s</span>';
+  }
   inner+=m.trans?('<div>'+esc(m.text||"")+'</div><div class="trans"><b>🌐 '+t("ai_translate")+'</b>'+esc(m.trans)+'</div>'):esc(m.text||"");
+  /* (20261008c) vdBulle20261008c */
+  if(m.efface||m.deleted){
+    return '<div class="bubble '+(m.who==="me"?"me":"them")+'" data-mk="'+esc(m.key||"")+'" style="opacity:.55;font-style:italic">'
+      +(LANG==="fr"?"🚫 Message retiré":"🚫 Message removed")+'<span class="msgtime">'+tm+'</span></div>';
+  }
+  if(m.lieu && m.lieu.lat!=null){
+    var vdL=vdLienCarte(m.lieu.lat,m.lieu.lng);
+    inner='<a href="'+esc(vdL)+'" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit">'
+      +'<div style="font-weight:800;font-size:13px">📍 '+(LANG==="fr"?"Position partagée":"Shared location")+'</div>'
+      +'<div style="font-size:11.5px;opacity:.8;margin-top:2px">'+esc(Number(m.lieu.lat).toFixed(4))+", "+esc(Number(m.lieu.lng).toFixed(4))+'</div>'
+      +'<div style="font-size:11.5px;margin-top:4px;text-decoration:underline">'+(LANG==="fr"?"Ouvrir dans Maps":"Open in Maps")+'</div></a>'+inner;
+  }
+  if(m.sys||m.who==="sys"){
+    /* un appel manqué sans bouton pour rappeler, c'est une impasse */
+    var vdRap="";
+    if(/(manqu|missed|sans r|no answer|refus|declined)/i.test(String(m.text||""))){
+      var vdK=/vid/i.test(String(m.text||""))?"video":"audio";
+      vdRap=' <button class="bact" style="margin-left:6px" onclick="'+(vdK==="video"?"vdRappelVideo()":"vdRappelAudio()")+'">'
+        +(LANG==="fr"?"↩︎ Rappeler":"↩︎ Call back")+'</button>';
+    }
+    return '<div class="bubble sys" data-mk="'+esc(m.key||"")+'"><span class="vdcallline">'+esc(m.text||"")+'</span>'+vdRap
+      +'<span class="msgtime">'+tm+'</span></div>';
+  }
   return '<div class="bubble '+(m.who==="me"?"me":"them")+'" data-mk="'+esc(m.key||"")+'">'+inner
     +'<span class="msgtime">'+tm+(m.who==="me"?" ✓":"")+'</span></div>';
 }
@@ -1064,6 +2071,8 @@ function renderThread(){
   var box=$("bubbles"); if(!box) return;
   if(!CHAT.open){ box.innerHTML=""; return; }
   var arr=threadMsgs(CHAT.tid);
+  /* (20261008c) la recherche filtre ce qui s'affiche */
+  if(typeof vdFilCorrespond==="function" && VD_RECH_FIL) arr=arr.filter(function(m){ return vdFilCorrespond(m); });
   var html=arr.length
     ? arr.map(bubbleHTML).join("")
     : '<div class="bubble sys">'+t("welcome_thread")+'<br><span class="dim" style="font-size:10.5px">'+t("empty_thread_hint")+'</span></div>';
@@ -1095,7 +2104,11 @@ function onThreadMsg(m,key){
   /* si la bulle montre la photo, inutile de repeter « 📷 Photo » dessous */
   var vdTexte = m.text || "";
   if (vdPhotos.length && /^📷 /.test(vdTexte)) vdTexte = "";
-  arr.push({who:mine?"me":"them",text:vdTexte,photos:vdPhotos,quote:m.quote,autoReply:!!m.autoReply,ts:m.timestamp||Date.now(),key:key});
+  /* (20261008b) vdVocalRecu : la bulle garde l'adresse du son, sinon
+     « 🎤 Message vocal » reste un texte qu'on ne peut pas écouter. */
+  if(m.voice && /^🎤 /.test(vdTexte)) vdTexte="";
+  /* (20261008c) vdRecu20261008c */
+  arr.push({who:mine?"me":"them",text:vdTexte,photos:vdPhotos,voice:m.voice||null,duree:m.duree||0,lieu:m.lieu||null,efface:!!m.deleted,quote:m.quote,autoReply:!!m.autoReply,ts:m.timestamp||Date.now(),key:key});
   if(arr.length>300) arr.shift();
   if(CHAT.open&&CHAT.tid===tid){
     renderThread();
@@ -1126,7 +2139,7 @@ function sendText(){
   inp.value="";
   if(!CHAT.open||!CHAT.tid) return;
   var tid=CHAT.tid, key=null;
-  try{ key=FB.db.ref("chats/"+tid+"/messages").push().key; }catch(e){ key=null; }
+  try{ key=FB.db.ref("market_chats/"+tid+"/messages").push().key; }catch(e){ key=null; }
   if(!FB.user){ inp.value=txt; openSignIn(); return; }
   var arr=threadMsgs(tid);
   if(key){ preMarkThreadMsg(tid,key); }
@@ -1369,6 +2382,7 @@ function notifyIncoming(tid,m){
   if(!(CHAT.open&&CHAT.tid===tid&&document.visibilityState==="visible")){
     showBanner("💬",name,txt,tid);
     beep(); vibrate();
+    try{ vdNotifMessage(tid,name,txt); }catch(e){}
   }
   updateTitleBadgeSoon();
 }
@@ -1631,9 +2645,9 @@ function vdMarquerLu(tid, ids){
   try{
     var me = FB && FB.auth && FB.auth.currentUser; if(!me || !tid) return 0;
     var maj = {}, n = 0;
-    (ids||[]).forEach(function(k){ if(k){ maj["chats/"+tid+"/messages/"+k+"/readBy/"+me.uid] = true; n++; } });
+    (ids||[]).forEach(function(k){ if(k){ maj["market_chats/"+tid+"/messages/"+k+"/readBy/"+me.uid] = true; n++; } });
     if(!n) return 0;
-    maj["userInboxes/"+me.uid+"/threads/"+tid+"/unread"] = 0;
+    maj["market_inboxes/"+me.uid+"/threads/"+tid+"/unread"] = 0;
     FB.db.ref().update(maj).catch(function(){});
     return n;
   }catch(e){ return 0; }
@@ -1698,7 +2712,7 @@ function vdOrdonnerFils(liste){
 function vdEcritEnCours(tid, actif){
   try{
     var me = FB && FB.auth && FB.auth.currentUser; if(!me || !tid) return false;
-    var r = FB.db.ref("chats/"+tid+"/meta/typing/"+me.uid);
+    var r = FB.db.ref("market_chats/"+tid+"/meta/typing/"+me.uid);
     actif ? r.set(Date.now()) : r.remove();
     try{ if(actif) r.onDisconnect().remove(); }catch(e){}
     return true;
@@ -1898,6 +2912,10 @@ function vdVeilleChat(){
       try{ vdBrouillonVeille(); }catch(e){}
       try{ vdMasquerBloques(); }catch(e){}
       try{ vdBarreAttente(); }catch(e){}
+      try{ vdAppelInstaller(); }catch(e){}
+      try{ vdMediaInstaller(); }catch(e){}
+      try{ vdAppelEcouter(); }catch(e){}
+      try{ vdInstaller20261008c(); }catch(e){}
     }, 1600);
     return true;
   }catch(e){ return false; }
@@ -1909,6 +2927,17 @@ try{
   window.vdSignalerFil=vdSignalerFil; window.vdMasquerBloques=vdMasquerBloques;
   window.vdBrouillonVeille=vdBrouillonVeille; window.vdBarreAttente=vdBarreAttente;
   window.vdVeilleChat=vdVeilleChat;
+  window.vdAppelDemarrer=vdAppelDemarrer; window.vdAppelAccepter=vdAppelAccepter;
+  window.vdAppelRefuser=vdAppelRefuser; window.vdAppelRaccrocher=vdAppelRaccrocher;
+  window.vdAppelCouperMicro=vdAppelCouperMicro; window.vdAppelCouperCamera=vdAppelCouperCamera;
+  window.vdAppelChangerCamera=vdAppelChangerCamera; window.vdAppelEcouter=vdAppelEcouter;
+  window.vdAppelInstaller=vdAppelInstaller; window.vdMediaInstaller=vdMediaInstaller;
+  window.vdAppelDuree=vdAppelDuree; window.vdAppelChrono=vdAppelChrono;
+  window.vdServeursIce=vdServeursIce; window.vdSonnerie=vdSonnerie;
+  window.vdAppelTrace=vdAppelTrace; window.vdHeureServeur=vdHeureServeur;
+  window.vdPhotoChoisie=vdPhotoChoisie; window.vdReduirePhoto=vdReduirePhoto;
+  window.vdVocalDemarrer=vdVocalDemarrer; window.vdVocalArreter=vdVocalArreter;
+  window.vdVocalSupporte=vdVocalSupporte; window.vdTeleverser=vdTeleverser;
 }catch(e){}
 </script>
 </body>

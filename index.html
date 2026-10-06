@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261007a">
+<html lang="fr" data-app-build="20261008c">
 <head>
 <script>
 // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1413,6 +1413,9 @@ background: var(--surface);
 <div style="font-size:12px;color:var(--text-dim);margin:14px 0 8px 0;" data-i18n="settingsNotifications">Notifications</div>
 <button type="button" onclick="toggleSettingsPanel(); openNotifPrefs();" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
 🔔 <span data-i18n="notifPrefsTitle">Notifications</span>
+</button>
+<button type="button" id="jmcAppelsBtn" onclick="toggleSettingsPanel(); jmcAppelsOuvrir();" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
+📞 <span id="jmcAppelsBtnLabel">Appels &amp; silence</span>
 </button>
 <button type="button" id="installAppBtn" onclick="installAppFromSettings()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
 📲 <span id="installAppBtnLabel" data-i18n="installSettingsBtn">Installer l'app</span>

@@ -443,7 +443,7 @@ window.addEventListener("scroll",function(){
     </div>
     <form class="search" id="searchForm" role="search" onsubmit="return false">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
-      <button type="button" id="vdCroixRech" onclick="vdViderRecherche()" aria-label="Effacer la recherche" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;z-index:2">✕</button><input id="searchInput" type="text" autocomplete="off" aria-label="Rechercher" data-i18n-ph="search_ph">
+      <button type="button" id="vdCroixRech" onclick="vdViderRecherche()" aria-label="Effacer la recherche" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;z-index:2">✕</button><button type="button" id="vdVoixBtn" onclick="vdChercherALaVoix()" title="Chercher à la voix" aria-label="Chercher à la voix" style="position:absolute;right:34px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;z-index:2">🎙️</button><input id="searchInput" type="text" autocomplete="off" aria-label="Rechercher" data-i18n-ph="search_ph">
       <span class="kbd">/</span>
     </form>
     <div class="actions">
@@ -561,12 +561,14 @@ window.addEventListener("scroll",function(){
           <option value="priceAsc" data-i18n="s_price_asc">Prix : croissant</option>
           <option value="priceDesc" data-i18n="s_price_desc">Prix : décroissant</option>
           <option value="rating" data-i18n="s_rating">Mieux notés</option>
+          <option value="nearest" id="vdSortNear">📍 Le plus près</option>
         </select>
       </div>
     </div>
   </section>
 
   <!-- ================= GRID ================= -->
+  <div id="vdHorsLigne" style="display:none;margin:8px 12px;padding:9px 13px;border-radius:10px;background:rgba(229,72,77,.14);border:1px solid rgba(229,72,77,.4);color:var(--ink);font-size:12.5px;font-weight:700"></div>
   <section class="grid" id="grid"></section>
   <div class="sentinel" id="sentinel"></div>
   <button id="remoteMore" class="btn btn-ghost" style="display:none;margin:12px auto;max-width:360px" onclick="loadMoreRemote()">⏳ <span data-i18n="remote_more">Charger plus d'annonces réelles</span></button>
@@ -1217,6 +1219,7 @@ function rebuildSorts(){
     priceDesc: LISTINGS.slice().sort(function(a,b){ return b.price-a.price; }).map(function(l){return l.id;}),
     rating: LISTINGS.slice().sort(function(a,b){ return sellerOf(b).rating-sellerOf(a).rating; }).map(function(l){return l.id;})
   };
+  try{ vdTriProximite(); }catch(e){}
 }
 function sellerOf(l){
   if(l.real&&l.userName) return {id:999,name:l.userName,city:l.city||"",region:l.region||"",rating:4.8,reviews:l.sellerReviews||1,verified:true,since:2024,resp:"chat",real:true};
@@ -1376,7 +1379,7 @@ function subscribeUnread(){
   if(!(FB.ready&&FB.user&&FB.db)) return;
   if(UNREAD_UNSUB){ try{ UNREAD_UNSUB(); }catch(e){} UNREAD_UNSUB=null; }
   try{
-    var ref=FB.db.ref("userInboxes/"+FB.user.uid+"/threads");
+    var ref=FB.db.ref("market_inboxes/"+FB.user.uid+"/threads");
     UNREAD_UNSUB=function(){ try{ ref.off("value"); }catch(e){} };
     ref.on("value",function(snap){
       var v=(snap&&snap.val())||{}, n=0;
@@ -1417,7 +1420,7 @@ function sendMarketMessage(threadId,payload,cb,presetKey){
   var peer=peerOf(threadId);
   if(!peer){ cb&&cb(false,"peer"); return; }
   try{
-    var msgId=presetKey||FB.db.ref("chats/"+threadId+"/messages").push().key;
+    var msgId=presetKey||FB.db.ref("market_chats/"+threadId+"/messages").push().key;
     var now=Date.now();
     var myName=(FB.profile&&FB.profile.name)||me.displayName||(me.email||"").split("@")[0]||"Utilisateur";
     var peerName=PEER_NAMES.get(peer)||"Utilisateur";
@@ -1426,16 +1429,16 @@ function sendMarketMessage(threadId,payload,cb,presetKey){
     msg.readBy[me.uid]=true;
     if(payload.text) msg.text=payload.text;
     if(payload.quote) msg.quote=payload.quote;
-    FB.db.ref("userThreads/"+me.uid+"/"+threadId).set(true).catch(function(){});
-    FB.db.ref("userThreads/"+peer+"/"+threadId).set(true).catch(function(){});
+    FB.db.ref("market_threads/"+me.uid+"/"+threadId).set(true).catch(function(){});
+    FB.db.ref("market_threads/"+peer+"/"+threadId).set(true).catch(function(){});
     var parts={}; parts[me.uid]=true; parts[peer]=true;
-    FB.db.ref("chats/"+threadId+"/meta/participants").update(parts).catch(function(){});
+    FB.db.ref("market_chats/"+threadId+"/meta/participants").update(parts).catch(function(){});
     var names={}; names[me.uid]=myName; names[peer]=peerName;
-    FB.db.ref("chats/"+threadId+"/meta").update({names:names,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
-    FB.db.ref("userInboxes/"+peer+"/threads/"+threadId).update({peerUid:me.uid,peerName:myName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
-    FB.db.ref("userInboxes/"+me.uid+"/threads/"+threadId).update({peerUid:peer,peerName:peerName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
-    FB.db.ref("userInboxes/"+peer+"/threads/"+threadId+"/unread").transaction(function(c){ return (c||0)+1; }).catch(function(){});
-    FB.db.ref("chats/"+threadId+"/messages/"+msgId).set(msg).then(function(){ cb&&cb(true,msgId); }).catch(function(e){ cb&&cb(false,e); });
+    FB.db.ref("market_chats/"+threadId+"/meta").update({names:names,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
+    FB.db.ref("market_inboxes/"+peer+"/threads/"+threadId).update({peerUid:me.uid,peerName:myName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
+    FB.db.ref("market_inboxes/"+me.uid+"/threads/"+threadId).update({peerUid:peer,peerName:peerName,lastMessage:preview,lastAt:now,lastFrom:me.uid}).catch(function(){});
+    FB.db.ref("market_inboxes/"+peer+"/threads/"+threadId+"/unread").transaction(function(c){ return (c||0)+1; }).catch(function(){});
+    FB.db.ref("market_chats/"+threadId+"/messages/"+msgId).set(msg).then(function(){ cb&&cb(true,msgId); }).catch(function(e){ cb&&cb(false,e); });
   }catch(e){ cb&&cb(false,e); }
 }
 var RENDERED_KEYS=new Map();
@@ -1445,7 +1448,7 @@ function preMarkThreadMsg(threadId,key){
 }
 function subscribeThread(threadId,cb){
   if(!FB.ready) return null;
-  var ref=FB.db.ref("chats/"+threadId+"/messages").limitToLast(80);
+  var ref=FB.db.ref("market_chats/"+threadId+"/messages").limitToLast(80);
   var h=function(snap){
     var m=snap.val()||{}; var key=snap.key;
     if(!RENDERED_KEYS.has(threadId)) RENDERED_KEYS.set(threadId,new Set());
@@ -1460,7 +1463,7 @@ function subscribeThread(threadId,cb){
 function markThreadRead(threadId){
   var me=FB.auth&&FB.auth.currentUser;
   if(!me||!FB.ready) return;
-  FB.db.ref("userInboxes/"+me.uid+"/threads/"+threadId+"/unread").set(0).catch(function(){});
+  FB.db.ref("market_inboxes/"+me.uid+"/threads/"+threadId+"/unread").set(0).catch(function(){});
 }
 /* --- annonces réelles (Firebase market_listings, schéma aligné jobs) --- */
 function remoteIdHash(key){
@@ -1530,6 +1533,16 @@ function vdPublicationLocale(raison){
   }catch(e){}
 }
 function publishLiveListing(data,cb){
+  /* (20261008c) SANS RÉSEAU, L'ANNONCE N'EST PLUS PERDUE. Avant, l'appel
+     échouait et tout le formulaire était à retaper. Elle est mise de côté
+     et repart toute seule à la reconnexion. */
+  if(vdEstHorsLigne()){
+    vdFileAnnoncesAjouter(data);
+    vdBandeauReseau();
+    toast(LANG==="fr"?"📴 Pas de réseau — votre annonce partira toute seule":"📴 No network — your listing will go out on its own");
+    cb(false,"horsligne");
+    return;
+  }
   if(!FB.ready||!(FB.auth&&FB.auth.currentUser)){ cb(false); return; }
   try{
     var ref=FB.db.ref("market_listings").push();
@@ -1981,8 +1994,13 @@ function applyI18n(){
 /* ---------- filtering + search ---------- */
 function computeResults(){
   var t0=performance.now();
+  /* (20261008b) le tri par proximité dépend de la position du moment :
+     il ne peut pas être calculé une fois pour toutes au démarrage. */
+  if(F.sort==="nearest"){ try{ vdTriProximite(); }catch(e){} if(!SORTS.nearest) F.sort="newest"; }
   var q=F.query.trim().toLowerCase();
   function pred(l){
+    /* (20261008c) un vendeur bloqué disparaît partout, tout de suite */
+    if(l.real && l.sellerUid && vdVendeurEstBloque(l.sellerUid)) return false;
     if(F.category!=="all" && l.category!==F.category) return false;
     if(F.savedOnly && !SAVED.has(l.id)) return false;
     if(F.dealsOnly && !l.oldPrice) return false;
@@ -2023,8 +2041,448 @@ function isMine(l){ return !!l.mine || (l.real && FB.user && l.sellerUid===FB.us
 
 /* ---------- cards ---------- */
 function starsOf(r){ return "★".repeat(Math.max(1,Math.round(r))); }
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008b) TROIS MANQUES DU MARCHÉ
+
+   1. SIGNALER UNE ANNONCE. Il n'y avait aucun moyen de le faire :
+      zero occurrence de « signaler » dans la page. Une place de
+      marche sans bouton de signalement, c'est une place de marche
+      ou l'arnaque n'a aucun cout. Le signalement part dans
+      « errorLogs », le canal que l'equipe lit deja.
+
+   2. LA DISTANCE. Le filtre « pres de moi » existait, mais aucune
+      annonce ne disait A QUELLE DISTANCE elle se trouve. On
+      filtrait a 25 km sans savoir si l'objet etait a 2 km ou a 24.
+
+   3. LES FAVORIS NE SUIVAIENT PAS. Ils n'etaient ecrits que dans la
+      memoire du telephone : changer d'appareil, vider le navigateur
+      ou reinstaller, et tout etait perdu. Ils sont maintenant aussi
+      ranges sous « market_favorites/<uid> » et refusionnes a la
+      connexion — jamais ecrases : on garde l'union des deux listes.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* --- 1. signaler une annonce -------------------------------------- */
+var VD_MOTIFS = [
+  ["arnaque", "🚩 Arnaque ou faux vendeur", "Scam or fake seller"],
+  ["faux", "📸 Photos ou description mensongères", "Misleading photos or description"],
+  ["interdit", "⛔ Objet interdit ou dangereux", "Banned or dangerous item"],
+  ["prix", "💸 Prix manifestement faux", "Obviously fake price"],
+  ["double", "📑 Annonce publiée en double", "Duplicate listing"],
+  ["autre", "✍️ Autre raison", "Other reason"]
+];
+function vdMotifTexte(cle){
+  for(var i = 0; i < VD_MOTIFS.length; i++){
+    if(VD_MOTIFS[i][0] === cle) return (LANG === "fr") ? VD_MOTIFS[i][1] : VD_MOTIFS[i][2];
+  }
+  return cle || "";
+}
+function vdSignalerAnnonce(id){
+  var l = BY_ID.get(id);
+  if(!l) return false;
+  var opts = VD_MOTIFS.map(function(m){
+    return '<option value="' + m[0] + '">' + esc((LANG === "fr") ? m[1] : m[2]) + '</option>';
+  }).join("");
+  openModal('<h2 style="font-size:18px;margin-bottom:4px">'
+    + (LANG === "fr" ? "Signaler cette annonce" : "Report this listing") + '</h2>'
+    + '<p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">'
+    + esc(String(l.title).slice(0, 70)) + '</p>'
+    + '<div class="field"><label>' + (LANG === "fr" ? "Motif" : "Reason") + '</label>'
+    + '<select id="vdRepMotif">' + opts + '</select></div>'
+    + '<div class="field"><label>' + (LANG === "fr" ? "Détails (facultatif)" : "Details (optional)") + '</label>'
+    + '<textarea id="vdRepTexte" rows="3" maxlength="400" placeholder="'
+    + (LANG === "fr" ? "Ce qui vous a alerté…" : "What alerted you…") + '"></textarea></div>'
+    + '<div class="formerr" id="vdRepErr"></div>'
+    + '<button class="btn btn-gold btn-block" onclick="vdEnvoyerSignalement(' + id + ')">'
+    + (LANG === "fr" ? "Envoyer le signalement" : "Send report") + '</button>'
+    + '<p class="dim" style="font-size:11.5px;margin-top:9px">'
+    + (LANG === "fr"
+       ? "Votre signalement est lu par l’équipe. Les annonces signalées plusieurs fois sont retirées."
+       : "Your report is read by the team. Listings reported repeatedly are removed.") + '</p>');
+  return true;
+}
+function vdEnvoyerSignalement(id){
+  var l = BY_ID.get(id);
+  if(!l) return false;
+  var sel = document.getElementById("vdRepMotif");
+  var txt = document.getElementById("vdRepTexte");
+  var err = document.getElementById("vdRepErr");
+  var motif = (sel && sel.value) || "autre";
+  var detail = ((txt && txt.value) || "").trim().slice(0, 400);
+  if(!FB.ready || !FB.db){
+    if(err) err.textContent = (LANG === "fr") ? "Pas de réseau. Réessayez." : "No network. Try again.";
+    return false;
+  }
+  var me = (FB.auth && FB.auth.currentUser) ? FB.auth.currentUser.uid : "";
+  var corps = "[SIGNALEMENT BOUTIQUE] " + vdMotifTexte(motif)
+    + " | annonce : " + String(l.title).slice(0, 60)
+    + " | prix : " + l.price
+    + " | ville : " + (l.city || "?")
+    + " | cle : " + (l.remoteKey || ("demo" + l.id))
+    + " | vendeur : " + (l.sellerUid || "?")
+    + (detail ? (" | detail : " + detail) : "");
+  try{
+    FB.db.ref("errorLogs").push({
+      message: corps.slice(0, 900),
+      source: "shalom-square",
+      kind: "report",
+      motif: motif,
+      listing: l.remoteKey || ("demo" + l.id),
+      uid: me,
+      /* vdSignalementHorodate : « timestamp » est EXIGÉ par la règle */
+      timestamp: Date.now(),
+      at: Date.now()
+    }).then(function(){
+      closeModal();
+      toast(LANG === "fr" ? "🚩 Signalement envoyé. Merci." : "🚩 Report sent. Thank you.");
+    }).catch(function(){
+      if(err) err.textContent = (LANG === "fr") ? "Envoi impossible. Réessayez." : "Could not send. Try again.";
+    });
+  }catch(e){
+    if(err) err.textContent = (LANG === "fr") ? "Envoi impossible." : "Could not send.";
+    return false;
+  }
+  return true;
+}
+
+/* --- 2. la distance se lit sur l'annonce -------------------------- */
+var VD_POS = null;
+try{
+  var vdp = JSON.parse(store.getItem("vd_pos") || "null");
+  if(vdp && typeof vdp.lat === "number" && typeof vdp.lng === "number") VD_POS = vdp;
+}catch(e){ VD_POS = null; }
+function vdMaPosition(){
+  if(F && F.geo && typeof F.geo.lat === "number") return { lat: F.geo.lat, lng: F.geo.lng };
+  return VD_POS;
+}
+function vdRetenirPosition(lat, lng){
+  if(typeof lat !== "number" || typeof lng !== "number") return false;
+  VD_POS = { lat: lat, lng: lng, at: Date.now() };
+  try{ store.setItem("vd_pos", JSON.stringify(VD_POS)); }catch(e){}
+  try{ CACHE.clear(); }catch(e){}
+  return true;
+}
+function vdDistanceDe(l){
+  try{
+    var p = vdMaPosition();
+    if(!p) return null;
+    var ll = llOf(l);
+    if(!ll) return null;
+    return distKm(p.lat, p.lng, ll[0], ll[1]);
+  }catch(e){ return null; }
+}
+function vdDistanceTexte(l){
+  var d = vdDistanceDe(l);
+  if(d === null) return "";
+  if(d < 1) return "📍 " + Math.max(50, Math.round(d * 1000 / 50) * 50) + " m";
+  if(d < 10) return "📍 " + (Math.round(d * 10) / 10).toString().replace(".", ",") + " km";
+  return "📍 " + Math.round(d) + " km";
+}
+/* La vignette est gardée en mémoire : si la distance n'entrait pas
+   dans la clé, on resservirait « 3 km » après un déplacement. */
+function vdDistanceCle(l){
+  var d = vdDistanceDe(l);
+  return (d === null) ? "x" : String(Math.round(d * 10));
+}
+function vdTriProximite(){
+  try{
+    if(!SORTS) return 0;
+    var p = vdMaPosition();
+    if(!p){ SORTS.nearest = SORTS.newest ? SORTS.newest.slice() : []; return 0; }
+    var avec = LISTINGS.slice().map(function(l){
+      var ll = llOf(l);
+      return [l.id, ll ? distKm(p.lat, p.lng, ll[0], ll[1]) : 99999];
+    });
+    avec.sort(function(a, b){ return a[1] - b[1]; });
+    SORTS.nearest = avec.map(function(x){ return x[0]; });
+    return SORTS.nearest.length;
+  }catch(e){ return 0; }
+}
+
+/* --- 3. les favoris suivent le compte ----------------------------- */
+var VD_FAV_TIREE = "";
+function vdFavorisPousser(){
+  try{
+    var me = (FB.auth && FB.auth.currentUser) ? FB.auth.currentUser.uid : "";
+    if(!me || !FB.db) return false;
+    var o = {};
+    SAVED.forEach(function(id){ o["i" + id] = true; });
+    FB.db.ref("market_favorites/" + me).set(o).catch(function(){});
+    return true;
+  }catch(e){ return false; }
+}
+/* On FUSIONNE, on n'écrase pas : un favori posé hors ligne sur ce
+   téléphone ne doit pas disparaître parce que le compte n'en avait
+   pas encore connaissance. */
+function vdFavorisFusionner(distants){
+  var ajoutes = 0;
+  try{
+    Object.keys(distants || {}).forEach(function(k){
+      if(!distants[k]) return;
+      var id = parseInt(String(k).replace("i", ""), 10);
+      if(!isNaN(id) && !SAVED.has(id)){ SAVED.add(id); ajoutes++; }
+    });
+    if(ajoutes){
+      store.setItem("jm_market_saved", JSON.stringify(Array.from(SAVED)));
+      try{ CACHE.clear(); renderGrid(); renderPills(); }catch(e){}
+    }
+  }catch(e){}
+  return ajoutes;
+}
+function vdFavorisTirer(){
+  try{
+    var me = (FB.auth && FB.auth.currentUser) ? FB.auth.currentUser.uid : "";
+    if(!me || !FB.db) return false;
+    if(VD_FAV_TIREE === me) return true;
+    VD_FAV_TIREE = me;
+    FB.db.ref("market_favorites/" + me).once("value").then(function(sn){
+      vdFavorisFusionner((sn && sn.val()) || {});
+      vdFavorisPousser();
+    }).catch(function(){});
+    return true;
+  }catch(e){ return false; }
+}
+/* L'option de tri n'a pas de clé de traduction : on la nomme à la
+   main, sinon elle resterait en français quand la page passe en
+   anglais. */
+function vdNommerTriProche(){
+  var o = document.getElementById("vdSortNear");
+  if(!o) return false;
+  var voulu = (LANG === "fr") ? "📍 Le plus près" : "📍 Nearest first";
+  if(o.textContent !== voulu) o.textContent = voulu;
+  return true;
+}
+function vdVeilleMarche20261008b(){
+  try{
+    if(window.__vdVeilleB) return false;
+    window.__vdVeilleB = setInterval(function(){
+      try{ vdFavorisTirer(); }catch(e){}
+      try{ vdNommerTriProche(); }catch(e){}
+    }, 2500);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleMarche20261008b(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState !== "loading") vdVeilleMarche20261008b(); }catch(e){}
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008c) QUATRE MANQUES DU MARCHÉ
+
+   Comptés sur le fichier livré :
+       navigator.onLine ........ 0   rien ne sait que le réseau est coupé
+       SpeechRecognition ....... 0   il faut savoir écrire pour chercher
+       remonter une annonce .... 0   une annonce coule et ne remonte jamais
+       bloquer un vendeur ...... 0   on resubit le même escroc chaque jour
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* --- 7. remonter mon annonce (une fois par semaine) --------------- */
+/* Une annonce de trois semaines est invisible : le tri par défaut est
+   « Plus récentes ». Sans moyen de la remonter, le vendeur n'a qu'une
+   solution — la supprimer et la republier, ce qui lui fait perdre ses
+   vues et ses favoris. La limite d'une fois par semaine évite que
+   trois vendeurs occupent la première page en permanence. */
+var VD_SEMAINE = 7 * 24 * 60 * 60 * 1000;
+function vdDernierRemontage(id){
+  try{
+    var o = JSON.parse(store.getItem("vd_remontages") || "{}");
+    return Number(o["i" + id]) || 0;
+  }catch(e){ return 0; }
+}
+function vdPeutRemonter(id){
+  var d = vdDernierRemontage(id);
+  if(!d) return true;
+  return (Date.now() - d) >= VD_SEMAINE;
+}
+function vdJoursAvantRemontage(id){
+  var d = vdDernierRemontage(id);
+  if(!d) return 0;
+  var reste = VD_SEMAINE - (Date.now() - d);
+  return reste <= 0 ? 0 : Math.ceil(reste / 86400000);
+}
+function vdRemonterAnnonce(id){
+  var l = BY_ID.get(id);
+  if(!l) return false;
+  if(!isMine(l)){ toast(LANG === "fr" ? "Ce n’est pas votre annonce" : "Not your listing"); return false; }
+  if(!vdPeutRemonter(id)){
+    var j = vdJoursAvantRemontage(id);
+    toast(LANG === "fr"
+      ? ("Déjà remontée. Encore " + j + " jour" + (j > 1 ? "s" : "") + ".")
+      : ("Already bumped. " + j + " day" + (j > 1 ? "s" : "") + " to go."));
+    return false;
+  }
+  if(!l.real || !l.remoteKey || !FB.ready || !FB.user){
+    toast(LANG === "fr" ? "Disponible pour vos annonces en ligne" : "Available for your online listings");
+    return false;
+  }
+  var maintenant = Date.now();
+  FB.db.ref("market_listings/" + l.remoteKey).update({ timestamp: maintenant, bumpedAt: maintenant }).then(function(){
+    try{
+      var o = JSON.parse(store.getItem("vd_remontages") || "{}");
+      o["i" + id] = maintenant;
+      store.setItem("vd_remontages", JSON.stringify(o));
+    }catch(e){}
+    l.createdDaysAgo = 0;
+    try{ CACHE.clear(); rebuildSorts(); renderGrid(); }catch(e){}
+    toast(LANG === "fr" ? "⬆️ Annonce remontée en tête" : "⬆️ Listing bumped to the top");
+    try{ openDetail(id); }catch(e){}
+  }).catch(function(){
+    toast(LANG === "fr" ? "⚠️ Impossible pour le moment" : "⚠️ Not possible right now");
+  });
+  return true;
+}
+
+/* --- 8. le réseau coupe : on le dit, et on n'oublie rien ---------- */
+/* Jusqu'ici, publier sans réseau échouait et l'annonce était perdue :
+   il fallait tout retaper. Elle est maintenant mise de côté et part
+   toute seule au retour de la connexion. */
+function vdEstHorsLigne(){
+  try{ return navigator.onLine === false; }catch(e){ return false; }
+}
+function vdBandeauReseau(){
+  try{
+    var b = document.getElementById("vdHorsLigne");
+    if(!b) return false;
+    var dehors = vdEstHorsLigne();
+    b.style.display = dehors ? "" : "none";
+    if(dehors){
+      var n = vdFileAnnoncesLire().length;
+      b.textContent = (LANG === "fr" ? "📴 Pas de réseau" : "📴 No network")
+        + (n ? (LANG === "fr" ? (" — " + n + " annonce(s) en attente") : (" — " + n + " listing(s) waiting")) : "");
+    }
+    return dehors;
+  }catch(e){ return false; }
+}
+function vdFileAnnoncesLire(){
+  try{
+    var v = JSON.parse(store.getItem("vd_file_annonces") || "[]");
+    return Array.isArray(v) ? v : [];
+  }catch(e){ return []; }
+}
+function vdFileAnnoncesAjouter(data){
+  try{
+    var f = vdFileAnnoncesLire();
+    f.push({ data: data, at: Date.now() });
+    while(f.length > 10) f.shift();
+    store.setItem("vd_file_annonces", JSON.stringify(f));
+    return f.length;
+  }catch(e){ return 0; }
+}
+function vdFileAnnoncesTraiter(){
+  try{
+    if(vdEstHorsLigne()) return 0;
+    if(!FB.ready || !(FB.auth && FB.auth.currentUser)) return 0;
+    var f = vdFileAnnoncesLire();
+    if(!f.length) return 0;
+    store.setItem("vd_file_annonces", "[]");
+    var partis = 0;
+    f.forEach(function(e){
+      if(!e || !e.data) return;
+      partis++;
+      publishLiveListing(e.data, function(ok){
+        if(!ok){ vdFileAnnoncesAjouter(e.data); }
+        else {
+          toast(LANG === "fr" ? "✅ Annonce en attente publiée" : "✅ Pending listing published");
+          try{ CACHE.clear(); rebuildSorts(); buildIndex(); renderGrid(); }catch(x){}
+        }
+      });
+    });
+    return partis;
+  }catch(e){ return 0; }
+}
+
+/* --- 9. chercher à la voix --------------------------------------- */
+/* Beaucoup de nos utilisateurs écrivent lentement, et le clavier
+   d'un téléphone d'entrée de gamme n'aide pas. Dire « congélateur »
+   doit suffire. */
+function vdVoixDisponible(){
+  try{ return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+  catch(e){ return false; }
+}
+var VD_ECOUTE = null;
+function vdChercherALaVoix(){
+  try{
+    if(!vdVoixDisponible()){
+      toast(LANG === "fr" ? "Ce navigateur n’entend pas la voix" : "This browser cannot hear speech");
+      return false;
+    }
+    if(VD_ECOUTE){ try{ VD_ECOUTE.stop(); }catch(e){} VD_ECOUTE = null; return false; }
+    var M = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var r = new M();
+    r.lang = (LANG === "fr") ? "fr-FR" : "en-US";
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    var b = document.getElementById("vdVoixBtn");
+    if(b){ b.textContent = "🔴"; b.title = LANG === "fr" ? "J’écoute…" : "Listening…"; }
+    r.onresult = function(ev){
+      try{
+        var dit = ev.results[0][0].transcript || "";
+        var champ = document.getElementById("searchInput");
+        if(champ){
+          /* on passe par l'evenement « input » deja ecoute par la page :
+             appeler une fonction interne par son nom serait fragile. */
+          champ.value = dit;
+          champ.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        toast("🎙️ " + dit);
+      }catch(e){}
+    };
+    r.onerror = function(){ toast(LANG === "fr" ? "Je n’ai pas compris" : "I did not understand"); };
+    r.onend = function(){
+      VD_ECOUTE = null;
+      var b2 = document.getElementById("vdVoixBtn");
+      if(b2){ b2.textContent = "🎙️"; b2.title = LANG === "fr" ? "Chercher à la voix" : "Search by voice"; }
+    };
+    VD_ECOUTE = r;
+    r.start();
+    toast(LANG === "fr" ? "🎙️ Parlez…" : "🎙️ Speak…");
+    return true;
+  }catch(e){ return false; }
+}
+
+/* --- 10. ne plus voir un vendeur --------------------------------- */
+/* Signaler prévient l'équipe, mais ne protège pas tout de suite.
+   Bloquer fait disparaître TOUTES ses annonces, immédiatement. */
+function vdVendeursBloques(){
+  try{
+    var v = JSON.parse(store.getItem("vd_vendeurs_bloques") || "[]");
+    return Array.isArray(v) ? v : [];
+  }catch(e){ return []; }
+}
+function vdVendeurEstBloque(uid){
+  if(!uid) return false;
+  return vdVendeursBloques().indexOf(uid) !== -1;
+}
+function vdBasculerVendeur(uid){
+  try{
+    if(!uid) return false;
+    var l = vdVendeursBloques();
+    var i = l.indexOf(uid);
+    if(i === -1) l.push(uid); else l.splice(i, 1);
+    store.setItem("vd_vendeurs_bloques", JSON.stringify(l));
+    try{ CACHE.clear(); rebuildSorts(); buildIndex(); renderGrid(); closeModal(); }catch(e){}
+    toast(i === -1
+      ? (LANG === "fr" ? "🚫 Vendeur masqué. Ses annonces disparaissent." : "🚫 Seller hidden. Their listings are gone.")
+      : (LANG === "fr" ? "✅ Vendeur réaffiché" : "✅ Seller shown again"));
+    return i === -1;
+  }catch(e){ return false; }
+}
+
+function vdVeilleMarcheC(){
+  try{
+    if(window.__vdVeilleC) return false;
+    window.__vdVeilleC = setInterval(function(){
+      try{ vdBandeauReseau(); }catch(e){}
+    }, 3000);
+    try{
+      window.addEventListener("online", function(){ vdBandeauReseau(); vdFileAnnoncesTraiter(); });
+      window.addEventListener("offline", function(){ vdBandeauReseau(); });
+    }catch(e){}
+    setTimeout(function(){ try{ vdFileAnnoncesTraiter(); }catch(e){} }, 4000);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleMarcheC(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState !== "loading") vdVeilleMarcheC(); }catch(e){}
 function cardHTML(l){
-  var key=[l.id,LANG,SAVED.has(l.id)?1:0,VIEW,l.negotiable?1:0,((l.real&&typeof PRO_SELLERS!=="undefined"&&PRO_SELLERS.has(l.sellerUid))?1:0),(l.mine?(l.views||0):0)].join("|");
+  var key=[l.id,LANG,SAVED.has(l.id)?1:0,VIEW,l.negotiable?1:0,vdDistanceCle(l),((l.real&&typeof PRO_SELLERS!=="undefined"&&PRO_SELLERS.has(l.sellerUid))?1:0),(l.mine?(l.views||0):0)].join("|");
   var c=CACHE.get(key); if(c) return c;
   var heart=SAVED.has(l.id)?"❤️":"🤍";
   var isNew=(l.createdDaysAgo<=2)||l.mine;
@@ -2042,7 +2500,7 @@ function cardHTML(l){
     +(l.negotiable?'<span class="negpill">🤝 '+t("neg_badge")+'</span>':"")
     +((l.real&&PRO_SELLERS.has(l.sellerUid))?'<span class="propill">🏪 '+t("pro_badge")+'</span>':"")
     +(l.mine?'<span class="catpill">👁 '+String(l.views||0).toLocaleString("fr-FR")+'</span>':"")
-    +'<div class="meta">🇨🇲 '+esc(l.city)+(l.quartier?' · 📍 '+esc(l.quartier):'')+' · '+esc(l.region)+'</div>'
+    +'<div class="meta">🇨🇲 '+esc(l.city)+(l.quartier?' · 📍 '+esc(l.quartier):'')+' · '+esc(l.region)+(vdDistanceTexte(l)?' · <b>'+esc(vdDistanceTexte(l))+'</b>':'')+'</div>'
     +'<div class="seller"><span class="avatar">'+esc(s.name.charAt(0).toUpperCase())+'</span>'
     +'<span>'+(l.real?'<span class="verified">'+esc(t("real_seller"))+'</span>':'<span class="stars">'+starsOf(s.rating)+'</span> <span class="dim">'+s.rating.toFixed(1)+' ('+s.reviews+')</span>')
     +(s.verified&&!l.real?' <span class="verified">✓</span>':"")+'</span></div>'
@@ -2645,6 +3103,7 @@ function openDetail(id){
     +'<div class="d-chips"><span class="catpill">'+catIcon(l.category)+" "+esc(catName(l.category))+'</span>'
     +'<span class="catpill">'+esc(l.condition)+'</span>'
     +'<span class="catpill">🇨🇲 '+esc(l.city)+(l.quartier?' · 📍 '+esc(l.quartier):'')+' — '+esc(l.region)+'</span>'
+    +(vdDistanceTexte(l)?'<span class="catpill" style="color:var(--gold)">'+esc(vdDistanceTexte(l))+' '+(LANG==="fr"?"de vous":"from you")+'</span>':"")
     +(l.real?'<span class="catpill" style="color:var(--gold)">'+t("remote_badge")+'</span>':"")
     +(l.foodTag?'<span class="ftag">'+esc(foodTagName(l.foodTag))+'</span>':"")
     +(l.negotiable?'<span class="negpill">🤝 '+t("neg_badge")+'</span>':"")
@@ -2662,6 +3121,9 @@ function openDetail(id){
     +'<button class="btn btn-ghost" onclick="addToCart('+id+')" title="'+esc(t("cart_add"))+'">🛒 '+t("cart_add")+'</button>'
     +'<button class="btn btn-ghost" onclick="openOffer('+id+')">'+t("make_offer")+'</button>'
     +'<button class="btn btn-ghost" onclick="toggleSave('+id+',true)">'+(SAVED.has(id)?"❤️":"🤍")+' '+t("save_b")+'</button>'
+    +(isMine(l)&&l.real?'<button class="btn btn-ghost" onclick="vdRemonterAnnonce('+id+')" title="'+(LANG==="fr"?"Remettre mon annonce en tête":"Bump my listing")+'">⬆️ '+(LANG==="fr"?"Remonter":"Bump")+'</button>':"")
+    +(!isMine(l)&&l.real&&l.sellerUid?'<button class="btn btn-ghost" onclick="vdBasculerVendeur(\''+esc(l.sellerUid)+'\')" title="'+(LANG==="fr"?"Ne plus voir ce vendeur":"Hide this seller")+'">🚫 '+(LANG==="fr"?"Masquer ce vendeur":"Hide seller")+'</button>':"")
+    +'<button class="btn btn-ghost" onclick="vdSignalerAnnonce('+id+')" title="'+(LANG==="fr"?"Signaler cette annonce":"Report this listing")+'">🚩 '+(LANG==="fr"?"Signaler":"Report")+'</button>'
     +'<button class="btn btn-wa vdPartageVisible" onclick="shareWA('+id+')" title="'+esc(t("share"))+' WhatsApp" aria-label="'+esc(t("share"))+' sur WhatsApp">📤 '+esc(t("share"))+'</button>'
     +(!isMine(l)&&l.real&&l.sellerUid?'<button class="btn btn-ghost" onclick="openLeaveReview('+id+')">'+t("leave_review")+'</button>':"")
     +dActionsExtra(id,l)
@@ -2773,6 +3235,9 @@ function clearRecentSearches(){ RECENT_SEARCHES=[]; store.setItem("vendora_rsear
 function toggleSave(id,fromModal){
   if(SAVED.has(id)) SAVED.delete(id); else { SAVED.add(id); toast(t("saved_toast")); }
   store.setItem("jm_market_saved",JSON.stringify(Array.from(SAVED)));
+  /* (20261008b) le favori part aussi dans le compte : changer de
+     téléphone ne doit plus vider la liste. */
+  try{ vdFavorisPousser(); }catch(e){}
   renderGrid(); renderPills();
   if(fromModal) openDetail(id);
 }
@@ -3772,6 +4237,7 @@ function toggleGeo(){
     var near=nearestCity(la,lo);
     if(near.km>300) toast(t("geo_far"));
     F.geo={lat:la,lng:lo,radius:parseInt($("geoRadius").value,10)||25,label:near.city};
+    try{ vdRetenirPosition(la,lo); vdTriProximite(); }catch(e){}
     renderPills(); renderGrid(); scrollToGrid();
   }, function(){ toast(t("geo_err")); }, {timeout:9000, maximumAge:300000});
 }
@@ -4134,6 +4600,121 @@ try{
   window.vdAdminAccepter=vdAdminAccepter; window.vdAdminRefuser=vdAdminRefuser;
   window.vdDetecterAdmin=vdDetecterAdmin; window.vdBoutonAdmin=vdBoutonAdmin; window.vdCode7=vdCode7;
   window.vdNum9=vdNum9;
+}catch(e){}
+</script>
+
+<script>
+/* (correctif maison 20261007c) GARDE-FOUS SUR LES ANNONCES. */
+function vdSansAcc(s){
+  try{ return String(s==null?"":s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
+  catch(e){ return String(s==null?"":s).toLowerCase(); }
+}
+/* 1. un texte d'annonce qui reclame de l'argent avant la remise */
+var VD_MOTS_ANNONCE = ["envoyer l argent","envoie l argent","payer avant","paiement avant livraison",
+  "frais de transfert","frais de douane","mandat","western union","transfert d argent",
+  "acompte obligatoire","verser avant","depot avant"];
+function vdAnnonceRisquee(l){
+  try{
+    if(!l) return [];
+    var s=" "+vdSansAcc((l.title||"")+" "+(l.desc||"")).replace(/[^a-z0-9]+/g," ")+" ";
+    var out=[];
+    for(var i=0;i<VD_MOTS_ANNONCE.length;i++){
+      var w=" "+vdSansAcc(VD_MOTS_ANNONCE[i]).replace(/[^a-z0-9]+/g," ").trim()+" ";
+      if(s.indexOf(w)!==-1){ out.push("argent_avant"); break; }
+    }
+    /* un numero dans le texte : il y a un champ pour ca, et la il est
+       moissonne par les robots */
+    var d=String(l.desc||"");
+    for(var k=0;k<10;k++){ var n2=d.replace(/([0-9])[ .\-\/]([0-9])/g,"$1$2"); if(n2===d) break; d=n2; }
+    if(/(^|[^0-9])[26][0-9]{8}([^0-9]|$)/.test(d)) out.push("numero_dans_texte");
+    return out;
+  }catch(e){ return []; }
+}
+/* 2. un prix impossible pour la categorie */
+var VD_PRIX_PLANCHER = { electronique:3000, vehicules:50000, immobilier:20000,
+  mode:500, maison:500, alimentation:100, autresbiens:200 };
+function vdPrixAberrant(l){
+  try{
+    if(!l || !l.price) return "";
+    var p=Number(l.price)||0;
+    var mini=VD_PRIX_PLANCHER[l.category];
+    if(!mini) return "";
+    if(p>0 && p<mini) return "bas";
+    if(p>50000000) return "haut";
+    return "";
+  }catch(e){ return ""; }
+}
+/* 3. l'age d'une annonce */
+function vdAgeAnnonce(l){
+  try{ var j=Number(l&&l.createdDaysAgo); return isFinite(j)&&j>=0?j:0; }catch(e){ return 0; }
+}
+/* 4. le message d'avertissement, une seule boite pour les trois */
+function vdAvertissementAnnonce(l){
+  try{
+    var cles=vdAnnonceRisquee(l), prix=vdPrixAberrant(l), age=vdAgeAnnonce(l), msgs=[];
+    if(cles.indexOf("argent_avant")!==-1)
+      msgs.push("🚨 Cette annonce parle d'argent a envoyer AVANT la remise. Paye a la remise, dans un lieu public.");
+    if(cles.indexOf("numero_dans_texte")!==-1)
+      msgs.push("☎️ Un numero est ecrit dans le texte. Passe plutot par le chat securise : il sert de preuve.");
+    if(prix==="bas")
+      msgs.push("⚠️ Ce prix est anormalement bas pour cette categorie. Verifie l'article avant de payer.");
+    if(prix==="haut")
+      msgs.push("⚠️ Ce prix est inhabituellement eleve. Compare avant de t'engager.");
+    if(age>=30)
+      msgs.push("🕐 Annonce publiee il y a " + age + " jours. Demande si elle est encore valable.");
+    return msgs;
+  }catch(e){ return []; }
+}
+/* 5. la veille : on pose la boite dans la fiche ouverte */
+var VD_DERNIERE_FICHE = null;
+function vdPoserAvertissement(){
+  try{
+    var root=document.getElementById("modalRoot");
+    if(!root || !root.querySelector(".d-title")) { VD_DERNIERE_FICHE=null; return ""; }
+    var l=(typeof GAL_ID!=="undefined" && BY_ID && BY_ID.get) ? BY_ID.get(GAL_ID) : null;
+    if(!l) return "";
+    if(VD_DERNIERE_FICHE===l.id && document.getElementById("vdAvertAnnonce")) return "deja";
+    var msgs=vdAvertissementAnnonce(l);
+    var vieux=document.getElementById("vdAvertAnnonce");
+    if(vieux) vieux.remove();
+    VD_DERNIERE_FICHE=l.id;
+    if(!msgs.length) return "";
+    var ancre=root.querySelector(".d-actions") || root.querySelector(".d-title");
+    if(!ancre || !ancre.parentElement) return "";
+    var b=document.createElement("div");
+    b.id="vdAvertAnnonce";
+    b.style.cssText="margin:10px 0;padding:10px 12px;border-radius:10px;font-size:12.5px;line-height:1.55;"
+      + "background:rgba(231,76,60,.10);border:1px solid rgba(231,76,60,.45);";
+    b.innerHTML=msgs.map(function(x){ return esc(x); }).join("<br>");
+    ancre.parentElement.insertBefore(b, ancre);
+    return String(msgs.length);
+  }catch(e){ return ""; }
+}
+/* 6. la recherche ignore les accents : « menage » trouve « Ménage » */
+function vdChercheAnnonces(liste, q){
+  try{
+    var s=vdSansAcc(q).trim();
+    if(!s) return liste||[];
+    return (liste||[]).filter(function(l){
+      var hay=vdSansAcc((l&&l.title||"")+" "+(l&&l.desc||"")+" "+(l&&l.city||"")+" "+(l&&l.quartier||""));
+      return hay.indexOf(s)!==-1;
+    });
+  }catch(e){ return liste||[]; }
+}
+function vdVeilleAnnonces(){
+  try{
+    if(window.__vdVeilleA) return false;
+    window.__vdVeilleA=setInterval(function(){ try{ vdPoserAvertissement(); }catch(e){} },1500);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleAnnonces(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState!=="loading") vdVeilleAnnonces(); }catch(e){}
+try{
+  window.vdSansAcc=vdSansAcc; window.vdAnnonceRisquee=vdAnnonceRisquee;
+  window.vdPrixAberrant=vdPrixAberrant; window.vdAgeAnnonce=vdAgeAnnonce;
+  window.vdAvertissementAnnonce=vdAvertissementAnnonce; window.vdPoserAvertissement=vdPoserAvertissement;
+  window.vdChercheAnnonces=vdChercheAnnonces; window.vdVeilleAnnonces=vdVeilleAnnonces;
 }catch(e){}
 </script>
 </body>
