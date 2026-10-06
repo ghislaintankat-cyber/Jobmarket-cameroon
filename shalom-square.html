@@ -626,7 +626,7 @@ window.addEventListener("scroll",function(){
     <div><h4 data-i18n="f_support">Assistance</h4>
       <a href="./index.html" data-i18n="f_app">← Retour à l'app</a>
       <a href="#" onclick="openBench();return false" data-i18n="f_perf">⚡ Performances</a>
-      <a href="https://wa.me/237650420710" target="_blank" rel="noopener" data-i18n="f_contact">WhatsApp support</a></div>
+      <a href="./index.html" onclick="return vdAssistanceInterne();" data-i18n="f_contact">Assistance</a></div>
   </div>
   <div class="foot-note">🇨🇲 Made for Cameroon · 🇫🇷/🇬🇧 · © 2026 JobMarket Cameroon — Marché en version démo : les annonces publiées en mode connecté sont enregistrées dans la base JobMarket.</div>
 </footer>
@@ -2662,7 +2662,7 @@ function openDetail(id){
     +'<button class="btn btn-ghost" onclick="addToCart('+id+')" title="'+esc(t("cart_add"))+'">🛒 '+t("cart_add")+'</button>'
     +'<button class="btn btn-ghost" onclick="openOffer('+id+')">'+t("make_offer")+'</button>'
     +'<button class="btn btn-ghost" onclick="toggleSave('+id+',true)">'+(SAVED.has(id)?"❤️":"🤍")+' '+t("save_b")+'</button>'
-    +'<button class="btn btn-ghost" onclick="shareWA('+id+')" title="WhatsApp">📤</button>'
+    +'<button class="btn btn-wa vdPartageVisible" onclick="shareWA('+id+')" title="'+esc(t("share"))+' WhatsApp" aria-label="'+esc(t("share"))+' sur WhatsApp">📤 '+esc(t("share"))+'</button>'
     +(!isMine(l)&&l.real&&l.sellerUid?'<button class="btn btn-ghost" onclick="openLeaveReview('+id+')">'+t("leave_review")+'</button>':"")
     +dActionsExtra(id,l)
     +'</div>'
@@ -2683,11 +2683,37 @@ function renderGallery(items){
   }).join("");
 }
 function galSel(i){ GAL_SEL=i; renderGallery(galleryItems(BY_ID.get(GAL_ID))); }
+/* (correctif maison) vdTexteDePartage : au Cameroun, le partage
+   WhatsApp EST la publicite. Le texte doit se suffire a lui-meme. */
+function vdTexteDePartage(l, url){
+  try{
+    var fr = (LANG === "fr");
+    var s = sellerOf ? sellerOf(l) : null;
+    var lignes = [];
+    lignes.push("🛍️ *" + String(l.title || "").slice(0, 70) + "* — " + fmtXAF(l.price));
+    var lieu = [l.city || "", l.quartier || ""].filter(Boolean).join(" · ");
+    if(lieu) lignes.push("📍 " + lieu);
+    var etat = [];
+    if(l.condition) etat.push(l.condition);
+    if(l.negotiable) etat.push(fr ? "Négociable" : "Negotiable");
+    if(etat.length) lignes.push("✅ " + etat.join(" · "));
+    var nom = (s && (s.name || s.userName)) || l.userName || "";
+    if(nom) lignes.push("👤 " + String(nom).slice(0, 40) + ((s && s.verified) ? (fr ? " — vendeur vérifié" : " — verified seller") : ""));
+    lignes.push("");
+    lignes.push(fr ? "Vu sur *Shalom Square* — la place de marché de JobMarket Cameroon"
+                   : "Seen on *Shalom Square* — the JobMarket Cameroon marketplace");
+    lignes.push((fr ? "👉 Voir l'annonce : " : "👉 See the listing: ") + url);
+    return lignes.join("\n");
+  }catch(e){
+    return (LANG === "fr" ? "Regarde cette annonce sur Shalom Square : " : "Check this listing on Shalom Square: ")
+      + (l && l.title ? l.title : "") + " → " + url;
+  }
+}
 function shareWA(id){
   var l=BY_ID.get(id); if(!l) return;
   var base=location.origin+location.pathname.replace(/[^\/]*$/,""); /* dossier courant, sans le nom de fichier */
   var url=base+"shalom-square.html"+(l.remoteKey?("?listing="+l.remoteKey):("#listing-"+l.id));
-  var txt=(LANG==="fr"?"Regarde cette annonce sur Shalom Square : ":"Check this listing on Shalom Square: ")+l.title+" — "+fmtXAF(l.price)+" → "+url;
+  var txt=vdTexteDePartage(l,url);
   var photo=l.photo||null, done=false;
   function fallback(){
     if(done) return; done=true;
@@ -2783,7 +2809,7 @@ function openShop(uid,name){
     +'<div style="flex:1;min-width:170px"><div style="font-size:17.5px;font-weight:800">'+esc(name||"JobMarket")+' <span class="catpill" style="vertical-align:middle">🏪 Boutique</span></div>'
     +'<div class="dim" style="font-size:12.5px">'+items.length+' '+t("all_listings")+(first?' · 🇨🇲 '+esc(first.city)+(first.quartier?' ('+esc(first.quartier)+')':''):"")+(op?' · <span class="optag '+op.id+'">'+op.label+'</span>':"")+'</div></div>'
     +(items.length?'<button class="btn btn-ghost btn-sm" onclick="shareShop(\''+esc(uid)+'\')" title="'+esc(t("shop_share"))+'">📤 '+esc(t("shop_share"))+'</button>':"")
-    +(digits.length===9?'<a class="btn btn-wa btn-sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/237'+digits+'">🟢 '+t("shop_contact")+'</a>':"")+'</div>'
+    +(digits.length===9?'<button class="btn btn-wa btn-sm" onclick="vdContactBoutique(\''+(s.uid||"")+'\')">💬 '+t("shop_contact")+'</button>':"")+'</div>'
     +'<div id="shopPro" data-uid="'+esc(uid)+'"></div>'
     +'<div id="detailReviews" data-uid="'+esc(uid)+'"></div>'
     +(cards?'<div class="shopgrid">'+cards+'</div>':'<p class="dim">'+t("shop_empty")+'</p>'), true);
@@ -2799,7 +2825,7 @@ function renderShopPro(uid,name){
       var wa=String(prof.whatsapp||"").replace(/\D/g,"");
       html+='<div class="shopbanner" style="background:'+catGrad(prof.cat||"autresbiens")+'">'
         +'<div class="sbrow"><b style="font-size:16px">🏪 '+esc(prof.name||name||"Shalom Square")+'</b>'
-        +(wa.length===9?'<a class="btn btn-wa btn-sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/237'+wa+'">🟢 WhatsApp</a>':"")
+        +''
         +'</div>'
         +(prof.city?'<div style="opacity:.92;font-size:12px;margin-top:4px">🇨🇲 '+esc(prof.city)+'</div>':"")
         +(prof.desc?'<div style="font-size:12.5px;margin-top:6px;opacity:.96">'+esc(prof.desc)+'</div>':"")
@@ -3631,6 +3657,36 @@ function vdContactSecurise(id){
   try{ closeModal(); }catch(e){}
   try{ startChat(id); }catch(e){ try{ toast(t("chat_seller")); }catch(e2){} }
 }
+/* (correctif maison) vdContactBoutique : on ouvre le chat securise
+   avec le vendeur. Une discussion WhatsApp n'est ni prouvable ni
+   moderable ; WhatsApp ne sert plus qu'a PARTAGER une annonce. */
+function vdContactBoutique(uid){
+  try{
+    if(!uid){ toast(t("chat_seller")); return false; }
+    closeModal();
+    var l=null;
+    for(var i=0;i<LISTINGS.length;i++){ if(LISTINGS[i] && LISTINGS[i].sellerUid===uid){ l=LISTINGS[i]; break; } }
+    if(l) startChat(l.id); else location.href="./shalom-square-chat.html";
+    return true;
+  }catch(e){ try{ location.href="./shalom-square-chat.html"; }catch(e2){} return false; }
+}
+/* (correctif maison) vdAssistanceInterne : on ecrit a l'equipe
+   depuis l'application, pas depuis WhatsApp. Le message n'est lu
+   que par les administrateurs. */
+function vdAssistanceInterne(){
+  try{
+    var me = FB && FB.auth && FB.auth.currentUser;
+    if(!me){ toast("Connecte-toi pour ecrire a l'equipe."); return false; }
+    var txt = prompt("Dis-nous ce qui ne va pas :", "");
+    if(!txt || !String(txt).trim()) return false;
+    FB.db.ref("errorLogs").push({
+      message:"[support_boutique] "+String(txt).slice(0,800), timestamp:Date.now(),
+      type:"support", sujet:"support_boutique", uid:me.uid, build:"shalom-20261006c"
+    }).then(function(){ toast("✅ Message recu par l'equipe JobMarket Cameroon."); })
+     .catch(function(){ toast("Envoi impossible. Reessaie quand le reseau revient."); });
+    return false;
+  }catch(e){ return false; }
+}
 function startChat(id){
   var l=BY_ID.get(id); if(!l) return;
   closeModal();
@@ -3850,6 +3906,235 @@ function tryOpenDeepLink(){
     if(ok){ loadRemoteListings(); }
   });
 })();
+</script>
+
+
+
+<script>
+/* (correctif maison 20261007) VERIFICATION DE PROFIL — portage exact
+   du systeme de JobMarket Cameroon, meme noeud « verifications »,
+   meme forme de donnees, meme code a 7 chiffres. */
+var VD_ADMIN_WA = "237650420710";
+var VD_EST_ADMIN = false;
+
+function vdCode7(){
+  var n = "";
+  for (var i = 0; i < 7; i++) n += Math.floor(10 * Math.random());
+  return n;
+}
+function vdNum9(v){ return String(v||"").replace(/[^0-9]/g,"").replace(/^237/,"").slice(0,9); }
+
+/* --- cote UTILISATEUR : demander la verification --- */
+function vdOuvrirVerification(){
+  var me = FB && FB.auth && FB.auth.currentUser;
+  if(!me){ toast("Connecte-toi d'abord."); try{ openSignIn(); }catch(e){} return false; }
+  openModal(
+    '<button class="iconbtn" onclick="closeModal()" aria-label="Fermer">✕</button>'
+    + '<div class="d-title">✅ Faire verifier mon profil</div>'
+    + '<div class="dim" style="font-size:13px;line-height:1.55;margin:6px 0 12px">'
+    + 'Un profil verifie inspire confiance : les acheteurs repondent beaucoup plus. '
+    + 'Envoie une photo de ta CNI et un selfie. L\'equipe verifie, puis tu recois un '
+    + 'code secret par WhatsApp.</div>'
+    + '<label class="lbl">Photo de la CNI (recto)</label>'
+    + '<input id="vdCni" type="file" accept="image/*" class="inp">'
+    + '<label class="lbl">Sel'+'fie en tenant la CNI</label>'
+    + '<input id="vdSelfie" type="file" accept="image/*" class="inp">'
+    + '<label class="lbl">Ton numero WhatsApp (9 chiffres)</label>'
+    + '<input id="vdWa" type="tel" inputmode="tel" maxlength="12" placeholder="6XX XXX XXX" class="inp">'
+    + '<div id="vdVerifErr" style="color:#ef4444;font-size:12.5px;margin:6px 0"></div>'
+    + '<button class="btn btn-gold" style="width:100%" onclick="vdEnvoyerVerification()">Envoyer ma demande</button>'
+    + '<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">'
+    + '<label class="lbl">J\'ai recu mon code a 7 chiffres</label>'
+    + '<input id="vdCode" type="tel" inputmode="numeric" maxlength="7" placeholder="0000000" class="inp">'
+    + '<button class="btn btn-ghost" style="width:100%;margin-top:6px" onclick="vdConfirmerCode()">Valider mon code</button>'
+    + '</div>'
+  );
+  return true;
+}
+
+function vdEnvoyerVerification(){
+  var me = FB && FB.auth && FB.auth.currentUser;
+  if(!me){ toast("Connecte-toi d'abord."); return false; }
+  var err = document.getElementById("vdVerifErr");
+  var cni = document.getElementById("vdCni"), sf = document.getElementById("vdSelfie");
+  var wa = vdNum9(document.getElementById("vdWa") ? document.getElementById("vdWa").value : "");
+  var fCni = cni && cni.files && cni.files[0], fSf = sf && sf.files && sf.files[0];
+  if(!fCni || !fSf){ if(err) err.textContent = "Ajoute la photo de la CNI ET le selfie."; return false; }
+  if(wa.length !== 9 || wa.charAt(0) !== "6"){ if(err) err.textContent = "Numero WhatsApp invalide (9 chiffres, commence par 6)."; return false; }
+  if(err) err.textContent = "";
+  toast("📤 Envoi des photos…");
+  var urls = {}, faits = 0;
+  function suite(){
+    if(++faits < 2) return;
+    if(!urls.idPhotoUrl || !urls.selfieUrl){ toast("Envoi des photos impossible. Reessaie."); return; }
+    FB.db.ref("verifications/" + me.uid).update({
+      requestedAt: Date.now(),
+      docs: { idPhotoUrl: urls.idPhotoUrl, selfieUrl: urls.selfieUrl },
+      whatsappNumber: wa,
+      type: "person"
+    }).then(function(){
+      FB.db.ref("profiles/" + me.uid).update({ whatsappNumber: wa, verificationRequested: Date.now() }).catch(function(){});
+      closeModal();
+      toast("✅ Demande envoyee. L'equipe te repond par WhatsApp.");
+      var nom = (FB.profile && FB.profile.name) || me.displayName || "Utilisateur";
+      var msg = "Bonjour, je demande la verification de mon profil Shalom Square.\n"
+        + "Nom : " + nom + "\nID : " + me.uid + "\nWhatsApp : " + wa;
+      window.open("https://api.whatsapp.com/send?phone=" + VD_ADMIN_WA + "&text=" + encodeURIComponent(msg), "_blank");
+    }).catch(function(e){
+      toast("Enregistrement refuse : " + ((e && e.message) || "erreur"));
+    });
+  }
+  uploadPhotoCloudinary(fCni, function(u){ urls.idPhotoUrl = u; suite(); });
+  uploadPhotoCloudinary(fSf, function(u){ urls.selfieUrl = u; suite(); });
+  return true;
+}
+
+function vdConfirmerCode(){
+  var me = FB && FB.auth && FB.auth.currentUser;
+  if(!me){ toast("Connecte-toi d'abord."); return false; }
+  var el = document.getElementById("vdCode");
+  var code = el ? String(el.value).replace(/[^0-9]/g, "") : "";
+  if(code.length !== 7){ toast("Le code a 7 chiffres."); return false; }
+  FB.db.ref("verifications/" + me.uid).once("value").then(function(sn){
+    var v = sn.val() || {};
+    if(!v.code){ toast("Aucun code en attente. Fais d'abord une demande."); return; }
+    if(v.codeAt && Date.now() - v.codeAt > 86400000){ toast("Ce code a expire. Redemande une verification."); return; }
+    if(String(v.code) !== code){ toast("Code incorrect."); return; }
+    FB.db.ref("profiles/" + me.uid).update({ verified: true, verifiedAt: Date.now() }).then(function(){
+      FB.db.ref("verifications/" + me.uid).update({ code: null, codeAt: null }).catch(function(){});
+      closeModal();
+      toast("🎉 Profil verifie ! Le badge apparait sur tes annonces.");
+      try{ renderGrid(); }catch(e){}
+    }).catch(function(){ toast("Enregistrement impossible."); });
+  }).catch(function(){ toast("Lecture impossible."); });
+  return true;
+}
+
+/* --- cote ADMIN : le tableau de bord --- */
+function vdDetecterAdmin(){
+  try{
+    var me = FB && FB.auth && FB.auth.currentUser;
+    if(!me){ VD_EST_ADMIN = false; vdBoutonAdmin(); return; }
+    FB.db.ref("admins/" + me.uid).once("value").then(function(sn){
+      VD_EST_ADMIN = (sn.val() === true);
+      vdBoutonAdmin();
+    }).catch(function(){ VD_EST_ADMIN = false; vdBoutonAdmin(); });
+  }catch(e){ VD_EST_ADMIN = false; }
+}
+function vdBoutonAdmin(){
+  try{
+    var b = document.getElementById("vdAdminBtn");
+    if(!VD_EST_ADMIN){ if(b) b.remove(); return false; }
+    if(b) return true;
+    b = document.createElement("button");
+    b.id = "vdAdminBtn"; b.type = "button";
+    b.setAttribute("aria-label", "Tableau de bord administrateur");
+    b.title = "Tableau de bord administrateur";
+    b.textContent = "🛡️ Admin";
+    b.style.cssText = "position:fixed;left:12px;bottom:12px;z-index:9400;padding:9px 14px;border:none;"
+      + "border-radius:12px;background:#f59e0b;color:#1a1200;font-weight:800;font-size:13px;cursor:pointer;"
+      + "box-shadow:0 6px 18px rgba(0,0,0,.35)";
+    b.onclick = vdAdminPanneau;
+    document.body.appendChild(b);
+    return true;
+  }catch(e){ return false; }
+}
+function vdAdminPanneau(){
+  if(!VD_EST_ADMIN){ toast("Reserve a l'administrateur."); return false; }
+  openModal('<button class="iconbtn" onclick="closeModal()" aria-label="Fermer">✕</button>'
+    + '<div class="d-title">🛡️ Demandes de verification</div>'
+    + '<div id="vdAdminListe" class="dim" style="font-size:13px;margin-top:10px">Chargement…</div>');
+  FB.db.ref("verifications").orderByChild("requestedAt").limitToLast(40).once("value").then(function(sn){
+    var items = [];
+    sn.forEach(function(ch){
+      var v = ch.val() || {};
+      if(v.requestedAt && v.docs && v.docs.idPhotoUrl) items.push({ uid: ch.key, v: v });
+    });
+    items.sort(function(a,b){ return (b.v.requestedAt||0) - (a.v.requestedAt||0); });
+    var box = document.getElementById("vdAdminListe");
+    if(!box) return;
+    if(!items.length){ box.innerHTML = "Aucune demande en attente. ✅"; return; }
+    box.innerHTML = items.map(function(it){
+      return '<div style="border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px">'
+        + '<div style="font-weight:800;font-size:13.5px">' + esc(it.v.nom || it.uid.slice(0,10)) + '</div>'
+        + '<div class="dim" style="font-size:12px">WhatsApp : ' + esc(it.v.whatsappNumber || "—") + '</div>'
+        + '<div style="display:flex;gap:8px;margin:8px 0">'
+        + '<a href="' + esc(it.v.docs.idPhotoUrl) + '" target="_blank" rel="noopener" style="flex:1"><img src="' + esc(it.v.docs.idPhotoUrl) + '" alt="CNI" style="width:100%;height:84px;object-fit:cover;border-radius:8px"></a>'
+        + (it.v.docs.selfieUrl ? '<a href="' + esc(it.v.docs.selfieUrl) + '" target="_blank" rel="noopener" style="flex:1"><img src="' + esc(it.v.docs.selfieUrl) + '" alt="Sel'+'fie" style="width:100%;height:84px;object-fit:cover;border-radius:8px"></a>' : "")
+        + '</div>'
+        + '<div style="display:flex;gap:8px">'
+        + '<button class="btn btn-wa btn-sm" style="flex:1" onclick="vdAdminAccepter(\'' + it.uid + '\')">✅ Accepter</button>'
+        + '<button class="btn btn-ghost btn-sm" style="flex:1" onclick="vdAdminRefuser(\'' + it.uid + '\')">❌ Refuser</button>'
+        + '</div></div>';
+    }).join("");
+  }).catch(function(e){
+    var box = document.getElementById("vdAdminListe");
+    if(box) box.innerHTML = "Lecture refusee : " + esc((e && e.message) || "erreur");
+  });
+  return true;
+}
+function vdAdminAccepter(uid){
+  if(!VD_EST_ADMIN || !uid) return false;
+  var code = vdCode7();
+  FB.db.ref("verifications/" + uid).update({ code: code, codeAt: Date.now() }).then(function(){
+    return FB.db.ref("profiles/" + uid).update({ verified: true, verifiedAt: Date.now() });
+  }).then(function(){
+    return FB.db.ref("verifications/" + uid).once("value");
+  }).then(function(sn){
+    var v = sn.val() || {};
+    var wa = vdNum9(v.whatsappNumber);
+    toast("✅ Acceptee. Code : " + code);
+    if(wa.length === 9){
+      var msg = "Bonjour, ta demande de verification Shalom Square a ete acceptee ✅.\n"
+        + "Voici ton code secret a saisir dans l'application : " + code;
+      window.open("https://api.whatsapp.com/send?phone=237" + wa + "&text=" + encodeURIComponent(msg), "_blank");
+    } else toast("Pas de numero WhatsApp : transmets le code " + code + " a la main.");
+    vdAdminPanneau();
+  }).catch(function(e){ toast("Echec : " + ((e && e.message) || "erreur")); });
+  return true;
+}
+function vdAdminRefuser(uid){
+  if(!VD_EST_ADMIN || !uid) return false;
+  if(!confirm("Refuser cette demande ? La personne pourra en refaire une.")) return false;
+  FB.db.ref("verifications/" + uid).update({ requestedAt: null, docs: null, code: null, codeAt: null })
+    .then(function(){ return FB.db.ref("profiles/" + uid).update({ verificationRequested: null }); })
+    .then(function(){ toast("Demande refusee."); vdAdminPanneau(); })
+    .catch(function(e){ toast("Echec : " + ((e && e.message) || "erreur")); });
+  return true;
+}
+/* --- le point d'entree : un bouton pour qui n'est pas encore verifie.
+   Un profil verifie recoit beaucoup plus de reponses : il faut que la
+   demande soit a portee de pouce, pas enfouie dans un menu. --- */
+function vdBoutonVerifier(){
+  try{
+    var me = FB && FB.auth && FB.auth.currentUser;
+    var dejaVerifie = !!(FB && FB.profile && FB.profile.verified);
+    var b = document.getElementById("vdVerifBtn");
+    if(!me || dejaVerifie){ if(b) b.remove(); return false; }
+    if(b) return true;
+    b = document.createElement("button");
+    b.id = "vdVerifBtn"; b.type = "button";
+    b.setAttribute("aria-label", "Faire verifier mon profil");
+    b.title = "Faire verifier mon profil";
+    b.textContent = "✅ Verifier mon profil";
+    b.style.cssText = "position:fixed;left:12px;bottom:" + (VD_EST_ADMIN ? "58px" : "12px") + ";z-index:9390;"
+      + "padding:9px 14px;border:none;border-radius:12px;background:#22c55e;color:#04210f;font-weight:800;"
+      + "font-size:13px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35)";
+    b.onclick = vdOuvrirVerification;
+    document.body.appendChild(b);
+    return true;
+  }catch(e){ return false; }
+}
+try{ window.vdBoutonVerifier = vdBoutonVerifier; }catch(e){}
+try{ document.addEventListener("DOMContentLoaded", function(){ setTimeout(function(){ vdDetecterAdmin(); vdBoutonVerifier(); }, 1500); }); }catch(e){}
+try{ setInterval(function(){ vdDetecterAdmin(); vdBoutonVerifier(); }, 20000); }catch(e){}
+try{
+  window.vdOuvrirVerification=vdOuvrirVerification; window.vdEnvoyerVerification=vdEnvoyerVerification;
+  window.vdConfirmerCode=vdConfirmerCode; window.vdAdminPanneau=vdAdminPanneau;
+  window.vdAdminAccepter=vdAdminAccepter; window.vdAdminRefuser=vdAdminRefuser;
+  window.vdDetecterAdmin=vdDetecterAdmin; window.vdBoutonAdmin=vdBoutonAdmin; window.vdCode7=vdCode7;
+  window.vdNum9=vdNum9;
+}catch(e){}
 </script>
 </body>
 </html>

@@ -781,6 +781,52 @@ function updateTitleBadge(){
 }
 
 /* ---------- rendu de la liste des conversations ---------- */
+/* (correctif maison 20261006b) retrouver le correspondant et son nom */
+function vdPairDuFil(tid){
+  try{
+    var me = FB && FB.auth && FB.auth.currentUser;
+    var parts = String(tid||"").split("__")[0].split("_");
+    for(var i=0;i<parts.length;i++){ if(parts[i] && (!me || parts[i]!==me.uid)) return parts[i]; }
+  }catch(e){}
+  return "";
+}
+var VD_NOMS = {};
+function vdNomDuPair(uid){
+  try{
+    if(!uid) return "";
+    if(typeof PEER_NAMES!=="undefined" && PEER_NAMES.get && PEER_NAMES.get(uid)) return PEER_NAMES.get(uid);
+    if(VD_NOMS[uid]) return VD_NOMS[uid];
+    if(VD_NOMS[uid]===null) return "";
+    VD_NOMS[uid]=null;
+    if(FB && FB.db) FB.db.ref("profiles/"+uid+"/name").once("value").then(function(sn){
+      var n=sn && sn.val();
+      if(n){ VD_NOMS[uid]=String(n).slice(0,40); try{ PEER_NAMES.set(uid,VD_NOMS[uid]); }catch(e){} try{ renderInbox(); }catch(e){} }
+    }).catch(function(){});
+    return "";
+  }catch(e){ return ""; }
+}
+function vdCourt(uid){ return uid ? ("Utilisateur " + String(uid).slice(0,4)) : ""; }
+function vdCarteFil(r){
+  var you=(r.lastFrom&&FB.user&&r.lastFrom===FB.user.uid)?('<span class="you">'+esc(t("you"))+" : </span>"):"";
+  return '<div class="conv'+(CHAT.open&&CHAT.tid===r.tid?" active":"")+'" data-tid="'+esc(r.tid)+'" onclick="openThread(\''+esc(r.tid)+'\')">'
+    +avaHTML(r.peerUid||r.tid,r.name,46)
+    +'<div class="conv-mid"><div class="conv-name">'+esc(r.name)+'</div>'
+    +'<div class="conv-prev">'+you+esc(r.prev)+'</div></div>'
+    +'<div class="conv-right"><span class="conv-time">'+(r.lastAt?dayLabel(r.lastAt):"")+'</span>'
+    +(r.unread>0?'<span class="badge">'+(r.unread>99?"99+":r.unread)+'</span>':"")
+    +'</div></div>';
+}
+/* (correctif maison) vdNomEntete : un morceau d'identifiant n'est
+   pas un nom. On prend le vrai, et a defaut une formule lisible. */
+function vdNomEntete(inbox, peer){
+  try{
+    return (inbox && inbox.peerName)
+      || (typeof PEER_NAMES!=="undefined" && PEER_NAMES.get && PEER_NAMES.get(peer))
+      || vdNomDuPair(peer)
+      || vdCourt(peer)
+      || "Utilisateur";
+  }catch(e){ return "Utilisateur"; }
+}
 function renderInbox(){
   var box=$("convList"); if(!box) return;
   if(!FB.user){
@@ -796,16 +842,19 @@ function renderInbox(){
   function vdFilsDeLaBoutique(tid){ return String(tid).indexOf("__market") !== -1; }
   var vdTousLesFils = Object.keys(INBOX);
   var vdAutres = vdTousLesFils.filter(function(x){ return !vdFilsDeLaBoutique(x); }).length;
-  var arr=vdTousLesFils.filter(vdFilsDeLaBoutique).map(function(tid){
+  var vdLigne=function(tid){
     var th=INBOX[tid]||{};
-    return {tid:tid,name:th.peerName||th.peerUid||"?",prev:th.lastMessage||"",lastAt:Number(th.lastAt)||0,
-            lastFrom:th.lastFrom||"",unread:Number(th.unread)||0,peerUid:th.peerUid||""};
-  }).filter(function(r){
+    var pu=th.peerUid||vdPairDuFil(tid);
+    return {tid:tid,name:th.peerName||vdNomDuPair(pu)||vdCourt(pu)||"Utilisateur",prev:th.lastMessage||"",lastAt:Number(th.lastAt)||0,
+            lastFrom:th.lastFrom||"",unread:Number(th.unread)||0,peerUid:pu,
+            boutique:vdFilsDeLaBoutique(tid)};
+  };
+  var arr=vdTousLesFils.map(vdLigne).filter(function(r){
     if(!q) return true;
     return (r.name+" "+r.prev).toLowerCase().indexOf(q)>=0;
   }).sort(function(a,b){ return b.lastAt-a.lastAt; });
 
-  var vdNoteAutres = vdAutres
+  var vdNoteAutres = 0 && vdAutres
     ? '<a href="./index.html" style="display:block;text-align:center;color:var(--muted);font-size:12px;padding:9px 10px;border-top:1px solid var(--line);text-decoration:none">'
       + (LANG==="fr" ? ("💬 " + vdAutres + " conversation(s) JobMarket → ouvrir l'app")
                      : ("💬 " + vdAutres + " JobMarket conversation(s) → open the app")) + '</a>'
@@ -816,7 +865,20 @@ function renderInbox(){
       +'<a class="btn btn-gold" style="display:block;max-width:230px;margin:0 auto" href="./shalom-square.html">'+t("inbox_empty_go")+'</a></div>';
     return;
   }
+  var vdFamille="";
+  var vdTitre=function(b){
+    return '<div style="padding:7px 12px;font-size:11px;font-weight:800;letter-spacing:.4px;color:var(--muted);'
+      + 'background:rgba(255,255,255,.04);border-top:1px solid var(--line);">'
+      + (b ? (LANG==="fr"?"🛍️ BOUTIQUE":"🛍️ MARKETPLACE") : (LANG==="fr"?"💼 JOBMARKET":"💼 JOBMARKET"))
+      + '</div>';
+  };
   var html=arr.map(function(r){
+    var sep="";
+    var fam = r.boutique ? "b" : "j";
+    if(fam !== vdFamille){ vdFamille = fam; sep = vdTitre(r.boutique); }
+    return sep + vdCarteFil(r);
+  }).join("");
+  var vdInutilise=[].map(function(r){
     var you=(r.lastFrom&&FB.user&&r.lastFrom===FB.user.uid)?('<span class="you">'+esc(t("you"))+" : </span>"):"";
     return '<div class="conv'+(CHAT.open&&CHAT.tid===r.tid?" active":"")+'" data-tid="'+esc(r.tid)+'" onclick="openThread(\''+esc(r.tid)+'\')">'
       +avaHTML(r.peerUid||r.tid,r.name,46)
@@ -843,7 +905,7 @@ function openThread(tid){
   CHAT={open:true,tid:tid,peer:peer,unsub:null,meta:null,listing:LISTING_CACHE.get(tid)||null};
   if(!wasOpen) vdBackPose();
   showThreadPane();
-  $("thName").textContent=inbox.peerName||PEER_NAMES.get(peer)||peer.slice(0,8);
+  $("thName").textContent=vdNomEntete(inbox,peer);
   $("thAva").outerHTML=avaHTML(peer,$("thName").textContent,38).replace('class="ava"','class="ava" id="thAva"');
   renderListingChip();
   var inApp=$("inAppBtn"); if(inApp){ inApp.style.display=""; inApp.title=t("open_in_app"); }
@@ -1049,9 +1111,10 @@ function onThreadMsg(m,key){
 function renderQuickChips(){
   var box=$("quickChips"); if(!box) return;
   if(!CHAT.open){ box.innerHTML=""; return; }
-  box.innerHTML=[t("q_available"),t("q_price"),t("q_ship")].map(function(q){
-    return '<button class="qchip" onclick="quickSend(this)">'+esc(q)+'</button>';
-  }).join("");
+  /* (correctif maison) vdSuggestionsRetirees : elles appelaient
+     sendText(texte) alors que sendText() lit le champ de saisie —
+     elles ne pouvaient pas fonctionner. Retirees a la demande. */
+  box.innerHTML="";
 }
 function quickSend(btn){ sendText(btn.textContent); }
 
@@ -1368,6 +1431,12 @@ renderInbox();
 renderAuth();
 updateTitleBadge();
 </script>
+
+
+
+
+
+
 
 
 
