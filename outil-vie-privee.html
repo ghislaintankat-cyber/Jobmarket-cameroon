@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>JobMarket — Mettre les numéros à l'abri</title>
+<!--
+  POURQUOI CET OUTIL EXISTE, ET POURQUOI IL EST SÉPARÉ DE L'APPLICATION.
+
+  Le code de l'application déplace les numéros et les positions exactes
+  hors du domaine public — mais SEULEMENT pour la personne connectée, à
+  l'ouverture. Deux trous restaient :
+    • une annonce dont le propriétaire ne rouvre jamais l'application
+      garderait son numéro public pour toujours ;
+    • si quelque chose échoue (règles non publiées, réseau), personne
+      n'en sait rien : l'échec est silencieux.
+
+  Cet outil est réservé à l'administrateur. Il voit TOUT ce qui reste
+  exposé, met tout à l'abri en une fois, et DIT ce qui a échoué et
+  pourquoi. Il est dans un fichier à part pour ne pas peser un seul
+  octet sur le chargement de l'application : il ne sert qu'une fois.
+
+  IL NE SUPPRIME JAMAIS UN NUMÉRO AVANT DE L'AVOIR RECOPIÉ ET RELU.
+-->
+<style>
+  :root{--or:#FFD700;--fond:#0e1116;--carte:#171c24;--trait:#262d38;--texte:#e8edf4;--gris:#9aa6b6;--vert:#2ecc71;--rouge:#e5484d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--texte);font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px}
+  .w{max-width:760px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px}
+  .sous{color:var(--gris);font-size:13.5px;margin-bottom:18px}
+  .bloc{background:var(--carte);border:1px solid var(--trait);border-radius:12px;padding:16px;margin:12px 0}
+  label{display:block;font-size:12.5px;color:var(--gris);margin:8px 0 4px}
+  input{width:100%;background:#0a0d12;border:1px solid var(--trait);border-radius:9px;color:var(--texte);padding:11px 13px;font-size:14px}
+  button{background:var(--or);border:0;color:#111;padding:12px 18px;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer;width:100%;margin-top:12px}
+  button.sec{background:transparent;border:1px solid var(--trait);color:var(--texte)}
+  button:disabled{opacity:.5;cursor:default}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+  .k{background:#0a0d12;border:1px solid var(--trait);border-radius:10px;padding:12px;text-align:center}
+  .k b{display:block;font-size:24px}
+  .k span{font-size:11.5px;color:var(--gris)}
+  .ok{color:var(--vert)} .ko{color:var(--rouge)} .at{color:var(--or)}
+  pre{background:#0a0d12;border:1px solid var(--trait);border-radius:9px;padding:11px;font-size:12px;max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+  .danger{background:#2a1010;border-left:4px solid var(--rouge);padding:11px 13px;border-radius:0 8px 8px 0;font-size:13.5px;margin:10px 0}
+  .bon{background:#0f2418;border-left:4px solid var(--vert);padding:11px 13px;border-radius:0 8px 8px 0;font-size:13.5px;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>🔒 Mettre les numéros à l'abri</h1>
+  <div class="sous">Outil d'administration — JobMarket Cameroon &amp; Shalom Square</div>
+
+  <div class="bloc" id="blocLogin">
+    <b>Connexion administrateur</b>
+    <div class="sous" style="margin:6px 0 0">Le même compte que dans l'application. Rien n'est enregistré ici.</div>
+    <label>Adresse e-mail</label>
+    <input id="email" type="email" autocomplete="username">
+    <label>Mot de passe</label>
+    <input id="mdp" type="password" autocomplete="current-password">
+    <button id="btnLogin">Se connecter</button>
+    <div id="msgLogin" class="sous" style="margin-top:10px"></div>
+  </div>
+
+  <div class="bloc" id="blocEtat" style="display:none">
+    <b>Ce qu'un inconnu peut voir en ce moment</b>
+    <div class="kpi">
+      <div class="k"><b id="nJobs" class="at">…</b><span>annonces JobMarket<br>avec numéro public</span></div>
+      <div class="k"><b id="nProfils" class="at">…</b><span>profils<br>avec numéro public</span></div>
+      <div class="k"><b id="nBoutique" class="at">…</b><span>annonces boutique<br>avec numéro public</span></div>
+    </div>
+    <div id="verdict"></div>
+    <button id="btnScan" class="sec">↻ Revérifier</button>
+    <button id="btnMigrer">🔒 Tout mettre à l'abri maintenant</button>
+    <div class="sous" style="margin-top:8px">Aucun numéro n'est supprimé avant d'avoir été recopié <b>et relu</b> à son nouvel emplacement.</div>
+  </div>
+
+  <div class="bloc" id="blocJournal" style="display:none">
+    <b>Journal</b>
+    <pre id="journal"></pre>
+  </div>
+</div>
+
+<script src="./vendor/firebase-app-compat.js"></script>
+<script src="./vendor/firebase-auth-compat.js"></script>
+<script src="./vendor/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+  authDomain: "jobmarketfuture.firebaseapp.com",
+  databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
+  projectId: "jobmarketfuture",
+  storageBucket: "jobmarketfuture.firebasestorage.app",
+  messagingSenderId: "351669024349",
+  appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+});
+var db = firebase.database(), auth = firebase.auth();
+var $ = function (id) { return document.getElementById(id); };
+var LIGNES = [];
+function dire(txt) {
+  LIGNES.push(txt);
+  $("blocJournal").style.display = "";
+  $("journal").textContent = LIGNES.join("\n");
+  $("journal").scrollTop = $("journal").scrollHeight;
+}
+function flou(v) {
+  var n = Number(v);
+  if (!isFinite(n)) return null;
+  return Math.round(100 * n) / 100;
+}
+
+$("btnLogin").onclick = function () {
+  var e = $("email").value.trim(), m = $("mdp").value;
+  if (!e || !m) { $("msgLogin").textContent = "Renseignez les deux champs."; return; }
+  $("btnLogin").disabled = true;
+  $("msgLogin").textContent = "Connexion…";
+  auth.signInWithEmailAndPassword(e, m).then(function (c) {
+    return db.ref("admins/" + c.user.uid).once("value");
+  }).then(function (s) {
+    if (s.val() !== true) {
+      $("msgLogin").innerHTML = '<span class="ko">Ce compte n\'est pas administrateur.</span>';
+      $("btnLogin").disabled = false;
+      return auth.signOut();
+    }
+    $("blocLogin").style.display = "none";
+    $("blocEtat").style.display = "";
+    dire("Connecté comme administrateur.");
+    scanner();
+  }).catch(function (err) {
+    $("msgLogin").innerHTML = '<span class="ko">' + (err && err.message || "Échec") + "</span>";
+    $("btnLogin").disabled = false;
+  });
+};
+
+function compter(racine, champs) {
+  return db.ref(racine).once("value").then(function (s) {
+    var v = s.val() || {}, exposes = [];
+    Object.keys(v).forEach(function (k) {
+      var o = v[k];
+      if (!o || typeof o !== "object") return;
+      var aNum = champs.some(function (c) { return !!o[c]; });
+      var aPos = typeof o.lat === "number" && flou(o.lat) !== o.lat;
+      if (aNum || aPos) exposes.push({ id: k, o: o, aNum: aNum, aPos: aPos });
+    });
+    return { total: Object.keys(v).length, exposes: exposes };
+  }).catch(function (e) {
+    dire("⚠️ lecture impossible de « " + racine + " » : " + (e && e.message));
+    return { total: 0, exposes: [], erreur: true };
+  });
+}
+
+var ETAT = {};
+function scanner() {
+  $("btnScan").disabled = true; $("btnMigrer").disabled = true;
+  $("verdict").innerHTML = "";
+  return Promise.all([
+    compter("jobs", ["phone", "phone2"]),
+    compter("profiles", ["phone", "whatsappNumber"]),
+    compter("market_listings", ["phone"])
+  ]).then(function (r) {
+    ETAT = { jobs: r[0], profiles: r[1], market: r[2] };
+    $("nJobs").textContent = r[0].exposes.length;
+    $("nProfils").textContent = r[1].exposes.length;
+    $("nBoutique").textContent = r[2].exposes.length;
+    var total = r[0].exposes.length + r[1].exposes.length + r[2].exposes.length;
+    [["nJobs", r[0]], ["nProfils", r[1]], ["nBoutique", r[2]]].forEach(function (p) {
+      $(p[0]).className = p[1].exposes.length ? "ko" : "ok";
+    });
+    $("verdict").innerHTML = total
+      ? '<div class="danger"><b>' + total + " élément(s) encore exposés.</b> N'importe qui peut récupérer ces numéros sans compte.</div>"
+      : '<div class="bon"><b>Plus aucun numéro ni position exacte en libre accès.</b> Vous pouvez publier les règles ETAPE7.</div>';
+    dire("Vérification : " + r[0].exposes.length + " annonce(s), " + r[1].exposes.length
+       + " profil(s), " + r[2].exposes.length + " annonce(s) boutique encore exposés.");
+    $("btnScan").disabled = false;
+    $("btnMigrer").disabled = total === 0;
+  });
+}
+$("btnScan").onclick = scanner;
+
+/* On recopie, ON RELIT pour être sûr, et SEULEMENT ensuite on efface
+   l'original. Un numéro effacé sans copie vérifiée serait perdu. */
+function mettreALAbri(racine, racineContact, id, o, champs) {
+  var prive = { user: o.user || o.userId || "" };
+  champs.forEach(function (c) { if (o[c]) prive[c] = String(o[c]); });
+  if (typeof o.lat === "number") prive.lat = o.lat;
+  if (typeof o.lng === "number") prive.lng = o.lng;
+  return db.ref(racineContact + "/" + id).update(prive)
+    .then(function () { return db.ref(racineContact + "/" + id).once("value"); })
+    .then(function (s) {
+      var relu = s.val() || {};
+      var bon = champs.every(function (c) { return !o[c] || relu[c] === String(o[c]); });
+      if (!bon) throw new Error("la copie relue ne correspond pas — rien n'a été effacé");
+      var efface = {};
+      champs.forEach(function (c) { if (o[c]) efface[c] = null; });
+      if (typeof o.lat === "number") efface.lat = flou(o.lat);
+      if (typeof o.lng === "number") efface.lng = flou(o.lng);
+      return db.ref(racine + "/" + id).update(efface);
+    });
+}
+
+$("btnMigrer").onclick = function () {
+  if (!confirm("Mettre à l'abri tous les numéros et positions encore publics ?")) return;
+  $("btnMigrer").disabled = true; $("btnScan").disabled = true;
+  var lots = [
+    ["jobs", "jobs_contact", ETAT.jobs.exposes, ["phone", "phone2"]],
+    ["profiles", "profiles_contact", ETAT.profiles.exposes, ["phone", "whatsappNumber"]],
+    ["market_listings", "market_listings_contact", ETAT.market.exposes, ["phone"]]
+  ];
+  var ok = 0, ko = 0;
+  var chaine = Promise.resolve();
+  lots.forEach(function (l) {
+    l[2].forEach(function (e) {
+      chaine = chaine.then(function () {
+        return mettreALAbri(l[0], l[1], e.id, e.o, l[3]).then(function () {
+          ok++; dire("✅ " + l[0] + "/" + e.id);
+        }).catch(function (err) {
+          ko++;
+          var m = (err && err.message) || String(err);
+          dire("❌ " + l[0] + "/" + e.id + " — " + m);
+          if (/permission|denied/i.test(m))
+            dire("   ↳ droit refusé : publiez d'abord firebase-rules-ETAPE6-CONTACTS.json dans la console Firebase.");
+        });
+      });
+    });
+  });
+  chaine.then(function () {
+    dire("— terminé : " + ok + " mis à l'abri, " + ko + " en échec —");
+    if (ko) dire("Corrigez la cause ci-dessus puis relancez : l'opération peut être répétée sans risque.");
+    return scanner();
+  });
+};
+</script>
+</body>
+</html>
