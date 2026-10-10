@@ -187,7 +187,20 @@ window.__fbcdn = function(k){
   .card.lv .cardbody h3{-webkit-line-clamp:1;font-size:15px}
   .lvdesc{font-size:12px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .price{font-size:15.5px;font-weight:800;color:var(--gold)}
-  .catpill{font-size:10.5px;font-weight:800;background:var(--card2);color:var(--muted);border-radius:999px;padding:2px 9px;align-self:flex-start}
+  /* (20261008h) LES TROIS CLASSES QUI MANQUAIENT.
+   « lbl » et « inp » etaient employees par la fenetre de verification,
+   « btn-primary » par le bouton d'enregistrement de la vitrine. Aucune
+   des trois n'existait dans la feuille de style : les champs se
+   collaient les uns aux autres et le bouton etait blanc sur blanc. */
+.lbl{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin:12px 0 5px}
+.inp{width:100%;background:var(--card);border:1px solid var(--line);border-radius:10px;
+  color:var(--ink);padding:10px 12px;font-size:13.5px;outline:none}
+.inp:focus{border-color:var(--gold)}
+input.inp[type=file]{padding:9px 10px;font-size:12.5px;line-height:1.4}
+.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--goldink);
+  border:none;font-weight:800}
+.btn-primary:hover{filter:brightness(1.06)}
+.catpill{font-size:10.5px;font-weight:800;background:var(--card2);color:var(--muted);border-radius:999px;padding:2px 9px;align-self:flex-start}
   .meta{font-size:12px;color:var(--muted)}
   .seller{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
   .avatar{width:25px;height:25px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--goldink);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex:none}
@@ -518,6 +531,7 @@ window.addEventListener("scroll",function(){
       <button class="pill" id="savedToggle" onclick="toggleSavedOnly()">🤍 <span data-i18n="saved">Favoris</span></button>
       <button class="pill" id="dealsToggle" onclick="toggleDealsOnly()">🔥 <span data-i18n="deals_only">Promos</span></button>
       <button class="pill" id="verToggle" onclick="toggleVerifiedOnly()">✓ <span data-i18n="verified_only">Vérifiés</span></button>
+      <button class="pill" id="livToggle" onclick="vdBasculerLivraison()">🚚 Livraison</button>
       <button class="pill" id="photoToggle" onclick="togglePhotoOnly()">📷 <span data-i18n="photo_only">Avec photo</span></button>
       <button class="pill" id="mineToggle" onclick="toggleMineOnly()">👤 <span data-i18n="my_listings">Mes annonces</span></button>
       <button class="pill" id="viewToggle" onclick="toggleView()">▤ <span data-i18n="view_list">Liste</span></button>
@@ -569,6 +583,7 @@ window.addEventListener("scroll",function(){
 
   <!-- ================= GRID ================= -->
   <div id="vdHorsLigne" style="display:none;margin:8px 12px;padding:9px 13px;border-radius:10px;background:rgba(229,72,77,.14);border:1px solid rgba(229,72,77,.4);color:var(--ink);font-size:12.5px;font-weight:700"></div>
+  <div id="vdNouveautes" onclick="vdVoirNouveautes()" style="display:none;cursor:pointer;margin:8px 12px;padding:9px 13px;border-radius:10px;background:rgba(255,215,0,.13);border:1px solid rgba(255,215,0,.4);color:var(--ink);font-size:12.5px"></div>
   <section class="grid" id="grid"></section>
   <div class="sentinel" id="sentinel"></div>
   <button id="remoteMore" class="btn btn-ghost" style="display:none;margin:12px auto;max-width:360px" onclick="loadMoreRemote()">⏳ <span data-i18n="remote_more">Charger plus d'annonces réelles</span></button>
@@ -1482,7 +1497,7 @@ function addRemoteListing(key,v){
   var l={id:id,remoteKey:key,title:String(v.title).slice(0,90),price:Number(v.price)||0,oldPrice:0,
     category:CATMAP[v.category]?v.category:"autresbiens",city:v.city||"Yaoundé",region:v.region||cityRegion(v.city||"Yaoundé"),
     condition:v.condition||"Neuf",desc:v.desc||"",quartier:v.quartier||v.landmark||null,lat:v.lat||null,lng:v.lng||null,sold:!!v.sold,photo:v.image||null,photos:v.images||[],
-    views:v.views||ri(60,900),createdDaysAgo:days,real:true,sellerUid:v.user||null,foodTag:(v.category==="alimentation")?foodTagOf(v.title||""):null,negotiable:!!v.negotiable,userName:v.userName||"JobMarket",phone:v.phone||"",isPro:!!v.isPro};
+    views:v.views||ri(60,900),createdDaysAgo:days,real:true,sellerUid:v.user||null,foodTag:(v.category==="alimentation")?foodTagOf(v.title||""):null,negotiable:!!v.negotiable,livraison:!!v.livraison,zoneLivraison:String(v.zoneLivraison||"").slice(0,40),userName:v.userName||"JobMarket",phone:v.phone||"",isPro:!!v.isPro};
   /* (correctif maison) vdEstAMoi : une annonce venue du serveur et
      publiee par moi doit etre reconnue comme mienne — sinon on ne
      retrouve jamais ses propres publications. */
@@ -1529,7 +1544,11 @@ function vdPublicationLocale(raison){
     if (raison === "refus") txt += fr ? " La base a refusé l'enregistrement."
                                       : " The database refused the write.";
     toast(txt);
-    if (raison === "auth") setTimeout(function(){ try{ openAuth&&openAuth(); }catch(e){} }, 1200);
+    /* (20261008j) « openAuth » n'existe nulle part : la fonction s'appelle
+       openSignIn. Même protégé par « && », le simple fait de nommer une
+       variable non déclarée lève une ReferenceError — l'écran de connexion
+       ne s'ouvrait donc JAMAIS quand la base refusait faute de compte. */
+    if (raison === "auth") setTimeout(function(){ try{ if(typeof openSignIn === "function") openSignIn(); }catch(e){} }, 1200);
   }catch(e){}
 }
 function publishLiveListing(data,cb){
@@ -2017,6 +2036,7 @@ function computeResults(){
     }
     if(F.quartier && String(l.quartier||"").toLowerCase().indexOf(String(F.quartier).toLowerCase())===-1) return false;
     if(F.photoOnly && !l.photo) return false;
+    if(F.livOnly && !l.livraison) return false;
     if(F.min!=null && l.price<F.min) return false;
     if(F.max!=null && l.price>F.max) return false;
     if(l.sold && !F.mineOnly) return false;
@@ -2656,6 +2676,485 @@ function vdVeillePrivee(){
 }
 try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeillePrivee(); }catch(e){} }); }catch(e){}
 try{ if(document.readyState !== "loading") vdVeillePrivee(); }catch(e){}
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008h) QUATRE PANNES SIGNALÉES, QUATRE CAUSES TROUVÉES
+
+   1. « quand je clique sur Son of God rien n'arrive »
+      openShop() appelle « s.uid » — et « s » N'EXISTE PAS dans cette
+      fonction. C'est un reste de copier-coller depuis renderShops(),
+      ou « s » est le vendeur de la boucle. La ligne n'est evaluee que
+      si le vendeur a un numero a 9 chiffres... c'est-a-dire toujours.
+      Resultat : ReferenceError, et la fiche ne s'ouvre JAMAIS.
+      Bug introduit par mon propre correctif (le bouton WhatsApp
+      remplace par le chat securise).
+
+   2. « la fenetre de verification est illisible »
+      Elle emploie les classes « lbl » et « inp ». Comptees dans la
+      feuille de style : ZERO. Les champs n'avaient donc aucun style
+      et se collaient les uns aux autres.
+
+   3. « le bouton Enregistrer la vitrine est invisible »
+      Classe « btn-primary » : aucun style defini non plus. Texte
+      blanc sur fond blanc.
+
+   4. « j'ai publie une annonce et l'autre ne la voit pas »
+      Les annonces etaient lues UNE SEULE FOIS (.once). Rien
+      n'ecoutait la base. Tant qu'on ne rechargeait pas la page, une
+      annonce publiee ailleurs n'existait pas.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* --- 4. tout le monde voit la meme chose, en direct ---------------- */
+/* Un rendu par annonce recue couterait 250 rendus au demarrage : on
+   attend 350 ms que la rafale passe, puis on redessine une fois. */
+var VD_RENDU_T = null;
+function vdRenduDiffere(){
+  try{
+    if(VD_RENDU_T) clearTimeout(VD_RENDU_T);
+    VD_RENDU_T = setTimeout(function(){
+      VD_RENDU_T = null;
+      try{
+        CACHE.clear(); rebuildSorts(); buildIndex();
+        renderChips(); buildRegionSel(); renderGrid(); renderDeals(); renderShops();
+        var sl = document.getElementById("statListings");
+        if(sl) sl.textContent = LISTINGS.length.toLocaleString("fr-FR");
+      }catch(e){}
+    }, 350);
+    return true;
+  }catch(e){ return false; }
+}
+function vdSyncAnnonces(){
+  try{
+    if(!FB.ready || !FB.db || vdSyncAnnonces._pose) return false;
+    vdSyncAnnonces._pose = true;
+    var r = FB.db.ref("market_listings").limitToLast(250);
+    /* addRemoteListing refuse deja les doublons : poser cette ecoute
+       par-dessus le premier chargement ne cree rien en double. */
+    r.on("child_added", function(ch){
+      try{
+        var avant = LISTINGS.length;
+        addRemoteListing(ch.key, ch.val());
+        try{ var vdV = ch.val() || {}; if(vdV.price) vdRetenirPrix(ch.key, vdV.price); }catch(e){}
+        if(LISTINGS.length !== avant){
+          vdRenduDiffere();
+          if(vdSyncAnnonces._prete) vdNouvelleAnnonce(ch.val());
+        }
+      }catch(e){}
+    }, function(){});
+    r.on("child_changed", function(ch){
+      try{
+        var v = ch.val() || {};
+        var l = BY_ID.get(remoteIdHash(ch.key));
+        if(!l) return;
+        if(v.title) l.title = String(v.title).slice(0, 90);
+        if(typeof v.price === "number"){
+          /* (20261008l) le prix a baissé : l'ancien devient le prix barré */
+          var vdAv = vdBaissePrix(ch.key, v.price);
+          if(vdAv) l.oldPrice = vdAv;
+          l.price = v.price;
+        }
+        l.sold = !!v.sold;
+        if(v.userName) l.userName = String(v.userName).slice(0, 60);
+        if(typeof v.timestamp === "number")
+          l.createdDaysAgo = Math.max(0, Math.floor((Date.now() - v.timestamp) / 86400000));
+        vdRenduDiffere();
+      }catch(e){}
+    }, function(){});
+    r.on("child_removed", function(ch){
+      try{
+        var id = remoteIdHash(ch.key);
+        var l = BY_ID.get(id);
+        if(!l) return;
+        BY_ID.delete(id);
+        var i = LISTINGS.indexOf(l);
+        if(i !== -1) LISTINGS.splice(i, 1);
+        vdRenduDiffere();
+      }catch(e){}
+    }, function(){});
+    /* les annonces deja en base ne sont pas des nouveautes : on
+       n'annonce quelque chose qu'apres la rafale de depart. */
+    setTimeout(function(){ vdSyncAnnonces._prete = true; }, 4000);
+    return true;
+  }catch(e){ return false; }
+}
+function vdNouvelleAnnonce(v){
+  try{
+    if(!v || !v.title) return false;
+    var me = (FB.auth && FB.auth.currentUser) ? FB.auth.currentUser.uid : "";
+    if(me && v.user === me) return false;
+    toast((LANG === "fr" ? "🆕 Nouvelle annonce : " : "🆕 New listing: ") + String(v.title).slice(0, 38));
+    return true;
+  }catch(e){ return false; }
+}
+
+/* --- 5. les notifications mènent quelque part --------------------- */
+/* Elles etaient affichees dans des div SANS aucun gestionnaire : on
+   voyait l'information, on ne pouvait rien en faire. */
+function vdFermerNotifs(){
+  try{
+    var p = document.getElementById("notifPanel");
+    if(p) p.classList.remove("open");
+    return true;
+  }catch(e){ return false; }
+}
+function vdOuvrirNotif(i){
+  try{
+    var n = (typeof PERSIST_NOTIFS !== "undefined") ? PERSIST_NOTIFS[i] : null;
+    if(!n) return false;
+    /* lue : la pastille doit baisser tout de suite */
+    if(!n.read){
+      n.read = true;
+      try{
+        var me = FB.auth && FB.auth.currentUser;
+        if(me && n._key) FB.db.ref("userNotifs/" + me.uid + "/" + n._key + "/read").set(true).catch(function(){});
+      }catch(e){}
+      try{ renderNotifs(); }catch(e){}
+    }
+    var cle = (n.vars && (n.vars.k || n.vars.key || n.vars.listingKey)) || "";
+    if(cle){
+      var l = BY_ID.get(remoteIdHash(cle));
+      if(l){ vdFermerNotifs(); openDetail(l.id); return true; }
+    }
+    if(n.type === "nt_order"){ vdFermerNotifs(); try{ openOrders(); return true; }catch(e){} }
+    if(n.type === "nt_review" || n.type === "nt_views"){
+      vdFermerNotifs();
+      try{ F.mineOnly = true; renderPills(); renderGrid(); scrollToGrid(); return true; }catch(e){}
+    }
+    /* on ne sait pas ou aller : on le DIT, au lieu de ne rien faire */
+    toast(LANG === "fr" ? "Rien de plus à afficher pour cette alerte" : "Nothing more to show for this alert");
+    return false;
+  }catch(e){ return false; }
+}
+
+/* --- 6. ce que l'administrateur décide s'applique tout de suite ---- */
+/* « une action doit pouvoir declencher l'autre » : quand l'equipe
+   valide une verification, la personne concernee doit le voir sans
+   recharger, et son badge doit apparaitre partout. */
+var VD_VERIF_ETAT = null;
+function vdSyncVerification(){
+  try{
+    var me = FB.auth && FB.auth.currentUser;
+    if(!me || !FB.db || vdSyncVerification._pose) return false;
+    vdSyncVerification._pose = true;
+    FB.db.ref("verifications/" + me.uid).on("value", function(sn){
+      try{
+        var v = (sn && sn.val()) || {};
+        var etat = v.status || (v.verified ? "approved" : (v.requestedAt ? "pending" : ""));
+        var avant = VD_VERIF_ETAT;
+        VD_VERIF_ETAT = etat;
+        if(avant !== null && avant !== etat){
+          if(etat === "approved") toast(LANG === "fr" ? "✅ Votre profil est vérifié !" : "✅ Your profile is verified!");
+          else if(etat === "rejected") toast(LANG === "fr" ? "❌ Vérification refusée. Renvoyez des photos nettes." : "❌ Verification refused. Send clearer photos.");
+        }
+      }catch(e){}
+    }, function(){});
+    /* le badge « verifie » du profil, lui aussi, en direct */
+    FB.db.ref("profiles/" + me.uid + "/verified").on("value", function(sn){
+      try{
+        var ok = !!(sn && sn.val());
+        if(FB.profile) FB.profile.verified = ok;
+        CACHE.clear();
+        renderGrid(); renderShops();
+      }catch(e){}
+    }, function(){});
+    return true;
+  }catch(e){ return false; }
+}
+
+function vdVeilleSync(){
+  try{
+    if(window.__vdSync) return false;
+    window.__vdSync = setInterval(function(){
+      try{ vdSyncAnnonces(); }catch(e){}
+      try{ vdSyncVerification(); }catch(e){}
+    }, 2500);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleSync(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState !== "loading") vdVeilleSync(); }catch(e){}
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008i) SE CONNECTER AVEC GOOGLE, PARTOUT, Y COMPRIS AU TELEPHONE
+
+   UN COMPTE GOOGLE N'A PAS DE MOT DE PASSE. Essayer de l'ouvrir avec
+   une adresse et un mot de passe renvoie « auth/invalid-login-credentials »,
+   un message qui laisse croire a une faute de frappe alors que le
+   compte, lui, va tres bien. C'est ce qui s'est passe sur l'outil
+   d'administration.
+
+   SUR TELEPHONE, LA FENETRE SURGISSANTE NE MARCHE PRESQUE JAMAIS.
+   Elle est bloquee par le navigateur, fermee par le systeme, ou
+   simplement interdite dans une application installee. Jusqu'ici les
+   deux applications n'essayaient QUE la fenetre surgissante : sur
+   Android, le bouton Google ne faisait donc souvent rien du tout,
+   sans le moindre message.
+
+   Desormais : redirection directe sur telephone, fenetre sur
+   ordinateur, et repli automatique sur la redirection si elle echoue.
+   Au retour de la redirection, la connexion est reprise toute seule.
+   ═══════════════════════════════════════════════════════════════════ */
+function vdEstMobile(){
+  try{ return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent); }
+  catch(e){ return false; }
+}
+function vdGoogleProvider(){
+  var p = new firebase.auth.GoogleAuthProvider();
+  try{ p.setCustomParameters({ prompt: "select_account" }); }catch(e){}
+  return p;
+}
+function vdErreurAuthLisible(e){
+  var c = (e && e.code) || "";
+  if(/invalid-login-credentials|user-not-found|wrong-password|invalid-credential/.test(c))
+    return (LANG === "fr")
+      ? "Ce compte n a pas de mot de passe, ou il est faux. S il a ete cree avec Google, utilisez le bouton Google."
+      : "This account has no password, or it is wrong. If it was created with Google, use the Google button.";
+  if(/popup-blocked|popup-closed|cancelled-popup/.test(c))
+    return (LANG === "fr") ? "La fenetre Google a ete bloquee. On reessaie autrement." : "Google window blocked. Retrying.";
+  if(/network-request-failed/.test(c))
+    return (LANG === "fr") ? "Pas de reseau. Reessayez." : "No network. Try again.";
+  return (e && e.message) || "Erreur";
+}
+function vdConnexionGoogle(afficherErreur){
+  try{
+    if(!FB.ready){ if(afficherErreur) afficherErreur("Firebase indisponible"); return false; }
+    var prov = vdGoogleProvider();
+    var parRedirection = function(){
+      try{ FB.auth.signInWithRedirect(prov); }
+      catch(e){ if(afficherErreur) afficherErreur(vdErreurAuthLisible(e)); }
+    };
+    if(vdEstMobile()){ parRedirection(); return true; }
+    FB.auth.signInWithPopup(prov).then(function(){
+      try{ closeModal(); }catch(e){}
+    }).catch(function(e){
+      var c = (e && e.code) || "";
+      if(/popup-blocked|popup-closed|cancelled-popup|operation-not-supported|web-storage/.test(c)) return parRedirection();
+      if(afficherErreur) afficherErreur(vdErreurAuthLisible(e));
+    });
+    return true;
+  }catch(e){ return false; }
+}
+/* Au retour de la redirection, la page est rechargee : sans cette
+   reprise, la personne reviendrait sur l ecran de connexion sans
+   comprendre pourquoi rien ne s est passe. */
+function vdReprendreGoogle(){
+  try{
+    if(!FB.ready || vdReprendreGoogle._fait) return false;
+    vdReprendreGoogle._fait = true;
+    FB.auth.getRedirectResult().then(function(r){
+      if(r && r.user){
+        try{ closeModal(); }catch(e){}
+        try{ toast((LANG === "fr" ? "Bienvenue " : "Welcome ") + (r.user.displayName || "")); }catch(e){}
+      }
+    }).catch(function(e){
+      try{ toast(vdErreurAuthLisible(e)); }catch(x){}
+    });
+    return true;
+  }catch(e){ return false; }
+}
+function vdVeilleGoogle(){
+  try{
+    if(window.__vdGoogle) return false;
+    window.__vdGoogle = setInterval(function(){ try{ vdReprendreGoogle(); }catch(e){} }, 2000);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleGoogle(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState !== "loading") vdVeilleGoogle(); }catch(e){}
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008l) CINQ AMELIORATIONS DU MARCHE
+
+   1. LES ANNONCES SIMILAIRES. Quand on ouvre une fiche et qu'elle ne
+      convient pas, la discussion s'arrete la. Partout ailleurs on
+      propose autre chose. Ici : meme categorie, prix voisin, meme
+      ville d'abord.
+   2. LA BAISSE DE PRIX SE VOIT. Le badge « -X% » existait mais n'etait
+      jamais alimente pour les vraies annonces : seules les annonces de
+      demonstration en avaient un. Desormais, quand un vendeur baisse
+      son prix, l'ancien est retenu et la remise s'affiche toute seule.
+   3. « JE LIVRE ». Au Cameroun, la livraison decide de la vente. On
+      pouvait l'ecrire dans la description, donc personne ne pouvait
+      filtrer dessus.
+   4. NEGOCIER EN UN GESTE. La fenetre d'offre demandait de taper un
+      montant. Trois boutons -5, -10, -15 % suffisent dans neuf cas
+      sur dix.
+   5. « DEPUIS VOTRE DERNIERE VISITE ». Revenir sur une place de marche
+      sans savoir ce qui a change, c'est tout reparcourir.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* --- 1. annonces similaires -------------------------------------- */
+function vdBasculerLivraison(){
+  try{ F.livOnly = !F.livOnly; renderPills(); renderGrid(); return F.livOnly; }catch(e){ return false; }
+}
+/* la zone de livraison n'a de sens que si on coche « je peux livrer » */
+function vdVeilleZoneLiv(){
+  try{
+    var c = document.getElementById("vdLivChk"), z = document.getElementById("vdZoneLiv");
+    if(!c || !z) return false;
+    if(!c.getAttribute("data-vdz")){
+      c.setAttribute("data-vdz", "1");
+      c.addEventListener("change", function(){ z.style.display = c.checked ? "" : "none"; });
+    }
+    return true;
+  }catch(e){ return false; }
+}
+function vdSimilaires(l, combien){
+  try{
+    if(!l) return [];
+    var max = combien || 6;
+    var note = function(o){
+      if(o.id === l.id || o.sold) return -1;
+      var n = 0;
+      if(o.category === l.category) n += 50;
+      if(o.city === l.city) n += 25;
+      else if(o.region === l.region) n += 12;
+      var p = Number(l.price) || 0, q = Number(o.price) || 0;
+      if(p > 0 && q > 0){
+        var ecart = Math.abs(q - p) / p;
+        if(ecart <= 0.25) n += 22;
+        else if(ecart <= 0.6) n += 11;
+      }
+      if(o.photo) n += 5;
+      if(o.real) n += 4;
+      return n;
+    };
+    return LISTINGS.map(function(o){ return [o, note(o)]; })
+      .filter(function(x){ return x[1] > 40; })
+      .sort(function(a, b){ return b[1] - a[1]; })
+      .slice(0, max)
+      .map(function(x){ return x[0]; });
+  }catch(e){ return []; }
+}
+function vdBlocSimilaires(l){
+  try{
+    var liste = vdSimilaires(l, 6);
+    if(!liste.length) return "";
+    var cartes = liste.map(function(o){
+      return '<div class="rcard" style="width:auto;cursor:pointer" onclick="openDetail(' + o.id + ')">'
+        + '<div class="rthumb" style="height:72px;font-size:26px;background:' + catGrad(o.category) + '">'
+        + (o.photo ? ('<img src="' + vdImg(o.photo, 400) + '" alt="' + esc(o.title) + '" loading="lazy">') : catIcon(o.category))
+        + '</div><div class="rb"><h5>' + esc(String(o.title).slice(0, 44)) + '</h5>'
+        + '<span class="p">' + fmtXAF(o.price) + '</span>'
+        + '<span class="catpill" style="margin-top:4px">' + esc(o.city) + '</span></div></div>';
+    }).join("");
+    return '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:12px">'
+      + '<div style="font-weight:800;font-size:14px;margin-bottom:9px">'
+      + (LANG === "fr" ? "🔎 Annonces similaires" : "🔎 Similar listings") + '</div>'
+      + '<div class="dealsrow">' + cartes + '</div></div>';
+  }catch(e){ return ""; }
+}
+
+/* --- 2. la baisse de prix se voit ---------------------------------- */
+/* On retient le dernier prix connu de chaque annonce. Quand il baisse,
+   l'ancien devient le prix barre : la remise apparait sans que le
+   vendeur ait a la calculer. */
+function vdPrixConnus(){
+  try{ return JSON.parse(store.getItem("vd_prix") || "{}"); }catch(e){ return {}; }
+}
+function vdRetenirPrix(cle, prix){
+  try{
+    if(!cle || !(Number(prix) > 0)) return false;
+    var o = vdPrixConnus();
+    o[cle] = Number(prix);
+    var k = Object.keys(o);
+    if(k.length > 400) delete o[k[0]];
+    store.setItem("vd_prix", JSON.stringify(o));
+    return true;
+  }catch(e){ return false; }
+}
+function vdBaissePrix(cle, nouveau){
+  try{
+    var o = vdPrixConnus();
+    var avant = Number(o[cle]) || 0;
+    var maintenant = Number(nouveau) || 0;
+    vdRetenirPrix(cle, maintenant);
+    if(!avant || !maintenant) return 0;
+    if(maintenant >= avant) return 0;
+    return avant;
+  }catch(e){ return 0; }
+}
+
+/* --- 3. « je livre » ----------------------------------------------- */
+function vdLivraisonTexte(l){
+  try{
+    if(!l || !l.livraison) return "";
+    var z = String(l.zoneLivraison || "").slice(0, 40);
+    return (LANG === "fr" ? "🚚 Livraison" : "🚚 Delivery") + (z ? (" · " + z) : "");
+  }catch(e){ return ""; }
+}
+
+/* --- 4. negocier en un geste --------------------------------------- */
+function vdOffreRapide(pourcent){
+  try{
+    var champ = document.getElementById("offerAmt");
+    if(!champ) return 0;
+    var base = Number(champ.getAttribute("data-base")) || 0;
+    if(!base) return 0;
+    var v = Math.round(base * (100 - pourcent) / 100 / 500) * 500;
+    if(v < 500) v = 500;
+    champ.value = String(v);
+    var info = document.getElementById("vdOffreInfo");
+    if(info) info.textContent = (LANG === "fr" ? "Soit " : "That is ") + pourcent + " % "
+      + (LANG === "fr" ? "de moins que le prix demandé." : "below the asking price.");
+    return v;
+  }catch(e){ return 0; }
+}
+
+/* --- 5. depuis votre derniere visite -------------------------------- */
+function vdDerniereVisite(){
+  try{ return Number(store.getItem("vd_visite")) || 0; }catch(e){ return 0; }
+}
+function vdMarquerVisite(){
+  try{ store.setItem("vd_visite", String(Date.now())); return true; }catch(e){ return false; }
+}
+function vdDepuisDerniereVisite(){
+  try{
+    var t0 = vdDerniereVisite();
+    if(!t0) return [];
+    return LISTINGS.filter(function(l){
+      if(l.sold || !l.real) return false;
+      var ts = Date.now() - (Number(l.createdDaysAgo) || 0) * 86400000;
+      return ts > t0;
+    });
+  }catch(e){ return []; }
+}
+function vdBandeauNouveautes(){
+  try{
+    var b = document.getElementById("vdNouveautes");
+    if(!b) return 0;
+    var n = vdDepuisDerniereVisite().length;
+    if(!n || vdBandeauNouveautes._vu){ b.style.display = "none"; return 0; }
+    b.style.display = "";
+    b.innerHTML = '<b>' + n + '</b> '
+      + (LANG === "fr"
+         ? (n > 1 ? "nouvelles annonces depuis votre dernière visite" : "nouvelle annonce depuis votre dernière visite")
+         : (n > 1 ? "new listings since your last visit" : "new listing since your last visit"))
+      + ' <span style="text-decoration:underline">' + (LANG === "fr" ? "Voir" : "See") + '</span>';
+    return n;
+  }catch(e){ return 0; }
+}
+function vdVoirNouveautes(){
+  try{
+    vdBandeauNouveautes._vu = true;
+    var b = document.getElementById("vdNouveautes");
+    if(b) b.style.display = "none";
+    F.sort = "newest";
+    var sel = document.getElementById("sortSel");
+    if(sel) sel.value = "newest";
+    renderGrid();
+    try{ scrollToGrid(); }catch(e){}
+    vdMarquerVisite();
+    return true;
+  }catch(e){ return false; }
+}
+function vdVeilleNouveautes(){
+  try{
+    if(window.__vdNouv) return false;
+    window.__vdNouv = setInterval(function(){ try{ vdBandeauNouveautes(); }catch(e){} }, 3000);
+    setTimeout(function(){ try{ vdMarquerVisite(); }catch(e){} }, 45000);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleNouveautes(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState !== "loading") vdVeilleNouveautes(); }catch(e){}
 function cardHTML(l){
   var key=[l.id,LANG,SAVED.has(l.id)?1:0,VIEW,l.negotiable?1:0,vdDistanceCle(l),((l.real&&typeof PRO_SELLERS!=="undefined"&&PRO_SELLERS.has(l.sellerUid))?1:0),(l.mine?(l.views||0):0)].join("|");
   var c=CACHE.get(key); if(c) return c;
@@ -2675,7 +3174,7 @@ function cardHTML(l){
     +(l.negotiable?'<span class="negpill">🤝 '+t("neg_badge")+'</span>':"")
     +((l.real&&PRO_SELLERS.has(l.sellerUid))?'<span class="propill">🏪 '+t("pro_badge")+'</span>':"")
     +(l.mine?'<span class="catpill">👁 '+String(l.views||0).toLocaleString("fr-FR")+'</span>':"")
-    +'<div class="meta">🇨🇲 '+esc(l.city)+(l.quartier?' · 📍 '+esc(l.quartier):'')+' · '+esc(l.region)+(vdDistanceTexte(l)?' · <b>'+esc(vdDistanceTexte(l))+'</b>':'')+'</div>'
+    +'<div class="meta">🇨🇲 '+esc(l.city)+(l.quartier?' · 📍 '+esc(l.quartier):'')+' · '+esc(l.region)+(vdDistanceTexte(l)?' · <b>'+esc(vdDistanceTexte(l))+'</b>':'')+(vdLivraisonTexte(l)?' · <b>'+esc(vdLivraisonTexte(l))+'</b>':'')+'</div>'
     +'<div class="seller"><span class="avatar">'+esc(s.name.charAt(0).toUpperCase())+'</span>'
     +'<span>'+(l.real?'<span class="verified">'+esc(t("real_seller"))+'</span>':'<span class="stars">'+starsOf(s.rating)+'</span> <span class="dim">'+s.rating.toFixed(1)+' ('+s.reviews+')</span>')
     +(s.verified&&!l.real?' <span class="verified">✓</span>':"")+'</span></div>'
@@ -2844,6 +3343,7 @@ function renderPills(){
   d.className="pill"+(F.dealsOnly?" active-deals":""); d.innerHTML="🔥 "+t("deals_only");
   v.className="pill"+(F.verOnly?" active-ver":""); v.innerHTML="✓ "+t("verified_only");
   var po=$("photoToggle"); if(po){ po.className="pill"+(F.photoOnly?" active-deals":""); po.innerHTML="📷 "+t("photo_only"); }
+  var lv=$("livToggle"); if(lv){ lv.className="pill"+(F.livOnly?" active-deals":""); lv.innerHTML="🚚 "+(LANG==="fr"?"Livraison":"Delivery"); }
   m.className="pill"+(F.mineOnly?" active-mine":""); m.innerHTML="👤 "+t("my_listings");
   vt.innerHTML="▤ "+(VIEW==="list"?t("view_grid"):t("view_list"));
   var gp=$("geoToggle"), gr=$("geoRadius");
@@ -3148,10 +3648,10 @@ function avatarPicked(inp){
   rd.readAsDataURL(f);
 }
 function doGoogle(){
-  if(!FB.ready) return;
-  var prov=new firebase.auth.GoogleAuthProvider();
-  FB.auth.signInWithPopup(prov).then(function(){ closeModal(); }).catch(function(e){
-    $("authErr").textContent=(e&&e.message)||"Google sign-in failed";
+  /* (20261008i) sur téléphone la fenêtre surgissante est bloquée :
+     on redirige. Voir vdConnexionGoogle. */
+  return vdConnexionGoogle(function(msg){
+    var z=$("authErr"); if(z) z.textContent=msg;
   });
 }
 
@@ -3290,7 +3790,7 @@ function openDetail(id){
     +'<br><span class="dim" style="font-size:12px">'+(l.real?t("member_since")+" "+(l.sellerSince||2024):t("member_since")+" "+s.since+" · "+t("resp_time")+" "+s.resp)+'</span></div><span class="dim">'+(l.real?"🏪 →":"→")+'</span></div>'
     +(l.real&&l.sellerUid?'<div id="detailReviews" data-uid="'+esc(l.sellerUid)+'"></div>':"")
     +(phoneRow?'<div style="margin-bottom:12px">'+phoneRow+'</div>':"")
-    +vdConseilSecurite()+'<div class="d-actions">'
+    +vdBlocSimilaires(l)+vdConseilSecurite()+'<div class="d-actions">'
     +'<button class="btn btn-gold" onclick="startChat('+id+')">'+t("chat_seller")+'</button>'
     +'<button class="btn btn-blue" onclick="buyNow('+id+')">'+t("buy_now")+'</button>'
     +'<button class="btn btn-ghost" onclick="addToCart('+id+')" title="'+esc(t("cart_add"))+'">🛒 '+t("cart_add")+'</button>'
@@ -3449,7 +3949,7 @@ function openShop(uid,name){
     +'<div style="flex:1;min-width:170px"><div style="font-size:17.5px;font-weight:800">'+esc(name||"JobMarket")+' <span class="catpill" style="vertical-align:middle">🏪 Boutique</span></div>'
     +'<div class="dim" style="font-size:12.5px">'+items.length+' '+t("all_listings")+(first?' · 🇨🇲 '+esc(first.city)+(first.quartier?' ('+esc(first.quartier)+')':''):"")+(op?' · <span class="optag '+op.id+'">'+op.label+'</span>':"")+'</div></div>'
     +(items.length?'<button class="btn btn-ghost btn-sm" onclick="shareShop(\''+esc(uid)+'\')" title="'+esc(t("shop_share"))+'">📤 '+esc(t("shop_share"))+'</button>':"")
-    +(digits.length===9?'<button class="btn btn-wa btn-sm" onclick="vdContactBoutique(\''+(s.uid||"")+'\')">💬 '+t("shop_contact")+'</button>':"")+'</div>'
+    +(digits.length===9?'<button class="btn btn-wa btn-sm" onclick="vdContactBoutique(\''+(uid||"")+'\')">💬 '+t("shop_contact")+'</button>':"")+'</div>'
     +'<div id="shopPro" data-uid="'+esc(uid)+'"></div>'
     +'<div id="detailReviews" data-uid="'+esc(uid)+'"></div>'
     +(cards?'<div class="shopgrid">'+cards+'</div>':'<p class="dim">'+t("shop_empty")+'</p>'), true);
@@ -3587,7 +4087,12 @@ function openOffer(id){
   var real=(l.real&&l.sellerUid);
   openModal('<h2 style="font-size:18px;margin-bottom:4px">'+t("offer_h")+' — '+esc(l.title)+'</h2>'
     +'<p style="font-size:12.5px;color:var(--muted);margin-bottom:13px">'+t("offer_p")+'</p>'
-    +'<div class="field"><label>'+t("your_offer_xaf")+'</label><input id="offerAmt" type="number" min="500" step="500" value="'+Math.round(l.price*0.9/500)*500+'"></div>'
+    +'<div class="field"><label>'+t("your_offer_xaf")+'</label><input id="offerAmt" type="number" min="500" step="500" data-base="'+l.price+'" value="'+Math.round(l.price*0.9/500)*500+'"></div>'
+    +'<div style="display:flex;gap:7px;margin:-6px 0 10px">'
+      +'<button class="btn btn-ghost btn-sm" style="flex:1" onclick="vdOffreRapide(5)">-5 %</button>'
+      +'<button class="btn btn-ghost btn-sm" style="flex:1" onclick="vdOffreRapide(10)">-10 %</button>'
+      +'<button class="btn btn-ghost btn-sm" style="flex:1" onclick="vdOffreRapide(15)">-15 %</button>'
+    +'</div><div id="vdOffreInfo" class="dim" style="font-size:11.5px;margin-bottom:8px"></div>'
     +'<div class="formerr" id="offerErr"></div><div id="offerRes"></div>'
     +'<button class="btn btn-gold btn-block" onclick="sendOffer('+id+')">'+t("send_offer")+'</button>');
 }
@@ -4039,6 +4544,8 @@ function openSell(){
     +'<button type="button" class="btn btn-ghost" style="flex:1;font-size:12px;padding:9px 8px" id="aiPriceBtn" onclick="aiSuggestPrice()">✨ '+t("ai_price")+'</button>'
     +'<button type="button" class="btn btn-ghost" style="flex:1;font-size:12px;padding:9px 8px" id="aiDescBtn" onclick="aiImproveDesc()">✨ '+t("ai_desc")+'</button>'
     +'</div>'
+    +'<label class="checkline"><input type="checkbox" id="vdLivChk"> 🚚 '+(LANG==="fr"?"Je peux livrer":"I can deliver")+'</label>'
+    +'<div class="field" id="vdZoneLiv" style="display:none"><label>'+(LANG==="fr"?"Zone de livraison":"Delivery area")+'</label><input id="vdLivZone" maxlength="40" placeholder="'+(LANG==="fr"?"Ex : Yaoundé centre, Douala":"e.g. Yaounde centre, Douala")+'"></div>'
     +'<label class="checkline"><input type="checkbox" id="negChk"> 🤝 '+t("neg_l")+'</label>'
     +'<p class="mutednote" style="margin-top:7px"><a href="./index.html" style="color:var(--gold)">'+esc(t("jm_switch"))+'</a></p>'
     +'<div class="two"><div class="field"><label>'+t("city")+'</label><select id="sellCity">'
@@ -4127,7 +4634,7 @@ function submitListing(){
   var localId=NEXT_MINE++;
   var mkPhotos=SELL_PHOTOS.slice(0,4);
   function finalizeLocal(){
-    var l={id:localId,remoteKey:null,title:title,price:price,oldPrice:0,negotiable:neg,
+    var l={id:localId,remoteKey:null,title:title,price:price,oldPrice:0,negotiable:neg,livraison:!!($("vdLivChk")&&$("vdLivChk").checked),zoneLivraison:String(($("vdLivZone")&&$("vdLivZone").value)||"").slice(0,40),
       category:cat,city:city,region:cityRegion(city),condition:cond,
       desc:(area?"📍 "+area+". ":"")+(desc||"—"),photo:mkPhotos[0]||null,photos:mkPhotos,views:0,createdDaysAgo:0,
       mine:true,real:false,sellerUid:null,userName:myName||"Moi",phone:phone,isPro:false};
@@ -4137,7 +4644,7 @@ function submitListing(){
   function finalizeLive(key){
     var id=remoteIdHash(key), l=BY_ID.get(id);
     if(!l){ /* sécurité si l'annonce n'a pas encore été fusionnée */
-      l={id:id,remoteKey:key,title:title,price:price,oldPrice:0,negotiable:neg,
+      l={id:id,remoteKey:key,title:title,price:price,oldPrice:0,negotiable:neg,livraison:!!($("vdLivChk")&&$("vdLivChk").checked),zoneLivraison:String(($("vdLivZone")&&$("vdLivZone").value)||"").slice(0,40),
         category:cat,city:city,region:cityRegion(city),condition:cond,
         desc:(area?"📍 "+area+". ":"")+(desc||"—"),photo:null,photos:[],views:0,createdDaysAgo:0,
         mine:false,real:true,sellerUid:FB.user.uid,userName:myName||"JobMarket",phone:phone,isPro:false};
@@ -4163,7 +4670,7 @@ function submitListing(){
   if(FB.ready&&FB.user){
     toast(t("uploading_photos"));
     var data={title:title,price:price,phone:digits,landmark:area,desc:desc,icon:catIcon(cat),color:catColor(cat),
-      category:cat,city:city,region:cityRegion(city),condition:cond,negotiable:neg,
+      category:cat,city:city,region:cityRegion(city),condition:cond,negotiable:neg,livraison:!!($("vdLivChk")&&$("vdLivChk").checked),zoneLivraison:String(($("vdLivZone")&&$("vdLivZone").value)||"").slice(0,40),
       images:[],image:"",lat:(CITY_COORDS[city]||[0,0])[0],lng:(CITY_COORDS[city]||[0,0])[1],user:FB.user.uid,userName:myName||"JobMarket",
       timestamp:Date.now(),country:"Cameroon",currency:"XAF",lang:LANG,kind:"market"};
     if(!mkPhotos.length){
@@ -4352,8 +4859,8 @@ function renderNotifs(){
   var picons={nt_order:"🛒",nt_review:"⭐",nt_views:"👁"};
   var html="";
   if(typeof PERSIST_NOTIFS!=="undefined"){
-    html+=PERSIST_NOTIFS.map(function(n){
-      return '<div class="notif'+(n.read?"":" unread")+'"><span class="ni">'+(picons[n.type]||"🔔")+'</span><div>'+esc(tf(n.type,n.vars||{}))+'<span class="nt">'+agoTxt(n.ts||Date.now())+'</span></div></div>';
+    html+=PERSIST_NOTIFS.map(function(n,vdI){
+      return '<div class="notif'+(n.read?"":" unread")+'" style="cursor:pointer" onclick="vdOuvrirNotif('+vdI+')"><span class="ni">'+(picons[n.type]||"🔔")+'</span><div>'+esc(tf(n.type,n.vars||{}))+'<span class="nt">'+agoTxt(n.ts||Date.now())+'</span></div></div>';
     }).join("");
   }
   html+=NOTIFS.length?NOTIFS.map(function(n){

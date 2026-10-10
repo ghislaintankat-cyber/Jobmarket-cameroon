@@ -54,6 +54,10 @@
   <div class="bloc" id="blocLogin">
     <b>Connexion administrateur</b>
     <div class="sous" style="margin:6px 0 0">Le même compte que dans l'application. Rien n'est enregistré ici.</div>
+    <button id="btnGoogle" class="sec" style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:9px">
+      <span style="font-size:17px">🔵</span> Continuer avec Google
+    </button>
+    <div class="sous" style="text-align:center;margin:10px 0 2px">— ou avec un mot de passe —</div>
     <label>Adresse e-mail</label>
     <input id="email" type="email" autocomplete="username">
     <label>Mot de passe</label>
@@ -109,6 +113,65 @@ function flou(v) {
   return Math.round(100 * n) / 100;
 }
 
+/* UN COMPTE GOOGLE N'A PAS DE MOT DE PASSE.
+   C'est ce qui a fait échouer le premier essai : « auth/invalid-login-credentials »
+   ne veut pas dire « mauvais mot de passe », il veut dire « cette combinaison
+   n'ouvre pas ce compte » — et un compte créé avec Google n'en a aucun.
+
+   SUR TÉLÉPHONE, LA FENÊTRE SURGISSANTE NE MARCHE PRESQUE JAMAIS : elle est
+   bloquée par le navigateur, ou fermée par le système. On passe donc
+   directement par une redirection sur mobile, et on garde la fenêtre sur
+   ordinateur — avec repli sur la redirection si elle échoue. */
+function estMobile() {
+  try { return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent); }
+  catch (e) { return false; }
+}
+function connexionGoogle() {
+  var prov = new firebase.auth.GoogleAuthProvider();
+  try { prov.setCustomParameters({ prompt: "select_account" }); } catch (e) {}
+  var parRedirection = function () {
+    $("msgLogin").textContent = "Ouverture de Google…";
+    try { auth.signInWithRedirect(prov); }
+    catch (e) { $("msgLogin").innerHTML = '<span class="ko">' + (e && e.message || "Échec") + "</span>"; }
+  };
+  if (estMobile()) return parRedirection();
+  auth.signInWithPopup(prov).then(apresConnexion).catch(function (e) {
+    var c = (e && e.code) || "";
+    if (/popup-blocked|popup-closed|cancelled-popup|operation-not-supported|web-storage/.test(c)) return parRedirection();
+    $("msgLogin").innerHTML = '<span class="ko">' + (e && e.message || "Échec") + "</span>";
+  });
+}
+function apresConnexion(c) {
+  var u = (c && c.user) || auth.currentUser;
+  if (!u) return;
+  return db.ref("admins/" + u.uid).once("value").then(function (s) {
+    if (s.val() !== true) {
+      $("msgLogin").innerHTML = '<span class="ko">Ce compte n\'est pas administrateur.</span>';
+      $("btnLogin").disabled = false;
+      return auth.signOut();
+    }
+    $("blocLogin").style.display = "none";
+    $("blocEtat").style.display = "";
+    dire("Connecté comme administrateur (" + (u.email || u.uid.slice(0, 8)) + ").");
+    scanner();
+  });
+}
+$("btnGoogle").onclick = connexionGoogle;
+/* retour de la redirection : on reprend là où on en était */
+try {
+  auth.getRedirectResult().then(function (r) {
+    if (r && r.user) apresConnexion(r);
+  }).catch(function (e) {
+    if (e && e.code) $("msgLogin").innerHTML = '<span class="ko">' + e.message + "</span>";
+  });
+} catch (e) {}
+/* déjà connecté (session gardée par le navigateur) */
+try {
+  auth.onAuthStateChanged(function (u) {
+    if (u && $("blocLogin").style.display !== "none") apresConnexion({ user: u });
+  });
+} catch (e) {}
+
 $("btnLogin").onclick = function () {
   var e = $("email").value.trim(), m = $("mdp").value;
   if (!e || !m) { $("msgLogin").textContent = "Renseignez les deux champs."; return; }
@@ -127,7 +190,11 @@ $("btnLogin").onclick = function () {
     dire("Connecté comme administrateur.");
     scanner();
   }).catch(function (err) {
-    $("msgLogin").innerHTML = '<span class="ko">' + (err && err.message || "Échec") + "</span>";
+    var c = (err && err.code) || "";
+    var m = (err && err.message) || "Échec";
+    if (/invalid-login-credentials|user-not-found|wrong-password|invalid-credential/.test(c))
+      m = "Ce compte n\'a pas de mot de passe, ou il est faux. S\'il a été créé avec Google, utilisez le bouton « Continuer avec Google » ci-dessus.";
+    $("msgLogin").innerHTML = '<span class="ko">' + m + "</span>";
     $("btnLogin").disabled = false;
   });
 };

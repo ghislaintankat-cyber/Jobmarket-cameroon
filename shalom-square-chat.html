@@ -667,6 +667,8 @@ function openSignIn(){
     +'<div class="field"><label>'+t("email")+'</label><input id="inEmail" type="email" autocomplete="email" placeholder="ex. marie@gmail.com"></div>'
     +'<div class="field"><label>'+t("password")+'</label><input id="inPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>'
     +'<div class="formerr" id="authErr"></div>'
+    +'<button class="btn btn-ghost" style="margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="vdConnexionGoogle(function(msg){var z=document.getElementById(&quot;authErr&quot;);if(z)z.textContent=msg;})"><span style="font-size:16px">🔵</span> '+(LANG==="fr"?"Continuer avec Google":"Continue with Google")+'</button>'
+    +'<div style="text-align:center;font-size:11.5px;color:var(--muted);margin-bottom:9px">'+(LANG==="fr"?"— ou avec un mot de passe —":"— or with a password —")+'</div>'
     +'<button class="btn btn-gold" style="margin-bottom:9px" onclick="doAuth(false)">'+t("login_go")+'</button>'
     +'<button class="btn btn-ghost" style="margin-bottom:9px" id="signupBtn" onclick="switchAuthMode(true)">'+t("no_account")+' '+t("signup_go")+'</button>'
     +'<div style="text-align:center"><a href="javascript:void 0" style="font-size:12px" onclick="resetPass()">'+t("forgot")+'</a></div>');
@@ -1951,8 +1953,13 @@ function vdChercherDansFil(txt){
 function vdFilCorrespond(m){
   if(!VD_RECH_FIL) return true;
   try{
-    var q = vdSansAcc(VD_RECH_FIL.toLowerCase());
-    var t2 = vdSansAcc(String(m && m.text || "").toLowerCase());
+    /* (20261008j) la fonction s'appelle vdSansAccents DANS CETTE PAGE :
+       « vdSansAcc » n'existe que dans la page du marché. L'erreur était
+       avalée par le try, donc la recherche ne filtrait simplement rien. */
+    var vdN = (typeof vdSansAccents === "function") ? vdSansAccents
+            : (window.vdSansAcc || function(x){ return String(x||""); });
+    var q = vdN(VD_RECH_FIL.toLowerCase());
+    var t2 = vdN(String(m && m.text || "").toLowerCase());
     return t2.indexOf(q) !== -1;
   }catch(e){ return true; }
 }
@@ -2019,6 +2026,93 @@ function vdInstaller20261008c(){
   }catch(e){}
   return n;
 }
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008i) SE CONNECTER AVEC GOOGLE, PARTOUT, Y COMPRIS AU TELEPHONE
+
+   UN COMPTE GOOGLE N'A PAS DE MOT DE PASSE. Essayer de l'ouvrir avec
+   une adresse et un mot de passe renvoie « auth/invalid-login-credentials »,
+   un message qui laisse croire a une faute de frappe alors que le
+   compte, lui, va tres bien. C'est ce qui s'est passe sur l'outil
+   d'administration.
+
+   SUR TELEPHONE, LA FENETRE SURGISSANTE NE MARCHE PRESQUE JAMAIS.
+   Elle est bloquee par le navigateur, fermee par le systeme, ou
+   simplement interdite dans une application installee. Jusqu'ici les
+   deux applications n'essayaient QUE la fenetre surgissante : sur
+   Android, le bouton Google ne faisait donc souvent rien du tout,
+   sans le moindre message.
+
+   Desormais : redirection directe sur telephone, fenetre sur
+   ordinateur, et repli automatique sur la redirection si elle echoue.
+   Au retour de la redirection, la connexion est reprise toute seule.
+   ═══════════════════════════════════════════════════════════════════ */
+function vdEstMobile(){
+  try{ return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent); }
+  catch(e){ return false; }
+}
+function vdGoogleProvider(){
+  var p = new firebase.auth.GoogleAuthProvider();
+  try{ p.setCustomParameters({ prompt: "select_account" }); }catch(e){}
+  return p;
+}
+function vdErreurAuthLisible(e){
+  var c = (e && e.code) || "";
+  if(/invalid-login-credentials|user-not-found|wrong-password|invalid-credential/.test(c))
+    return (LANG === "fr")
+      ? "Ce compte n a pas de mot de passe, ou il est faux. S il a ete cree avec Google, utilisez le bouton Google."
+      : "This account has no password, or it is wrong. If it was created with Google, use the Google button.";
+  if(/popup-blocked|popup-closed|cancelled-popup/.test(c))
+    return (LANG === "fr") ? "La fenetre Google a ete bloquee. On reessaie autrement." : "Google window blocked. Retrying.";
+  if(/network-request-failed/.test(c))
+    return (LANG === "fr") ? "Pas de reseau. Reessayez." : "No network. Try again.";
+  return (e && e.message) || "Erreur";
+}
+function vdConnexionGoogle(afficherErreur){
+  try{
+    if(!FB.ready){ if(afficherErreur) afficherErreur("Firebase indisponible"); return false; }
+    var prov = vdGoogleProvider();
+    var parRedirection = function(){
+      try{ FB.auth.signInWithRedirect(prov); }
+      catch(e){ if(afficherErreur) afficherErreur(vdErreurAuthLisible(e)); }
+    };
+    if(vdEstMobile()){ parRedirection(); return true; }
+    FB.auth.signInWithPopup(prov).then(function(){
+      try{ closeModal(); }catch(e){}
+    }).catch(function(e){
+      var c = (e && e.code) || "";
+      if(/popup-blocked|popup-closed|cancelled-popup|operation-not-supported|web-storage/.test(c)) return parRedirection();
+      if(afficherErreur) afficherErreur(vdErreurAuthLisible(e));
+    });
+    return true;
+  }catch(e){ return false; }
+}
+/* Au retour de la redirection, la page est rechargee : sans cette
+   reprise, la personne reviendrait sur l ecran de connexion sans
+   comprendre pourquoi rien ne s est passe. */
+function vdReprendreGoogle(){
+  try{
+    if(!FB.ready || vdReprendreGoogle._fait) return false;
+    vdReprendreGoogle._fait = true;
+    FB.auth.getRedirectResult().then(function(r){
+      if(r && r.user){
+        try{ closeModal(); }catch(e){}
+        try{ toast((LANG === "fr" ? "Bienvenue " : "Welcome ") + (r.user.displayName || "")); }catch(e){}
+      }
+    }).catch(function(e){
+      try{ toast(vdErreurAuthLisible(e)); }catch(x){}
+    });
+    return true;
+  }catch(e){ return false; }
+}
+function vdVeilleGoogle(){
+  try{
+    if(window.__vdGoogle) return false;
+    window.__vdGoogle = setInterval(function(){ try{ vdReprendreGoogle(); }catch(e){} }, 2000);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleGoogle(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState !== "loading") vdVeilleGoogle(); }catch(e){}
 function bubbleHTML(m){
   var tm=hhmm(m.ts);
   var inner="";
