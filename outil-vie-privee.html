@@ -75,7 +75,9 @@
     </div>
     <div id="verdict"></div>
     <button id="btnScan" class="sec">↻ Revérifier</button>
+    <button id="btnDroits" class="sec">🔎 Tester mes droits</button>
     <button id="btnMigrer">🔒 Tout mettre à l'abri maintenant</button>
+    <div id="droits" class="sous" style="margin-top:8px"></div>
     <div class="sous" style="margin-top:8px">Aucun numéro n'est supprimé avant d'avoir été recopié <b>et relu</b> à son nouvel emplacement.</div>
   </div>
 
@@ -153,7 +155,8 @@ function apresConnexion(c) {
     $("blocLogin").style.display = "none";
     $("blocEtat").style.display = "";
     dire("Connecté comme administrateur (" + (u.email || u.uid.slice(0, 8)) + ").");
-    scanner();
+    var r = scanner();
+    if (r && r.then) r.then(function () { try { $("btnDroits").onclick(); } catch (e) {} });
   });
 }
 $("btnGoogle").onclick = connexionGoogle;
@@ -243,6 +246,49 @@ function scanner() {
   });
 }
 $("btnScan").onclick = scanner;
+
+/* Avant de migrer, on mesure les droits réels : cela évite de tourner en
+   rond sans savoir quelle étape de règles est vraiment publiée. */
+function testerUnDroit(noeud) {
+  var cle = "_test_" + noeud;
+  var uid = (auth.currentUser && auth.currentUser.uid) || "";
+  return db.ref(noeud + "/" + cle).set({ user: uid, test: true })
+    .then(function () { return db.ref(noeud + "/" + cle).once("value"); })
+    .then(function (s) { return (s && s.val()) ? "OK" : "relu vide"; })
+    .then(function (r) {
+      return db.ref(noeud + "/" + cle).remove().then(function () { return r; },
+                                                     function () { return r; });
+    })
+    .catch(function (e) {
+      var m = (e && e.message) || String(e);
+      return /denied|permission/i.test(m) ? "REFUSE" : "erreur : " + m;
+    });
+}
+$("btnDroits").onclick = function () {
+  if (!auth.currentUser) return;
+  $("btnDroits").disabled = true;
+  $("droits").innerHTML = "Test en cours…";
+  Promise.all([
+    testerUnDroit("jobs_contact"),
+    testerUnDroit("profiles_contact"),
+    testerUnDroit("market_listings_contact")
+  ]).then(function (r) {
+    var txt = "jobs_contact : " + r[0] + " — profiles_contact : " + r[1]
+            + " — market_listings_contact : " + r[2];
+    var tousOk = r.every(function (x) { return x === "OK"; });
+    $("droits").innerHTML = txt;
+    if (tousOk) {
+      dire("✅ droits complets : les règles ETAPE6 (ou mieux) sont publiées. La migration peut aboutir.");
+    } else if (r[0] === "REFUSE" && r[1] === "REFUSE" && r[2] === "REFUSE") {
+      dire("❌ les trois nœuds « contact » sont refusés : les règles ETAPE6 ne sont PAS publiées. "
+         + "Publiez firebase-rules-ETAPE6-CONTACTS.json dans la console Firebase, puis revérifiez.");
+    } else {
+      dire("⚠️ droits partiels (" + txt + "). Republiez firebase-rules-ETAPE6-CONTACTS.json : "
+         + "la version corrigée autorise l'administrateur sur profiles_contact.");
+    }
+    $("btnDroits").disabled = false;
+  });
+};
 
 /* On recopie, ON RELIT pour être sûr, et SEULEMENT ensuite on efface
    l'original. Un numéro effacé sans copie vérifiée serait perdu. */

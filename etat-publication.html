@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>État de la publication — Shalom Square & JobMarket</title>
+<style>
+:root{--bg:#0e1015;--card:#161a22;--line:#252b36;--ink:#e8ecf3;--muted:#8b95a5;
+  --gold:#ffd700;--ok:#16a34a;--ko:#ef4444}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:16px}
+.wrap{max-width:640px;margin:0 auto}
+h1{font-size:19px;margin:4px 0 4px}
+.sous{color:var(--muted);font-size:13px;margin-bottom:16px}
+.bloc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.bloc b{display:block;font-size:14px;margin-bottom:9px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td{padding:5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--muted)}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.ok{color:var(--ok);font-weight:700}
+.ko{color:var(--ko);font-weight:700}
+.at{color:var(--muted)}
+.verdict{border-radius:12px;padding:12px 14px;font-size:14px;font-weight:700;margin-bottom:14px}
+.v-ok{background:rgba(22,163,74,.14);color:var(--ok);border:1px solid rgba(22,163,74,.4)}
+.v-ko{background:rgba(239,68,68,.13);color:var(--ko);border:1px solid rgba(239,68,68,.4)}
+.v-at{background:rgba(255,215,0,.12);color:var(--gold);border:1px solid rgba(255,215,0,.35)}
+button{width:100%;background:linear-gradient(135deg,var(--gold),#e6c200);color:#1a1a00;
+  border:none;border-radius:11px;padding:12px;font-size:15px;font-weight:800;cursor:pointer;margin-top:4px}
+button.sec{background:none;border:1px solid var(--line);color:var(--muted);font-weight:600;margin-top:9px}
+pre{background:#0b0d12;border:1px solid var(--line);border-radius:10px;padding:10px;
+  font-size:12px;color:var(--muted);white-space:pre-wrap;margin:9px 0 0;max-height:230px;overflow:auto}
+.dim{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>État de la publication</h1>
+  <div class="sous">Cette page lit ce que votre site sert <b>en ce moment même</b>, et le compare à ce que l'ordinateur a fabriqué. Elle ne modifie rien.</div>
+
+  <div id="verdict" class="verdict v-at">Vérification en cours…</div>
+
+  <div class="bloc">
+    <b>Version servie</b>
+    <table>
+      <tr><td>app.js</td><td id="vApp">…</td></tr>
+      <tr><td>index.html</td><td id="vHtml">…</td></tr>
+      <tr><td>sw.js (cache)</td><td id="vSw">…</td></tr>
+      <tr><td>attendu</td><td id="vAtt">…</td></tr>
+    </table>
+  </div>
+
+  <div class="bloc">
+    <b>Les fichiers déposés</b>
+    <table id="fichiers"><tr><td colspan="2" class="at">…</td></tr></table>
+  </div>
+
+  <div class="bloc">
+    <b>Numéros visibles par un inconnu</b>
+    <table>
+      <tr><td>Annonces JobMarket</td><td id="cJobs">…</td></tr>
+      <tr><td>Profils</td><td id="cProf">…</td></tr>
+      <tr><td>Annonces boutique</td><td id="cBout">…</td></tr>
+    </table>
+    <div id="aidePrivee" class="dim" style="margin-top:8px"></div>
+  </div>
+
+  <div class="bloc">
+    <b>Règles Firebase</b>
+    <div id="droits" class="dim">Connectez-vous pour tester les droits d'écriture.</div>
+    <button class="sec" id="btnGoogle" style="display:none">🔵 Continuer avec Google (administrateur)</button>
+    <button class="sec" id="btnDroits" style="display:none">🔎 Tester mes droits d'écriture</button>
+  </div>
+
+  <button onclick="tout()">↻ Tout revérifier</button>
+  <pre id="journal"></pre>
+</div>
+
+<script src="./vendor/firebase-app-compat.js"></script>
+<script src="./vendor/firebase-auth-compat.js"></script>
+<script src="./vendor/firebase-database-compat.js"></script>
+<script>
+var ATTENDU = {"build":"20261008p","cache":"v297","taille":{"app.js":702956,"index.html":213645,"sw.js":41938,"chat-widget.js":71228,"manifest.json":2568,"shalom-square.html":283821,"shalom-square-chat.html":160366,"outil-vie-privee.html":16572}};
+var $ = function(i){ return document.getElementById(i); };
+var LIGNES = [];
+function dire(t){ LIGNES.push(t); $("journal").textContent = LIGNES.slice(-60).join("\n"); }
+function verdict(classe, txt){
+  var v = $("verdict");
+  v.className = "verdict " + classe;
+  v.innerHTML = txt;
+}
+function prendre(txt, motif){
+  try{ var m = String(txt).match(motif); return m ? m[1] : "(introuvable)"; }
+  catch(e){ return "(erreur)"; }
+}
+function taille(txt){
+  try{
+    if(txt && txt.byteLength !== undefined) return txt.byteLength;
+    return new Blob([txt]).size;
+  }catch(e){ return String(txt).length; }
+}
+function texteDe(r){
+  if(!r.ok) throw new Error("HTTP " + r.status);
+  return r.text();
+}
+function verifierUnFichier(nom, attendu){
+  return fetch("./" + nom, { cache: "no-store" })
+    .then(texteDe)
+    .then(function(t){
+      var n = taille(t);
+      var bon = (n === attendu);
+      return { nom: nom, n: n, attendu: attendu, bon: bon, txt: t };
+    })
+    .catch(function(e){ return { nom: nom, n: -1, attendu: attendu, bon: false, err: String(e && e.message || e) }; });
+}
+function tout(){
+  LIGNES = []; $("journal").textContent = "";
+  $("vAtt").textContent = ATTENDU.build;
+  $("fichiers").innerHTML = '<tr><td colspan="2" class="at">…</td></tr>';
+  verdict("v-at", "Vérification en cours…");
+  dire("Attendu : " + ATTENDU.build + " (cache " + ATTENDU.cache + ")");
+
+  Promise.all([
+    verifierUnFichier("app.js", ATTENDU.taille["app.js"]),
+    verifierUnFichier("index.html", ATTENDU.taille["index.html"]),
+    verifierUnFichier("sw.js", ATTENDU.taille["sw.js"]),
+    verifierUnFichier("chat-widget.js", ATTENDU.taille["chat-widget.js"]),
+    verifierUnFichier("manifest.json", ATTENDU.taille["manifest.json"]),
+    verifierUnFichier("shalom-square.html", ATTENDU.taille["shalom-square.html"]),
+    verifierUnFichier("shalom-square-chat.html", ATTENDU.taille["shalom-square-chat.html"]),
+    verifierUnFichier("outil-vie-privee.html", ATTENDU.taille["outil-vie-privee.html"])
+  ]).then(function(r){
+    var app = r[0], htm = r[1], sw = r[2];
+    $("vApp").innerHTML = app.txt
+      ? '<span class="' + (prendre(app.txt, /APP_BUILD\s*=\s*"([^"]+)"/) === ATTENDU.build ? "ok" : "ko") + '">'
+        + prendre(app.txt, /APP_BUILD\s*=\s*"([^"]+)"/) + "</span>"
+      : '<span class="ko">illisible</span>';
+    $("vHtml").innerHTML = htm.txt
+      ? '<span class="' + (prendre(htm.txt, /data-app-build="([^"]*)"/) === ATTENDU.build ? "ok" : "ko") + '">'
+        + prendre(htm.txt, /data-app-build="([^"]*)"/) + "</span>"
+      : '<span class="ko">illisible</span>';
+    var cache = sw.txt ? prendre(sw.txt, /CACHE_VERSION\s*=\s*'([^']+)'/) : "?";
+    $("vSw").innerHTML = '<span class="' + (cache === ATTENDU.cache ? "ok" : "ko") + '">' + cache + "</span>";
+
+    var html = "", manquants = 0;
+    r.forEach(function(f){
+      var etat = f.bon ? '<span class="ok">✓ déposé</span>'
+        : (f.n === -1 ? '<span class="ko">introuvable</span>'
+                      : '<span class="ko">ancien</span> (' + f.n + " au lieu de " + f.attendu + ")");
+      if(!f.bon) manquants++;
+      html += "<tr><td>" + f.nom + "</td><td>" + etat + "</td></tr>";
+    });
+    $("fichiers").innerHTML = html;
+
+    var versionsBonnes = app.txt && htm.txt && sw.txt
+      && prendre(app.txt, /APP_BUILD\s*=\s*"([^"]+)"/) === ATTENDU.build
+      && prendre(htm.txt, /data-app-build="([^"]*)"/) === ATTENDU.build
+      && cache === ATTENDU.cache;
+
+    if(versionsBonnes && manquants === 0){
+      verdict("v-ok", "✅ Votre site sert bien la version " + ATTENDU.build + ". Rien à faire de plus de ce côté.");
+      dire("Tout est en place.");
+    } else if(manquants === 8){
+      verdict("v-ko", "❌ Aucun fichier de cette version n'est en ligne. Les 8 fichiers du zip doivent être déposés dans le dépôt.");
+      dire("Aucun fichier à jour : le dépôt n'a pas reçu le pack.");
+    } else {
+      verdict("v-ko", "⚠️ " + manquants + " fichier(s) pas à la bonne version. Le dépôt est à moitié mis à jour — redéposez-les tous.");
+      dire(manquants + " fichier(s) en retard.");
+    }
+    return compter();
+  }).catch(function(e){ verdict("v-ko", "❌ Vérification impossible : " + e.message); dire("Erreur : " + e.message); });
+}
+
+/* ═══ les numéros, lus SANS compte : c'est exactement ce que voit un inconnu ═══ */
+var DB = "https://jobmarketfuture-default-rtdb.firebaseio.com";
+function compterUn(noeud, champs){
+  return fetch(DB + "/" + noeud + ".json").then(function(r){ return r.json(); })
+    .then(function(d){
+      d = d || {};
+      var n = 0, pos = 0, tot = 0;
+      Object.keys(d).forEach(function(k){
+        var o = d[k];
+        if(!o || typeof o !== "object") return;
+        tot++;
+        if(champs.some(function(c){ return !!o[c]; })) n++;
+        if(typeof o.lat === "number" && Math.round(o.lat * 100) / 100 !== o.lat) pos++;
+      });
+      return { n: n, pos: pos, tot: tot };
+    })
+    .catch(function(){ return null; });
+}
+function compter(){
+  return Promise.all([
+    compterUn("jobs", ["phone", "phone2"]),
+    compterUn("profiles", ["phone", "whatsappNumber"]),
+    compterUn("market_listings", ["phone"])
+  ]).then(function(r){
+    var tot = 0;
+    [["cJobs", r[0]], ["cProf", r[1]], ["cBout", r[2]]].forEach(function(p){
+      var v = p[1];
+      if(!v){ $(p[0]).innerHTML = '<span class="at">illisible</span>'; return; }
+      tot += v.n;
+      $(p[0]).innerHTML = v.n
+        ? '<span class="ko">' + v.n + " / " + v.tot + "</span>"
+        : '<span class="ok">0 / ' + v.tot + "</span>";
+    });
+    $("aidePrivee").innerHTML = tot
+      ? "Il reste <b>" + tot + "</b> numéro(s) lisibles par n'importe qui sans compte. Publiez les règles ETAPE6, puis ouvrez « outil-vie-privee.html » et mettez tout à l'abri."
+      : "Plus aucun numéro en clair. <b>Vous pouvez publier les règles ETAPE7.</b>";
+    dire("Numéros publics : " + tot);
+  });
+}
+
+/* ═══ les droits d'écriture, seulement si on est administrateur ═══ */
+var auth = null, base = null;
+try{
+  firebase.initializeApp({
+    apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
+    authDomain: "jobmarketfuture.firebaseapp.com",
+    databaseURL: DB,
+    projectId: "jobmarketfuture",
+    storageBucket: "jobmarketfuture.firebasestorage.app",
+    messagingSenderId: "351669024349",
+    appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
+  });
+  auth = firebase.auth(); base = firebase.database();
+}catch(e){}
+function testerUnDroit(noeud){
+  var cle = "_test_" + noeud;
+  var uid = (auth.currentUser && auth.currentUser.uid) || "";
+  return base.ref(noeud + "/" + cle).set({ user: uid, test: true })
+    .then(function(){ return base.ref(noeud + "/" + cle).once("value"); })
+    .then(function(s){ return (s && s.val()) ? "OK" : "relu vide"; })
+    .then(function(r){ return base.ref(noeud + "/" + cle).remove().then(function(){ return r; }, function(){ return r; }); })
+    .catch(function(e){
+      var m = (e && e.message) || String(e);
+      return /denied|permission/i.test(m) ? "REFUSÉ" : "erreur : " + m;
+    });
+}
+$("btnDroits").onclick = function(){
+  $("btnDroits").disabled = true;
+  $("droits").textContent = "Test en cours…";
+  Promise.all([
+    testerUnDroit("jobs_contact"),
+    testerUnDroit("profiles_contact"),
+    testerUnDroit("market_listings_contact")
+  ]).then(function(r){
+    var txt = "jobs_contact : " + r[0] + " — profiles_contact : " + r[1] + " — market_listings_contact : " + r[2];
+    $("droits").innerHTML = txt;
+    if(r.every(function(x){ return x === "OK"; }))
+      dire("✅ Droits complets : l'ETAPE6 est publiée. La mise à l'abri peut aboutir.");
+    else if(r.every(function(x){ return x === "REFUSÉ"; }))
+      dire("❌ Les trois nœuds sont refusés : l'ETAPE6 n'est PAS publiée. Publiez-la dans la console Firebase.");
+    else
+      dire("⚠️ Droits partiels. Republiez firebase-rules-ETAPE6-CONTACTS.json (version corrigée, admin inclus).");
+    $("btnDroits").disabled = false;
+  });
+};
+$("btnGoogle").onclick = function(){
+  var prov = new firebase.auth.GoogleAuthProvider();
+  prov.setCustomParameters({ prompt: "select_account" });
+  var ok = function(c){
+    var u = (c && c.user) || (auth && auth.currentUser);
+    if(!u) return;
+    base.ref("admins/" + u.uid).once("value").then(function(s){
+      if(s.val() !== true){ $("droits").textContent = "Ce compte n'est pas administrateur."; return auth.signOut(); }
+      $("btnDroits").style.display = "";
+      $("droits").textContent = "Connecté comme administrateur. Lancez le test des droits.";
+      dire("Connecté (" + (u.email || u.uid.slice(0, 8)) + ").");
+    });
+  };
+  if(/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)) auth.signInWithRedirect(prov);
+  else auth.signInWithPopup(prov).then(ok).catch(function(e){ $("droits").textContent = e.message; });
+};
+try{
+  auth.onAuthStateChanged(function(u){
+    if(u){
+      $("btnGoogle").style.display = "none";
+      base.ref("admins/" + u.uid).once("value").then(function(s){
+        if(s.val() === true){ $("btnDroits").style.display = ""; $("droits").textContent = "Connecté comme administrateur."; }
+      });
+    } else {
+      $("btnGoogle").style.display = "";
+    }
+  });
+  auth.getRedirectResult().then(function(r){ if(r && r.user) $("btnDroits").style.display = ""; }).catch(function(){});
+}catch(e){}
+
+tout();
+</script>
+</body>
+</html>

@@ -2161,6 +2161,305 @@ function bubbleHTML(m){
   return '<div class="bubble '+(m.who==="me"?"me":"them")+'" data-mk="'+esc(m.key||"")+'">'+inner
     +'<span class="msgtime">'+tm+(m.who==="me"?" ✓":"")+'</span></div>';
 }
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008o) QUATRE OUTILS DE LA MESSAGERIE
+
+   Aucun de ces quatre outils n'ecrit un seul nouveau champ dans la
+   base : a chaque nouvel champ il faudrait republier les regles, et
+   elles ne sont pas encore passees. Ils vivent donc du cote telephone.
+
+   1. LA PREUVE D'ACHAT. Un litige se regle avec des ecrits. On pouvait
+      faire des captures d'ecran pendant dix minutes ; on sort un seul
+      fichier date, avec l'annonce, les deux noms et tout le fil.
+   2. LIRE A VOIX HAUTE. Tout le monde n'est pas a l'aise avec l'ecrit,
+      et personne ne lit un message en conduisant. Le telephone sait
+      parler : autant s'en servir.
+   3. « REPONDRE PLUS TARD ». Un message arrive au milieu de quelque
+      chose. On le marque, le telephone rappelle. Sans ça, il tombe
+      dans l'oubli et le vendeur passe pour quelqu'un qui ignore.
+   4. ECONOMIE DE DONNEES. Une photo de discussion, c'est du forfait.
+      En mode econome, les photos attendent qu'on appuie dessus.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Lecture et ecriture locales. Elles portent le meme nom que sur la page
+   du marche : ce sont deux pages differentes, il n'y a pas de collision. */
+function vdLire(cle, defaut){
+  try{ var v = store.getItem("vd_" + cle); return (v === null || v === undefined) ? defaut : JSON.parse(v); }
+  catch(e){ return defaut; }
+}
+function vdEcrire(cle, val){
+  try{ store.setItem("vd_" + cle, JSON.stringify(val)); return true; }catch(e){ return false; }
+}
+
+/* --- 1. la preuve d'achat ----------------------------------------- */
+function vdTextePreuve(){
+  try{
+    var tid = CHAT.tid || "", arr = threadMsgs(tid) || [], i;
+    var fr = (LANG === "fr");
+    var annonce = (CHAT.listing && CHAT.listing.title) ? CHAT.listing.title : "";
+    var lignes = [];
+    lignes.push(fr ? "PREUVE DE CONVERSATION — SHALOM SQUARE" : "CONVERSATION RECORD — SHALOM SQUARE");
+    lignes.push(fr ? "Sortie le : " : "Exported on : " + "");
+    lignes[1] = (fr ? "Sortie le : " : "Exported on : ") + new Date().toLocaleString("fr-FR");
+    lignes.push(fr ? "Conversation : " : "Thread : " + "");
+    lignes[2] = (fr ? "Conversation : " : "Thread : ") + tid;
+    if(annonce) lignes.push((fr ? "Annonce : " : "Listing : ") + annonce);
+    lignes.push("");
+    var dernierJour = "";
+    for(i = 0; i < arr.length; i++){
+      var m = arr[i] || {};
+      var j = (typeof dayLabel === "function") ? dayLabel(m) : (m.date || "");
+      if(j && j !== dernierJour){ lignes.push("-- " + j + " --"); dernierJour = j; }
+      var qui = (m.who === "me")
+        ? (fr ? "Moi" : "Me")
+        : (vdNomDuPair ? vdNomDuPair() : (fr ? "L'autre" : "Them"));
+      var quand = (m.time || (typeof hhmm === "function" ? hhmm(m.ts || m.timestamp) : ""));
+      var corps = m.text || "";
+      if(m.quote) corps = (fr ? "[devis] " : "[quote] ") + (m.quote.title || "") + " " + (m.quote.price || "");
+      if(m.imageUrl) corps = corps || (fr ? "[photo]" : "[photo]");
+      if(m.audioUrl) corps = corps || (fr ? "[vocal]" : "[voice]");
+      lignes.push("[" + (quand || "") + "] " + qui + " : " + corps);
+    }
+    lignes.push("");
+    lignes.push(fr
+      ? "Document genere depuis l'application. Il ne remplace pas une facture."
+      : "Generated from the app. This is not an invoice.");
+    return lignes.join(String.fromCharCode(10));
+  }catch(e){ return ""; }
+}
+function vdChatPreuve(){
+  try{
+    var txt = vdTextePreuve();
+    if(!txt){ toast(LANG === "fr" ? "Rien a exporter" : "Nothing to export"); return false; }
+    var nom = "shalom-conversation-" + new Date().toISOString().slice(0, 10) + ".txt";
+    try{
+      var blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = nom;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ try{ document.body.removeChild(a); URL.revokeObjectURL(url); }catch(e){} }, 1500);
+      toast(LANG === "fr" ? "Conversation enregistree" : "Conversation saved");
+      return true;
+    }catch(e){
+      /* pas de telechargement possible : on montre le texte, copiable */
+      if(window.prompt){ window.prompt(LANG === "fr" ? "Copiez cette preuve :" : "Copy this record:", txt); return true; }
+      return false;
+    }
+  }catch(e){ return false; }
+}
+
+/* --- 2. lire a voix haute ----------------------------------------- */
+var VD_LECTURE = { on: false, i: 0, file: [] };
+function vdVoixDispoChat(){
+  try{ return !!(window.speechSynthesis && window.SpeechSynthesisUtterance); }catch(e){ return false; }
+}
+function vdArreterLecture(){
+  try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+  VD_LECTURE.on = false; VD_LECTURE.i = 0; VD_LECTURE.file = [];
+  return true;
+}
+function vdLireLaSuite(){
+  try{
+    if(!VD_LECTURE.on) return false;
+    if(VD_LECTURE.i >= VD_LECTURE.file.length){ vdArreterLecture(); return false; }
+    var morceau = VD_LECTURE.file[VD_LECTURE.i];
+    VD_LECTURE.i++;
+    var u = new SpeechSynthesisUtterance(morceau);
+    u.lang = (LANG === "en") ? "en-US" : "fr-FR";
+    u.rate = 1;
+    u.onend = function(){ try{ vdLireLaSuite(); }catch(e){} };
+    u.onerror = function(){ try{ vdArreterLecture(); }catch(e){} };
+    window.speechSynthesis.speak(u);
+    return true;
+  }catch(e){ vdArreterLecture(); return false; }
+}
+function vdChatLire(){
+  try{
+    if(!vdVoixDispoChat()){ toast(LANG === "fr" ? "Ce navigateur ne sait pas lire" : "This browser cannot read aloud"); return false; }
+    if(VD_LECTURE.on){ vdArreterLecture(); toast(LANG === "fr" ? "Lecture arretee" : "Stopped"); return true; }
+    var arr = (threadMsgs(CHAT.tid) || []).slice(-12);
+    if(!arr.length){ toast(LANG === "fr" ? "Rien a lire" : "Nothing to read"); return false; }
+    var fr = (LANG === "fr");
+    var file = [];
+    arr.forEach(function(m){
+      var qui = (m.who === "me") ? (fr ? "Moi" : "Me") : (vdNomDuPair ? vdNomDuPair() : (fr ? "L'autre" : "Them"));
+      var corps = m.text || (m.quote ? (m.quote.title || "") : (m.imageUrl ? (fr ? "photo" : "photo") : (m.audioUrl ? (fr ? "message vocal" : "voice message") : "")));
+      if(corps) file.push(qui + " : " + corps);
+    });
+    if(!file.length){ toast(LANG === "fr" ? "Rien a lire" : "Nothing to read"); return false; }
+    VD_LECTURE = { on: true, i: 0, file: file };
+    vdArreterLecture._garde = false;
+    window.speechSynthesis.cancel();
+    VD_LECTURE = { on: true, i: 0, file: file };
+    vdLireLaSuite();
+    toast(fr ? "Lecture en cours" : "Reading aloud");
+    return true;
+  }catch(e){ return false; }
+}
+
+/* --- 3. « repondre plus tard » ------------------------------------ */
+function vdRappels(){ return vdLire("rappels", {}); }
+function vdRappelPose(minutes){
+  try{
+    var tid = CHAT.tid;
+    if(!tid) return false;
+    var r = vdRappels();
+    if(r[tid]){ delete r[tid]; toast(LANG === "fr" ? "Rappel retire" : "Reminder removed"); }
+    else { r[tid] = Date.now() + (Number(minutes) || 60) * 60000; toast(LANG === "fr" ? ("Rappel dans " + minutes + " min") : ("Reminder in " + minutes + " min")); }
+    vdEcrire("rappels", r);
+    vdRenduRappels();
+    return true;
+  }catch(e){ return false; }
+}
+function vdRenduRappels(){
+  try{
+    var r = vdRappels(), n = Object.keys(r).length;
+    var b = document.getElementById("vdRappelBadge");
+    if(b){ b.textContent = n ? String(n) : ""; b.style.display = n ? "" : "none"; }
+    return n;
+  }catch(e){ return 0; }
+}
+function vdVeilleRappels(){
+  try{
+    if(window.__vdRappels) return false;
+    window.__vdRappels = setInterval(function(){
+      try{
+        var r = vdRappels(), now = Date.now(), change = false;
+        Object.keys(r).forEach(function(tid){
+          if(r[tid] <= now){
+            delete r[tid]; change = true;
+            toast(LANG === "fr" ? "Rappel : un message attend votre reponse" : "Reminder: a message is waiting for your reply");
+            try{ if(navigator.vibrate) navigator.vibrate([180, 90, 180]); }catch(e){}
+            try{
+              if(typeof vdNotifMessage === "function") vdNotifMessage(
+                LANG === "fr" ? "Repondre" : "Reply",
+                LANG === "fr" ? "Un message attend votre reponse." : "A message is waiting for your reply.");
+            }catch(e){}
+          }
+        });
+        if(change) vdEcrire("rappels", r);
+        vdRenduRappels();
+      }catch(e){}
+    }, 30000);
+    vdRenduRappels();
+    return true;
+  }catch(e){ return false; }
+}
+
+/* --- 4. economie de donnees --------------------------------------- */
+var VD_PIXEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+function vdDonneesActives(){ return vdLire("donnees", false); }
+function vdDonneesChat(){
+  try{
+    vdEcrire("donnees", !vdDonneesActives());
+    toast(vdDonneesActives()
+      ? (LANG === "fr" ? "Photos chargees a la demande" : "Photos load on tap")
+      : (LANG === "fr" ? "Photos chargees automatiquement" : "Photos load automatically"));
+    if(typeof renderThread === "function") renderThread();
+    return vdDonneesActives();
+  }catch(e){ return false; }
+}
+/* On ne touche PAS a la fabrication des bulles : on reprend juste ce
+   qui est deja affiche et on met les photos en attente. */
+function vdDonneesAppliquer(){
+  try{
+    var box = document.getElementById("bubbles");
+    if(!box) return 0;
+    var imgs = box.querySelectorAll ? box.querySelectorAll("img[data-src], img") : [];
+    var n = 0;
+    for(var i = 0; i < imgs.length; i++){
+      var im = imgs[i];
+      if(vdDonneesActives()){
+        if(!im.getAttribute("data-src")){
+          im.setAttribute("data-src", im.getAttribute("src") || "");
+          im.setAttribute("src", VD_PIXEL);
+          im.setAttribute("data-attente", "1");
+          im.title = (LANG === "fr") ? "Appuyez pour charger la photo" : "Tap to load the photo";
+          n++;
+        }
+      } else if(im.getAttribute("data-src")){
+        im.setAttribute("src", im.getAttribute("data-src"));
+        im.removeAttribute("data-src");
+        im.removeAttribute("data-attente");
+        n++;
+      }
+    }
+    return n;
+  }catch(e){ return 0; }
+}
+try{
+  document.addEventListener("click", function(e){
+    var c = e.target;
+    if(!c || c.tagName !== "IMG") return;
+    var src = c.getAttribute && c.getAttribute("data-src");
+    if(!src) return;
+    c.setAttribute("src", src);
+    c.removeAttribute("data-src");
+    c.removeAttribute("data-attente");
+  });
+}catch(e){}
+
+/* --- la barre d'outils, posee une seule fois ---------------------- */
+function vdOutilsChat(){
+  try{
+    if(window.__vdOutils) return false;
+    var tete = document.querySelector(".thread-head");
+    if(!tete) return false;
+    window.__vdOutils = true;
+    var fr = (LANG === "fr");
+    var faire = function(icone, titre, action){
+      var b = document.createElement("button");
+      b.className = "hbtn";
+      b.type = "button";
+      b.textContent = icone;
+      b.title = titre;
+      b.setAttribute("aria-label", titre);
+      b.addEventListener("click", action);
+      tete.appendChild(b);
+      return b;
+    };
+    faire("📄", fr ? "Enregistrer la conversation (preuve)" : "Save conversation (record)", function(){ vdChatPreuve(); });
+    faire("🔊", fr ? "Lire la conversation a voix haute" : "Read the conversation aloud", function(){ vdChatLire(); });
+    faire("⏰", fr ? "Me rappeler de repondre (1 h)" : "Remind me to reply (1 h)", function(){ vdRappelPose(60); });
+    faire("🪶", fr ? "Economie de donnees : photos a la demande" : "Data saving: photos on tap", function(){ vdDonneesChat(); });
+    var badge = document.createElement("span");
+    badge.id = "vdRappelBadge";
+    badge.style.cssText = "display:none;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--gold);color:#000;font-size:10px;font-weight:800;line-height:16px;text-align:center";
+    tete.appendChild(badge);
+    return true;
+  }catch(e){ return false; }
+}
+/* Les photos mises en attente doivent l'etre a chaque rendu. */
+try{
+  var _renderThreadO = renderThread;
+  renderThread = function(){
+    var r = _renderThreadO.apply(this, arguments);
+    try{ vdDonneesAppliquer(); vdRenduRappels(); }catch(e){}
+    return r;
+  };
+}catch(e){}
+
+function vdVeilleChatO(){
+  try{
+    if(window.__vdO) return false;
+    window.__vdO = true;
+    vdOutilsChat();
+    vdVeilleRappels();
+    setTimeout(function(){ try{ vdOutilsChat(); vdDonneesAppliquer(); }catch(e){} }, 1200);
+    return true;
+  }catch(e){ return false; }
+}
+try{ document.addEventListener("DOMContentLoaded", function(){ try{ vdVeilleChatO(); }catch(e){} }); }catch(e){}
+try{ if(document.readyState !== "loading") vdVeilleChatO(); }catch(e){}
+/* On arrete la lecture si on quitte la conversation. */
+try{
+  var _closeThreadUIO = closeThreadUI;
+  closeThreadUI = function(){
+    try{ vdArreterLecture(); }catch(e){}
+    return _closeThreadUIO.apply(this, arguments);
+  };
+}catch(e){}
 function renderThread(){
   var box=$("bubbles"); if(!box) return;
   if(!CHAT.open){ box.innerHTML=""; return; }

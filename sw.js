@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v293'; // 20261008l : similaires, baisse de prix, je livre, offres rapides, nouveautes
+const CACHE_VERSION = 'v297'; // 20261008p : page de diagnostic « etat-publication.html »
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
