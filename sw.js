@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v298'; // 20261008q : recherche vocale retiree, plus aucun element ne secrase
+const CACHE_VERSION = 'v300'; // 20261008s : boutons assez grands pour un doigt (31 px -> 40/44 px)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des

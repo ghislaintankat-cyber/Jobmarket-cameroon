@@ -239,6 +239,22 @@ input.inp[type=file]{padding:9px 10px;font-size:12.5px;line-height:1.4}
   flex-wrap:wrap;pointer-events:none}
 .badges .badge{position:static;top:auto;left:auto;right:auto}
 .badges .badge.b-sold{margin-left:auto}
+/* (20261008s) DES BOUTONS QU'ON ARRIVE VRAIMENT A VISER.
+   Sept boutons étaient sous 44 px, la taille que recommandent Apple et
+   Google pour un doigt. Le pire : le cœur des favoris, 31 px — un geste
+   qu'on fait souvent, sur un téléphone d'entrée de gamme, souvent en
+   marchant.
+   On ne change PAS l'apparence : une zone transparente porte le clic
+   jusqu'à 40 px de large et 44 px de haut. La largeur reste à 40 pour
+   ne pas empiéter sur le bouton voisin (l'écart est de 8 à 10 px) ;
+   la hauteur, elle, ne coûte rien. */
+@media (pointer:coarse){
+  .iconbtn,.backbtn,.ibtn{position:relative}
+  .heart::after,.iconbtn::after,.backbtn::after,.ibtn::after{
+    content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:100%;height:100%;min-width:40px;min-height:44px
+  }
+}
 .catpill{font-size:10.5px;font-weight:800;background:var(--card2);color:var(--muted);border-radius:999px;padding:2px 9px;align-self:flex-start}
   .meta{font-size:12px;color:var(--muted)}
   .seller{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
