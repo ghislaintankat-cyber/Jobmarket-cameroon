@@ -314,11 +314,27 @@ function mettreALAbri(racine, racineContact, id, o, champs) {
 $("btnMigrer").onclick = function () {
   if (!confirm("Mettre à l'abri tous les numéros et positions encore publics ?")) return;
   $("btnMigrer").disabled = true; $("btnScan").disabled = true;
+  var relacher = function () { $("btnMigrer").disabled = false; $("btnScan").disabled = false; };
+  /* (20261008t) LA PANNE SILENCIEUSE.
+     Si l'état n'était pas chargé (scan pas encore fini, ou page ouverte
+     directement sur ce bouton), « ETAT.jobs.exposes » levait une erreur
+     DANS le gestionnaire de clic : rien dans le journal, boutons
+     désactivés, et on croyait que le travail avait été fait. C'est
+     exactement ce qui rendait la situation indiagnosable. */
+  if (!ETAT || !ETAT.jobs || !ETAT.jobs.exposes || !ETAT.profiles || !ETAT.profiles.exposes
+      || !ETAT.market || !ETAT.market.exposes) {
+    dire("⚠️ l'état n'est pas chargé — je revérifie d'abord, puis relancez.");
+    Promise.resolve(scanner()).then(relacher, relacher);
+    return;
+  }
   var lots = [
     ["jobs", "jobs_contact", ETAT.jobs.exposes, ["phone", "phone2"]],
     ["profiles", "profiles_contact", ETAT.profiles.exposes, ["phone", "whatsappNumber"]],
     ["market_listings", "market_listings_contact", ETAT.market.exposes, ["phone"]]
   ];
+  var prevu = lots.reduce(function (n, l) { return n + l[2].length; }, 0);
+  dire("▶ " + prevu + " élément(s) à traiter.");
+  if (!prevu) { dire("Rien à faire : plus aucun numéro ni position précise en clair."); relacher(); return; }
   var ok = 0, ko = 0;
   var chaine = Promise.resolve();
   lots.forEach(function (l) {
@@ -338,8 +354,12 @@ $("btnMigrer").onclick = function () {
   });
   chaine.then(function () {
     dire("— terminé : " + ok + " mis à l'abri, " + ko + " en échec —");
+    if (ko) dire("   ↳ " + ko + " échec(s) : lisez les lignes ❌ ci-dessus, elles donnent la raison exacte.");
     if (ko) dire("Corrigez la cause ci-dessus puis relancez : l'opération peut être répétée sans risque.");
     return scanner();
+  })["catch"](function (err) {
+    dire("❌ panne inattendue : " + ((err && err.message) || String(err)));
+    relacher();
   });
 };
 </script>

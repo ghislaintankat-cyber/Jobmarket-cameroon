@@ -73,6 +73,12 @@ pre{background:#0b0d12;border:1px solid var(--line);border-radius:10px;padding:1
     <button class="sec" id="btnDroits" style="display:none">🔎 Tester mes droits d'écriture</button>
   </div>
 
+  <div class="bloc">
+    <b>Erreurs remontées par les téléphones</b>
+    <div id="erreurs" class="dim">Connectez-vous comme administrateur pour lire les dernières erreurs.</div>
+    <button class="sec" id="btnErreurs" style="display:none">📋 Lire les dernières erreurs</button>
+  </div>
+
   <button onclick="tout()">↻ Tout revérifier</button>
   <pre id="journal"></pre>
 </div>
@@ -81,8 +87,9 @@ pre{background:#0b0d12;border:1px solid var(--line);border-radius:10px;padding:1
 <script src="./vendor/firebase-auth-compat.js"></script>
 <script src="./vendor/firebase-database-compat.js"></script>
 <script>
-var ATTENDU = {"build":"20261008s","cache":"v300","taille":{"app.js":703115,"index.html":213645,"sw.js":41946,"chat-widget.js":71228,"manifest.json":2568,"shalom-square.html":286469,"shalom-square-chat.html":163577,"outil-vie-privee.html":16572}};
+var ATTENDU = {"build":"20261008x","cache":"v305","taille":{"app.js":703115,"index.html":213645,"sw.js":41948,"chat-widget.js":71228,"manifest.json":2568,"shalom-square.html":297841,"shalom-square-chat.html":170430,"outil-vie-privee.html":17843}};
 var $ = function(i){ return document.getElementById(i); };
+function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;"; }); }
 var LIGNES = [];
 function dire(t){ LIGNES.push(t); $("journal").textContent = LIGNES.slice(-60).join("\n"); }
 function verdict(classe, txt){
@@ -257,6 +264,36 @@ $("btnDroits").onclick = function(){
     $("btnDroits").disabled = false;
   });
 };
+/* (20261008w) Le second filet. Une erreur qui reste dans le téléphone
+   de celui qui l'a vue ne sert à personne : on ne peut pas la réparer.
+   Ici, l'administrateur lit ce que les téléphones ont vraiment
+   rencontré — la prochaine réclamation se diagnostique en un message
+   au lieu de trois allers-retours. */
+function vdLireErreurs(){
+  try{
+    var b = $("erreurs");
+    if(!b) return false;
+    b.textContent = "Lecture…";
+    base.ref("errorLogs").orderByChild("at").limitToLast(20).once("value").then(function(s){
+      var d = s.val() || {}, l = [];
+      Object.keys(d).forEach(function(k){ l.push(d[k]); });
+      l.sort(function(x, y){ return (Number(y && y.at) || 0) - (Number(x && x.at) || 0); });
+      if(!l.length){ b.innerHTML = '<span class="ok">Aucune erreur remontée.</span>'; dire("Aucune erreur enregistrée."); return; }
+      b.innerHTML = l.slice(0, 20).map(function(e){
+        var quand = new Date(Number(e.at) || 0).toLocaleString("fr-FR");
+        return '<div style="border-bottom:1px solid var(--line);padding:6px 0">'
+          + "<b>" + esc(quand) + "</b> · " + esc(String(e.page || ""))
+          + '<br><span style="color:var(--ink)">' + esc(String(e.message || "").slice(0, 180)) + "</span>"
+          + (e.source ? '<br><span class="dim">' + esc(String(e.source)) + "</span>" : "")
+          + "</div>";
+      }).join("");
+      dire(l.length + " erreur(s) lue(s).");
+    })["catch"](function(e){ b.textContent = "Lecture impossible : " + ((e && e.message) || e); });
+    return true;
+  }catch(e){ return false; }
+}
+$("btnErreurs").onclick = vdLireErreurs;
+
 $("btnGoogle").onclick = function(){
   var prov = new firebase.auth.GoogleAuthProvider();
   prov.setCustomParameters({ prompt: "select_account" });
@@ -278,7 +315,7 @@ try{
     if(u){
       $("btnGoogle").style.display = "none";
       base.ref("admins/" + u.uid).once("value").then(function(s){
-        if(s.val() === true){ $("btnDroits").style.display = ""; $("droits").textContent = "Connecté comme administrateur."; }
+        if(s.val() === true){ $("btnDroits").style.display = ""; $("btnErreurs").style.display = ""; $("droits").textContent = "Connecté comme administrateur."; vdLireErreurs(); }
       });
     } else {
       $("btnGoogle").style.display = "";

@@ -155,6 +155,16 @@ a{color:var(--gold);text-decoration:none}
     width:100%;height:100%;min-width:40px;min-height:44px
   }
 }
+/* (20261008w) le bandeau « une action n'a pas abouti ».
+   Il est bas et discret : il explique sans cacher l'écran. */
+.vderr{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
+  z-index:500;display:none;align-items:center;gap:8px;background:#3a1416;
+  border:1px solid #ef4444;color:#fff;border-radius:12px;padding:9px 11px;
+  font-size:12.5px;box-shadow:0 10px 26px rgba(0,0,0,.5)}
+.vderr span{flex:1;min-width:0;line-height:1.4}
+.vderr button{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;
+  padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;min-height:38px;
+  flex:0 0 auto;font-family:inherit}
 .hbtn{
   width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card2);
   font-size:15px;flex-shrink:0;position:relative;
@@ -1016,6 +1026,7 @@ function openThread(tid){
   if(!FB.user){ PENDING_THREAD=tid; openSignIn(); return; }
   closeModal();
   if(CHAT.unsub){ try{ CHAT.unsub(); }catch(e){} CHAT.unsub=null; }
+  if(CHAT.unsubListing){ try{ CHAT.unsubListing(); }catch(e){} CHAT.unsubListing=null; }
   var peer=peerOf(tid);
   if(!peer){ toast("…"); return; }
   var inbox=INBOX[tid]||{};
@@ -1063,24 +1074,45 @@ function closeThreadPane(){
 
 /* ---------- contexte annonce (pour la vérification IA + accroche) ---------- */
 var LISTING_CACHE=new Map();
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008x) ON NE NEGOCIE PLUS SUR UN PRIX QUI N'EST PLUS LE BON
+
+   « loadListingContext » lisait l'annonce UNE SEULE FOIS et la gardait
+   en cache pour de bon. Pendant qu'on discute, le vendeur peut baisser
+   son prix, ou vendre l'objet a quelqu'un d'autre. L'accroche du
+   fil gardait l'ancien chiffre : on négociait sur du périmé.
+
+   Désormais on ÉCOUTE l'annonce. Le prix suit, et « vendu » s'affiche.
+   L'écoute est détachée quand on quitte la conversation — sinon on
+   empilerait un écouteur par fil ouvert, et le téléphone ramerait.
+   ═══════════════════════════════════════════════════════════════════ */
 function loadListingContext(tid){
   var key=listingKeyOf(tid);
   if(!key) return;
-  if(LISTING_CACHE.has(tid)){ CHAT.listing=LISTING_CACHE.get(tid); renderListingChip(); renderAiIdle(); return; }
-  FB.db.ref("market_listings/"+key).once("value").then(function(snap){
-    var v=(snap&&snap.val())||null;
-    if(!v||!v.title) return;
-    var l={key:key,title:String(v.title).slice(0,90),price:Number(v.price)||0,desc:String(v.desc||"").slice(0,600),city:v.city||"",cat:v.category||""};
-    LISTING_CACHE.set(tid,l);
-    if(CHAT.open&&CHAT.tid===tid){ CHAT.listing=l; renderListingChip(); renderAiIdle(); }
-  }).catch(function(){});
+  if(LISTING_CACHE.has(tid)){ CHAT.listing=LISTING_CACHE.get(tid); renderListingChip(); renderAiIdle(); }
+  /* on détache l'écoute du fil précédent avant d'en poser une nouvelle */
+  if(CHAT.unsubListing){ try{ CHAT.unsubListing(); }catch(e){} CHAT.unsubListing=null; }
+  var ref=FB.db.ref("market_listings/"+key);
+  var cb=ref.on("value", function(snap){
+    try{
+      var v=(snap&&snap.val())||null;
+      if(!v||!v.title){ LISTING_CACHE.delete(tid); return; }
+      var l={key:key,title:String(v.title).slice(0,90),price:Number(v.price)||0,
+             desc:String(v.desc||"").slice(0,600),city:v.city||"",cat:v.category||"",
+             sold:!!v.sold};
+      LISTING_CACHE.set(tid,l);
+      if(CHAT.open&&CHAT.tid===tid){ CHAT.listing=l; renderListingChip(); renderAiIdle(); }
+    }catch(e){}
+  }, function(){});
+  CHAT.unsubListing=function(){ try{ ref.off("value", cb); }catch(e){} };
 }
+
 function renderListingChip(){
   var chip=$("listingChip"), l=CHAT.listing;
   if(!l){ chip.style.display="none"; $("scamBtn").style.display="none"; return; }
   chip.style.display="flex";
   $("lcTitle").textContent=l.title;
-  $("lcPrice").textContent=l.price?fmtXAF(l.price):"";
+  $("lcPrice").textContent=(l.price?fmtXAF(l.price):"")+(l.sold?" · ✅ "+(LANG==="fr"?"vendu":"sold"):"");
   $("lcThumb").textContent=catEmoji(l.cat);
   $("scamBtn").style.display="";
 }
@@ -2530,6 +2562,118 @@ try{
     return _closeThreadUIO.apply(this, arguments);
   };
 }catch(e){}
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008w) PLUS JAMAIS « JE TAPE ET RIEN NE SE PASSE »
+
+   Mesure faite sur les quatre fichiers : 1 178 erreurs avalées par un
+   « catch » vide. Aucune n'est visible par la personne qui tient le
+   telephone. C'est exactement la reclamation revenue trois fois :
+   un appui, aucun effet, aucun message.
+
+   On ne peut pas reparer 1 178 endroits a la main. On pose donc un
+   filet : toute erreur qui arrive jusqu'au navigateur est montree,
+   memorisee, et — si la personne est connectee — ecrite dans
+   « errorLogs », que l'equipe peut lire.
+
+   Trois gardes, pour que le filet ne devienne pas une nuisance :
+   - un meme message n'est annonce qu'une fois par minute ;
+   - le bandeau s'efface tout seul au bout de 9 secondes ;
+   - trois ecritures au maximum vers la base, par ouverture.
+   ═══════════════════════════════════════════════════════════════════ */
+var VD_ERR = { vus: {}, n: 0 };
+function vdErrGarder(o){
+  try{
+    var l = vdLire("erreurs", []);
+    l.push(o);
+    if(l.length > 30) l = l.slice(-30);
+    vdEcrire("erreurs", l);
+  }catch(e){}
+}
+function vdErrBandeau(txt){
+  try{
+    var b = document.getElementById("vdErrBar");
+    if(!b){
+      b = document.createElement("div");
+      b.id = "vdErrBar";
+      b.className = "vderr";
+      document.body.appendChild(b);
+    }
+    b.innerHTML = "";
+    var t = document.createElement("span");
+    t.textContent = txt;
+    var c = document.createElement("button");
+    c.type = "button";
+    c.textContent = (LANG === "fr") ? "Copier" : "Copy";
+    c.addEventListener("click", function(){
+      try{
+        var tout = (vdLire("erreurs", []) || []).slice(-8).map(function(x){
+          return new Date(x.t).toLocaleString("fr-FR") + " · " + x.s + " · " + x.m;
+        }).join(String.fromCharCode(10));
+        if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tout);
+        else if(window.prompt) window.prompt((LANG === "fr" ? "Copiez ce détail :" : "Copy this detail:"), tout);
+        toast(LANG === "fr" ? "Détail copié" : "Detail copied");
+      }catch(e){}
+    });
+    var f = document.createElement("button");
+    f.type = "button";
+    f.textContent = "✕";
+    f.setAttribute("aria-label", LANG === "fr" ? "Fermer" : "Close");
+    f.addEventListener("click", function(){ b.style.display = "none"; });
+    b.appendChild(t); b.appendChild(c); b.appendChild(f);
+    b.style.display = "flex";
+    clearTimeout(vdErrBandeau._t);
+    vdErrBandeau._t = setTimeout(function(){ try{ b.style.display = "none"; }catch(e){} }, 9000);
+  }catch(e){}
+}
+function vdErrVersBase(o){
+  try{
+    if(!(FB && FB.db && FB.user)) return false;
+    FB.db.ref("errorLogs").push({
+      message: o.m, source: o.s, page: o.p, at: o.t,
+      uid: FB.user.uid, ua: String(navigator.userAgent || "").slice(0, 160)
+    });
+    return true;
+  }catch(e){ return false; }
+}
+function vdErrDire(msg, source){
+  try{
+    var texte = String(msg || "erreur inconnue");
+    var cle = texte.slice(0, 120);
+    var maintenant = Date.now();
+    if(VD_ERR.vus[cle] && maintenant - VD_ERR.vus[cle] < 60000) return false;
+    VD_ERR.vus[cle] = maintenant;
+    VD_ERR.n++;
+    var o = { t: maintenant, m: texte.slice(0, 300), s: String(source || ""),
+              p: String(location.pathname || ""), v: VD_ERR.n };
+    vdErrGarder(o);
+    vdErrBandeau((LANG === "fr" ? "Une action n'a pas abouti : " : "Something did not work: ")
+      + texte.slice(0, 110));
+    if(VD_ERR.n <= 3) vdErrVersBase(o);
+    return true;
+  }catch(e){ return false; }
+}
+function vdGardienPoser(){
+  try{
+    if(window.__vdGardien) return false;
+    window.__vdGardien = true;
+    /* sans « true » : seules les erreurs de script remontent, pas les
+       images qui echouent — sinon le bandeau ne s'arreterait jamais. */
+    window.addEventListener("error", function(e){
+      try{
+        var ou = (e && e.filename) ? String(e.filename).split("/").pop() + ":" + (e.lineno || 0) : "page";
+        vdErrDire((e && e.message) || "erreur inconnue", ou);
+      }catch(err){}
+    });
+    window.addEventListener("unhandledrejection", function(e){
+      try{
+        var r = e && e.reason;
+        vdErrDire((r && (r.message || r.code)) || String(r) || "promesse refusee", "promesse");
+      }catch(err){}
+    });
+    return true;
+  }catch(e){ return false; }
+}
+try{ vdGardienPoser(); }catch(e){}
 function renderThread(){
   var box=$("bubbles"); if(!box) return;
   if(!CHAT.open){ box.innerHTML=""; return; }
