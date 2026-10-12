@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v307'; // 20261008z : menu unique, sortie visible, icones dessinees, plus de Vendora
+const CACHE_VERSION = 'v308'; // 20261012a : plus de defilement horizontal, menu en face de Publier, epingle dessinee
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
