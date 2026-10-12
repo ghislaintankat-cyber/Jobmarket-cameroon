@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v305'; // 20261008x : annonce et profil ecoutes en direct, plus de prix perime
+const CACHE_VERSION = 'v307'; // 20261008z : menu unique, sortie visible, icones dessinees, plus de Vendora
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des

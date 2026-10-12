@@ -144,7 +144,9 @@ a{color:var(--gold);text-decoration:none}
    écrans vraiment étroits — c'est la garantie, pas le comportement
    normal. */
 @media(max-width:600px){
-  #toMarketBtn{display:none}
+  /* #toMarketBtn reste visible : à une époque il était masqué sous
+     600 px, et il ne restait alors AUCUNE façon de quitter la
+     messagerie sur un téléphone. C’était une erreur. */
   .thread-head{gap:8px}
   .thread-hmid{flex:1 1 90px}
 }
@@ -165,6 +167,50 @@ a{color:var(--gold);text-decoration:none}
 .vderr button{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;
   padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;min-height:38px;
   flex:0 0 auto;font-family:inherit}
+/* (20261008z) Les icônes du fil partent dans le menu « ⋮ » : cela rend
+   la place, et on n'a plus à zoomer pour trouver un bouton.
+   Les boutons restent dans la page, masqués : le menu les actionne. */
+#scamBtn,#vdRechFilBtn,#vdVenduBtn,#vdCallAudioBtn,#vdCallVideoBtn,#inAppBtn{display:none}
+/* la sortie de la messagerie reste visible, elle — c'est la seule
+   façon de quitter la page sur un téléphone */
+#vdQuitter{display:inline-flex;align-items:center;gap:6px}
+.iobtn svg{display:block}
+/* (20261008q) Sur un téléphone courant, le bandeau doit tenir sur UNE
+   ligne. Le bouton « marché » est un doublon du retour : on le cache en
+   dessous de 600 px, et on resserre l'écart. Le repli reste là pour les
+   écrans vraiment étroits — c'est la garantie, pas le comportement
+   normal. */
+@media(max-width:600px){
+  /* #toMarketBtn reste visible : à une époque il était masqué sous
+     600 px, et il ne restait alors AUCUNE façon de quitter la
+     messagerie sur un téléphone. C’était une erreur. */
+  .thread-head{gap:8px}
+  .thread-hmid{flex:1 1 90px}
+}
+/* (20261008q) Sur un téléphone courant, le bandeau doit tenir sur UNE
+   ligne. Le bouton « marché » est un doublon du retour : on le cache en
+   dessous de 600 px, et on resserre l'écart. Le repli reste là pour les
+   écrans vraiment étroits — c'est la garantie, pas le comportement
+   normal. */
+@media(max-width:600px){
+  /* #toMarketBtn reste visible : à une époque il était masqué sous
+     600 px, et il ne restait alors AUCUNE façon de quitter la
+     messagerie sur un téléphone. C’était une erreur. */
+  .thread-head{gap:8px}
+  .thread-hmid{flex:1 1 90px}
+}
+/* (20261008q) Sur un téléphone courant, le bandeau doit tenir sur UNE
+   ligne. Le bouton « marché » est un doublon du retour : on le cache en
+   dessous de 600 px, et on resserre l'écart. Le repli reste là pour les
+   écrans vraiment étroits — c'est la garantie, pas le comportement
+   normal. */
+@media(max-width:600px){
+  /* #toMarketBtn reste visible : à une époque il était masqué sous
+     600 px, et il ne restait alors AUCUNE façon de quitter la
+     messagerie sur un téléphone. C’était une erreur. */
+  .thread-head{gap:8px}
+  .thread-hmid{flex:1 1 90px}
+}
 .hbtn{
   width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card2);
   font-size:15px;flex-shrink:0;position:relative;
@@ -332,6 +378,7 @@ body.light{
   </a>
   <div class="grow"></div>
   <button class="tbtn" id="langBtn" onclick="toggleLang()">EN</button>
+  <button class="tbtn" id="vdQuitter" onclick="try{location.href='./shalom-square.html';}catch(e){}" title="Quitter la messagerie" aria-label="Quitter la messagerie">&#10005; <span>Quitter</span></button>
   <button class="tbtn gold" id="authBtn" onclick="authClick()">🔐 <span data-i18n="login_btn">Connexion</span></button>
 </div>
 <div class="offline-bar" id="offlineBar" data-i18n="offline_bar">📡 Connexion à la base sécurisée en cours…</div>
@@ -378,10 +425,10 @@ body.light{
       <div class="chat-input">
         <input id="chatInput" type="text" data-i18n-ph="chat_ph" placeholder="Écrivez un message…"
           onkeydown="if(event.key==='Enter'){event.preventDefault();sendText();}">
-                <button class="iobtn" id="vdLieuBtn" title="Partager ma position" aria-label="Partager ma position">📍</button>
+                <button class="iobtn" id="vdLieuBtn" title="Partager ma position" aria-label="Partager ma position"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></button>
         <input id="vdPhotoFile" type="file" accept="image/*" style="display:none">
-        <button class="iobtn" id="vdPhotoBtn" title="Envoyer une photo" aria-label="Envoyer une photo">📷</button>
-        <button class="iobtn" id="vdVoiceBtn" title="Message vocal" aria-label="Message vocal">🎤</button>
+        <button class="iobtn" id="vdPhotoBtn" title="Envoyer une photo" aria-label="Envoyer une photo"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+        <button class="iobtn" id="vdVoiceBtn" title="Message vocal" aria-label="Message vocal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
         <button class="sendbtn" onclick="sendText()" aria-label="Envoyer">➤</button>
       </div>
     </div>
@@ -2471,73 +2518,14 @@ try{
    la cause directe des éléments qui s'écrasaient. Un menu « ⋮ » rend
    la place, et le bandeau se replie si malgré tout il fallait plus
    large — le chevauchement devient impossible. */
-function vdOutilsChat(){
-  try{
-    if(window.__vdOutils) return false;
-    var tete = document.querySelector(".thread-head");
-    if(!tete) return false;
-    window.__vdOutils = true;
-    var fr = (LANG === "fr");
-    var titre = fr ? "Plus d’outils" : "More tools";
-    var bouton = document.createElement("button");
-    bouton.className = "hbtn";
-    bouton.type = "button";
-    bouton.id = "vdMenuBtn";
-    bouton.textContent = "⋮";
-    bouton.title = titre;
-    bouton.setAttribute("aria-label", titre);
-    tete.appendChild(bouton);
-    var panneau = document.createElement("div");
-    panneau.className = "vdmenu";
-    panneau.id = "vdMenuPanel";
-    panneau.style.display = "none";
-    var entrees = [
-      ["📄", fr ? "Enregistrer la conversation (preuve)" : "Save conversation (record)", "preuve"],
-      ["🔊", fr ? "Lire à voix haute" : "Read aloud", "lire"],
-      ["⏰", fr ? "Me rappeler de répondre (1 h)" : "Remind me to reply (1 h)", "rappel"],
-      ["🪶", fr ? "Photos à la demande (économie)" : "Photos on tap (data saving)", "donnees"]
-    ];
-    entrees.forEach(function(l){
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "vdmenu-i";
-      b.setAttribute("data-outil", l[2]);
-      b.innerHTML = "<span>" + l[0] + "</span><span>" + esc(l[1]) + "</span>";
-      panneau.appendChild(b);
-    });
-    tete.appendChild(panneau);
-    bouton.addEventListener("click", function(e){
-      if(e.stopPropagation) e.stopPropagation();
-      panneau.style.display = (panneau.style.display === "none") ? "" : "none";
-    });
-    panneau.addEventListener("click", function(e){
-      var c = e.target;
-      while(c && c !== panneau && !c.getAttribute) c = c.parentNode;
-      var q = c && c.getAttribute ? c.getAttribute("data-outil") : null;
-      if(!q) return;
-      panneau.style.display = "none";
-      if(q === "preuve") vdChatPreuve();
-      else if(q === "lire") vdChatLire();
-      else if(q === "rappel") vdRappelPose(60);
-      else if(q === "donnees") vdDonneesChat();
-    });
-    document.addEventListener("click", function(){
-      try{ panneau.style.display = "none"; }catch(e){}
-    });
-    var badge = document.createElement("span");
-    badge.id = "vdRappelBadge";
-    badge.style.cssText = "display:none;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--gold);color:#000;font-size:10px;font-weight:800;line-height:16px;text-align:center";
-    tete.appendChild(badge);
-    return true;
-  }catch(e){ return false; }
-}
+
 
 /* Les photos mises en attente doivent l'etre a chaque rendu. */
 try{
   var _renderThreadO = renderThread;
   renderThread = function(){
     var r = _renderThreadO.apply(this, arguments);
-    try{ vdDonneesAppliquer(); vdRenduRappels(); }catch(e){}
+    try{ vdDonneesAppliquer(); vdRenduRappels(); vdMenuRendu(); }catch(e){}
     return r;
   };
 }catch(e){}
@@ -2674,6 +2662,103 @@ function vdGardienPoser(){
   }catch(e){ return false; }
 }
 try{ vdGardienPoser(); }catch(e){}
+/* ═══════════════════════════════════════════════════════════════════
+   (20261008z) UN SEUL MENU, ET UNE SORTIE VISIBLE
+   ═══════════════════════════════════════════════════════════════════ */
+function vdMenuRendu(){
+  try{
+    var p = document.getElementById("vdMenuPanel");
+    if(!p) return false;
+    var fr = (LANG === "fr");
+    var html = "";
+    /* les outils du fil : on ne montre que ceux que la page a rendus
+       visibles pour CETTE conversation (le bouton « vendu », par
+       exemple, n'apparaît que sur ses propres annonces). */
+    var duFil = [
+      ["scamBtn", "&#128737;", fr ? "Vérification IA de l'annonce" : "AI check on the listing"],
+      ["vdRechFilBtn", "&#128269;", fr ? "Chercher dans la conversation" : "Search in conversation"],
+      ["vdVenduBtn", "&#9989;", fr ? "Marquer vendu" : "Mark as sold"],
+      ["vdCallAudioBtn", "&#128222;", fr ? "Appel audio" : "Audio call"],
+      ["vdCallVideoBtn", "&#127909;", fr ? "Appel vidéo" : "Video call"],
+      ["inAppBtn", "&#128241;", fr ? "Ouvrir dans l'app" : "Open in app"]
+    ];
+    duFil.forEach(function(l){
+      var b = document.getElementById(l[0]);
+      if(!b) return;
+      if(b.style && b.style.display === "none") return;
+      html += '<button type="button" class="vdmenu-i" data-mp="' + l[0] + '"><span>'
+        + l[1] + '</span><span>' + esc(l[2]) + "</span></button>";
+    });
+    if(html) html += '<div class="vdsep"></div>';
+    var miens = [
+      ["preuve", "&#128220;", fr ? "Enregistrer la conversation (preuve)" : "Save conversation (record)"],
+      ["lire", "&#128266;", fr ? "Lire à voix haute" : "Read aloud"],
+      ["rappel", "&#9200;", fr ? "Me rappeler de répondre (1 h)" : "Remind me to reply (1 h)"],
+      ["donnees", "&#129654;", fr ? "Photos à la demande (économie)" : "Photos on tap (data saving)"]
+    ];
+    miens.forEach(function(l){
+      html += '<button type="button" class="vdmenu-i" data-outil="' + l[0] + '"><span>'
+        + l[1] + '</span><span>' + esc(l[2]) + "</span></button>";
+    });
+    html += '<div class="vdsep"></div>'
+      + '<button type="button" class="vdmenu-i" data-quitter="1"><span>&#10005;</span><span>'
+      + esc(fr ? "Quitter la messagerie" : "Leave messaging") + "</span></button>";
+    p.innerHTML = html;
+    return true;
+  }catch(e){ return false; }
+}
+function vdOutilsChat(){
+  try{
+    if(window.__vdOutils) return false;
+    var tete = document.querySelector(".thread-head");
+    if(!tete) return false;
+    window.__vdOutils = true;
+    var fr = (LANG === "fr");
+    var titre = fr ? "Plus d’outils" : "More tools";
+    var bouton = document.createElement("button");
+    bouton.className = "hbtn";
+    bouton.type = "button";
+    bouton.id = "vdMenuBtn";
+    bouton.title = titre;
+    bouton.setAttribute("aria-label", titre);
+    bouton.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true">'
+      + '<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>';
+    tete.appendChild(bouton);
+    var panneau = document.createElement("div");
+    panneau.className = "vdmenu";
+    panneau.id = "vdMenuPanel";
+    panneau.style.display = "none";
+    tete.appendChild(panneau);
+    bouton.addEventListener("click", function(e){
+      if(e.stopPropagation) e.stopPropagation();
+      panneau.style.display = (panneau.style.display === "none") ? "" : "none";
+      if(panneau.style.display === "") vdMenuRendu();
+    });
+    panneau.addEventListener("click", function(e){
+      var c = e.target;
+      while(c && c !== panneau && !c.getAttribute) c = c.parentNode;
+      if(!c || c === panneau) return;
+      if(c.getAttribute("data-quitter")){ try{ location.href = "./shalom-square.html"; }catch(err){} return; }
+      var q = c.getAttribute("data-mp");
+      if(q){ panneau.style.display = "none"; var b = document.getElementById(q); if(b) b.click(); return; }
+      var o = c.getAttribute("data-outil");
+      if(!o) return;
+      panneau.style.display = "none";
+      if(o === "preuve") vdChatPreuve();
+      else if(o === "lire") vdChatLire();
+      else if(o === "rappel") vdRappelPose(60);
+      else if(o === "donnees") vdDonneesChat();
+    });
+    document.addEventListener("click", function(){
+      try{ panneau.style.display = "none"; }catch(e){}
+    });
+    var badge = document.createElement("span");
+    badge.id = "vdRappelBadge";
+    badge.style.cssText = "display:none;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--gold);color:#000;font-size:10px;font-weight:800;line-height:16px;text-align:center";
+    tete.appendChild(badge);
+    return true;
+  }catch(e){ return false; }
+}
 function renderThread(){
   var box=$("bubbles"); if(!box) return;
   if(!CHAT.open){ box.innerHTML=""; return; }
