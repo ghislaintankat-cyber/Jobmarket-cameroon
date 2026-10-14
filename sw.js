@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v313'; // 20261014a : confort, nuit auto, reponse auto, vus, plus vues, boutique
+const CACHE_VERSION = 'v315'; // 20261014c : le point choisi sur la carte ne se perd plus
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
