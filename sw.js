@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v316'; // 20261014d : le repere tombe a 110 m au lieu de 1,1 km
+const CACHE_VERSION = 'v317'; // 20261015b : position exacte pour les annonces, arrondie pour les profils
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
