@@ -511,6 +511,18 @@ a{color:var(--gold);text-decoration:none}
   .thread-head{gap:8px}
   .thread-hmid{flex:1 1 90px}
 }
+/* (20261008q) Sur un téléphone courant, le bandeau doit tenir sur UNE
+   ligne. Le bouton « marché » est un doublon du retour : on le cache en
+   dessous de 600 px, et on resserre l'écart. Le repli reste là pour les
+   écrans vraiment étroits — c'est la garantie, pas le comportement
+   normal. */
+@media(max-width:600px){
+  /* #toMarketBtn reste visible : à une époque il était masqué sous
+     600 px, et il ne restait alors AUCUNE façon de quitter la
+     messagerie sur un téléphone. C’était une erreur. */
+  .thread-head{gap:8px}
+  .thread-hmid{flex:1 1 90px}
+}
 .hbtn{
   width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card2);
   font-size:15px;flex-shrink:0;position:relative;
@@ -1703,15 +1715,15 @@ function vdAppelMonter(){
       VD_APPEL.local = flux;
       flux.getTracks().forEach(function(p){ try{ pc.addTrack(p, flux); }catch(e){} });
       var mini = document.getElementById("vdCallMini");
-      if(mini && VD_APPEL.kind === "video"){ try{ mini.srcObject = flux; mini.muted = true; mini.play(); }catch(e){} }
+      if(mini && VD_APPEL.kind === "video"){ try{ mini.srcObject = flux; mini.muted = true; var p0 = mini.play(); if(p0 && p0.catch) p0.catch(function(){}); }catch(e){} }
       pc.ontrack = function(ev){
         var d = (ev.streams && ev.streams[0]) || null;
         if(!d || !VD_APPEL) return;
         VD_APPEL.distant = d;
         var v = document.getElementById("vdCallRemote");
         var a = document.getElementById("vdCallAudio");
-        if(VD_APPEL.kind === "video" && v){ try{ v.srcObject = d; v.play(); }catch(e){} }
-        if(a){ try{ a.srcObject = d; a.play(); }catch(e){} }
+        if(VD_APPEL.kind === "video" && v){ try{ v.srcObject = d; var p1 = v.play(); if(p1 && p1.catch) p1.catch(function(){}); }catch(e){} }
+        if(a){ try{ a.srcObject = d; var p2 = a.play(); if(p2 && p2.catch) p2.catch(function(){}); }catch(e){} }
       };
       pc.onicecandidate = function(ev){
         if(!ev || !ev.candidate || !VD_APPEL) return;
@@ -1742,7 +1754,17 @@ function vdAppelEcouterIce(base){
       if(!v || !v.c || !VD_APPEL || !VD_APPEL.pc) return;
       var moi = (FB.auth && FB.auth.currentUser) ? FB.auth.currentUser.uid : "";
       if(v.from === moi) return;
-      try{ VD_APPEL.pc.addIceCandidate(new RTCIceCandidate(JSON.parse(v.c))); }catch(e){}
+      /* (20261016c) addIceCandidate renvoie une PROMESSE. Un try/catch ne
+         peut pas attraper son refus — d'ou les « Unknown ufrag » dans le
+         journal. On ajoute un catch, et on ne touche plus a une connexion
+         deja fermee. */
+      try{
+        var pcC = VD_APPEL.pc;
+        if(pcC && pcC.signalingState !== "closed"){
+          var pC = pcC.addIceCandidate(new RTCIceCandidate(JSON.parse(v.c)));
+          if(pC && pC.catch) pC.catch(function(){});
+        }
+      }catch(e){}
     });
     if(VD_APPEL) VD_APPEL.ecoutes.push(function(){ try{ r.off("child_added", h); }catch(e){} });
     return true;
@@ -1761,7 +1783,16 @@ function vdAppelEcouterMaBoite(){
       if(v.state === "ended"){ vdAppelTerminer("raccroche"); return; }
       if(v.sdp && VD_APPEL.pc && VD_APPEL.role === "appelant" && !VD_APPEL.repondu){
         VD_APPEL.repondu = true;
-        try{ VD_APPEL.pc.setRemoteDescription(new RTCSessionDescription(v.sdp)); }catch(e){}
+        /* (20261016c) meme chose, plus une garde d'etat : on n'applique une
+           reponse que si l'on a bien fait une offre. Sinon WebRTC leve
+           « Called in wrong state: stable ». */
+        try{
+          var pcR = VD_APPEL.pc;
+          if(pcR && pcR.signalingState === "have-local-offer"){
+            var pR = pcR.setRemoteDescription(new RTCSessionDescription(v.sdp));
+            if(pR && pR.catch) pR.catch(function(){});
+          }
+        }catch(e){}
         vdAppelEtat(LANG === "fr" ? "Connexion…" : "Connecting…");
       }
     });
@@ -1884,7 +1915,11 @@ function vdAppelAccepter(){
   if(take) take.style.display = "none";
   vdAppelMonter().then(function(ok){
     if(!ok || !VD_APPEL) return null;
-    return VD_APPEL.pc.setRemoteDescription(new RTCSessionDescription(e.sdp)).then(function(){
+    /* (20261016c) il y avait un .then mais aucun .catch : la panne partait
+       en « unhandled rejection ». */
+    var pA = VD_APPEL.pc.setRemoteDescription(new RTCSessionDescription(e.sdp));
+    if(pA && pA.catch) pA.catch(function(){});
+    return pA.then(function(){
       return VD_APPEL.pc.createAnswer();
     }).then(function(ans){
       return VD_APPEL.pc.setLocalDescription(ans).then(function(){
