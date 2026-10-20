@@ -22,17 +22,14 @@ h1{font-size:20px;margin:6px 0 4px}
 .src{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.4px;padding:2px 8px;border-radius:999px;margin-right:7px}
 .src.jobmarket{background:#1d4ed8;color:#dbeafe}
 .src.shalom{background:#0e9f6e;color:#d1fae5}
-.src.inconnu{background:#52525b;color:#e4e4e7}
+.src.deduit{background:#52525b;color:#e4e4e7}
 .qui{font-weight:700}
 .quand{color:var(--muted);font-size:12px}
 .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 button{border:none;border-radius:10px;padding:9px 14px;font-weight:800;font-size:13.5px;cursor:pointer;min-height:40px}
 .b-ok{background:linear-gradient(135deg,var(--ok),#15803d);color:#03150e}
 .b-ko{background:rgba(239,68,68,.16);color:#fca5a5;border:1px solid rgba(239,68,68,.4)}
-.b-or{background:linear-gradient(135deg,var(--gold),#e6b800);color:#0a0a0f}
 .dim{color:var(--muted);font-size:13px}
-.err{white-space:pre-wrap;font-size:12px;color:var(--muted);border-top:1px solid var(--line);
-  padding-top:7px;margin-top:7px}
 .vide{color:var(--muted);font-size:13.5px;text-align:center;padding:14px 0}
 button.b-google{width:100%;background:#fff;color:#111;font-size:15px;padding:13px}
 </style>
@@ -57,11 +54,29 @@ button.b-google{width:100%;background:#fff;color:#111;font-size:15px;padding:13p
   </div>
 </div>
 
-<script src="./vendor/firebase-app-compat.js"></script>
-<script src="./vendor/firebase-auth-compat.js"></script>
-<script src="./vendor/firebase-database-compat.js"></script>
-<script>
-firebase.initializeApp({
+<!-- =====================================================================
+     SDK Firebase 13 MODULAIRE (au lieu du 9.23 « compat »).
+     Pourquoi :
+       - le mode compat est une solution temporaire que Firebase supprimera.
+         Ce jour-la, l'application cesse de fonctionner.
+       - le mode modulaire laisse le navigateur ne charger que les fonctions
+         reellement utilisees (tree-shaking). Mesure Firebase sur un projet
+         comparable : 429 Ko en compat, 244 Ko en modulaire.
+     On charge depuis la CDN officielle : plus de fichiers locaux a maintenir,
+     et les correctifs de securite arrivent sans rien faire.
+     ===================================================================== -->
+<script type="module">
+import { initializeApp }
+  from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+         getRedirectResult, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js";
+import { getDatabase, ref, get, update, remove }
+  from "https://www.gstatic.com/firebasejs/13.0.0/firebase-database.js";
+
+const $ = (i) => document.getElementById(i);
+
+const app = initializeApp({
   apiKey: "AIzaSyCR1Z6VlS5A7iPbUCoVm0AQcnkkUdsA0CE",
   authDomain: "jobmarketfuture.firebaseapp.com",
   databaseURL: "https://jobmarketfuture-default-rtdb.firebaseio.com",
@@ -70,213 +85,219 @@ firebase.initializeApp({
   messagingSenderId: "351669024349",
   appId: "1:351669024349:web:d4d4d08727ccc6012b7fb4"
 });
-var auth = firebase.auth(), db = firebase.database();
-var $ = function(i){ return document.getElementById(i); };
-function esc(s){
-  return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function quand(t){
-  try{
-    var n = Number(t);
-    if(!n) return "date inconnue";
-    var d = new Date(n);
-    return isNaN(d.getTime()) ? "date inconnue"
-      : d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
-  }catch(e){ return "date inconnue"; }
+function quand(t) {
+  try {
+    const n = Number(t);
+    if (!n) return "date inconnue";
+    const d = new Date(n);
+    return isNaN(d.getTime()) ? "date inconnue" :
+      d.toLocaleDateString("fr-FR") + " " +
+      d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  } catch (e) { return "date inconnue"; }
 }
-/* L'origine est lue dans la donnee. Si elle manque (ancienne demande),
-   on la deduit : un vendeur qui possede des annonces boutique vient de
-   Shalom. Sinon on l'avoue au lieu de deviner. */
-var VENDEURS_SHALOM = {};
-function sourceDe(v, uid){
-  var s = (v && (v.source || v.app)) ? String(v.source || v.app).toLowerCase() : "";
-  if(s.indexOf("shalom") !== -1 || s.indexOf("boutique") !== -1 || s.indexOf("market") !== -1)
-    return { cle:"shalom", txt:"SHALOM", deduit:false };
-  if(s.indexOf("job") !== -1) return { cle:"jobmarket", txt:"JOBMARKET", deduit:false };
-  if(VENDEURS_SHALOM[uid]) return { cle:"shalom", txt:"SHALOM ?", deduit:true };
-  /* Les demandes anciennes n'ont pas de marque d'origine. On ne les
-     affiche pas comme « inconnues » : JobMarket est l'application
-     principale, donc l'absence d'annonce boutique oriente vers elle.
-     On le dit quand même (point d'interrogation + « origine déduite »),
-     pour ne jamais faire passer une supposition pour une certitude. */
-  return { cle:"jobmarket", txt:"JOBMARKET ?", deduit:true };
+
+const VENDEURS_SHALOM = {};
+
+/* L'origine est lue dans la donnee. Si elle manque (ancienne demande), on la
+   deduit : un vendeur qui possede des annonces boutique vient de Shalom.
+   Sinon on l'avoue — jamais une supposition presentee comme une certitude. */
+function sourceDe(v, uid) {
+  const s = (v && (v.source || v.app)) ? String(v.source || v.app).toLowerCase() : "";
+  if (s.includes("shalom") || s.includes("boutique") || s.includes("market"))
+    return { cle: "shalom", txt: "SHALOM", deduit: false };
+  if (s.includes("job")) return { cle: "jobmarket", txt: "JOBMARKET", deduit: false };
+  if (VENDEURS_SHALOM[uid]) return { cle: "shalom", txt: "SHALOM ?", deduit: true };
+  return { cle: "jobmarket", txt: "JOBMARKET ?", deduit: true };
 }
-function codeA7(){
-  var c = "";
-  for(var i = 0; i < 7; i++) c += Math.floor(Math.random() * 10);
+function codeA7() {
+  let c = "";
+  for (let i = 0; i < 7; i++) c += Math.floor(Math.random() * 10);
   return c;
 }
 
 /* ---------- connexion ---------- */
-$("btnGoogle").onclick = function(){
-  var prov = new firebase.auth.GoogleAuthProvider();
+$("btnGoogle").onclick = () => {
+  const prov = new GoogleAuthProvider();
   prov.setCustomParameters({ prompt: "select_account" });
-  if(/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)) auth.signInWithRedirect(prov);
-  else auth.signInWithPopup(prov).catch(function(e){ $("msgLogin").textContent = e.message; });
+  const mobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+  (mobile ? signInWithRedirect(auth, prov) : signInWithPopup(auth, prov))
+    .catch((e) => { $("msgLogin").textContent = e.message; });
 };
-auth.getRedirectResult().catch(function(e){ $("msgLogin").textContent = e.message; });
-auth.onAuthStateChanged(function(u){
-  if(!u) return;
-  db.ref("admins/" + u.uid).once("value").then(function(s){
-    if(s.val() !== true){
-      $("msgLogin").textContent = "Ce compte n'est pas administrateur.";
-      return auth.signOut();
+
+getRedirectResult(auth).catch((e) => { $("msgLogin").textContent = e.message; });
+
+onAuthStateChanged(auth, (u) => {
+  if (!u) return;
+  $("msgLogin").textContent = "Connecté. Vérification des droits…";
+  /* Le catch est indispensable : sans lui, un refus de lecture echoue en
+     silence et la page reste bloquee sur l'ecran de connexion sans rien
+     dire. C'est exactement la panne remontee par Ghislain. */
+  get(ref(db, "admins/" + u.uid)).then((s) => {
+    if (s.val() !== true) {
+      $("msgLogin").innerHTML = "Connecté en tant que <b>" + esc(u.email || u.uid) +
+        "</b>, mais ce compte n'est pas dans la liste <code>admins</code>.";
+      return;
     }
     $("blocLogin").style.display = "none";
     $("app").style.display = "";
     tout();
+  }).catch((e) => {
+    $("msgLogin").innerHTML = "Lecture impossible : <b>" + esc(e.message) +
+      "</b><br>Causes les plus fréquentes : les règles ETAPE6 ne sont pas " +
+      "publiées, ou ce compte n'a pas le droit de lire <code>admins</code>.";
   });
 });
 
 /* ---------- lecture ---------- */
-function tout(){
+function tout() {
   Promise.all([
-    db.ref("verifications").once("value"),
-    db.ref("market_reports").once("value"),
-    db.ref("reports").once("value"),
-    db.ref("errorLogs").limitToLast(30).once("value"),
-    db.ref("market_listings").once("value"),
-    db.ref("jobs").once("value"),
-    db.ref("profiles").once("value")
-  ]).then(function(r){
-    VENDEURS_SHALOM = {};
-    var ml = r[4].val() || {};
-    Object.keys(ml).forEach(function(k){
-      var l = ml[k];
-      if(l && l.user) VENDEURS_SHALOM[l.user] = true;
-    });
+    get(ref(db, "verifications")),
+    get(ref(db, "market_reports")),
+    get(ref(db, "reports")),
+    get(ref(db, "errorLogs")),
+    get(ref(db, "market_listings")),
+    get(ref(db, "jobs")),
+    get(ref(db, "profiles"))
+  ]).then((r) => {
+    const ml = r[4].val() || {};
+    Object.keys(ml).forEach((k) => { if (ml[k] && ml[k].user) VENDEURS_SHALOM[ml[k].user] = true; });
     prive(r[5].val() || {}, r[6].val() || {}, ml);
     verif(r[0].val() || {});
     signal(r[1].val() || {}, r[2].val() || {});
     erreurs(r[3].val() || {});
-  }).catch(function(e){
-    $("blocPrive").innerHTML = '<div class="dim">Lecture impossible : ' + esc(e.message) + "</div>";
+  }).catch((e) => {
+    $("app").innerHTML = '<div class="bloc"><h2>Lecture impossible</h2>' +
+      '<div style="color:var(--muted);font-size:13.5px;line-height:1.6"><b>' + esc(e.message) +
+      '</b><br><br>Cause la plus fréquente : les règles <b>ETAPE6</b> ne sont pas publiées. ' +
+      'Sans elles, ce tableau ne peut lire ni les vérifications ni les administrateurs.</div></div>';
   });
 }
-function compteN(noeud, champs){
-  var n = 0;
-  Object.keys(noeud).forEach(function(k){
-    var o = noeud[k];
-    if(!o || typeof o !== "object") return;
-    for(var i = 0; i < champs.length; i++){ if(o[champs[i]]){ n++; return; } }
+
+function compteN(noeud, champs) {
+  let n = 0;
+  Object.keys(noeud).forEach((k) => {
+    const o = noeud[k];
+    if (!o || typeof o !== "object") return;
+    if (champs.some((c) => o[c])) n++;
   });
   return n;
 }
-function prive(jobs, profiles, ml){
-  var a = compteN(jobs, ["phone","phone2"]);
-  var b = compteN(profiles, ["phone","whatsappNumber"]);
-  var c = compteN(ml, ["phone"]);
-  var t = a + b + c;
-  $("blocPrive").innerHTML = '<h2>Mise à l’abri <span class="count '
-    + (t ? "rouge" : "vert") + '">' + t + '</span></h2>'
-    + '<div class="dim">Numéros lisibles par n’importe qui sans compte :</div>'
-    + '<div style="margin-top:8px;font-size:13.5px">'
-    + 'Annonces JobMarket <b>' + a + " / " + Object.keys(jobs).length + "</b><br>"
-    + 'Profils <b>' + b + " / " + Object.keys(profiles).length + "</b><br>"
-    + 'Annonces boutique <b>' + c + " / " + Object.keys(ml).length + "</b></div>"
-    + (t ? '<div class="dim" style="margin-top:10px">Ouvrez « outil-vie-privee.html » puis '
-         + '« Tout mettre à l’abri ».</div>'
-         : '<div class="dim" style="margin-top:10px">Rien en clair : l’ETAPE7 peut être publiée.</div>');
+
+function prive(jobs, profiles, ml) {
+  const a = compteN(jobs, ["phone", "phone2"]);
+  const b = compteN(profiles, ["phone", "whatsappNumber"]);
+  const c = compteN(ml, ["phone"]);
+  const t = a + b + c;
+  $("blocPrive").innerHTML =
+    '<h2>Mise à l’abri <span class="count ' + (t ? "rouge" : "vert") + '">' + t + '</span></h2>' +
+    '<div class="dim">Numéros lisibles par n’importe qui sans compte :</div>' +
+    '<div style="margin-top:8px;font-size:13.5px">' +
+    "Annonces JobMarket <b>" + a + " / " + Object.keys(jobs).length + "</b><br>" +
+    "Profils <b>" + b + " / " + Object.keys(profiles).length + "</b><br>" +
+    "Annonces boutique <b>" + c + " / " + Object.keys(ml).length + "</b></div>" +
+    (t ? '<div class="dim" style="margin-top:10px">Ouvrez « outil-vie-privee.html » puis « Tout mettre à l’abri ».</div>'
+       : '<div class="dim" style="margin-top:10px">Rien en clair : l’ETAPE7 peut être publiée.</div>');
 }
-function verif(d){
-  var enAttente = [], traitees = 0;
-  Object.keys(d).forEach(function(uid){
-    var v = d[uid] || {};
-    var st = String(v.status || "").toLowerCase();
-    if(st === "approved" || st === "refused" || st === "rejected"){ traitees++; return; }
-    if(st === "" && !v.requestedAt) return;
-    enAttente.push({ uid: uid, v: v });
+
+function verif(d) {
+  const enAttente = [];
+  let traitees = 0;
+  Object.keys(d).forEach((uid) => {
+    const v = d[uid] || {};
+    const st = String(v.status || "").toLowerCase();
+    if (["approved", "refused", "rejected"].includes(st)) { traitees++; return; }
+    if (st === "" && !v.requestedAt) return;
+    enAttente.push({ uid, v });
   });
-  enAttente.sort(function(x, y){
-    return Number(y.v.requestedAt || 0) - Number(x.v.requestedAt || 0);
-  });
-  var html = '<h2>Vérifications <span class="count ' + (enAttente.length ? "rouge" : "vert")
-    + '">' + enAttente.length + " en attente</span> "
-    + '<span class="count">' + traitees + " traitée(s)</span></h2>";
-  if(!enAttente.length) html += '<div class="vide">Aucune demande en attente.</div>';
-  enAttente.forEach(function(x){
-    var s = sourceDe(x.v, x.uid);
-    var nom = x.v.name || x.v.userName || x.uid.slice(0, 10);
-    html += '<div class="item">'
-      + '<span class="src ' + s.cle + '">' + s.txt + "</span>"
-      + '<span class="qui">' + esc(nom) + "</span> "
-      + '<span class="quand">· ' + quand(x.v.requestedAt) + " · "
-      + esc(String((x.v.type === "company" || (x.v.company && x.v.company.requestedAt)) ? "entreprise" : "particulier"))
-      + (s.deduit ? " · origine déduite" : "") + "</span>"
-      + '<div class="actions">'
-      + '<button class="b-ok" data-acc="' + esc(x.uid) + '">✓ Accepter</button>'
-      + '<button class="b-ko" data-ref="' + esc(x.uid) + '">✕ Refuser</button>'
-      + "</div></div>";
+  enAttente.sort((x, y) => Number(y.v.requestedAt || 0) - Number(x.v.requestedAt || 0));
+
+  let html = '<h2>Vérifications <span class="count ' + (enAttente.length ? "rouge" : "vert") + '">' +
+    enAttente.length + " en attente</span> <span class=\"count\">" + traitees + " traitée(s)</span></h2>";
+  if (!enAttente.length) html += '<div class="vide">Aucune demande en attente.</div>';
+  enAttente.forEach((x) => {
+    const s = sourceDe(x.v, x.uid);
+    const nom = x.v.name || x.v.userName || x.uid.slice(0, 10);
+    const type = (x.v.type === "company" || (x.v.company && x.v.company.requestedAt)) ?
+      "entreprise" : "particulier";
+    html += '<div class="item">' +
+      '<span class="src ' + s.cle + '">' + s.txt + "</span>" +
+      '<span class="qui">' + esc(nom) + "</span> " +
+      '<span class="quand">· ' + quand(x.v.requestedAt) + " · " + esc(type) +
+      (s.deduit ? " · origine déduite" : "") + "</span>" +
+      '<div class="actions">' +
+      '<button class="b-ok" data-acc="' + esc(x.uid) + '">✓ Accepter</button>' +
+      '<button class="b-ko" data-ref="' + esc(x.uid) + '">✕ Refuser</button>' +
+      "</div></div>";
   });
   $("blocVerif").innerHTML = html;
-  Array.prototype.forEach.call($("blocVerif").querySelectorAll("[data-acc]"), function(b){
-    b.onclick = function(){ accepter(b.getAttribute("data-acc")); };
-  });
-  Array.prototype.forEach.call($("blocVerif").querySelectorAll("[data-ref]"), function(b){
-    b.onclick = function(){ refuser(b.getAttribute("data-ref")); };
-  });
+  $("blocVerif").querySelectorAll("[data-acc]").forEach((b) =>
+    b.onclick = () => accepter(b.getAttribute("data-acc")));
+  $("blocVerif").querySelectorAll("[data-ref]").forEach((b) =>
+    b.onclick = () => refuser(b.getAttribute("data-ref")));
 }
-function accepter(uid){
-  if(!confirm("Accepter cette vérification ?")) return;
-  var code = codeA7();
-  var maj = {
+
+function accepter(uid) {
+  if (!confirm("Accepter cette vérification ?")) return;
+  const code = codeA7();
+  const maj = {
     status: "approved", verifiedAt: Date.now(), verified: true,
     verificationCode: code, codeAt: Date.now()
   };
-  db.ref("verifications/" + uid).update(maj).then(function(){
-    return db.ref("profiles/" + uid).update({ verified: true, verifiedAt: Date.now() });
-  }).then(function(){
-    alert("Vérifié. Code à 7 chiffres : " + code +
-      "\n\nDonnez ce code à la personne : elle le saisit dans son application.");
-    tout();
-  }).catch(function(e){ alert("Échec : " + e.message); });
+  update(ref(db, "verifications/" + uid), maj)
+    .then(() => update(ref(db, "profiles/" + uid), { verified: true, verifiedAt: Date.now() }))
+    .then(() => {
+      alert("Vérifié. Code à 7 chiffres : " + code +
+        "\n\nDonnez ce code à la personne : elle le saisit dans son application.");
+      tout();
+    })
+    .catch((e) => alert("Échec : " + e.message));
 }
-function refuser(uid){
-  if(!confirm("Refuser cette vérification ? La demande sera effacée.")) return;
-  db.ref("verifications/" + uid).remove().then(function(){
-    tout();
-  }).catch(function(e){ alert("Échec : " + e.message); });
+
+function refuser(uid) {
+  if (!confirm("Refuser cette vérification ? La demande sera effacée.")) return;
+  remove(ref(db, "verifications/" + uid)).then(() => tout()).catch((e) => alert("Échec : " + e.message));
 }
-function signal(market, job){
-  var l = [];
-  Object.keys(market).forEach(function(k){
-    var g = market[k] || {};
-    Object.keys(g).forEach(function(j){ l.push({ src:"shalom", o:g[j], id:j }); });
+
+function signal(market, job) {
+  const l = [];
+  Object.keys(market).forEach((k) => {
+    const g = market[k] || {};
+    Object.keys(g).forEach((j) => l.push({ src: "shalom", o: g[j], id: j }));
   });
-  Object.keys(job).forEach(function(k){
-    var o = job[k];
-    if(o && typeof o === "object") l.push({ src:"jobmarket", o:o, id:k });
+  Object.keys(job).forEach((k) => {
+    const o = job[k];
+    if (o && typeof o === "object") l.push({ src: "jobmarket", o, id: k });
   });
-  l.sort(function(a, b){ return Number(b.o.timestamp || 0) - Number(a.o.timestamp || 0); });
-  var html = '<h2>Signalements <span class="count ' + (l.length ? "rouge" : "vert")
-    + '">' + l.length + "</span></h2>";
-  if(!l.length) html += '<div class="vide">Aucun signalement.</div>';
-  l.slice(0, 40).forEach(function(x){
-    var cls = x.src === "shalom" ? "shalom" : "jobmarket";
-    var txt = x.src === "shalom" ? "SHALOM" : "JOBMARKET";
-    html += '<div class="item"><span class="src ' + cls + '">' + txt + "</span> "
-      + esc(x.o.motif || x.o.reason || "motif non précisé")
-      + ' <span class="quand">· ' + quand(x.o.timestamp) + "</span>"
-      + (x.o.listingTitle ? '<div class="dim">' + esc(x.o.listingTitle) + "</div>" : "")
-      + (x.o.detail ? '<div class="dim">' + esc(String(x.o.detail).slice(0, 200)) + "</div>" : "")
-      + "</div>";
+  l.sort((a, b) => Number(b.o.timestamp || 0) - Number(a.o.timestamp || 0));
+  let html = '<h2>Signalements <span class="count ' + (l.length ? "rouge" : "vert") + '">' + l.length + "</span></h2>";
+  if (!l.length) html += '<div class="vide">Aucun signalement.</div>';
+  l.slice(0, 40).forEach((x) => {
+    const txt = x.src === "shalom" ? "SHALOM" : "JOBMARKET";
+    html += '<div class="item"><span class="src ' + x.src + '">' + txt + "</span> " +
+      esc(x.o.motif || x.o.reason || "motif non précisé") +
+      ' <span class="quand">· ' + quand(x.o.timestamp) + "</span>" +
+      (x.o.listingTitle ? '<div class="dim">' + esc(x.o.listingTitle) + "</div>" : "") +
+      (x.o.detail ? '<div class="dim">' + esc(String(x.o.detail).slice(0, 200)) + "</div>" : "") + "</div>";
   });
   $("blocSignal").innerHTML = html;
 }
-function erreurs(d){
-  var l = [];
-  Object.keys(d).forEach(function(k){
-    var o = d[k];
-    if(o && typeof o === "object") l.push(o);
-  });
-  l.sort(function(a, b){ return Number(b.at || 0) - Number(a.at || 0); });
-  var html = '<h2>Erreurs des téléphones <span class="count">' + l.length + "</span></h2>";
-  if(!l.length) html += '<div class="vide">Aucune erreur enregistrée.</div>';
-  l.slice(0, 30).forEach(function(o){
-    html += '<div class="item"><div class="qui" style="font-size:13.5px">'
-      + esc(String(o.message || "").slice(0, 220)) + "</div>"
-      + '<div class="quand">' + quand(o.at) + " · " + esc(String(o.page || "")) + "</div></div>";
+
+function erreurs(d) {
+  const l = Object.keys(d).map((k) => d[k]).filter((o) => o && typeof o === "object");
+  l.sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
+  let html = '<h2>Erreurs des téléphones <span class="count">' + l.length + "</span></h2>";
+  if (!l.length) html += '<div class="vide">Aucune erreur enregistrée.</div>';
+  l.slice(0, 30).forEach((o) => {
+    html += '<div class="item"><div class="qui" style="font-size:13.5px">' +
+      esc(String(o.message || "").slice(0, 220)) + "</div>" +
+      '<div class="quand">' + quand(o.at) + " · " + esc(String(o.page || "")) + "</div></div>";
   });
   $("blocErr").innerHTML = html;
 }
