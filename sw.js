@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v317'; // 20261015b : position exacte pour les annonces, arrondie pour les profils
+const CACHE_VERSION = 'v322'; // 20261022d : le numéro de téléphone ne se perd plus en silence
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -491,6 +491,65 @@ const SHELL_URLS = new Set(
   })
 );
 
+/* ══════════════════════════════════════════════════════════════════════
+   (20261022c) LES FICHIERS IMMUABLES NE SONT PLUS RETÉLÉCHARGÉS
+
+   MESURÉ AVANT CORRECTION : à chaque mise à jour, 265,6 Ko repartaient
+   sur le câble alors qu'aucun de ces fichiers n'avait changé d'un octet
+   (Leaflet, les quatre bibliothèques Firebase, les polices, les icônes).
+   Soit 5,4 secondes perdues sur une 3G faible, À CHAQUE VAGUE, pour
+   CHAQUE utilisateur.
+
+   La cause : le cache du code s'appelle « jobmarket-shell-vNNN ». Au
+   changement de version, l'ancien cache était supprimé sans être repris
+   (seuls les caches de CONTENU étaient récupérés), puis le nouveau était
+   rempli à neuf par le préchargement d'installation. Le numéro de
+   version servait donc à purger au lieu de servir à renouveler.
+
+   Les fichiers ci-dessous ne changent jamais : on les recopie de
+   l'ancien cache vers le nouveau, et on ne les télécharge qu'une fois
+   dans la vie de l'application. Le code de l'application, lui (index,
+   app.js, chat-widget), continue d'être retéléchargé — c'est lui qui
+   change.
+   ══════════════════════════════════════════════════════════════════ */
+const IMMUABLES = [/^\.\/vendor\//, /^\.\/icon-/, /^\.\/apple-touch-icon/, /^\.\/favicon-/, /^\.\/manifest\.json$/];
+function estImmuable(u) {
+  try { return IMMUABLES.some((r) => r.test(u)); } catch (e) { return false; }
+}
+
+/* Les mêmes, en adresse absolue, pour le gestionnaire de requêtes. */
+const IMMUABLE_URLS = new Set(
+  SHELL_ASSETS.filter(estImmuable).map((u) => {
+    try { const a = new URL(u, self.location.href); return a.origin + a.pathname; } catch (e) { return u; }
+  })
+);
+
+/* Recopie les fichiers immuables du dernier cache de code connu vers le
+   nouveau. Aucun octet ne passe par le réseau : c'est une lecture
+   locale. Renvoie le nombre d'entrées récupérées. */
+async function heriterImmuables(cache) {
+  let n = 0;
+  try {
+    const noms = (await caches.keys())
+      .filter((k) => k.indexOf('jobmarket-shell-') === 0 && k !== SHELL_CACHE)
+      .sort()
+      .reverse();                       // le plus récent d'abord
+    if (!noms.length) return 0;
+    for (const u of SHELL_ASSETS) {
+      if (!estImmuable(u)) continue;
+      try {
+        if (await cache.match(u, { ignoreSearch: true })) continue;
+        for (const nom of noms) {
+          const vieux = await caches.open(nom);
+          const res = await vieux.match(u, { ignoreSearch: true });
+          if (res) { await cache.put(u, res); n++; break; }
+        }
+      } catch (e) {}
+    }
+  } catch (e) {}
+  return n;
+}
+
 // (20260907aj) Une seule version de chaque fichier du socle dans le cache.
 // Comme la page demande « app.js?v=<version> », chaque mise à jour créerait
 // une entrée de plus (700 Ko à chaque fois) si on ne rangeait pas derrière.
@@ -508,26 +567,42 @@ async function rangerSocle(cache, req) {
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(SHELL_CACHE).then((cache) =>
-      Promise.all(
-        SHELL_ASSETS.map((url) =>
-          cache.add(url).catch((err) => console.warn('SW: échec mise en cache', url, err))
-        )
-      )
-    ).then(() => self.skipWaiting())
+    (async () => {
+      const cache = await caches.open(SHELL_CACHE);
+      /* (20261022c) D'ABORD on récupère ce qu'on a déjà, ENSUITE on
+         télécharge ce qui manque. Sans cette étape, le préchargement
+         retéléchargeait les 265,6 Ko de bibliothèques à chaque vague. */
+      const herites = await heriterImmuables(cache);
+      if (herites) console.log('SW: ' + herites + ' fichier(s) immuable(s) récupérés, 0 octet téléchargé');
+      for (const url of SHELL_ASSETS) {
+        try {
+          if (estImmuable(url) && (await cache.match(url, { ignoreSearch: true }))) continue;
+          await cache.add(url);
+        } catch (err) {
+          console.warn('SW: échec mise en cache', url, err);
+        }
+      }
+      await self.skipWaiting();
+    })()
   );
 });
 
 // (20260907u) Reprend le contenu d'un ancien cache versionné dans le nouveau
 // cache permanent, puis supprime l'ancien. Tout se passe sur l'appareil :
 // aucun téléchargement, donc aucune donnée consommée.
-async function recupererAncienCache(ancienNom, nouveauNom) {
+async function recupererAncienCache(ancienNom, nouveauNom, ignorerAvecParametres) {
   try {
     const ancien = await caches.open(ancienNom);
     const nouveau = await caches.open(nouveauNom);
     const demandes = await ancien.keys();
     for (const req of demandes) {
       try {
+        /* (20261022c) « app.js?v=20261022b » porte son numéro de version
+           dans l'adresse : le recopier reviendrait à garder jusqu'à 700 Ko
+           de code périmé dans le nouveau cache, pour une entrée que plus
+           personne ne demandera. On ne recopie que les adresses sans
+           paramètre, c'est-à-dire les fichiers réellement stables. */
+        if (ignorerAvecParametres && req.url.indexOf('?') !== -1) continue;
         if (await nouveau.match(req)) continue;      // déjà présent
         const res = await ancien.match(req);
         if (res) await nouveau.put(req, res);
@@ -552,6 +627,10 @@ self.addEventListener('activate', (event) => {
         // ancien cache de CONTENU : on récupère avant de supprimer
         const cible = cacheContenuCible(key);
         if (cible) await recupererAncienCache(key, cible);
+        /* (20261022c) filet de sécurité : si un fichier immuable n'avait
+           pas pu être récupéré à l'installation, on le reprend ici avant
+           de jeter l'ancien cache — plutôt que de le faire retélécharger. */
+        else if (key.indexOf('jobmarket-shell-') === 0) await recupererAncienCache(key, SHELL_CACHE, true);
         try { await caches.delete(key); } catch (e) {}
       }
       try { await trimTileCache(); } catch (e) {}
@@ -825,6 +904,24 @@ self.addEventListener('fetch', (event) => {
   // la dernière version, hors ligne l'application démarre quand même.
   // « ignoreSearch » est indispensable : la page demande « app.js?v=… », le
   // cache contient « app.js ».
+  /* (20261022c) Un fichier immuable n'a PAS BESOIN du réseau : celui qui
+     est en cache est, par définition, le bon. On le sert directement.
+     Avant, ces fichiers partaient en « réseau d'abord » : chaque ouverture
+     de l'application attendait une réponse du serveur pour 265,6 Ko qui
+     n'avaient pas changé depuis des mois — et sur une connexion hésitante,
+     c'était l'écran de démarrage qui restait bloqué. */
+  if (url.origin === self.location.origin && IMMUABLE_URLS.has(url.origin + url.pathname)) {
+    event.respondWith(
+      caches.match(req, { ignoreSearch: true }).then((deja) => deja || fetch(req).then((res) => {
+        if (res && res.ok && res.status === 200) {
+          caches.open(SHELL_CACHE).then((cache) => cache.put(req, res.clone()));
+        }
+        return res;
+      }).catch(() => caches.match(req, { ignoreSearch: true })))
+    );
+    return;
+  }
+
   if (url.origin === self.location.origin && SHELL_URLS.has(url.origin + url.pathname)) {
     event.respondWith(
       fetch(req).then((res) => {
