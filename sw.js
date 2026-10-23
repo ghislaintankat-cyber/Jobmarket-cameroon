@@ -362,7 +362,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v323'; // 20261023a : quand la base refuse, on le dit ; le fichier livré est vérifié
+const CACHE_VERSION = 'v326'; // 20261023d : les appels annoncent l'état du correspondant, le slogan fait patienter
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
