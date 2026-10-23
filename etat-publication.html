@@ -74,6 +74,16 @@ pre{background:#0b0d12;border:1px solid var(--line);border-radius:10px;padding:1
   </div>
 
   <div class="bloc">
+    <b>Partage et référencement (worker Cloudflare)</b>
+    <div id="etatWorker" class="dim">Vérification en cours…</div>
+    <button class="sec" id="btnWorker">🔎 Revérifier le worker</button>
+    <div class="dim" style="margin-top:8px;font-size:12px">
+      Le worker fabrique la page d'une annonce quand WhatsApp, Facebook ou
+      Google ouvre le lien. C'est lui qui rend les annonces trouvables.
+    </div>
+  </div>
+
+  <div class="bloc">
     <b>Erreurs remontées par les téléphones</b>
     <div id="erreurs" class="dim">Connectez-vous comme administrateur pour lire les dernières erreurs.</div>
     <button class="sec" id="btnErreurs" style="display:none">📋 Lire les dernières erreurs</button>
@@ -87,7 +97,7 @@ pre{background:#0b0d12;border:1px solid var(--line);border-radius:10px;padding:1
 <script src="./vendor/firebase-auth-compat.js"></script>
 <script src="./vendor/firebase-database-compat.js"></script>
 <script>
-var ATTENDU = {"build":"20261023d","cache":"v326","taille":{"app.js":716955,"index.html":215928,"sw.js":47121,"chat-widget.js":71228,"manifest.json":2568,"shalom-square.html":318158,"shalom-square-chat.html":175838,"outil-vie-privee.html":17843}};
+var ATTENDU = {"build":"20261023g","cache":"v328","taille":{"app.js":717671,"index.html":215673,"sw.js":48323,"chat-widget.js":71228,"manifest.json":2568,"shalom-square.html":318158,"shalom-square-chat.html":175838,"outil-vie-privee.html":17843}};
 var $ = function(i){ return document.getElementById(i); };
 function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&quot;"; }); }
 var LIGNES = [];
@@ -218,6 +228,52 @@ function compter(){
     dire("Numéros publics : " + tot);
   });
 }
+
+/* ═══ (20261023h) LE WORKER DE PARTAGE ═══
+   On lit son sitemap : il est public et ne demande aucun compte.
+   Deux choses s'y voient :
+     • le NOMBRE d'annonces déclarées (est-ce qu'il lit bien la base ?) ;
+     • la présence de <lastmod> — la signature de la version corrigée.
+   L'ancienne version ne produisait aucun lastmod : Google ne savait donc
+   pas quelles annonces avaient changé, et revenait au hasard. */
+var JMC_WORKER = "https://jobmarket-share.ghislaintankat.workers.dev";
+
+function verifierWorker(){
+  var zone = $("etatWorker");
+  if(!zone) return;
+  if("function" != typeof fetch){
+    zone.textContent = "Ce navigateur ne peut pas interroger le worker.";
+    return;
+  }
+  zone.textContent = "Vérification en cours…";
+  fetch(JMC_WORKER + "/sitemap.xml?t=" + Date.now(), { cache: "no-store" })
+    .then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.text();
+    })
+    .then(function(xml){
+      var urls = (xml.match(/<loc>/g) || []).length;
+      var maj = (xml.match(/<lastmod>/g) || []).length;
+      var lignes = [];
+      lignes.push("Sitemap : " + urls + " adresse(s) déclarée(s).");
+      if(maj > 0){
+        lignes.push("✅ Version corrigée déployée : " + maj + " annonce(s) portent une date de mise à jour.");
+        lignes.push("Google sait donc lesquelles réexplorer.");
+        zone.innerHTML = lignes.join("<br>");
+      } else {
+        lignes.push("⚠️ Aucune date de mise à jour dans le sitemap.");
+        lignes.push("C'est la signature de l'<b>ancienne</b> version du worker : il faut déployer <b>jobmarket-share.js</b>.");
+        zone.innerHTML = lignes.join("<br>");
+      }
+    })
+    .catch(function(e){
+      zone.innerHTML = "❌ Le worker ne répond pas (" + ((e && e.message) || e) + ")."
+        + "<br>Les liens partagés ne montreront pas l'annonce, et Google ne peut rien indexer.";
+    });
+}
+
+if($("btnWorker")) $("btnWorker").onclick = verifierWorker;
+try{ verifierWorker(); }catch(e){}
 
 /* ═══ les droits d'écriture, seulement si on est administrateur ═══ */
 var auth = null, base = null;

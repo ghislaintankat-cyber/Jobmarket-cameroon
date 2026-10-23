@@ -120,14 +120,27 @@ messaging.onBackgroundMessage((payload) => {
     // « quelqu'un m'appelle » avec « j'ai reçu un message ».
     // (20260907o) l'appel vibre EXACTEMENT comme la sonnerie dans l'app :
     // même salve longue, pour qu'on reconnaisse « on m'appelle » sans regarder.
-    vibrate: type === 'call' ? [600, 250, 600, 250, 900] : [70, 80, 70, 80, 70, 80, 200],
+    /* (20261023e) UN APPEL DOIT S'ENTENDRE ET SE SENTIR LONGTEMPS.
+       Retour terrain : « ça ne vibre pas pour longtemps ». Le motif ne
+       durait que 2,6 s (600+250+600+250+900). Si le système coupe le
+       service worker après une ou deux salves — ce qui arrive souvent
+       écran éteint — il ne restait presque rien.
+       On passe à 4,1 s par salve, et le nombre de salves passe de 3 à 6
+       plus bas : même si le système ne nous en laisse que deux, la
+       vibration dure plus de huit secondes au lieu de cinq. */
+    vibrate: type === 'call' ? [1000, 300, 1000, 300, 1500] : [70, 80, 70, 80, 70, 80, 200],
     // (20260907o) un appel ne disparaît pas tout seul : il reste à l'écran
     // tant qu'on n'a pas répondu ou refusé, comme WhatsApp.
     requireInteraction: type === 'call',
     silent: false,
-    // Android : un message NOUVEAU (même sujet/tag) rejoue son + vibration
-    // au lieu de remplacer silencieusement la notif existante.
-    renotify: true,
+    /* Android : un message NOUVEAU (même sujet/tag) rejoue son + vibration
+       au lieu de remplacer silencieusement la notif existante.
+       (20261023e) ATTENTION : « renotify » n'a de sens QU'AVEC un « tag ».
+       Sans tag, la combinaison est invalide et la notification peut être
+       refusée ou affichée sans alerte sonore — c'est-à-dire exactement le
+       symptôme observé (« le son ne sort pas »). On ne l'active donc que
+       lorsqu'un tag existe. */
+    renotify: !!tag,
     lang: data.lang || 'fr', // langue de la chrome de notification
     data,
     // Boutons d'action directement dans la notification : gagne un clic et
@@ -193,7 +206,12 @@ messaging.onBackgroundMessage((payload) => {
 
 // (20260907o) Réaffiche la notification d'appel toutes les 4 s pour que le
 // téléphone sonne et vibre en continu, et s'arrête dès qu'elle n'est plus là.
-const CALL_RING_SALVES = 3;   // (20260907af) 5 salves étaient pénibles
+/* (20261023e) 3 → 6 salves. Elles avaient été réduites à 3 parce que
+   cinq étaient « pénibles » — mais le retour terrain dit maintenant
+   l'inverse : la sonnerie s'arrête trop tôt et on manque l'appel.
+   Six salves de 4 s, c'est 24 s de sonnerie : une durée de téléphone
+   ordinaire (une sonnerie classique dure de 20 à 40 s). */
+const CALL_RING_SALVES = 6;
 const CALL_RING_INTERVALLE = 4000;
 
 function sonnerCommeUnAppel(title, options, tag) {
@@ -362,7 +380,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v326'; // 20261023d : les appels annoncent l'état du correspondant, le slogan fait patienter
+const CACHE_VERSION = 'v328'; // 20261023g : les notifications push ne sont plus téléchargées au démarrage
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
