@@ -1,4 +1,12 @@
 User-agent: *
 Allow: /
 
+# (20261022b) Le sitemap doit être déclaré sur le MÊME domaine que le site.
+# Avant, il pointait vers jobmarket-share.ghislaintankat.workers.dev ;
+# Google ignore un sitemap déclaré sur un autre domaine tant que la
+# propriété n'est pas vérifiée dans la Search Console. Les deux sont
+# déclarés : celui du site (toujours pris en compte) et celui du worker
+# (qui liste les annonces, et qui sera pris en compte une fois la
+# propriété vérifiée).
+Sitemap: https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/sitemap.xml
 Sitemap: https://jobmarket-share.ghislaintankat.workers.dev/sitemap.xml
