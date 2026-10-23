@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.ghislaintankat_cyber.twa",
+        "sha256_cert_fingerprints": ["B8:CF:50:A7:BF:BC:C5:50:0C:CB:BC:55:B7:E9:E3:06:C2:B3:E8:FB:D4:1E:87:3E:E5:15:18:48:5A:61:FB:C8"]
+      }
+    }]
