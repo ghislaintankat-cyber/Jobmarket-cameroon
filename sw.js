@@ -380,7 +380,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v329'; // 20261023i : « Qui m'a contacté » refonctionne sans les règles ETAPE6
+const CACHE_VERSION = 'v331'; // 20261024a : le slogan ne se coupe plus (préchargé et gardé en local)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -402,6 +402,34 @@ const MAX_VIDEO_ENTRIES = 12;
 // anciens noms (versionnés) : on récupère leur contenu une dernière fois
 // avant de les supprimer, pour ne rien faire retélécharger lors du passage.
 const PREFIXES_CONTENU = ['jobmarket-tiles-', 'jobmarket-images-', 'jobmarket-videos-'];
+
+/* ══════════════════════════════════════════════════════════════════════
+   (20261024a) LE SLOGAN EN LOCAL, MAIS SANS RETARDER LE DÉMARRAGE
+
+   slogan.mp3 pèse 77 Ko. Il était préchargé au tout premier lancement,
+   puis retiré (vague 20261002) pour ne pas alourdir l'ouverture. Ce
+   choix a coûté plus qu'il ne rapportait : sans préchargement, le
+   téléphone télécharge ET joue en même temps, le tampon se vide, et le
+   slogan se coupe en plein milieu (« ça met pause, puis ça continue »).
+
+   On le remet donc en cache — mais PAS dans SHELL_ASSETS : cette liste
+   est attendue à l'installation, et y remettre 77 Ko retarderait
+   l'activation du service worker. On le récupère en ARRIÈRE-PLAN, une
+   fois tout installé, quand plus rien n'est urgent.
+   ══════════════════════════════════════════════════════════════════════ */
+const PRECHAUFFAGE = [ './slogan.mp3' ];
+
+async function prechaufferContenus() {
+  try {
+    const cache = await caches.open(SHELL_CACHE);
+    for (const url of PRECHAUFFAGE) {
+      try {
+        if (await cache.match(url, { ignoreSearch: true })) continue;
+        await cache.add(url);
+      } catch (e) {}
+    }
+  } catch (e) {}
+}
 
 const SHELL_ASSETS = [
   './',
@@ -655,6 +683,8 @@ self.addEventListener('activate', (event) => {
       try { await trimImageCache(); } catch (e) {}
       try { await trimVideoCache(); } catch (e) {}
     }).then(() => self.clients.claim())
+      /* mise en cache du slogan APRÈS coup, sans bloquer l'activation */
+      .then(() => { prechaufferContenus(); })
   );
 });
 
@@ -889,6 +919,22 @@ self.addEventListener('fetch', (event) => {
           return new Response('', { status: 504, statusText: 'Tuile indisponible hors-ligne' });
         }
       })
+    );
+    return;
+  }
+
+  /* (20261024a) les contenus préchauffés (le slogan) : servis depuis le
+     cache. Sans cette règle, ils retomberaient sur le cache HTTP du
+     navigateur — or GitHub Pages ne le garde que 10 minutes
+     (« cache-control: max-age=600 », mesuré). Passé ce délai, le fichier
+     était retéléchargé, d'où la coupure qui revenait. */
+  if (url.origin === self.location.origin &&
+      PRECHAUFFAGE.some((u) => { try { const a = new URL(u, self.location.href); return a.pathname === url.pathname; } catch (e) { return false; } })) {
+    event.respondWith(
+      caches.match(req, { ignoreSearch: true }).then((deja) => deja || fetch(req).then((res) => {
+        if (res && res.ok) { caches.open(SHELL_CACHE).then((c) => c.put(req, res.clone())); }
+        return res;
+      }).catch(() => new Response('', { status: 504 })))
     );
     return;
   }
