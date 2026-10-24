@@ -380,7 +380,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v328'; // 20261023g : les notifications push ne sont plus téléchargées au démarrage
+const CACHE_VERSION = 'v329'; // 20261023i : « Qui m'a contacté » refonctionne sans les règles ETAPE6
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
