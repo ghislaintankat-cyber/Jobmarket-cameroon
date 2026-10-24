@@ -380,7 +380,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v331'; // 20261024a : le slogan ne se coupe plus (préchargé et gardé en local)
+const CACHE_VERSION = 'v332'; // 20261024d : les raccourcis de l'icône Android font enfin quelque chose
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
