@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261024g">
+<html lang="fr" data-app-build="20261024h">
 <head>
 <script>
 // Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -897,6 +897,37 @@ animation:jmcPhareRouge 1.05s ease-in-out infinite;
 .jmc-urgent-phare i.phare-bleu  { background:#1d4ed8; animation:none; }
 .jmc-urgent-bandeau { background:#dc2626; animation:none; }
 }
+#jmcAmorcage{
+position:fixed;left:0;right:0;z-index:8800;
+top:calc(env(safe-area-inset-top,0px) + 58px);
+display:none;align-items:center;gap:10px;
+margin:0 10px;padding:10px 12px;
+background:linear-gradient(135deg,rgba(255,215,0,.14),rgba(255,215,0,.06));
+border:1px solid rgba(255,215,0,.42);border-radius:14px;
+box-shadow:0 6px 22px rgba(0,0,0,.28);
+font-size:12.5px;line-height:1.45;color:var(--text);
+}
+#jmcAmorcage.jmc-visible{display:flex}
+#jmcAmorcage .jmc-am-txt{flex:1;min-width:0}
+#jmcAmorcage .jmc-am-txt b{color:var(--gold,#FFD700);font-weight:800}
+#jmcAmorcage .jmc-am-actions{display:flex;gap:6px;flex:none}
+#jmcAmorcage button{
+border:none;border-radius:10px;padding:8px 11px;font-size:12px;
+font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;
+min-height:36px;
+}
+#jmcAmorcage .jmc-am-publier{background:var(--gold,#FFD700);color:#0A0A0F}
+#jmcAmorcage .jmc-am-partager{
+background:none;border:1px solid rgba(255,215,0,.55);color:var(--gold,#FFD700);
+}
+#jmcAmorcage .jmc-am-fermer{
+background:none;border:none;color:var(--text-dim,#999);font-size:16px;
+padding:4px 2px;min-height:0;line-height:1;
+}
+@media (max-width:520px){
+#jmcAmorcage{flex-wrap:wrap}
+#jmcAmorcage .jmc-am-actions{width:100%;justify-content:flex-end}
+}
 .job-card{
 background:var(--surface);
 border-radius:var(--radius-md);
@@ -1409,6 +1440,14 @@ background: var(--surface);
 </div>
 </div>
 <div id="map"></div>
+<div id="jmcAmorcage" role="status">
+<span class="jmc-am-txt" data-i18n-html="amorcageTexte">JobMarket démarre. <b>Sois parmi les premiers</b> à publier un besoin — les artisans viendront.</span>
+<span class="jmc-am-actions">
+<button type="button" class="jmc-am-publier" onclick="jmcAmorcagePublier()" data-i18n="amorcagePublier">Publier</button>
+<button type="button" class="jmc-am-partager" onclick="jmcAmorcagePartager()" data-i18n="amorcagePartager">Partager</button>
+</span>
+<button type="button" class="jmc-am-fermer" onclick="jmcAmorcageFermer()" aria-label="Fermer" data-i18n-aria-label="closeAriaLabel">✕</button>
+</div>
 <header class="topbar">
 <div class="logo-wrap">
 <div class="logo-icon">JM</div>
