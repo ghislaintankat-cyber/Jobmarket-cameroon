@@ -15,14 +15,20 @@
    ─────────────────────────────────────────────────────────────────────────
    1. console.cloud.google.com → créer un projet (nom : JobMarket)
    2. « Facturation » → ajouter un moyen de paiement
-      (Google offre 200 $ par mois ; 100 000 tuiles gratuites — de quoi
-       couvrir très largement JobMarket. Utilisation normale : 0 F.)
+      (Vérifiez les tarifs ACTUELS de « Map Tiles API – 2D Tiles » : un quota
+       gratuit mensuel existe, puis c'est payant au volume. Chaque ouverture
+       de la carte charge plusieurs dizaines de tuiles.)
+      FIXEZ UN QUOTA JOURNALIER : API et services → Map Tiles API → Quotas.
+      Quand il est atteint, l'application bascule toute seule sur la carte
+      Esri, sans frais.
    3. « API et services » → Bibliothèque → chercher « Map Tiles API »
       → ACTIVER
    4. « API et services » → Identifiants → Créer une clé API → copier
    5. RESTREINDRE LA CLÉ (indispensable, elle est publique) :
       • Restrictions relatives aux applications → Sites Web
         → ajouter : ghislaintankat-cyber.github.io/*
+        → ajouter aussi : localhost/*   (sinon l'application Android
+          n'aura pas la carte Google : son adresse interne est localhost)
       • Restrictions relatives aux API → Map Tiles API uniquement
    6. Coller la clé ci-dessous, entre les guillemets.
 
