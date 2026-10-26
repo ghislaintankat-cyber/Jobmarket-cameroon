@@ -380,7 +380,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v341'; // 20261025i : boutons de langue nommés pour les lecteurs d'écran
+const CACHE_VERSION = 'v356'; // 20261026g : données allégées (slogan ×2 plus léger) et page de vérification d'envoi
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -393,7 +393,10 @@ const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // change pas parce que NOTRE code a changé.
 // Seul le cache du CODE (SHELL) reste versionné — lui doit bien être renouvelé.
 const TILE_CACHE = 'jobmarket-tiles';
-const MAX_TILE_ENTRIES = 400;
+/* 300 tuiles ≈ 12 Mo avec l'imagerie satellite d'Esri (~40 Ko/tuile), contre
+   ~15 Ko pour un plan OSM. Mesuré : 400 tuiles satellite pesaient jusqu'à
+   16 Mo sur l'appareil — beaucoup pour un téléphone d'entrée de gamme. */
+const MAX_TILE_ENTRIES = 300;
 const IMAGE_CACHE = 'jobmarket-images';
 const MAX_IMAGE_ENTRIES = 250;
 // (20260905v 5ᵉ) cache vidéo séparé : peu d'entrées (fichiers lourds)
@@ -417,7 +420,34 @@ const PREFIXES_CONTENU = ['jobmarket-tiles-', 'jobmarket-images-', 'jobmarket-vi
    l'activation du service worker. On le récupère en ARRIÈRE-PLAN, une
    fois tout installé, quand plus rien n'est urgent.
    ══════════════════════════════════════════════════════════════════════ */
-const PRECHAUFFAGE = [ './slogan.mp3' ];
+/* (20261025p) lieux.js rejoint le préchauffage, PAS la liste bloquante :
+   ce sont les noms écrits sur la carte satellite. Les tuiles de la carte ne
+   sont pas mises en cache (ce serait des milliers d'images) : hors ligne, la
+   carte est de toute façon vide. Inutile donc de retarder l'installation du
+   service worker de 3 Ko pour ces noms — on les récupère juste après. */
+/* ═══════════════════════════════════════════════════════════════════════════
+   (20261026f) LE SLOGAN N'EST PLUS TÉLÉCHARGÉ À L'OUVERTURE
+   -----------------------------------------------------------------------------
+   Mesure du 26/10 : première ouverture de JobMarket = 595 Ko, dont
+   **76 Ko pour slogan.mp3** — la sonnerie qui annonce un appel entrant.
+        app.js 211 · slogan 76 · police 61 · index 48 · firebase 97 ·
+        leaflet 42 · police 34 · chat 21 · reste 6
+   76 Ko, c'est 13 % du poids pour un son que la grande majorité des visites
+   n'entendront jamais : il ne sert qu'à la sonnerie d'un appel.
+
+   Pourquoi il était préchargé (vague 20261024a) : GitHub Pages ne garde le
+   cache HTTP que 10 minutes ; le slogan était donc retéléchargé et la
+   sonnerie se coupait. Ce défaut est réel — mais il ne justifie pas de faire
+   payer 76 Ko à chaque ouverture.
+
+   Nouvelle règle : on préchauffe le slogan APRÈS 45 SECONDES d'utilisation
+   réelle. Quelqu'un qui ouvre l'application pour consulter la carte et la
+   referme ne paie rien. Quelqu'un qui reste — celui à qui on peut appeler —
+   l'a en mémoire avant que le téléphone sonne.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const PRECHAUFFAGE = [ './lieux.js' ];            // léger (2 Ko), sert aux noms de la carte
+const PRECHAUFFAGE_DIFFERE = [ './slogan.mp3' ];  // 76 Ko : après 45 s, jamais à l'ouverture
+const DELAI_PRECHAUFFAGE_MS = 45000;
 
 async function prechaufferContenus() {
   try {
@@ -429,6 +459,27 @@ async function prechaufferContenus() {
       } catch (e) {}
     }
   } catch (e) {}
+}
+
+/* (20261026f) Les contenus lourds attendent 45 s. Un navigateur peut endormir
+   le service worker : si le minuteur n'a pas pu s'exécuter, ce n'est pas
+   grave — la sonnerie se chargera au premier appel, comme avant 20261024a. */
+let prechauffageDiffereFait = false;
+async function prechaufferDiffere() {
+  if (prechauffageDiffereFait) return 0;
+  prechauffageDiffereFait = true;
+  let n = 0;
+  try {
+    const cache = await caches.open(SHELL_CACHE);
+    for (const url of PRECHAUFFAGE_DIFFERE) {
+      try {
+        if (await cache.match(url, { ignoreSearch: true })) continue;
+        await cache.add(url);
+        n++;
+      } catch (e) {}
+    }
+  } catch (e) {}
+  return n;
 }
 
 const SHELL_ASSETS = [
@@ -683,15 +734,39 @@ self.addEventListener('activate', (event) => {
       try { await trimImageCache(); } catch (e) {}
       try { await trimVideoCache(); } catch (e) {}
     }).then(() => self.clients.claim())
-      /* mise en cache du slogan APRÈS coup, sans bloquer l'activation */
-      .then(() => { prechaufferContenus(); })
+      /* (20261026f) à l'activation : seulement les contenus LÉGERS (lieux.js).
+         Le slogan (76 Ko) attend 45 s — voir PRECHAUFFAGE_DIFFERE. */
+      .then(() => { prechaufferContenus(); try { setTimeout(() => { prechaufferDiffere(); }, DELAI_PRECHAUFFAGE_MS); } catch (e) {} })
   );
 });
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   (20261026c) QUELLES TUILES SONT GARDÉES POUR LE HORS-LIGNE
+
+   Défaut trouvé en relisant cette fonction : elle reconnaissait
+   tile.openstreetmap.org et mt0-3.google.com. Or la vague 20261025j a changé
+   de fournisseur pour sortir de Google (interdit) : le satellite vient
+   maintenant de server.arcgisonline.com — un hôte QUE PERSONNE NE RECONNAISSAIT.
+   Conséquence : les tuiles satellite, celles affichées par défaut, n'étaient
+   jamais mises en cache. Hors ligne, la carte était vide, alors que le service
+   worker savait le faire.
+
+   On couvre donc les hôtes réellement utilisés :
+     • server.arcgisonline.com  — images satellite (défaut)
+     • *.tile.openstreetmap.org — le plan (bascule « style de carte »)
+     • *.basemaps.cartocdn.com  — conservé : ce fournisseur a déjà servi, et
+       le reconnaître ne coûte rien s'il revient un jour
+   La règle Google est RETIRÉE : plus aucune tuile Google n'est demandée.
+   Garder un hôte mort laissait croire que la carte était couverte.
+   ═══════════════════════════════════════════════════════════════════════════ */
 function isMapTile(url) {
+  const h = url.hostname;
   return (
-    url.hostname.endsWith('tile.openstreetmap.org') ||
-    /^mt[0-3]\.google\.com$/.test(url.hostname)
+    h === 'server.arcgisonline.com' ||                  // satellite Esri
+    h === 'services.arcgisonline.com' ||               // variante Esri
+    h.endsWith('.arcgisonline.com') ||
+    h.endsWith('tile.openstreetmap.org') ||            // plan OSM
+    h.endsWith('basemaps.cartocdn.com')                // réserve
   );
 }
 
@@ -738,17 +813,29 @@ async function trimVideoCache() {
 async function trimTileCache() {
   const cache = await caches.open(TILE_CACHE);
   const keys = await cache.keys();
-  if (keys.length > MAX_TILE_ENTRIES) {
-    await cache.delete(keys[0]);
+  /* (20261026c) On supprime JUSQU'À repasser sous la limite.
+     Avant : une seule entrée par appel. Si le cache était très au-dessus du
+     plafond (plafond abaissé, grosse session), il le restait — et chaque
+     nouvelle tuile en supprimait une seule, sans jamais revenir dans le
+     budget. Les tuiles satellite d'Esri pèsent ~40 Ko : le dépassement
+     coûtait des dizaines de mégaoctets sur le téléphone. */
+  if (keys.length <= MAX_TILE_ENTRIES) return 0;
+  const aSupprimer = keys.length - Math.floor(MAX_TILE_ENTRIES * 0.9);
+  for (let i = 0; i < aSupprimer && i < keys.length; i++) {
+    try { await cache.delete(keys[i]); } catch (e) {}
   }
+  return aSupprimer;
 }
 
 async function trimImageCache() {
   const cache = await caches.open(IMAGE_CACHE);
   const keys = await cache.keys();
-  if (keys.length > MAX_IMAGE_ENTRIES) {
-    await cache.delete(keys[0]);
+  if (keys.length <= MAX_IMAGE_ENTRIES) return 0;   // (20261026c) idem tuiles
+  const aSupprimer = keys.length - Math.floor(MAX_IMAGE_ENTRIES * 0.9);
+  for (let i = 0; i < aSupprimer && i < keys.length; i++) {
+    try { await cache.delete(keys[i]); } catch (e) {}
   }
+  return aSupprimer;
 }
 
 // (20260907aa) PARTAGE VERS JOBMARKET — « Partager » d'Android
@@ -929,7 +1016,7 @@ self.addEventListener('fetch', (event) => {
      (« cache-control: max-age=600 », mesuré). Passé ce délai, le fichier
      était retéléchargé, d'où la coupure qui revenait. */
   if (url.origin === self.location.origin &&
-      PRECHAUFFAGE.some((u) => { try { const a = new URL(u, self.location.href); return a.pathname === url.pathname; } catch (e) { return false; } })) {
+      PRECHAUFFAGE.concat(PRECHAUFFAGE_DIFFERE).some((u) => { try { const a = new URL(u, self.location.href); return a.pathname === url.pathname; } catch (e) { return false; } })) {
     event.respondWith(
       caches.match(req, { ignoreSearch: true }).then((deja) => deja || fetch(req).then((res) => {
         if (res && res.ok) { caches.open(SHELL_CACHE).then((c) => c.put(req, res.clone())); }
