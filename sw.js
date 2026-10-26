@@ -380,7 +380,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v334'; // 20261024h : une barre dit que JobMarket démarre, quand il y a peu d'annonces
+const CACHE_VERSION = 'v341'; // 20261025i : boutons de langue nommés pour les lecteurs d'écran
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des

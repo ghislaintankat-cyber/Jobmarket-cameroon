@@ -1,34 +1,43 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261024h">
+<html lang="fr" data-app-build="20261025i">
 <head>
 <script>
-// Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
-// un flash visible (thème sombre par défaut puis bascule vers clair).
-// On aligne aussi la balise theme-color sur ce même choix dès maintenant :
-// sans ça, la barre de statut du téléphone/navigateur (au-dessus de la
-// topbar, et parfois en bas selon l'appareil) restait toujours sombre
-// même en thème clair, puisque cette balise est indépendante du CSS.
+/* Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
+un flash visible (thème sombre par défaut puis bascule vers clair), et
+aligne la balise theme-color sur ce même choix.
+(20261025c) CE SCRIPT ÉTAIT MORT DEPUIS LA VAGUE 20260907z.
+Un commentaire avait été inséré DANS une chaîne, apostrophe de
+« l'application » comprise : la chaîne se fermait trop tôt, et les
+retours à la ligne littéraux la rendaient invalide. Mesuré dans
+Chromium : « Invalid or unexpected token », bloc entièrement ignoré.
+Conséquences réelles : le thème clair n'était jamais posé avant
+l'affichage (éclair clair au démarrage), theme-color n'existait pas,
+et les métadonnées iPhone non plus.
+Réécrit sans document.write : on crée les balises une à une. */
 try {
 // (20260905x) 3 états : 'dark' | 'light' | 'auto' (suit le système).
 var savedTheme = localStorage.getItem('jmc_theme');
 var useLight = false;
 try {
 if (savedTheme === 'light') useLight = true;
-else if (savedTheme === 'auto') useLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+else if (savedTheme === 'auto') useLight = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
 } catch (e2) {}
-if (useLight) {
-document.documentElement.setAttribute('data-theme', 'light');
-document.write('<meta name="theme-color" content="#FFFFFF"/>');
-} else {
-document.write('
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="JobMarket"/>
-<meta name="theme-color" content="#0A0A0F"/>');
+if (useLight) document.documentElement.setAttribute('data-theme', 'light');
+// iPhone : sans ces balises, une application ajoutée à l'écran d'accueil
+// s'ouvre avec la barre d'adresse de Safari (Android suit le manifeste).
+var jmcMetas = [
+[ 'apple-mobile-web-app-capable', 'yes' ],
+[ 'apple-mobile-web-app-status-bar-style', 'black-translucent' ],
+[ 'apple-mobile-web-app-title', 'JobMarket' ],
+[ 'theme-color', useLight ? '#FFFFFF' : '#0A0A0F' ]
+];
+for (var jmcI = 0; jmcI < jmcMetas.length; jmcI++) {
+var jmcM = document.createElement('meta');
+jmcM.setAttribute('name', jmcMetas[jmcI][0]);
+jmcM.setAttribute('content', jmcMetas[jmcI][1]);
+document.head.appendChild(jmcM);
 }
-} catch (e) {
-document.write('<meta name="theme-color" content="#0A0A0F"/>');
-}
+} catch (e) {}
 </script>
 <meta name="google-site-verification" content="0_-xcrADFwsu6oefUuQE1JTLLzyfl-ptmIqpmvDb7fo" />
 <meta charset="UTF-8"/>
@@ -899,15 +908,23 @@ animation:jmcPhareRouge 1.05s ease-in-out infinite;
 }
 #jmcAmorcage{
 position:fixed;left:0;right:0;z-index:8800;
-top:calc(env(safe-area-inset-top,0px) + 58px);
+top:calc(env(safe-area-inset-top,0px) + var(--jmc-amorcage-top,132px));
+width:calc(100% - 20px);max-width:720px;margin-inline:auto;
 display:none;align-items:center;gap:10px;
-margin:0 10px;padding:10px 12px;
-background:linear-gradient(135deg,rgba(255,215,0,.14),rgba(255,215,0,.06));
+padding:10px 12px;
+background:linear-gradient(135deg,rgba(255,215,0,.14),rgba(255,215,0,.06)),var(--surface,#16161F);
 border:1px solid rgba(255,215,0,.42);border-radius:14px;
 box-shadow:0 6px 22px rgba(0,0,0,.28);
 font-size:12.5px;line-height:1.45;color:var(--text);
 }
 #jmcAmorcage.jmc-visible{display:flex}
+body.jmc-amorcage-ouvert .side-controls{
+top:var(--jmc-amorcage-bas,279px);
+transition:top .18s ease-out;
+}
+@media (max-width:520px){
+#jmcAmorcage .jmc-am-fermer{margin-left:auto}
+}
 #jmcAmorcage .jmc-am-txt{flex:1;min-width:0}
 #jmcAmorcage .jmc-am-txt b{color:var(--gold,#FFD700);font-weight:800}
 #jmcAmorcage .jmc-am-actions{display:flex;gap:6px;flex:none}
@@ -1280,8 +1297,8 @@ background: var(--surface);
 <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--text);margin-bottom:4px;padding-right:24px;" data-i18n="langModalTitle">Choisissez votre langue</div>
 <div style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">Choose your language</div>
 <div style="display:flex;flex-direction:column;gap:8px;">
-<button class="lang-pick-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇫🇷 Français</button>
-<button class="lang-pick-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;">🇬🇧 English</button>
+<button class="lang-pick-option" onclick="setLanguage('fr')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;"><svg viewBox="0 0 20 14" width="20" height="14" aria-hidden="true" focusable="false" style="flex:none;border-radius:2px;overflow:hidden;display:block"><rect width="7" height="14" fill="#0055A4"/><rect x="7" width="6" height="14" fill="#FFFFFF"/><rect x="13" width="7" height="14" fill="#EF4135"/></svg> Français</button>
+<button class="lang-pick-option" onclick="setLanguage('en')" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:var(--surface);border:1px solid rgba(255,255,255,0.07);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font-size:14px;font-weight:600;"><svg viewBox="0 0 20 14" width="20" height="14" aria-hidden="true" focusable="false" style="flex:none;border-radius:2px;overflow:hidden;display:block"><rect width="20" height="14" fill="#012169"/><path d="M0 0l20 14M20 0L0 14" stroke="#FFFFFF" stroke-width="3"/><path d="M0 0l20 14M20 0L0 14" stroke="#C8102E" stroke-width="1.6"/><path d="M10 0v14M0 7h20" stroke="#FFFFFF" stroke-width="5"/><path d="M10 0v14M0 7h20" stroke="#C8102E" stroke-width="3"/></svg> English</button>
 </div>
 </div>
 </div>
@@ -1295,7 +1312,7 @@ background: var(--surface);
 <video id="callSelfVideo" autoplay playsinline muted></video>
 <button type="button" class="call-reduire" id="callReduireBtn" title="Réduire" data-i18n-title="callMinimize" onclick="event.stopPropagation();callReduire()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><polyline points="6 9 12 15 18 9"/></svg></button>
 <div class="call-center">
-<img class="call-avatar" id="callAvatar" src="" alt="">
+<img class="call-avatar" id="callAvatar" alt="">
 <div class="call-name" id="callName"></div>
 <div class="call-kind" id="callKind"></div>
 <div class="call-status" id="callStatus"></div>
@@ -1477,8 +1494,8 @@ background: var(--surface);
 <div style="font-weight:700;margin-bottom:12px;font-family:'Syne',sans-serif;" data-i18n="settingsTitle">Paramètres</div>
 <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;" data-i18n="settingsLanguage">Langue</div>
 <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
-<button onclick="setLanguage('fr')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇫🇷</button>
-<button onclick="setLanguage('en')" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;">🇬🇧</button>
+<button onclick="setLanguage('fr')" aria-label="Français" title="Français" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 20 14" width="20" height="14" aria-hidden="true" focusable="false" style="flex:none;border-radius:2px;overflow:hidden;display:block"><rect width="7" height="14" fill="#0055A4"/><rect x="7" width="6" height="14" fill="#FFFFFF"/><rect x="13" width="7" height="14" fill="#EF4135"/></svg></button>
+<button onclick="setLanguage('en')" aria-label="English" title="English" style="flex:1;min-width:44px;padding:8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 20 14" width="20" height="14" aria-hidden="true" focusable="false" style="flex:none;border-radius:2px;overflow:hidden;display:block"><rect width="20" height="14" fill="#012169"/><path d="M0 0l20 14M20 0L0 14" stroke="#FFFFFF" stroke-width="3"/><path d="M0 0l20 14M20 0L0 14" stroke="#C8102E" stroke-width="1.6"/><path d="M10 0v14M0 7h20" stroke="#FFFFFF" stroke-width="5"/><path d="M10 0v14M0 7h20" stroke="#C8102E" stroke-width="3"/></svg></button>
 </div>
 <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;" data-i18n="settingsTheme">Thème</div>
 <button id="themeToggleBtn" onclick="toggleTheme()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
@@ -1495,6 +1512,7 @@ background: var(--surface);
 <button type="button" id="installAppBtn" onclick="installAppFromSettings()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:13px;font-weight:600;">
 📲 <span id="installAppBtnLabel" data-i18n="installSettingsBtn">Installer l'app</span>
 </button>
+<div id="jmcEnvInfo" style="margin-top:10px;font-size:11px;line-height:1.4;color:var(--text-dim,#9999BC);text-align:center;"></div>
 </div>
 </div>
 </div>
@@ -2987,7 +3005,7 @@ reader.readAsDataURL(event.target.files[0]);
 <div class="wa" id="wa">
 <div class="wa-side" id="waSide">
 <div class="wa-side-head">
-<img class="avatar" src="" id="waMyAv" alt="Ma photo de profil">
+<img class="avatar" id="waMyAv" alt="Ma photo de profil">
 <div class="wa-side-acts">
 <button class="wa-icon-btn" title="Épinglés" data-i18n-title="chatPinnedTitle" onclick="W.toggleStarred()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
 <button class="wa-icon-btn" title="Fermer" data-i18n-title="chatCloseTitle" onclick="closeMessagesInbox()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
@@ -3020,7 +3038,7 @@ reader.readAsDataURL(event.target.files[0]);
 </div>
 <div class="wa-chead" id="waCHead" style="display:none">
 <button class="wa-back" onclick="W.goBack()" aria-label="Retour" title="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
-<img class="wa-chead-av" id="waHeadAv" src="" alt="Photo du contact">
+<img class="wa-chead-av" id="waHeadAv" alt="Photo du contact">
 <div class="wa-chead-info" onclick="W.toggleProfile()">
 <div class="wa-chead-name" id="waHeadName"></div>
 <div class="wa-chead-sub" id="waHeadSub" style="display:none"></div>
@@ -3091,7 +3109,7 @@ reader.readAsDataURL(event.target.files[0]);
 <div class="wa-profile" id="waProfile">
 <div class="wa-prof-head"><button class="wa-icon-btn" onclick="W.toggleProfile()" aria-label="Fermer la fiche du contact" title="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button><h3 data-i18n="chatContactInfo">Infos du contact</h3></div>
 <div class="wa-prof-body">
-<div class="wa-prof-avatar"><img id="waProfAv" src="" alt="Photo du contact"><div class="name" id="waProfName"></div><div class="status" id="waProfStatus"></div></div>
+<div class="wa-prof-avatar"><img id="waProfAv" alt="Photo du contact"><div class="name" id="waProfName"></div><div class="status" id="waProfStatus"></div></div>
 <div class="wa-prof-actions">
 <button class="wa-prof-action" onclick="W.toggleStarred()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span data-i18n="chatStarAction">Épingler</span></button>
 </div>
@@ -3100,7 +3118,7 @@ reader.readAsDataURL(event.target.files[0]);
 </div>
 </div>
 </div>
-<div class="wa-lightbox" id="waLB" onclick="W.closeLB()"><button class="wa-lightbox-close" aria-label="Fermer l'image" title="Fermer">&times;</button><img id="waLBImg" src="" alt="Image de la conversation"></div>
+<div class="wa-lightbox" id="waLB" onclick="W.closeLB()"><button class="wa-lightbox-close" aria-label="Fermer l'image" title="Fermer">&times;</button><img id="waLBImg" alt="Image de la conversation"></div>
 <div class="wa-ctx" id="waCtx"></div>
 <div id="aiAnalysisBox" style="display:none;position:fixed;left:16px;right:16px;bottom:118px;z-index:1400;background:var(--bg-card,#151515);border:1px solid rgba(37,211,102,0.5);border-radius:14px;padding:14px;max-height:46vh;overflow:auto;box-shadow:0 10px 34px rgba(0,0,0,.55);">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -3121,7 +3139,7 @@ reader.readAsDataURL(event.target.files[0]);
 <textarea id="waQuoteNotes" rows="2" placeholder="Notes : ce qui est inclus, garantie…" data-i18n-placeholder="quoteNotesPh"></textarea>
 <button type="button" class="wa-quote-send" onclick="W.sendQuote()"><span data-i18n="quoteSend">Envoyer le devis</span></button>
 </div></div></div>
-<div class="wa-toast" id="waToast"><img id="waToastAv" src="" alt="Photo de l'expéditeur"><div class="wa-toast-body"><div class="wa-toast-name" id="waToastName"></div><div class="wa-toast-text" id="waToastText"></div></div></div>
+<div class="wa-toast" id="waToast"><img id="waToastAv" alt="Photo de l'expéditeur"><div class="wa-toast-body"><div class="wa-toast-name" id="waToastName"></div><div class="wa-toast-text" id="waToastText"></div></div></div>
 </div>
 </div>
 <button type="button" id="jmcHaut" onclick="jmcRemonterEnHaut()" aria-label="Remonter en haut"
@@ -3145,7 +3163,7 @@ html[data-taille="tres-grand"]{font-size:19px}
 html[data-nuit="1"] body{filter:brightness(.88) saturate(.94)}
 </style>
 <div id="jmcMsgBanner" role="button" tabindex="0" onclick="jmcBanniereOuvrir()">
-<img class="jmcbAv" id="jmcbAv" src="" alt="">
+<img class="jmcbAv" id="jmcbAv" alt="">
 <div class="jmcbBody">
 <div class="jmcbName" id="jmcbName"></div>
 <div class="jmcbText" id="jmcbText"></div>
