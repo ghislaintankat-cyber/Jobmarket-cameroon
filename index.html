@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261025i">
+<html lang="fr" data-app-build="20261026g">
 <head>
 <script>
 /* Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -198,7 +198,7 @@ border-radius:4px;animation:load-bar 2s ease forwards;
 }
 @keyframes load-bar{to{width:100%;}}
 .topbar{
-position:fixed;top:0;left:0;right:0;z-index:1000;
+position:fixed;top:var(--jmc-bandeau-hors-ligne,0px);left:0;right:0;z-index:1000;
 height:68px;
 display:flex;align-items:center;justify-content:space-between;
 padding:0 16px;
@@ -664,7 +664,7 @@ transition:transform 0.15s,box-shadow 0.2s;
 .post-btn:active{transform:scale(0.95);box-shadow:0 2px 8px rgba(255,215,0,0.2);}
 .post-btn svg{width:14px;height:14px;}
 .category-bar{
-position:fixed;top:68px;left:0;right:0;z-index:999;
+position:fixed;top:calc(var(--jmc-bandeau-hors-ligne,0px) + 68px);left:0;right:0;z-index:999;
 display:flex;gap:8px;
 padding:10px 16px;
 overflow-x:auto;
@@ -917,6 +917,8 @@ border:1px solid rgba(255,215,0,.42);border-radius:14px;
 box-shadow:0 6px 22px rgba(0,0,0,.28);
 font-size:12.5px;line-height:1.45;color:var(--text);
 }
+.jmc-libelle{background:none;border:none;pointer-events:none;}
+.jmc-libelle>div{will-change:transform;}
 #jmcAmorcage.jmc-visible{display:flex}
 body.jmc-amorcage-ouvert .side-controls{
 top:var(--jmc-amorcage-bas,279px);
@@ -1344,13 +1346,15 @@ background: var(--surface);
 </div>
 </div>
 </div>
-<div id="offlinePopup" style="display:none;position:fixed;inset:0;z-index:12900;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;padding:20px;">
-<div style="background:var(--surface,#1a1a1a);border:1px solid var(--border,#333);border-radius:16px;padding:22px 20px;max-width:340px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.5);">
-<div style="font-size:42px;margin-bottom:10px;">📡</div>
-<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:8px;color:var(--text,#fff);" data-i18n="offlinePopTitle">Vous êtes hors ligne</div>
-<div style="font-size:13px;color:var(--text-dim,#9999BC);margin-bottom:16px;line-height:1.55;" data-i18n="offlinePopBody">Pas de connexion internet. La carte reste consultable sur les zones déjà chargées — les actions en ligne (publier, contacter, chat) reprendront au retour du réseau.</div>
-<button type="button" onclick="offlinePopupMap()" style="width:100%;background:var(--accent,#25D366);border:none;color:#fff;padding:13px;border-radius:12px;font-weight:800;font-size:14px;cursor:pointer;margin-bottom:8px;">🗺️ <span data-i18n="offlinePopMapBtn">Voir le plan de la carte</span></button>
-<button type="button" onclick="hideOfflinePopup()" style="width:100%;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#9999BC);padding:11px;border-radius:12px;font-weight:600;font-size:13px;cursor:pointer;" data-i18n="offlinePopLater">Plus tard</button>
+<div id="offlinePopup" style="display:none;position:fixed;left:10px;right:10px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:12900;align-items:flex-end;justify-content:center;padding:0;pointer-events:none;">
+<div style="background:var(--surface,#1a1a1a);border:1px solid var(--border,#333);border-radius:14px;padding:12px 14px;max-width:420px;width:100%;text-align:left;box-shadow:0 10px 30px rgba(0,0,0,0.55);pointer-events:auto;">
+<div style="font-size:18px;margin-bottom:4px;">📡</div>
+<div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:4px;color:var(--text,#fff);" data-i18n="offlinePopTitle">Vous êtes hors ligne</div>
+<div style="font-size:12px;color:var(--text-dim,#9999BC);margin-bottom:10px;line-height:1.5;" data-i18n="offlinePopBody">La carte reste consultable sur les zones déjà chargées. Publier et discuter reprendront au retour du réseau.</div>
+<div style="display:flex;gap:8px;">
+<button type="button" onclick="offlinePopupMap()" style="flex:1.4;background:var(--accent,#25D366);border:none;color:#fff;padding:10px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">🗺️ <span data-i18n="offlinePopMapBtn">Voir la carte</span></button>
+<button type="button" onclick="hideOfflinePopup()" style="flex:1;background:none;border:1px solid var(--border,#333);color:var(--text-dim,#9999BC);padding:10px;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;" data-i18n="offlinePopLater">Plus tard</button>
+</div>
 </div>
 </div>
 <div id="shareNewJobModal" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(10,10,15,0.75);align-items:center;justify-content:center;padding:20px;">
@@ -1395,17 +1399,17 @@ background: var(--surface);
 <div style="position:relative;width:100%;max-width:360px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:28px 24px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
 <button onclick="skipOnboarding()" style="position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:600;cursor:pointer;padding:6px;" data-i18n="onbSkip">Passer</button>
 <div class="onb-slide active" data-slide="0">
-<div style="font-size:44px;margin-bottom:16px;">🗺️</div>
+<svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#FFD700" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="display:block;margin:0 auto 16px"><path d="M6 12l11-5 14 6 11-5v29l-11 5-14-6-11 5z"/><path d="M17 7v29M31 13v29"/><circle cx="24" cy="22" r="3.2" fill="#FFD700" stroke="none"/></svg>
 <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle1">Trouvez un pro près de chez vous</div>
 <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody1">Explorez la carte pour découvrir des artisans qualifiés autour de vous, avec leur note et leur distance.</div>
 </div>
 <div class="onb-slide" data-slide="1">
-<div style="font-size:44px;margin-bottom:16px;">➕</div>
+<svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#FFD700" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="display:block;margin:0 auto 16px"><circle cx="24" cy="24" r="17"/><path d="M24 16v16M16 24h16"/></svg>
 <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle2">Publiez votre besoin en quelques secondes</div>
 <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody2">Appuyez sur le bouton + pour décrire ce dont vous avez besoin. Les prestataires proches sont alertés aussitôt.</div>
 </div>
 <div class="onb-slide" data-slide="2">
-<div style="font-size:44px;margin-bottom:16px;">✅</div>
+<svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="#FFD700" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="display:block;margin:0 auto 16px"><path d="M24 6l14 5v13c0 9-6 14-14 18-8-4-14-9-14-18V11z"/><path d="M17 24l5 5 9-10"/></svg>
 <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:19px;color:var(--text);margin-bottom:8px;" data-i18n="onbTitle3">Contactez en toute confiance</div>
 <div style="color:var(--text-dim);font-size:14px;line-height:1.5;" data-i18n="onbBody3">Consultez les avis et les badges vérifiés, puis échangez directement via le chat sécurisé de l'app.</div>
 </div>
@@ -1513,6 +1517,12 @@ background: var(--surface);
 📲 <span id="installAppBtnLabel" data-i18n="installSettingsBtn">Installer l'app</span>
 </button>
 <div id="jmcEnvInfo" style="margin-top:10px;font-size:11px;line-height:1.4;color:var(--text-dim,#9999BC);text-align:center;"></div>
+<div id="jmcReparerZone" style="margin-top:10px;">
+<button type="button" id="jmcReparerBtn" onclick="jmcReparerApplication(true)" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;background:none;border:1px solid var(--border,#333);border-radius:8px;cursor:pointer;color:var(--text-dim,#9999BC);font-size:12px;font-weight:600;">
+<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>
+<span data-i18n="reparerApp">Réparer l'application</span>
+</button>
+</div>
 </div>
 </div>
 </div>
@@ -2109,7 +2119,7 @@ catch (e) { return false; }
 function lancer() {
 if (window.__jmcLance) return;
 window.__jmcLance = true;
-["chat-widget.js", "app.js"].forEach(function (f) {
+["chat-widget.js", "lieux.js", "app.js"].forEach(function (f) {
 var s = document.createElement("script");
 s.src = f + "?v=" + VERSION;
 s.async = false;                 // on garde l'ordre : widget puis app

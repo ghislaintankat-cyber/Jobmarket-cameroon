@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vérifier l'envoi — JobMarket Cameroon</title>
+<style>
+  :root{--or:#FFD700;--fond:#0A0A0F;--carte:#14141C;--bord:#2A2A38;--texte:#EDEDF2;--gris:#9A9AB0;--vert:#25D366;--rouge:#FF5C5C;--orange:#FF9F0A}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fond);color:var(--texte);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.55;padding:18px 14px 60px;font-size:15px}
+  h1{font-size:20px;margin:0 0 4px;font-weight:800}
+  .sous{color:var(--gris);font-size:13px;margin:0 0 18px}
+  .bandeau{border-radius:14px;padding:14px 16px;margin:0 0 18px;font-weight:700;font-size:15px;display:flex;gap:10px;align-items:center}
+  .bandeau.ok{background:rgba(37,211,102,.14);border:1px solid rgba(37,211,102,.5);color:#7BFFB0}
+  .bandeau.ko{background:rgba(255,92,92,.12);border:1px solid rgba(255,92,92,.45);color:#FFA8A8}
+  .bandeau.attente{background:rgba(255,215,0,.10);border:1px solid rgba(255,215,0,.4);color:var(--or)}
+  .ligne{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--bord);font-size:13.5px;align-items:flex-start}
+  .ligne:last-child{border-bottom:none}
+  .nom{font-family:ui-monospace,Consolas,monospace;font-size:13px;word-break:break-all}
+  .etat{font-weight:800;flex:none;font-size:12px;padding:2px 8px;border-radius:8px;white-space:nowrap}
+  .etat.ok{background:rgba(37,211,102,.18);color:var(--vert)}
+  .etat.ko{background:rgba(255,92,92,.18);color:var(--rouge)}
+  .etat.attente{background:rgba(154,154,176,.18);color:var(--gris)}
+  .carte{background:var(--carte);border:1px solid var(--bord);border-radius:14px;padding:14px 16px;margin:0 0 16px}
+  .titre-carte{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--or);font-weight:800;margin:0 0 8px}
+  button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--or);color:#0A0A0F;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:10px}
+  button:disabled{opacity:.55;cursor:default}
+  .aide{font-size:12.5px;color:var(--gris);margin:6px 0 0}
+  .detail{font-size:11.5px;color:var(--gris);margin-top:2px;font-family:ui-monospace,monospace;word-break:break-all}
+  .repere{display:flex;gap:8px;padding:6px 0;font-size:13px;border-bottom:1px solid var(--bord)}
+  .repere:last-child{border-bottom:none}
+  .repere .p{font-weight:700;flex:none;width:20px}
+  .ok .p{color:var(--vert)} .ko .p{color:var(--rouge)}
+</style>
+</head>
+<body>
+<h1>Vérifier l'envoi</h1>
+<p class="sous">Version préparée : <strong>20261026g</strong> · 7 fichiers contrôlés</p>
+
+<div id="verdict" class="bandeau attente">⏳ Contrôle en cours…</div>
+
+<div class="carte">
+  <p class="titre-carte">Fichiers</p>
+  <div id="liste"></div>
+</div>
+
+<div class="carte">
+  <p class="titre-carte">Corrections réellement présentes</p>
+  <div id="reperes"></div>
+  <p class="aide">Ces repères prouvent que les corrections attendues sont bien dans les fichiers en ligne.</p>
+</div>
+
+<button id="relancer" onclick="verifier(true)">Relancer le contrôle</button>
+<p class="aide">La page retélécharge chaque fichier en contournant le cache (paramètre <code>?v=</code> aléatoire). Écarte-la de ton écran pendant le contrôle.</p>
+
+<script>
+const ATTENDUS = {"index.html":{"sha":"67800ac64696ad9c4254f58588d55c7b8c169087598ddd08026f806be71a458f","octets":225246},"app.js":{"sha":"781378868e7537ad41329ea04ff8705a479ab4d76699567e4f0336e678dd5c41","octets":741949},"sw.js":{"sha":"5ed0cac04bc6849fd90cbcffb5e12ce289da5699ee9d9156843973a2c1b5d60d","octets":56649},"lieux.js":{"sha":"ea6ac58b0c4c9811dbfad3be789cfde7e947ed086b67b8e50a321b99ade5b09a","octets":3863},"shalom-square.html":{"sha":"37ce9603a09aba31774ddec423907efe25ec2f033009a3934f1cee3a3809db50","octets":317608},"shalom-square-chat.html":{"sha":"c27cde281499ae17dd71ea595a405da4ae63b3b2156585a3e8add5f42d2e8c50","octets":175838},"etat-publication.html":{"sha":"15d5ed12f2f20aaaf98b1a6a6443f45c60e0e12ba07480b75807af9f964aa6fe","octets":17999}};
+const BUILD = "20261026g";
+const SITE = "https://ghislaintankat-cyber.github.io/Jobmarket-cameroon";
+
+function octetsLisibles(n) {
+  if (!n && n !== 0) return '?';
+  return n > 1024 ? (n / 1024).toFixed(0) + ' Ko' : n + ' o';
+}
+
+async function empreinteOctets(buffer) {
+  const h = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifier(depuisBouton) {
+  const bouton = document.getElementById('relancer');
+  const verdict = document.getElementById('verdict');
+  const liste = document.getElementById('liste');
+  bouton.disabled = true;
+  verdict.className = 'bandeau attente';
+  verdict.textContent = '⏳ Contrôle en cours…';
+  liste.innerHTML = '';
+
+  let ok = 0, diff = 0, absent = 0;
+  const noms = Object.keys(ATTENDUS);
+
+  for (const nom of noms) {
+    const ligne = document.createElement('div');
+    ligne.className = 'ligne';
+    ligne.innerHTML = '<div><div class="nom">' + nom + '</div><div class="detail">contrôle…</div></div>'
+      + '<span class="etat attente">…</span>';
+    liste.appendChild(ligne);
+    const detail = ligne.querySelector('.detail');
+    const etat = ligne.querySelector('.etat');
+
+    try {
+      const reponse = await fetch(SITE + '/' + nom + '?v=' + Date.now() + Math.random(), { cache: 'no-store' });
+      if (!reponse.ok) {
+        absent++;
+        etat.className = 'etat ko'; etat.textContent = 'ABSENT';
+        detail.textContent = 'code ' + reponse.status + ' — le fichier n\'est pas en ligne';
+        continue;
+      }
+      /* On hache les OCTETS, jamais le texte décodé : un fichier UTF-8 relu
+         en windows-1252 donnerait d'autres octets et un faux DIFF. */
+      const brut = await reponse.arrayBuffer();
+      const sha = await empreinteOctets(brut);
+      const attendu = ATTENDUS[nom];
+      const taille = brut.byteLength;
+
+      if (sha === attendu.sha) {
+        ok++;
+        etat.className = 'etat ok'; etat.textContent = 'OK';
+        detail.textContent = octetsLisibles(taille) + ' · ' + sha.slice(0, 16) + '…';
+      } else {
+        diff++;
+        etat.className = 'etat ko'; etat.textContent = 'DIFF';
+        detail.textContent = 'en ligne ' + octetsLisibles(taille) + ' (attendu ' + octetsLisibles(attendu.octets) + ')'
+          + ' — empreinte ' + sha.slice(0, 12) + '… au lieu de ' + attendu.sha.slice(0, 12) + '…';
+      }
+    } catch (e) {
+      absent++;
+      etat.className = 'etat ko'; etat.textContent = 'ERREUR';
+      detail.textContent = 'réseau : ' + (e && e.message ? e.message.slice(0, 60) : 'inconnu');
+    }
+  }
+
+  if (diff === 0 && absent === 0) {
+    verdict.className = 'bandeau ok';
+    verdict.textContent = '✅ Tout est en ligne — les ' + ok + ' fichiers correspondent exactement.';
+  } else {
+    verdict.className = 'bandeau ko';
+    verdict.textContent = '⚠ ' + diff + ' fichier(s) à redéposer, ' + absent + ' absent(s), ' + ok + ' correct(s).'
+      + ' Dépose ceux marqués DIFF ou ABSENT, puis relance.';
+  }
+  if (depuisBouton) window.scrollTo({ top: 0, behavior: 'smooth' });
+  bouton.disabled = false;
+}
+
+document.getElementById('reperes').innerHTML = ["<div class=\"repere ok\"><span class=\"p\">✓</span><span>la carte utilise Esri + les noms des quartiers</span></div>","<div class=\"repere ok\"><span class=\"p\">✓</span><span>les prix barrés sont neutralisés dans la boutique</span></div>","<div class=\"repere ok\"><span class=\"p\">✓</span><span>les tuiles de la carte sont gardées hors ligne</span></div>","<div class=\"repere ok\"><span class=\"p\">✓</span><span>le bouton « Réparer l’application » est présent</span></div>","<div class=\"repere ok\"><span class=\"p\">✓</span><span>les notes vocales savent s’envoyer sans le serveur</span></div>","<div class=\"repere ok\"><span class=\"p\">✓</span><span>les documents sans extension sont reconnus</span></div>"].join('');
+
+verifier(false);
+</script>
+</body>
+</html>
