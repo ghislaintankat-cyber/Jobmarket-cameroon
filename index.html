@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261027a">
+<html lang="fr" data-app-build="20261027b">
 <head>
 <script>
 /* Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -918,6 +918,8 @@ box-shadow:0 6px 22px rgba(0,0,0,.28);
 font-size:12.5px;line-height:1.45;color:var(--text);
 }
 .jmc-libelle{background:none;border:none;pointer-events:none;}
+.leaflet-tile-pane{filter:brightness(.93) contrast(1.06) saturate(.92);}
+.leaflet-pane[style*="jmcRoutes"]{filter:none !important;}
 .jmc-libelle>div{will-change:transform;}
 #jmcAmorcage.jmc-visible{display:flex}
 body.jmc-amorcage-ouvert .side-controls{
@@ -1825,7 +1827,7 @@ background: var(--surface);
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 <span data-i18n="createAccountBtn">Creer mon compte</span>
 </button>
-<div id="forgotPasswordLink" class="hidden" style="text-align:center;margin-top:10px;">
+<div id="forgotPasswordLink" class="" style="text-align:center;margin-top:10px;">
 <a href="#" onclick="forgotPassword(); return false;" style="font-size:13px;color:var(--text-dim,#9999BC);text-decoration:underline;" data-i18n="forgotPassword">Mot de passe oublié ?</a>
 </div>
 <div class="divider"><div class="divider-line"></div><div class="divider-text" data-i18n="orWord">ou</div><div class="divider-line"></div></div>
@@ -2119,7 +2121,7 @@ catch (e) { return false; }
 function lancer() {
 if (window.__jmcLance) return;
 window.__jmcLance = true;
-["chat-widget.js", "lieux.js", "config-carte.js", "leaflet-cluster.js", "app.js"].forEach(function (f) {
+["chat-widget.js", "lieux.js", "config-carte.js", "app.js"].forEach(function (f) {
 var s = document.createElement("script");
 s.src = f + "?v=" + VERSION;
 s.async = false;                 // on garde l'ordre : widget puis app
@@ -2232,9 +2234,7 @@ try { if (splashEncoreLa()) { var b = document.getElementById("splashRecharger")
 <button class="btn btn-green" id="previewChatBtn" onclick="openUserChatFromPreview()">
 <span style="display:inline-flex;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="display:inline-block;vertical-align:-3px;flex:none"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span> <span data-i18n="secureChat">Chat sécurisé</span>
 </button>
-<button class="btn btn-blue" id="previewQuoteBtn" onclick="openQuoteRequestFromPreview()">
-<span style="font-size:16px;">💬</span> <span data-i18n="requestQuoteBtn">Demander un devis</span>
-</button>
+<span class="hidden" id="previewQuoteBtn" aria-hidden="true" style="display:none"></span>
 <button class="btn btn-blue" onclick="shareJobViaWhatsApp()">
 <span style="display:inline-flex;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="display:inline-block;vertical-align:-3px;flex:none"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span> <span data-i18n="shareWhatsApp">Partager sur WhatsApp</span>
 </button>
@@ -2562,7 +2562,7 @@ justify-content:center;cursor:pointer}
 #callOverlay.call-mini .call-reduire{display:none}
 .call-remote-video-wrap{position:absolute;top:0;right:0;bottom:0;left:0;display:none}
 #callOverlay.call-active-video .call-remote-video-wrap{display:block}
-#callRemoteVideo{width:100%;height:100%;object-fit:contain;background:#000}
+#callRemoteVideo{width:100%;height:100%;object-fit:cover;object-position:center;background:#000}
 #callSelfVideo{position:absolute;right:12px;top:14px;width:30%;max-width:140px;border-radius:12px;transform:scaleX(-1);background:#000;z-index:2;display:none;box-shadow:0 4px 18px rgba(0,0,0,.5)}
 #callOverlay.call-active-video #callSelfVideo{display:block}
 #callOverlay.call-local-video #callSelfVideo{display:block}

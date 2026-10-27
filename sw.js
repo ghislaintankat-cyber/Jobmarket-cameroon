@@ -380,7 +380,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v359'; // 20261027a : carte Google à l'identique dès qu'une clé est fournie
+const CACHE_VERSION = 'v362'; // 20261027b : sortie de secours pour les comptes Google dans l'application
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -447,8 +447,7 @@ const PREFIXES_CONTENU = ['jobmarket-tiles-', 'jobmarket-images-', 'jobmarket-vi
    ═══════════════════════════════════════════════════════════════════════════ */
 const PRECHAUFFAGE = [
   './lieux.js',        // 2 Ko : noms des lieux écrits sur la carte satellite
-  './config-carte.js', // < 1 Ko : clé de la carte Google (vide par défaut)
-  './leaflet-cluster.js' // 35 Ko : regroupement des annonces + point bleu animé
+  './config-carte.js'  // < 1 Ko : clé de la carte Google (vide par défaut)
 ];
 const PRECHAUFFAGE_DIFFERE = [ './slogan.mp3' ];  // 76 Ko : après 45 s, jamais à l'ouverture
 const DELAI_PRECHAUFFAGE_MS = 45000;
