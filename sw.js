@@ -15,10 +15,21 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    (20261027e) MODE « PUSH SEULEMENT » — POUR L'APPLICATION ANDROID
 
-   Les notifications de JobMarket utilisent le **web push de Firebase**
-   (`messaging.onBackgroundMessage` + clé VAPID), et non le push natif Android.
-   Conséquence importante : elles n'ont PAS besoin de `google-services.json`,
-   mais elles ont besoin d'un **service worker actif**.
+   Sur le WEB, les notifications de JobMarket passent par le **web push de
+   Firebase** (`messaging.onBackgroundMessage` + clé VAPID) : elles n'ont donc
+   besoin que d'un **service worker actif**.
+
+   (20261029b) CORRECTION D'UNE AFFIRMATION FAUSSE ÉCRITE ICI.
+   Ce commentaire disait « dans l'APK aussi, pas besoin de
+   google-services.json ». C'est faux, et la mesure le prouve : une WebView
+   Android n'expose NI `PushManager` NI `Notification` (vérifié sur un rapport
+   réel d'app Capacitor : hasServiceWorker=true, hasPushManager=false,
+   hasNotification=false). Le web push y est donc impossible quel que soit le
+   code JS. Dans l'APK, la seule voie est le **push natif FCM**, qui exige
+   `google-services.json` dans le projet Android et le greffon
+   @capacitor/push-notifications. Ce service worker reste néanmoins enregistré
+   en mode `pushOnly` : il assure le repli si un jour la WebView expose le web
+   push, et il ne coûte aucun cache.
 
    Or dans l'APK, la coque avait désactivé le service worker pour éviter qu'un
    cache ne resserve l'ancienne version après une mise à jour. Résultat : les
@@ -402,7 +413,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v369'; // 20261028e : la WebView n'a pas d'API Push — l'app le dit au lieu de promettre
+const CACHE_VERSION = 'v371'; // 20261029b : ouverture depuis une notification NATIVE Android (clic -> conversation)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
