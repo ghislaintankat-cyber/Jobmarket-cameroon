@@ -12,6 +12,28 @@
 //
 // IMPORTANT : incrémentez CACHE_VERSION à chaque mise à jour de l'app.
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   (20261027e) MODE « PUSH SEULEMENT » — POUR L'APPLICATION ANDROID
+
+   Les notifications de JobMarket utilisent le **web push de Firebase**
+   (`messaging.onBackgroundMessage` + clé VAPID), et non le push natif Android.
+   Conséquence importante : elles n'ont PAS besoin de `google-services.json`,
+   mais elles ont besoin d'un **service worker actif**.
+
+   Or dans l'APK, la coque avait désactivé le service worker pour éviter qu'un
+   cache ne resserve l'ancienne version après une mise à jour. Résultat : les
+   notifications étaient rendues impossibles — par notre propre code.
+
+   Solution : le service worker accepte d'être enregistré avec `?pushOnly=1`.
+   Dans ce mode il reçoit les messages et affiche les notifications, mais il
+   **n'installe AUCUN cache** et **n'intercepte AUCUNE requête** : il ne peut
+   donc jamais servir un fichier périmé. Le risque qui justifiait la
+   désactivation disparaît, et les notifications redeviennent possibles.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const MODE_PUSH_SEUL = (function () {
+  try { return String(self.location.search || "").indexOf("pushOnly") >= 0; } catch (e) { return false; }
+})();
+
 // (20260907ai) LES BIBLIOTHÈQUES VIENNENT D'ABORD DE CE DÉPÔT.
 // Le service worker allait les chercher sur www.gstatic.com à chaque
 // démarrage : un nom de domaine à résoudre et une connexion TLS à négocier
@@ -380,7 +402,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v362'; // 20261027b : sortie de secours pour les comptes Google dans l'application
+const CACHE_VERSION = 'v369'; // 20261028e : la WebView n'a pas d'API Push — l'app le dit au lieu de promettre
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -666,6 +688,9 @@ async function rangerSocle(cache, req) {
 }
 
 self.addEventListener('install', (event) => {
+  /* (20261027e) mode push : rien à mettre en cache, on s'active tout de suite. */
+  if (MODE_PUSH_SEUL) { try { self.skipWaiting(); } catch (e) {} return; }
+
   event.waitUntil(
     (async () => {
       const cache = await caches.open(SHELL_CACHE);
@@ -719,6 +744,12 @@ function cacheContenuCible(nom) {
 }
 
 self.addEventListener('activate', (event) => {
+  /* (20261027e) mode push : aucun cache à gérer. */
+  if (MODE_PUSH_SEUL) {
+    event.waitUntil((async function () { try { await self.clients.claim(); } catch (e) {} })());
+    return;
+  }
+
   event.waitUntil(
     caches.keys().then(async (keys) => {
       const garder = [SHELL_CACHE, TILE_CACHE, IMAGE_CACHE, VIDEO_CACHE, PARTAGE_CACHE];
@@ -876,6 +907,10 @@ async function recevoirPartage(req) {
 }
 
 self.addEventListener('fetch', (event) => {
+  /* (20261027e) mode push : on NE touche À AUCUNE requête. C'est la garantie
+     qu'aucun fichier périmé ne sera jamais servi depuis l'application. */
+  if (MODE_PUSH_SEUL) return;
+
   const req = event.request;
 
   // (20260907aa) le partage arrive en POST : on le traite AVANT le filtre GET
