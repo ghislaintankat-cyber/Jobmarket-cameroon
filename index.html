@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261029b">
+<html lang="fr" data-app-build="20261029c">
 <head>
 <script>
 /* Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -2125,7 +2125,7 @@ catch (e) { return false; }
 function lancer() {
 if (window.__jmcLance) return;
 window.__jmcLance = true;
-["chat-widget.js", "lieux.js", "config-carte.js", "app.js"].forEach(function (f) {
+["chat-widget.js", "config-carte.js", "app.js"].forEach(function (f) {
 var s = document.createElement("script");
 s.src = f + "?v=" + VERSION;
 s.async = false;                 // on garde l'ordre : widget puis app

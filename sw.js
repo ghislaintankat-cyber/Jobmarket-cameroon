@@ -413,7 +413,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v371'; // 20261029b : ouverture depuis une notification NATIVE Android (clic -> conversation)
+const CACHE_VERSION = 'v372'; // 20261029c : écritures du PLAN posées sur le satellite (noms de rues réels)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -479,7 +479,9 @@ const PREFIXES_CONTENU = ['jobmarket-tiles-', 'jobmarket-images-', 'jobmarket-vi
    l'a en mémoire avant que le téléphone sonne.
    ═══════════════════════════════════════════════════════════════════════════ */
 const PRECHAUFFAGE = [
-  './lieux.js',        // 2 Ko : noms des lieux écrits sur la carte satellite
+  /* (20261029c) lieux.js est RETIRÉ : les noms écrits sur la carte viennent
+     maintenant des tuiles du plan, et non plus d'une liste maison. Précharger
+     un fichier que personne ne lit coûterait une requête pour rien. */
   './config-carte.js'  // < 1 Ko : clé de la carte Google (vide par défaut)
 ];
 const PRECHAUFFAGE_DIFFERE = [ './slogan.mp3' ];  // 76 Ko : après 45 s, jamais à l'ouverture
