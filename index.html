@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261029c">
+<html lang="fr" data-app-build="20261029i">
 <head>
 <script>
 /* Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -151,7 +151,7 @@ overscroll-behavior:none;
 position: fixed;
 inset: 0;
 z-index: 1;
-filter: brightness(0.9) saturate(1.15); 
+background: #0A0A0F;          
 }
 #map::after {
 content: '';
@@ -918,7 +918,15 @@ box-shadow:0 6px 22px rgba(0,0,0,.28);
 font-size:12.5px;line-height:1.45;color:var(--text);
 }
 .jmc-libelle{background:none;border:none;pointer-events:none;}
-.leaflet-tile-pane{filter:brightness(.93) contrast(1.06) saturate(.92);}
+.leaflet-tile-pane{filter:brightness(1.02) contrast(1.1) saturate(1.04);}
+.leaflet-bottom.leaflet-left{margin-bottom:78px;margin-left:10px;}
+.leaflet-control-scale-line{background:rgba(10,10,15,.72);border:1px solid rgba(255,255,255,.38);
+border-top:none;color:#EDEDF2;font-size:10px;font-weight:600;line-height:1.4;padding:1px 6px;
+border-radius:0 0 4px 4px;text-shadow:0 1px 2px #000;}
+.jmc-quartier{background:none;border:0;pointer-events:none;}
+.jmc-quartier span{display:block;width:max-content;transform:translate(-50%,-50%);
+font-size:13.5px;font-weight:700;letter-spacing:.2px;color:#fff;
+text-shadow:0 0 3px #000,0 0 7px rgba(0,0,0,.95),0 1px 3px #000;white-space:nowrap;}
 .leaflet-pane[style*="jmcRoutes"]{filter:none !important;}
 .jmc-libelle>div{will-change:transform;}
 #jmcAmorcage.jmc-visible{display:flex}
@@ -1528,6 +1536,10 @@ background: var(--surface);
 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
 <span data-i18n="diagNotif">Diagnostic des notifications</span>
 </button>
+<button type="button" onclick="jmcDiagConnexion()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px;margin-top:8px;background:none;border:1px solid var(--border,#333);border-radius:8px;cursor:pointer;color:var(--text-dim,#9999BC);font-size:12px;font-weight:600;">
+<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M15 3h4a2 2 0 0 1 2 2v4"/><path d="M9 21H5a2 2 0 0 1-2-2v-4"/><path d="M21 16v4a2 2 0 0 1-2 2h-4"/><path d="M3 8V4a2 2 0 0 1 2-2h4"/><circle cx="12" cy="12" r="3"/></svg>
+<span data-i18n="diagConnexion">Diagnostic de connexion</span>
+</button>
 </div>
 </div>
 </div>
@@ -1923,6 +1935,10 @@ background: var(--surface);
 <button class="btn" onclick="fixNotifications()" style="width:100%;margin-top:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);" data-i18n="notifFixBtn">🔧 Réparer les notifications</button>
 </div>
 </div>
+<button class="btn" onclick="jmcPoserMotDePasse()" style="width:100%; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--surface2); border:1px solid var(--border); color:var(--text);">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+<span data-i18n="poserMdpBtn">Créer mon mot de passe</span>
+</button>
 <button class="btn btn-danger" onclick="logout()" style="width:100%; margin-top:15px; display:flex; align-items:center; justify-content:center; gap:8px;">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
 <span data-i18n="logout">Déconnexion</span>

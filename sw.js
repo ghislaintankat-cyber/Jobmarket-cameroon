@@ -413,7 +413,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v372'; // 20261029c : écritures du PLAN posées sur le satellite (noms de rues réels)
+const CACHE_VERSION = 'v378'; // 20261029i : grands axes en jaune (Overpass) + barre d'échelle
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -1073,6 +1073,24 @@ self.addEventListener('fetch', (event) => {
         if (res && res.ok) { caches.open(SHELL_CACHE).then((c) => c.put(req, res.clone())); }
         return res;
       }).catch(() => new Response('', { status: 504 })))
+    );
+    return;
+  }
+
+  /* (20261029i) routes.js : la géométrie des grands axes (67 Ko).
+     Elle est chargée APRÈS le premier écran (voir jmcChargerRoutes dans
+     app.js), donc elle ne fait pas partie du socle de démarrage. Mais une
+     fois téléchargée, elle doit RESTER : GitHub Pages ne garde son cache HTTP
+     que 10 minutes (mesuré), et sans cette règle les tracés disparaîtraient
+     au bout de dix minutes d'utilisation hors-ligne. */
+  if (url.origin === self.location.origin && /\/routes\.js$/.test(url.pathname)) {
+    event.respondWith(
+      caches.match(req, { ignoreSearch: true }).then((deja) => deja || fetch(req).then((res) => {
+        if (res && res.ok) { caches.open(SHELL_CACHE).then((c) => c.put(req, res.clone())).catch(() => {}); }
+        return res;
+      }).catch(() => new Response('window.JMC_ROUTES=window.JMC_ROUTES||[];', {
+        status: 200, headers: { 'Content-Type': 'text/javascript; charset=utf-8' }
+      })))
     );
     return;
   }
