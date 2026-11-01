@@ -413,7 +413,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v378'; // 20261029i : grands axes en jaune (Overpass) + barre d'échelle
+const CACHE_VERSION = 'v379'; // 20261029j : rattrapage des notifications + fuite HTML corrigée
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
