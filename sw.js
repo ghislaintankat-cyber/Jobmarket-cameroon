@@ -413,7 +413,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v379'; // 20261029j : rattrapage des notifications + fuite HTML corrigée
+const CACHE_VERSION = 'v395'; // 20261029z : l'APK affiche elle-même les messages data-only (notification visible)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -546,7 +546,6 @@ const SHELL_ASSETS = [
   // par l'écran d'accueil — ils sont de toute façon téléchargés au
   // premier affichage, donc les mettre ici ne coûte rien de plus et
   // rend le texte correct même hors ligne.
-  './vendor/fonts/syne-latin.woff2',
   './vendor/fonts/dmsans-latin.woff2',
   // (20260907ai) NE SONT PLUS PRÉCHARGÉS : leaflet-routing-machine (css + js,
   // unpkg) et compressor.min.js (cdnjs). Même raisonnement que slogan.mp3
@@ -1078,17 +1077,25 @@ self.addEventListener('fetch', (event) => {
   }
 
   /* (20261029i) routes.js : la géométrie des grands axes (67 Ko).
-     Elle est chargée APRÈS le premier écran (voir jmcChargerRoutes dans
-     app.js), donc elle ne fait pas partie du socle de démarrage. Mais une
-     fois téléchargée, elle doit RESTER : GitHub Pages ne garde son cache HTTP
-     que 10 minutes (mesuré), et sans cette règle les tracés disparaîtraient
-     au bout de dix minutes d'utilisation hors-ligne. */
-  if (url.origin === self.location.origin && /\/routes\.js$/.test(url.pathname)) {
+     (20261029k) lieux-osm.js : les lieux réels (135 Ko), ajouté à la même
+     règle — les deux sont chargés APRÈS le premier écran (voir jmcChargerRoutes
+     et jmcChargerLieuxOsm dans app.js), donc hors du socle de démarrage.
+
+     Pourquoi les garder malgré tout : GitHub Pages ne garde son cache HTTP que
+     10 minutes (mesuré). Sans cette règle, les tracés jaunes et les icônes de
+     lieux disparaîtraient au bout de dix minutes d'utilisation hors-ligne.
+     Hors-ligne SANS cache : on renvoie un fichier VIDE mais valide, pour que la
+     carte reste utilisable au lieu de lever une erreur de script. */
+  if (url.origin === self.location.origin &&
+      (/\/routes\.js$/.test(url.pathname) || /\/lieux-osm\.js$/.test(url.pathname))) {
+    const vide = /lieux-osm/.test(url.pathname)
+      ? 'window.JMC_LIEUX_OSM=window.JMC_LIEUX_OSM||[];'
+      : 'window.JMC_ROUTES=window.JMC_ROUTES||[];';
     event.respondWith(
       caches.match(req, { ignoreSearch: true }).then((deja) => deja || fetch(req).then((res) => {
         if (res && res.ok) { caches.open(SHELL_CACHE).then((c) => c.put(req, res.clone())).catch(() => {}); }
         return res;
-      }).catch(() => new Response('window.JMC_ROUTES=window.JMC_ROUTES||[];', {
+      }).catch(() => new Response(vide, {
         status: 200, headers: { 'Content-Type': 'text/javascript; charset=utf-8' }
       })))
     );
