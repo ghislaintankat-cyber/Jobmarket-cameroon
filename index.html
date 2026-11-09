@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261029z">
+<html lang="fr" data-app-build="20261030b">
 <head>
 <script>
 /* Applique le thème sauvegardé AVANT que le CSS ne s'affiche, pour éviter
@@ -1276,6 +1276,41 @@ border-top: 1px solid var(--border);
 background: var(--surface);
 }
 #previewOwnerActions{margin-bottom:10px;}
+.jmc-pos{position:relative;width:0;height:0;pointer-events:none}
+.jmc-pos-halo{position:absolute;left:0;top:0;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:radial-gradient(circle,rgba(26,115,232,.42) 0%,rgba(26,115,232,.16) 52%,rgba(26,115,232,0) 72%);animation:jmcPosHalo 2.6s ease-out infinite}
+@keyframes jmcPosHalo{0%{transform:scale(.42);opacity:.95}70%{transform:scale(1.04);opacity:.2}100%{transform:scale(1.16);opacity:0}}
+.jmc-pos-cap{position:absolute;left:0;top:0;width:0;height:0;margin:-46px 0 0 -17px;border-left:17px solid transparent;border-right:17px solid transparent;border-bottom:46px solid rgba(26,115,232,.38);transform-origin:17px 46px;display:none}
+.jmc-pos-dot{position:absolute;left:0;top:0;width:17px;height:17px;margin:-8.5px 0 0 -8.5px;border-radius:50%;background:#1A73E8;border:2.5px solid #FFF;box-shadow:0 1px 5px rgba(0,0,0,.7)}
+@media (prefers-reduced-motion:reduce){.jmc-pos-halo{animation:none;opacity:.4}}
+#jmcFicheLieu{position:fixed;left:10px;right:10px;bottom:96px;z-index:1250;display:none;background:var(--dark2,#14141C);border:1px solid var(--border,#2A2A38);border-radius:16px;padding:12px 13px;box-shadow:0 14px 36px rgba(0,0,0,.6)}
+#jmcFicheLieu.jmc-ouvert{display:block}
+.jmc-fiche-tete{display:flex;align-items:flex-start;gap:9px}
+.jmc-fiche-titre{flex:1;min-width:0}
+.jmc-fiche-nom{font-weight:700;font-size:14.5px;line-height:1.25;color:var(--text,#E9EDEF);word-break:break-word}
+.jmc-fiche-sous{font-size:12px;color:var(--text-dim,#9999BC);margin-top:2px}
+.jmc-fiche-x{flex:none;background:none;border:none;color:var(--text-dim,#9999BC);font-size:18px;line-height:1;cursor:pointer;padding:2px 4px}
+.jmc-fiche-actions{display:flex;gap:8px;margin-top:10px}
+.jmc-fiche-btn{flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:12.5px;cursor:pointer;background:none;border:1px solid var(--border,#333);color:var(--text,#E9EDEF)}
+.jmc-fiche-btn.jmc-plein{background:#1A73E8;border:none;color:#fff}
+.jmc-alentour{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;margin-bottom:6px;background:var(--surface,#1A1A1A);border:1px solid var(--border,#333);border-radius:11px;color:var(--text,#E9EDEF);font-size:12.5px;text-align:left;cursor:pointer}
+.jmc-alentour-nom{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jmc-alentour-dist{flex:none;color:var(--text-dim,#9999BC);font-size:11px}
+.jmc-alentour-vide{padding:18px 4px;color:var(--text-dim,#9999BC);font-size:13px;line-height:1.5}
+.jmc-emoji-lieu{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;flex:none;
+border-radius:50%;background:rgba(10,10,15,.78);
+box-shadow:0 0 0 1px rgba(255,255,255,.72),0 1px 3px rgba(0,0,0,.55);
+font-size:13px;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.jmc-lieu-osm .jmc-emoji-lieu{width:21px;height:21px;font-size:14px}
+.jmc-lieu-osm>div.jmc-lieu-boite{position:absolute;left:0;top:0;display:flex;align-items:center;
+width:max-content;-webkit-width:max-content;white-space:nowrap;
+transform:translate(-10.5px,-50%);pointer-events:none}
+.jmc-nom-toast{position:fixed;left:50%;transform:translateX(-50%);z-index:13160;display:none;max-width:86vw;
+padding:9px 15px;border-radius:12px;background:rgba(20,20,28,.96);border:1px solid rgba(255,215,0,.55);
+color:#F2F2F7;font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+box-shadow:0 8px 26px rgba(0,0,0,.6)}
+.jmc-nom-toast.jmc-visible{display:block}
+@media (max-height:700px){.side-controls{top:132px;gap:8px}.side-btn{width:44px;height:44px}}
+.leaflet-bottom.leaflet-left{bottom:90px}
 </style>
 <style>
 :focus-visible{outline:2px solid var(--gold,#FFD700);outline-offset:2px;border-radius:4px;}

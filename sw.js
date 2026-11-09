@@ -413,7 +413,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v395'; // 20261029z : l'APK affiche elle-même les messages data-only (notification visible)
+const CACHE_VERSION = 'v397'; // 20261030b : emoji des lieux sur la carte, et la notification d'un message qui part enfin vers le téléphone du destinataire (worker direct-notify)
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
