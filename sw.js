@@ -413,7 +413,8 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Cache / offline ----------
 
-const CACHE_VERSION = 'v397'; // 20261030b : emoji des lieux sur la carte, et la notification d'un message qui part enfin vers le téléphone du destinataire (worker direct-notify)
+// (20261111c) v409 : app.js et index.html corrigés (villes/villages + cache de tuiles).
+const CACHE_VERSION = 'v416'; // 20260729g : routes secondaires nationales hors des villes, visibles dès z13
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -429,7 +430,8 @@ const TILE_CACHE = 'jobmarket-tiles';
 /* 300 tuiles ≈ 12 Mo avec l'imagerie satellite d'Esri (~40 Ko/tuile), contre
    ~15 Ko pour un plan OSM. Mesuré : 400 tuiles satellite pesaient jusqu'à
    16 Mo sur l'appareil — beaucoup pour un téléphone d'entrée de gamme. */
-const MAX_TILE_ENTRIES = 300;
+/* (20261111c) 300 -> 600. Mesure d'origine : ~40 Ko/tuile satellite Esri, donc ~12 Mo pour 300. Passer à 600 double la zone de carte gardée hors ligne (~24 Mo) : c'est le prix d'un seul démarrage a froid, et cela evite de retelecharger la meme zone a chaque ouverture sur un forfait limite. Le plafond reste borne par la purge FIFO ci-dessous. */
+const MAX_TILE_ENTRIES = 600;
 const IMAGE_CACHE = 'jobmarket-images';
 const MAX_IMAGE_ENTRIES = 250;
 // (20260905v 5ᵉ) cache vidéo séparé : peu d'entrées (fichiers lourds)
@@ -1076,9 +1078,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  /* (20261029i) routes.js : la géométrie des grands axes (67 Ko).
-     (20261029k) lieux-osm.js : les lieux réels (135 Ko), ajouté à la même
-     règle — les deux sont chargés APRÈS le premier écran (voir jmcChargerRoutes
+  /* (20261029i) routes.js : les grands axes des 12 villes.
+     (20260729a) routes-cameroun.js : le réseau trunk/primary national,
+     chargé seulement quand l'utilisateur sort des villes connues.
+     (20261029k) lieux-osm.js : les lieux réels (135 Ko).
+     Les couches sont chargées APRÈS le premier écran (voir jmcChargerRoutes
      et jmcChargerLieuxOsm dans app.js), donc hors du socle de démarrage.
 
      Pourquoi les garder malgré tout : GitHub Pages ne garde son cache HTTP que
@@ -1086,11 +1090,21 @@ self.addEventListener('fetch', (event) => {
      lieux disparaîtraient au bout de dix minutes d'utilisation hors-ligne.
      Hors-ligne SANS cache : on renvoie un fichier VIDE mais valide, pour que la
      carte reste utilisable au lieu de lever une erreur de script. */
+  /* (20261030c) itineraire.js rejoint la même règle : chargé au premier clic
+     sur « Itinéraire », il doit survivre à une coupure réseau — c'est
+     justement dehors, sur la route, qu'on demande son chemin. */
   if (url.origin === self.location.origin &&
-      (/\/routes\.js$/.test(url.pathname) || /\/lieux-osm\.js$/.test(url.pathname))) {
+      (/\/routes\.js$/.test(url.pathname) || /\/routes-cameroun\.js$/.test(url.pathname)
+       || /\/lieux-osm\.js$/.test(url.pathname) || /\/lieux-restos\.js$/.test(url.pathname) || /\/itineraire\.js$/.test(url.pathname))) {
     const vide = /lieux-osm/.test(url.pathname)
       ? 'window.JMC_LIEUX_OSM=window.JMC_LIEUX_OSM||[];'
-      : 'window.JMC_ROUTES=window.JMC_ROUTES||[];';
+      : /lieux-restos/.test(url.pathname)
+      ? 'window.JMC_LIEUX_RESTO=window.JMC_LIEUX_RESTO||[];'
+      : /itineraire/.test(url.pathname)
+        ? '/* itineraire.js indisponible hors-ligne : drawRoute retombe sur le vol d\'oiseau */'
+        : /routes-cameroun/.test(url.pathname)
+          ? 'window.JMC_ROUTES_NATIONALES=window.JMC_ROUTES_NATIONALES||[];'
+          : 'window.JMC_ROUTES=window.JMC_ROUTES||[];';
     event.respondWith(
       caches.match(req, { ignoreSearch: true }).then((deja) => deja || fetch(req).then((res) => {
         if (res && res.ok) { caches.open(SHELL_CACHE).then((c) => c.put(req, res.clone())).catch(() => {}); }
