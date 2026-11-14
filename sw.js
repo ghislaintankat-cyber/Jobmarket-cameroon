@@ -414,7 +414,7 @@ self.addEventListener('notificationclick', (event) => {
 // ---------- Cache / offline ----------
 
 // (20261111c) v409 : app.js et index.html corrigés (villes/villages + cache de tuiles).
-const CACHE_VERSION = 'v416'; // 20260729g : routes secondaires nationales hors des villes, visibles dès z13
+const CACHE_VERSION = 'v419'; // 20260729g : routes secondaires nationales hors des villes, visibles dès z13
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
@@ -1095,11 +1095,15 @@ self.addEventListener('fetch', (event) => {
      justement dehors, sur la route, qu'on demande son chemin. */
   if (url.origin === self.location.origin &&
       (/\/routes\.js$/.test(url.pathname) || /\/routes-cameroun\.js$/.test(url.pathname)
-       || /\/lieux-osm\.js$/.test(url.pathname) || /\/lieux-restos\.js$/.test(url.pathname) || /\/itineraire\.js$/.test(url.pathname))) {
+       || /\/lieux-osm\.js$/.test(url.pathname) || /\/lieux-restos\.js$/.test(url.pathname) || /\/lieux-autres\.js$/.test(url.pathname) || /\/lieux-villes\.js$/.test(url.pathname) || /\/itineraire\.js$/.test(url.pathname))) {
     const vide = /lieux-osm/.test(url.pathname)
       ? 'window.JMC_LIEUX_OSM=window.JMC_LIEUX_OSM||[];'
       : /lieux-restos/.test(url.pathname)
       ? 'window.JMC_LIEUX_RESTO=window.JMC_LIEUX_RESTO||[];'
+      : /lieux-autres/.test(url.pathname)
+      ? 'window.JMC_LIEUX_AUTRES=window.JMC_LIEUX_AUTRES||[];'
+      : /lieux-villes/.test(url.pathname)
+      ? 'window.JMC_LIEUX_VILLES=window.JMC_LIEUX_VILLES||[];'
       : /itineraire/.test(url.pathname)
         ? '/* itineraire.js indisponible hors-ligne : drawRoute retombe sur le vol d\'oiseau */'
         : /routes-cameroun/.test(url.pathname)
