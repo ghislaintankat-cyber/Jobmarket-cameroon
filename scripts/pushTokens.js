@@ -32,7 +32,7 @@
 //   • envoi à tous les appareils, succès dès qu'UN SEUL reçoit ;
 //   • suppression CHIRURGICALE : seul l'appareil réellement refusé par FCM
 //     est retiré, jamais l'entrée entière du compte ;
-//   • RÈGLE ANTI-DESTRUCTION : on relit la valeur juste avant d'effacer. Si
+//   • RÈGLE ANTI-DESTRUCTION : la comparaison et la suppression sont atomiques. Si
 //     elle a changé entre-temps (un autre appareil s'est enregistré pendant
 //     le run), la suppression est ANNULÉE.
 //
@@ -92,22 +92,20 @@ function tokensFor(tokensMap, uid) {
 async function removeDeadToken(db, uid, badToken) {
   if (!uid || !badToken) return;
   try {
-    const snap = await db.ref(`notificationTokens/${uid}`).once("value");
-    const current = snap.val();
-    if (current === badToken) {
-      await db.ref(`notificationTokens/${uid}`).remove().catch(() => {});
-    } else if (current) {
-      console.log(`↩️  ${uid} : jeton déjà remplacé par un autre appareil, suppression annulée.`);
-    }
-
-    // Multi-appareils : on ne retire que l'entrée dont le jeton correspond.
+    // Comparaison ET suppression dans une transaction atomique : une
+    // réinscription concurrente ne peut pas être effacée après la lecture.
+    await db.ref(`notificationTokens/${uid}`).transaction(
+      current => current === badToken ? null : undefined, undefined, false
+    );
     const devSnap = await db.ref(`notificationTokens_v2/${uid}`).once("value");
     const devices = devSnap.val() || {};
     for (const [key, entry] of Object.entries(devices)) {
       const tk = entry && typeof entry === "object" ? entry.token : entry;
-      if (tk === badToken) {
-        await db.ref(`notificationTokens_v2/${uid}/${key}`).remove().catch(() => {});
-      }
+      if (tk !== badToken) continue;
+      await db.ref(`notificationTokens_v2/${uid}/${key}`).transaction(current => {
+        const token = current && typeof current === "object" ? current.token : current;
+        return token === badToken ? null : undefined;
+      }, undefined, false);
     }
   } catch (e) {
     console.error(`removeDeadToken(${uid}) :`, (e && e.message) || e);
@@ -160,7 +158,9 @@ async function sendToUid(messaging, db, uid, tokensMap, data) {
   for (const bad of dead) await removeDeadToken(db, uid, bad);
 
   if (anySent) return "sent";
-  if (dead.length) return "invalid";
+  // Un seul jeton invalide ne suffit pas : un autre peut avoir échoué
+  // temporairement. Ne marquer « invalid » que si TOUS sont invalides.
+  if (dead.length === tokens.length && (response.responses || []).length === tokens.length) return "invalid";
   return "error";
 }
 
