@@ -414,7 +414,7 @@ self.addEventListener('notificationclick', (event) => {
 // ---------- Cache / offline ----------
 
 // (20261111c) v409 : app.js et index.html corrigés (villes/villages + cache de tuiles).
-const CACHE_VERSION = 'v425'; // 20260729g : routes secondaires nationales hors des villes, visibles dès z13
+const CACHE_VERSION = 'v427'; // 20261123a : session Firebase restaurée à l'ouverture (plus de reconnexion à chaque fermeture) ; connexions Google sans double ouverture ; les actions réservées aux comptes ouvrent directement l'écran Compte
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
