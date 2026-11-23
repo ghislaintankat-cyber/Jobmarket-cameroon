@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261003a">
+<html lang="fr" data-app-build="20261123a">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -8,6 +8,10 @@
 <meta name="theme-color" content="#0A0A0F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="robots" content="noindex,nofollow">
+<meta property="og:title" content="Shalom Square — Messagerie sécurisée">
+<meta property="og:description" content="Chat sécurisé Shalom Square — synchronisé avec JobMarket Cameroon.">
+<meta property="og:image" content="https://ghislaintankat-cyber.github.io/Jobmarket-cameroon/og-image.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A0A0F'/%3E%3Ctext x='32' y='42' font-size='32' text-anchor='middle'%3E%F0%9F%9B%8D%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <style>
 :root{
@@ -390,7 +394,7 @@ body.light{
 <div class="main">
   <aside class="list-pane" aria-label="Conversations">
     <div class="searchbar">
-      <input id="searchInput" type="search" data-i18n-ph="search_ph" placeholder="Rechercher une conversation…" oninput="renderInbox()">
+      <input id="searchInput" type="search" data-i18n-ph="search_ph" placeholder="Rechercher une conversation…" aria-label="Rechercher une conversation" oninput="renderInbox()">
     </div>
     <div class="conv-scroll" id="convList"></div>
   </aside>
@@ -422,15 +426,15 @@ body.light{
         <span class="ltitle" id="lcTitle"></span>
         <span class="lprice" id="lcPrice"></span>
       </div>
-      <div id="vdFilRecherche" style="display:none;padding:7px 12px 0"><input id="vdFilRechChamp" type="text" placeholder="Chercher dans cette conversation…" style="width:100%;background:var(--card);border:1px solid var(--line);border-radius:999px;color:var(--ink);padding:8px 14px;font-size:13px;outline:none"></div>
+      <div id="vdFilRecherche" style="display:none;padding:7px 12px 0"><input id="vdFilRechChamp" type="text" placeholder="Chercher dans cette conversation…" aria-label="Chercher dans cette conversation" style="width:100%;background:var(--card);border:1px solid var(--line);border-radius:999px;color:var(--ink);padding:8px 14px;font-size:13px;outline:none"></div>
       <div class="bubbles" id="bubbles"></div>
       <div class="qchips" id="aiRow"></div>
       <div class="qchips" id="quickChips"></div>
       <div class="chat-input">
-        <input id="chatInput" type="text" data-i18n-ph="chat_ph" placeholder="Écrivez un message…"
+        <input id="chatInput" type="text" data-i18n-ph="chat_ph" placeholder="Écrivez un message…" aria-label="Écrivez un message"
           onkeydown="if(event.key==='Enter'){event.preventDefault();sendText();}">
                 <button class="iobtn" id="vdLieuBtn" title="Partager ma position" aria-label="Partager ma position"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></button>
-        <input id="vdPhotoFile" type="file" accept="image/*" style="display:none">
+        <input id="vdPhotoFile" type="file" accept="image/*" style="display:none" aria-label="Choisir une photo à envoyer">
         <button class="iobtn" id="vdPhotoBtn" title="Envoyer une photo" aria-label="Envoyer une photo"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
         <button class="iobtn" id="vdVoiceBtn" title="Message vocal" aria-label="Message vocal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
         <button class="sendbtn" onclick="sendText()" aria-label="Envoyer">➤</button>
@@ -757,9 +761,9 @@ function renderAuth(){
 function openSignIn(){
   openModal('<h2 style="font-size:19px;margin-bottom:4px">'+t("sign_in_h")+'</h2>'
     +'<p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">'+t("sign_in_p")+'</p>'
-    +'<div class="field" id="nameField" style="display:none"><label>'+t("your_name")+'</label><input id="inName" type="text" maxlength="40" placeholder="ex. Marie Abena"></div>'
-    +'<div class="field"><label>'+t("email")+'</label><input id="inEmail" type="email" autocomplete="email" placeholder="ex. marie@gmail.com"></div>'
-    +'<div class="field"><label>'+t("password")+'</label><input id="inPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>'
+    +'<div class="field" id="nameField" style="display:none"><label>'+t("your_name")+'</label><input id="inName" type="text" maxlength="40" placeholder="ex. Marie Abena" aria-label="Votre nom"></div>'
+    +'<div class="field"><label>'+t("email")+'</label><input id="inEmail" type="email" autocomplete="email" placeholder="ex. marie@gmail.com" aria-label="Adresse e-mail"></div>'
+    +'<div class="field"><label>'+t("password")+'</label><input id="inPass" type="password" autocomplete="current-password" placeholder="••••••••" aria-label="Mot de passe"></div>'
     +'<div class="formerr" id="authErr"></div>'
     +'<button class="btn btn-ghost" style="margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="vdConnexionGoogle(function(msg){var z=document.getElementById(&quot;authErr&quot;);if(z)z.textContent=msg;})"><span style="font-size:16px">🔵</span> '+(LANG==="fr"?"Continuer avec Google":"Continue with Google")+'</button>'
     +'<div style="text-align:center;font-size:11.5px;color:var(--muted);margin-bottom:9px">'+(LANG==="fr"?"— ou avec un mot de passe —":"— or with a password —")+'</div>'
@@ -3246,7 +3250,7 @@ function vdSignalerConversation(uid, dernier){
     FB.db.ref("errorLogs").push({
       message:"[signalement_chat_boutique] "+String(dernier||"").slice(0,400),
       timestamp:Date.now(), type:"support", sujet:"signalement_chat_boutique",
-      uid:me.uid, peer:uid||"", build:"shalom-20261005d"
+      uid:me.uid, peer:uid||"", build:"shalom-20261123a"
     }).then(function(){ toast("🚩 Signalement recu par l'equipe JobMarket Cameroon ✅"); })
      .catch(function(){ toast("Envoi impossible. Reessaie quand le reseau revient."); });
     return true;
