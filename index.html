@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" data-app-build="20261116g">
+<html lang="fr" data-app-build="20261124a">
 <head>
 <script src="shim-natif.js?v=1"></script>
 <script>
@@ -2667,8 +2667,8 @@ border:none;background:rgba(255,255,255,.12);color:#e9edef;display:flex;align-it
 justify-content:center;cursor:pointer}
 .call-reduire:active{transform:scale(.92)}
 #callOverlay.call-mini .call-reduire{display:none}
-.call-remote-video-wrap{position:absolute;top:0;right:0;bottom:0;left:0;display:none}
-#callOverlay.call-active-video .call-remote-video-wrap{display:block}
+.call-remote-video-wrap{position:absolute;top:0;right:0;bottom:0;left:0;visibility:hidden;background:#000}
+#callOverlay.call-active-video .call-remote-video-wrap{visibility:visible}
 #callRemoteVideo{width:100%;height:100%;object-fit:cover;object-position:center;background:#000}
 #callSelfVideo{position:absolute;right:12px;top:14px;width:30%;max-width:140px;border-radius:12px;transform:scaleX(-1);background:#000;z-index:2;display:none;box-shadow:0 4px 18px rgba(0,0,0,.5)}
 #callOverlay.call-active-video #callSelfVideo{display:block}

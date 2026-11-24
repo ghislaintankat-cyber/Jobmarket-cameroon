@@ -414,7 +414,7 @@ self.addEventListener('notificationclick', (event) => {
 // ---------- Cache / offline ----------
 
 // (20261111c) v409 : app.js et index.html corrigés (villes/villages + cache de tuiles).
-const CACHE_VERSION = 'v428'; // 20261123b : session Firebase restaurée à l'ouverture — décision prise sur l'utilisateur RESTAURÉ lui-même (jeux d'ordre douteux) ; connexions Google sans double ouverture ; les actions réservées aux comptes ouvrent directement l'écran Compte
+const CACHE_VERSION = 'v429'; // 20261124a : vidéo d'appel — surface distante toujours rendue (visibility au lieu de display:none, WebView Android), lecture relancée et journalisée ; jobs lus immédiatement (reprise après session si refus). [hérité] 20261123b : session restaurée à l'ouverture ; Google sans double ouverture ; Compte directement pour les actions réservées
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
