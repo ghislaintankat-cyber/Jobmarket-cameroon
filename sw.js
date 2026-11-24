@@ -414,7 +414,7 @@ self.addEventListener('notificationclick', (event) => {
 // ---------- Cache / offline ----------
 
 // (20261111c) v409 : app.js et index.html corrigés (villes/villages + cache de tuiles).
-const CACHE_VERSION = 'v429'; // 20261124a : vidéo d'appel — surface distante toujours rendue (visibility au lieu de display:none, WebView Android), lecture relancée et journalisée ; jobs lus immédiatement (reprise après session si refus). [hérité] 20261123b : session restaurée à l'ouverture ; Google sans double ouverture ; Compte directement pour les actions réservées
+const CACHE_VERSION = 'v430'; // 20261124b : popups d'annonces construits à l'ouverture (pas 500 au démarrage) ; audio d'appel relit via jmcLireVideo. [hérité v429] 20261124a : surface distante toujours rendue (visibility), relances de lecture ; jobs lus immédiatement. [hérité v428] 20261123b : session restaurée à l'ouverture ; Google sans double ouverture ; Compte directement pour les actions réservées
 const SHELL_CACHE = `jobmarket-shell-${CACHE_VERSION}`;
 // (20260907u) LES CONTENUS NE SONT PLUS VERSIONNÉS.
 // Défaut trouvé en relisant le code : les caches des tuiles de carte, des
